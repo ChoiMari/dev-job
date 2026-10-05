@@ -2,9 +2,13 @@
 
 ## 1. 범위와 설계 판단
 
-이 문서는 `requirements.md`, `user-flow.md`, `ui-spec.md`, `architecture.md`, `development-plan.md`에 명시된 **MVP 데이터 구조의 설계안**이다. S03에서 `User`만 Entity와 migration으로 구현했으며 나머지는 설계 예정이다. DB는 `architecture.md`의 PostgreSQL을 전제로 한다.
+이 문서는 `requirements.md`, `user-flow.md`, `ui-spec.md`, `architecture.md`, `development-plan.md`에 명시된 **MVP 데이터 구조의 설계안**이다. S03의 `User`와 S07의 `Company`·`JobSource`·`JobPosting`만 Entity와 migration으로 구현했으며 나머지는 설계 예정이다. DB는 `architecture.md`의 PostgreSQL을 전제로 한다.
 
 S01에서 스키마 적용은 Flyway SQL migration + JPA `validate`로 확정했다. S01은 연결 기반과 Flyway 이력 테이블만 구성하며, 아래 도메인 테이블은 후속 단계에서 Entity와 migration을 함께 구현한다.
+
+통합 migration 순서는 S03 `V1__create_users.sql` 다음 S07 `V2__create_job_collection.sql`이다. 두 작업의 분리된 DB에서는 각자의 V1을 적용했으므로, 기존 DB의 `flyway_schema_history`가 사용자 V1인지 공고 V1인지 먼저 확인해야 한다. 공고 V1이 이미 적용된 DB에는 통합본을 그대로 실행하면 Flyway 검증이 실패한다. 이력 수정이나 DB 초기화는 자동으로 수행하지 않는다.
+
+S07에서 `Company`·`JobSource`·`JobPosting`의 Entity·Repository를 구현했다. 아래 필드·관계·유일 키 계약을 유지하며 PostgreSQL 17에서 Flyway 적용과 JPA `validate`를 확인했다. 출처·외부 ID 중복은 기존 공고와 회사 연결을 보존한다. 신규 공고는 회사 고유 식별 근거가 없으므로 별도 Company를 연결하고 회사명만으로 기존 기업을 합치지 않는다. AI·CRM 테이블은 이 단계에 포함하지 않는다.
 
 | 판단 지점 | MVP 결정과 근거 |
 | --- | --- |

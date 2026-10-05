@@ -2,7 +2,7 @@
 
 ## 사용 방법
 
-2026-10-05 기준 main에는 **S01·S02·S03이 구현·검증 완료** 상태로 통합되어 있다. S01은 Backend 빌드·기본 테스트·기동, PostgreSQL Compose·연결, 공통 오류 응답을 검증했다. S02는 Frontend 빌드·공통 API 클라이언트 테스트·기본 화면과 상태 표시를 검증했으며, 픽셀 아트 공통 디자인은 S02-V에서 진행한다. S03은 User 저장과 인증 API·화면·보호 경로를 구현하고 비밀번호·이메일 중복·세션·CSRF·사용자 분리를 검증했다. 다른 도메인 테이블·API는 아직 구현하지 않았다. 나머지 단계의 통합 여부는 작업을 시작할 때 Git 상태로 확인한다. 한 단계의 선행 작업을 마치면 그 단계만 구현·검증한다. 독립적인 단계는 동시에 진행할 수 있다.
+2026-10-05 기준 main에는 **S01·S02·S03·S07이 구현·검증 완료** 상태로 통합되어 있다. S01은 Backend 빌드·기본 테스트·기동, PostgreSQL Compose·연결, 공통 오류 응답을 검증했다. S02는 Frontend 빌드·공통 API 클라이언트 테스트·기본 화면과 상태 표시를 검증했으며, 픽셀 아트 공통 디자인은 S02-V에서 진행한다. S03은 User 저장과 인증 API·화면·보호 경로를 구현하고 비밀번호·이메일 중복·세션·CSRF·사용자 분리를 검증했다. S07은 채용공고 저장 테이블·Adapter 계약·모의 수집을 검증했으며 공고 조회 API는 아직 구현하지 않았다. 나머지 단계의 통합 여부는 작업을 시작할 때 Git 상태로 확인한다. 한 단계의 선행 작업을 마치면 그 단계만 구현·검증한다. 독립적인 단계는 동시에 진행할 수 있다.
 
 각 단계에 적힌 관련 문서만 우선 확인한다. 공통 규칙은 [AGENTS.md](../AGENTS.md), 복잡한 작업의 실행계획 기준은 [.agent/PLANS.md](../.agent/PLANS.md)를 따른다. DB·API 계약은 [ERD](erd.md)와 [API 명세](api-spec.md)가 기준이다. S03 인증 API는 구현했으며 나머지는 **설계 예정**이다.
 
@@ -88,6 +88,7 @@
 - 문서: [architecture](architecture.md), [requirements](requirements.md), [ERD](erd.md), [user flow](user-flow.md).
 - 구현: JobSourceAdapter 계약, Company·JobSource·JobPosting 저장, 외부 응답 정규화·중복 처리·실패 격리를 만든다. 모의 응답으로 검증하며 공개 수집 API는 추가하지 않는다.
 - 완료: 중복 키·회사 연결·누락 필드·외부 실패 테스트와 Backend Compile.
+- 상태: 2026-10-05 구현·검증 완료. 모의 Adapter 응답의 정규화, 반복·동시 수집 중복 방지, 회사 연결, 필수/선택 필드 누락, 외부 실패 후 저장 데이터 조회, 공고별 DB 오류 롤백을 테스트했다. 일회용 PostgreSQL 17에서 Flyway·JPA 매핑 검증과 Backend `build dbTest`를 통과했다. 실제 Work24 연동·공고 조회 API·공개 수집 API·AI는 포함하지 않는다.
 
 **S08 · 공고 검색·상세**
 - 문서: [requirements](requirements.md), [user flow](user-flow.md), [API](api-spec.md), [UI](ui-spec.md).

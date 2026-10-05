@@ -816,7 +816,9 @@ public interface JobSourceAdapter {
 
 
 
-&#x20;   List<ExternalJobPosting> fetchJobs(JobSearchCondition condition);
+    JobSourceDescriptor source();
+
+    List<ExternalJobPosting> fetchJobs(JobSearchCondition condition);
 
 
 
@@ -857,6 +859,15 @@ PostgreSQL
 \---
 
 
+
+### S07 구현 경계
+
+- `com.devjob.job.adapter.JobSourceAdapter`는 출처 정보와 내부 수집 조건을 받아 외부 공고 모델을 반환한다. 모의 Adapter는 테스트에만 두며 실제 HTTP 호출이나 자동 수집, 공개 수집 API는 추가하지 않는다.
+- `JobPostingNormalizer`는 필수값(외부 ID·회사명·제목·원문 URL)을 검증하고 문자열 양끝 공백을 제거한다. 선택 필드의 빈 문자열은 null, 날짜는 ISO 날짜에서 LocalDate로 변환한다. 본문의 줄바꿈과 외부 ID 대소문자는 보존하며 HTTP(S) 원문 URL과 게시일·마감일 순서를 검증한다.
+- `JobCollectionService`는 외부 호출 때 호출자 트랜잭션을 일시 중지하고, `JobPostingWriter`는 출처 등록과 공고별 저장을 독립 트랜잭션으로 실행한다. 회사·공고를 함께 저장해 한 공고의 DB 오류가 다른 공고의 저장에 영향을 주지 않게 한다. 출처 행 잠금과 유일 키로 동시 수집 중복을 막는다.
+- 출처·외부 ID가 이미 있으면 공고 원문·회사 연결·생성/수정 시각을 유지하고 중복으로 집계한다. 회사 고유 식별자는 현재 계약에 없으므로 신규 공고마다 Company를 연결하고 동명 기업을 이름만으로 합치지 않는다.
+- 필수값 누락·잘못된 날짜/URL은 해당 공고만 거절한다. 외부 호출 실패는 재시도 없이 SOURCE_FAILED, 출처 저장 실패는 STORAGE_FAILED, 일부 공고 거절/저장 실패는 PARTIAL_FAILURE로 반환한다. 내부 수집 결과와 로그에는 건수·상태를 기록하며 외부 응답 원문·예외 메시지는 넣지 않는다. 실패 이력 테이블은 추가하지 않는다.
+- 검증은 테스트 전용 모의 응답과 PostgreSQL 17을 사용했다. `gradlew.bat build dbTest`의 S07 DB 테스트는 `DB_NAME=devjob_s07_test`인 일회용 DB에서만 실행하며 대상 세 테이블을 테스트마다 비운다. 저장 데이터 조회는 Repository에서 검증하고 검색·상세 API는 S08에 남긴다.
 
 \# 11. Why Adapter Architecture?
 

@@ -1,0 +1,32 @@
+[
+  {
+    "id": " posting-1 ",
+    "corpName": " 모의 기업 ",
+    "jobTitle": " 백엔드 개발자 ",
+    "body": " Java 개발\n협업 경험 ",
+    "type": " 정규직 ",
+    "career": " 신입 ",
+    "area": " 서울 ",
+    "published": " 2026-10-01 ",
+    "expires": "2026-10-31",
+    "url": " https://example.com/jobs/1 "
+  },
+  {
+    "id": "posting-2",
+    "corpName": "모의 기업",
+    "jobTitle": "프론트엔드 개발자",
+    "body": " ",
+    "url": "https://example.com/jobs/2"
+  },
+  {
+    "id": "posting-1",
+    "corpName": "변경된 회사",
+    "jobTitle": "변경된 제목",
+    "url": "https://example.com/jobs/changed"
+  },
+  {
+    "corpName": "회사",
+    "jobTitle": "필수 ID 누락",
+    "url": "https://example.com/jobs/invalid"
+  }
+]
