@@ -1,12 +1,19 @@
 import type { ReactNode } from 'react';
+import type { CurrentUser } from '../api/auth';
 
-export function Layout({ title, path, children }: { title: string; path: string; children: ReactNode }) {
+export function Layout({ title, path, children, user, onLogout, loggingOut }: {
+  title: string; path: string; children: ReactNode; user: CurrentUser; onLogout: () => void; loggingOut: boolean;
+}) {
   return <div className="app-layout">
     <a className="skip-link" href="#main-content" onClick={(event) => {
       event.preventDefault();
       document.getElementById('main-content')?.focus();
     }}>본문으로 이동</a>
-    <header className="header"><a className="brand" href="#/">DEVJOB</a><span>{title}</span></header>
+    <header className="header"><a className="brand" href="#/">DEVJOB</a><span>{title}</span>
+      <div className="account-controls"><span>{user.email}</span>
+        <button type="button" onClick={onLogout} disabled={loggingOut}>{loggingOut ? '로그아웃 중…' : '로그아웃'}</button>
+      </div>
+    </header>
     <aside className="sidebar">
       <nav aria-label="주요 메뉴">
         <a href="#/" aria-current={path === '/' ? 'page' : undefined}><span aria-hidden="true">⌂</span> 기본 화면</a>

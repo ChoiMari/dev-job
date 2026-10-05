@@ -19,8 +19,8 @@ class DatabaseConnectionTest {
     @Test
     void realHttpServerUsesJsonErrorContract() {
         var response = http.getForEntity("/api/s01-missing", ApiError.class);
-        assertThat(response.getStatusCode().value()).isEqualTo(404);
-        assertThat(response.getBody()).isEqualTo(new ApiError("NOT_FOUND", "요청한 대상을 찾을 수 없습니다."));
+        assertThat(response.getStatusCode().value()).isEqualTo(401);
+        assertThat(response.getBody()).isEqualTo(new ApiError("UNAUTHORIZED", "로그인이 필요합니다."));
         var errorResponse = http.getForEntity("/error", ApiError.class);
         assertThat(errorResponse.getStatusCode().value()).isEqualTo(500);
         assertThat(errorResponse.getBody()).isEqualTo(new ApiError("INTERNAL_SERVER_ERROR", "서버 오류가 발생했습니다."));

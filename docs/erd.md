@@ -2,7 +2,7 @@
 
 ## 1. 범위와 설계 판단
 
-이 문서는 `requirements.md`, `user-flow.md`, `ui-spec.md`, `architecture.md`, `development-plan.md`에 명시된 **MVP 데이터 구조의 설계안**이다. 실제 DB, JPA Entity, migration이 생성되었다는 뜻이 아니다. DB는 `architecture.md`의 PostgreSQL을 전제로 한다.
+이 문서는 `requirements.md`, `user-flow.md`, `ui-spec.md`, `architecture.md`, `development-plan.md`에 명시된 **MVP 데이터 구조의 설계안**이다. S03에서 `User`만 Entity와 migration으로 구현했으며 나머지는 설계 예정이다. DB는 `architecture.md`의 PostgreSQL을 전제로 한다.
 
 S01에서 스키마 적용은 Flyway SQL migration + JPA `validate`로 확정했다. S01은 연결 기반과 Flyway 이력 테이블만 구성하며, 아래 도메인 테이블은 후속 단계에서 Entity와 migration을 함께 구현한다.
 
@@ -48,6 +48,8 @@ erDiagram
 표의 `id`는 각 테이블의 PK다. `*_id`는 별도 표기가 없으면 이름에 대응하는 테이블의 `id`를 참조하는 FK다. 주요 컬럼만 나열하며 생성·수정 시각 등 공통 운영 컬럼은 필요한 테이블에 포함한다.
 
 ### 3.1 계정, 역량, 프로젝트
+
+S03 물리 매핑: `User`는 `users` 테이블로 구현한다. `id`는 BIGINT identity, `email`은 VARCHAR(254), `password_hash`는 VARCHAR(100), `created_at`은 TIMESTAMP WITH TIME ZONE이며 모두 필수다. `V1__create_users.sql`은 정규화된 이메일의 UNIQUE와 `email = lower(btrim(email))` CHECK를 적용한다. 서버 세션은 메모리에 보관하며 인증용 DB 테이블은 추가하지 않는다. 기존 데이터 삭제·변경 migration은 없다.
 
 | 엔티티 | 목적 | 주요 컬럼 및 키 | 핵심 제약 |
 | --- | --- | --- | --- |

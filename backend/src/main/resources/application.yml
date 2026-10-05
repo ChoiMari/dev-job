@@ -1,4 +1,6 @@
 spring:
+  autoconfigure:
+    exclude: org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration
   application:
     name: devjob-backend
   datasource:
@@ -17,6 +19,15 @@ spring:
       mode: never
 server:
   port: ${SERVER_PORT:8080}
+  servlet:
+    session:
+      timeout: 30m
+      tracking-modes: cookie
+      cookie:
+        http-only: true
+        same-site: lax
+        secure: ${SESSION_COOKIE_SECURE:true}
+        path: /
   error:
     include-message: never
     include-binding-errors: never

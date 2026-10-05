@@ -6,11 +6,11 @@ const json = (value, status = 200) => new Response(JSON.stringify(value), {
   status, headers: { 'Content-Type': 'application/json' },
 });
 
-test('returns resource JSON directly, encodes query, and sends no authentication', async () => {
+test('returns resource JSON directly, encodes query, and uses same-origin cookies', async () => {
   const resource = { items: [], page: 0, size: 20, totalElements: 0 };
   const request = createApiClient('/api/', async (url, options) => {
     assert.equal(url, '/api/example?q=a%26b&page=0');
-    assert.equal(options.credentials, 'omit');
+    assert.equal(options.credentials, 'same-origin');
     assert.equal(options.headers.Authorization, undefined);
     assert.equal(options.headers['Content-Type'], undefined);
     return json(resource);

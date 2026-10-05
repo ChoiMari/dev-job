@@ -15,6 +15,7 @@ type RequestOptions = {
   query?: Record<string, string | number | boolean | undefined>;
   body?: unknown;
   signal?: AbortSignal;
+  csrfToken?: string;
 };
 
 function isErrorBody(value: unknown): value is { code: string; message: string } {
@@ -41,11 +42,11 @@ export function createApiClient(baseUrl: string, fetcher: typeof fetch = fetch) 
         headers: {
           Accept: 'application/json',
           ...(options.body === undefined ? {} : { 'Content-Type': 'application/json' }),
+          ...(options.csrfToken === undefined ? {} : { 'X-CSRF-TOKEN': options.csrfToken }),
         },
         body: options.body === undefined ? undefined : JSON.stringify(options.body),
         signal: options.signal,
-        // S03 must establish authentication before cookies or tokens are sent.
-        credentials: 'omit',
+        credentials: 'same-origin',
       });
     } catch (error) {
       if (options.signal?.aborted || (error instanceof Error && error.name === 'AbortError')) throw error;

@@ -2,9 +2,9 @@
 
 ## 사용 방법
 
-2026-10-05 기준 main에는 **S01·S02가 구현·검증 완료** 상태로 통합되어 있다. S01은 Backend 빌드·기본 테스트·기동, PostgreSQL Compose·연결, 공통 오류 응답을 검증했다. S02는 Frontend 빌드·공통 API 클라이언트 테스트·기본 화면과 상태 표시를 검증했으며, 픽셀 아트 공통 디자인은 S02-V에서 진행한다. 나머지 단계의 통합 여부는 작업을 시작할 때 Git 상태로 확인한다. 한 단계의 선행 작업을 마치면 그 단계만 구현·검증한다. 독립적인 단계는 동시에 진행할 수 있다.
+2026-10-05 기준 main에는 **S01·S02·S03이 구현·검증 완료** 상태로 통합되어 있다. S01은 Backend 빌드·기본 테스트·기동, PostgreSQL Compose·연결, 공통 오류 응답을 검증했다. S02는 Frontend 빌드·공통 API 클라이언트 테스트·기본 화면과 상태 표시를 검증했으며, 픽셀 아트 공통 디자인은 S02-V에서 진행한다. S03은 User 저장과 인증 API·화면·보호 경로를 구현하고 비밀번호·이메일 중복·세션·CSRF·사용자 분리를 검증했다. 다른 도메인 테이블·API는 아직 구현하지 않았다. 나머지 단계의 통합 여부는 작업을 시작할 때 Git 상태로 확인한다. 한 단계의 선행 작업을 마치면 그 단계만 구현·검증한다. 독립적인 단계는 동시에 진행할 수 있다.
 
-각 단계에 적힌 관련 문서만 우선 확인한다. 공통 규칙은 [AGENTS.md](../AGENTS.md), 복잡한 작업의 실행계획 기준은 [.agent/PLANS.md](../.agent/PLANS.md)를 따른다. DB·API 계약은 [ERD](erd.md)와 [API 명세](api-spec.md)가 기준이다. 모든 API는 현재 **설계 예정**이다.
+각 단계에 적힌 관련 문서만 우선 확인한다. 공통 규칙은 [AGENTS.md](../AGENTS.md), 복잡한 작업의 실행계획 기준은 [.agent/PLANS.md](../.agent/PLANS.md)를 따른다. DB·API 계약은 [ERD](erd.md)와 [API 명세](api-spec.md)가 기준이다. S03 인증 API는 구현했으며 나머지는 **설계 예정**이다.
 
 ## 단계·의존성·권장 모델
 
@@ -65,6 +65,7 @@
 - 문서: [requirements](requirements.md), [user flow](user-flow.md), [ERD](erd.md), [API](api-spec.md), [UI](ui-spec.md).
 - 구현: User 저장·이메일 중복 방지, 회원가입·로그인·로그아웃·현재 사용자 API, 보호된 경로와 인증 화면을 구현한다. 비밀번호 저장과 사용자별 접근을 검증한다.
 - 완료: 인증·미인증·중복 가입 테스트, Backend Compile·Frontend Build, 가입→로그인→로그아웃 확인.
+- 검증 결과: Backend `test` 18개·PostgreSQL `dbTest` 9개와 `build` 통과, Frontend `test` 19개·`build` 통과. 실제 브라우저에서 가입·로그인 실패·정상 로그인·새로고침·로그아웃·보호 경로 차단·대소문자 중복 가입을 확인했다. 실제 HTTP 테스트는 이전 세션 쿠키/CSRF 재사용 차단과 쿠키 보안 속성을 확인했다. 30분 실시간 만료 대기와 배포 HTTPS 통합은 미실행이며 S03 검증은 격리된 로컬 PostgreSQL·HTTP 환경에서 수행했다.
 
 **S04 · 프로필**
 - 문서: [requirements](requirements.md), [user flow](user-flow.md), [ERD](erd.md), [API](api-spec.md), [UI](ui-spec.md).
@@ -152,7 +153,7 @@
 | --- | --- |
 | PostgreSQL 스키마 적용·변경 방식: Flyway SQL migration + JPA `validate`로 확정. S01에서는 도메인 migration을 만들지 않는다. | S01, 첫 Entity 작업 |
 | React 프로젝트 언어: TypeScript로 확정 | S02 |
-| 인증 전달·로그아웃 방식, 회원가입 화면 최소 구성 | S03 |
+| 서버 세션 + HttpOnly 쿠키, CSRF 조회 API 추가, 서버 세션 무효화 로그아웃으로 확정. 회원가입 화면은 이메일·비밀번호·확인(화면 전용)이며 상세 계약은 api-spec 2절. | S03 완료 |
 | 프로젝트 관리 화면 최소 구성 | S06 |
 | Work24 공식 접근 권한·필드·이용 조건 | S09 |
 | LLM 제공자·자격 정보·비용 범위와 202/PENDING 처리 방식 | S12 |
