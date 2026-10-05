@@ -8,6 +8,7 @@ import { AuthPage } from './pages/AuthPage';
 import { StatePreview } from './pages/StatePreview';
 import { ProfilePage } from './pages/ProfilePage';
 import { Badge, PixelCharacter } from './components/PixelArt';
+import { ProfileSkills } from './components/ProfileSkills';
 
 const getPath = () => window.location.hash.slice(1) || '/';
 
@@ -94,8 +95,10 @@ export function App() {
         <a className="button-link button-primary" href="#/states">공통 상태 확인하기</a>
       </div>
       <div className="welcome-companion"><span className="character-stage"><PixelCharacter /></span><p>함께 준비해요</p></div>
-    </section> : path === '/profile' ? <ProfilePage key={user.id} email={user.email} onEmailChange={email => setUser(current => current ? { ...current, email } : current)} />
-      : path === '/states' ? <StatePreview /> : <section className="card">
+    </section> : path === '/profile' ? <>
+      <ProfilePage key={user.id} email={user.email} onEmailChange={email => setUser(current => current ? { ...current, email } : current)} />
+      <ProfileSkills key={user.id} />
+    </> : path === '/states' ? <StatePreview /> : <section className="card">
       <EmptyState title="화면을 찾을 수 없습니다." message="주소를 확인하거나 기본 화면으로 돌아가 주세요." />
       <a className="button-link" href="#/">기본 화면으로</a>
     </section>}

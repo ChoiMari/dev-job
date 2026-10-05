@@ -1354,6 +1354,13 @@ S04 구현: `#/profile`에서 처음 조회할 때 로딩, 미설정 `404`는 �
 
 Skill은 Badge 형태로 표시할 수 있다.
 
+S05 구현: 보호된 `#/profile` 경로에서 독립 컴포넌트 `ProfileSkills`가 기술 스택을 표시한다. S04 통합 시 프로필 정보 폼 아래에 `<ProfileSkills />`를 렌더링하며 프로필 PUT 요청과 기술 POST/DELETE 요청을 분리한다. 기술 관리는 프로필 저장 여부와 독립적으로 사용할 수 있다.
+
+- 내 기술은 표준 이름의 공통 픽셀 Badge와 이름을 포함한 삭제 버튼으로 표시한다. 빈 목록은 공통 EmptyState, 조회 중·실패는 LoadingState·재시도 ErrorState를 사용한다.
+- 별칭·표준명 검색 폼, 결과 목록, 이전/다음 페이지, 현재 보유 표시를 제공한다. 별칭으로 검색해도 표준 이름을 보여준다. 입력이 있는 검색 후에는 이름으로 추가할 수 있으며 미등록 이름은 서버 검증 후 생성한다.
+- 변경 중에는 추가·삭제 중복 제출을 차단한다. 성공은 공통 SuccessState, 중복·입력·통신 오류는 alert 문구로 표시한다. 인증 실패는 기존 S03의 `devjob:unauthorized`를 통해 로그인 화면으로 이동한다.
+- 전용 스타일은 `components/ProfileSkills.css`에 제한하며 S02-V 색상·Badge·상태·44px 입력/버튼 기준을 재사용한다. 공유 `styles.css`와 인증 파일은 수정하지 않는다. S04와 겹치는 `App.tsx`·`Layout.tsx` 연결 및 검증 결과는 [S05 보고](s05-implementation-report.md)를 따른다.
+
 
 
 ```text

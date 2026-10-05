@@ -2,7 +2,7 @@
 
 ## 1. 상태와 공통 계약
 
-S03의 인증 API(`/api/auth/*`)와 S04의 프로필 API(`/api/me/profile`)는 구현했다. 그 밖의 API는 설계 예정이며 구현 완료를 뜻하지 않는다. 기준 문서는 `requirements.md`, `user-flow.md`, `architecture.md`, `erd.md`다. 기본 경로는 `/api`, 요청·응답 본문은 JSON이다. 외부 채용 API 수집은 Backend의 Adapter 처리 범위이며, 근거 없는 공개 수집·관리자 API를 추가하지 않는다.
+S03의 인증 API(`/api/auth/*`), S04의 프로필 API(`/api/me/profile`), S05의 기술 API(`/api/skills`, `/api/me/skills`)는 구현했다. 그 밖의 API는 설계 예정이며 구현 완료를 뜻하지 않는다. 기준 문서는 `requirements.md`, `user-flow.md`, `architecture.md`, `erd.md`다. 기본 경로는 `/api`, 요청·응답 본문은 JSON이다. 외부 채용 API 수집은 Backend의 Adapter 처리 범위이며, 근거 없는 공개 수집·관리자 API를 추가하지 않는다.
 
 - `{...Id}`는 양의 정수 식별자다. 날짜는 `YYYY-MM-DD`, 일시는 시간대가 포함된 ISO 8601 문자열로 표현한다. 값이 없는 선택 필드는 `null`로 응답한다.
 - `page`·`size`를 받는 목록은 `page`(0부터 시작, 기본 0), `size`(1~100, 기본 20)를 사용하고 `{ "items": [], "page": 0, "size": 20, "totalElements": 0 }` 형태로 응답한다. 공고 `sort`는 `latest`(기본), `deadline`, `matchRate`를 허용한다. 내 기술 목록과 한 지원 건의 상태 이력은 페이지 없이 반환한다.
@@ -60,6 +60,14 @@ S04 구현: 이메일은 앞뒤 공백 제거·소문자 정규화 후 최대 25
 `Project` 입력: `{ "name": "프로젝트명", "description": "...", "startDate": "2026-01-01", "endDate": null, "role": "백엔드", "keyFeatures": "...", "outcome": "...", "projectUrl": null, "skillIds": [1, 2] }`. `name`, `startDate`, `skillIds`는 필수이고 `skillIds`는 빈 배열이 가능하다. 그 외 텍스트·URL·종료일은 선택이다. 응답에는 `id`, 위 정보, `skills: Skill[]`를 포함한다. 수정 시 `skillIds`는 전달한 목록으로 프로젝트 기술 관계를 교체한다. 프로젝트 기술을 수정해도 보유 기술 목록이 자동으로 변하지 않는다.
 
 기술 추가 요청은 `skillId`와 `name` 중 하나만 보낸다. `name`은 기존 표준 기술명·별칭으로 먼저 정규화하고, 일치 항목이 없으면 해당 이름의 표준 `Skill`을 생성해 연결한다. 문자열 자체를 `UserSkill`에 저장하지 않는다. 별칭 목록 관리는 공개 사용자 API 범위에 넣지 않는다.
+
+S05 구현 계약:
+
+- 검색 `q`는 생략 또는 빈 문자열이면 전체 목록이다. 공백만 있는 값, 100자 초과, 제어·format 문자는 `400`이다. NFKC → Unicode 공백 축약·앞뒤 제거 → `Locale.ROOT` 소문자로 표준명·별칭의 부분 문자열을 검색한다. `%`, `_`는 일반 문자이며 결과는 기술당 한 건, 정규화 이름·ID 오름차순이다. 페이지 기본값·응답은 1절을 따르며 `page × size > 2147483647`도 `400`이다.
+- 추가 본문의 `skillId`는 JSON 양의 정수(Long 범위), `name`은 JSON 문자열(입력·정규화 후 모두 최대 100자)이다. 문자열 ID·소수 ID·숫자 name·빈 이름·제어/format 문자는 `400`이다. 두 값 모두 제공하거나 모두 없으면 `400`; `null`은 미선택으로 취급한다.
+- `Postgres`·`POSTGRES`·`PostgreSQL`은 같은 ID의 `PostgreSQL`, `SpringBoot`는 `Spring Boot`로 연결한다. 구두점은 보존하므로 `C++`와 `C#`, `JPA`와 `Spring Data JPA`는 다른 기술이다. 알 수 없는 유효한 사용자 이름은 표준 Skill과 표준명 별칭을 생성한다. 동시 요청도 표준 키·별칭 키·보유 관계 유일 제약으로 보호한다. 같은 기술 재추가는 `409`이다.
+- 모든 기술 API는 S03 세션 인증을 사용하고 POST·DELETE는 최신 CSRF 토큰을 요구한다. 내 목록·추가·삭제의 사용자 ID는 서버 `CurrentUser`에서만 얻는다. 입력 `userId`·`X-User-Id`는 사용자 선택에 사용하지 않는다. 타인만 보유한 기술을 삭제하면 내 관계가 없으므로 `404`이며 타인 데이터는 유지한다. 삭제는 UserSkill 관계만 제거하고 공통 Skill·SkillAlias는 유지한다.
+- 공개 정규화·별칭 관리 API는 없다. Backend `SkillNormalizer.resolveExisting`은 AI/외부 입력용 경계로 같은 문자열 검증 뒤 기존 목록만 조회하고 알 수 없는 이름은 `Optional.empty()`로 반환한다. 호출자는 AI JSON·요구유형 등 자신의 형식 검증 후 이를 호출하고, 미해결 입력의 보류·실패 정책을 정한 뒤 표준 ID만 저장해야 한다. 자동 기술 생성은 명시적 사용자 추가용 `resolveForUser`에만 있다. S05는 LLM/외부 호출·JobSkill 저장을 추가하지 않는다.
 
 ## 4. 채용공고, AI 분석, 역량 비교
 

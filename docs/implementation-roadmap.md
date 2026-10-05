@@ -77,6 +77,7 @@
 - 문서: [requirements](requirements.md), [ERD](erd.md), [API](api-spec.md), [UI](ui-spec.md).
 - 구현: Skill·SkillAlias·UserSkill, 표준 기술 검색·별칭 정규화·내 기술 추가/삭제 API와 프로필 기술 UI를 구현한다.
 - 완료: 중복·별칭·소유권·없는 기술 테스트, Build와 화면 추가/삭제 확인.
+- 상태: 2026-10-06 S05 별도 worktree에서 구현·검증 완료, main 미통합. 일반 Backend 테스트 49개, 격리 DB 테스트 15개(S05 6개 포함), Frontend 테스트 23개와 양쪽 build를 통과했다. S07 DB 테스트 8개는 전용 DB 이름 가드로 이번 실행에서 제외했다. 실제 브라우저 별칭 추가→새로고침 조회→삭제→빈 목록 재조회와 중복 오류를 확인했다. S04와의 공유 파일·V3 migration 충돌은 [S05 보고](s05-implementation-report.md)에 기록했다.
 
 **S06 · 프로젝트 관리**
 - 문서: [requirements](requirements.md), [user flow](user-flow.md), [ERD](erd.md), [API](api-spec.md), [UI](ui-spec.md).

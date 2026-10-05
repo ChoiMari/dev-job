@@ -1,0 +1,15 @@
+.profile-skills { margin-top: 24px; }
+.profile-skills__owned, .profile-skills__results { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 12px; }
+.profile-skills__owned li { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; max-width: 100%; }
+.profile-skills .badge { white-space: normal; overflow-wrap: anywhere; }
+.profile-skills__search { border-top: 1px solid var(--border); padding-top: 24px; }
+.profile-skills__search label { display: block; font-weight: 600; margin-bottom: 8px; }
+.profile-skills__search > div { display: flex; gap: 8px; }
+.profile-skills__search input { min-width: 0; flex: 1; min-height: 44px; font: inherit; color: var(--text); background: var(--surface); padding: 10px 12px; border: 1px solid var(--input-border); border-radius: 8px; }
+.profile-skills__search p { font-size: .875rem; }
+.profile-skills__results { display: grid; }
+.profile-skills__results li { display: flex; justify-content: space-between; align-items: center; gap: 16px; border-bottom: 1px solid var(--border); padding: 8px 0; }
+.profile-skills__results li span { min-width: 0; }
+.profile-skills__results button { flex-shrink: 0; }
+.profile-skills__pagination { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin: 20px 0; }
+@media (max-width: 480px) { .profile-skills__search > div { flex-wrap: wrap; } .profile-skills__search input { flex-basis: 100%; } }
