@@ -37,4 +37,20 @@ tasks.register('dbTest', Test) {
     shouldRunAfter tasks.named('test')
 }
 
-tasks.named('test') { useJUnitPlatform { excludeTags 'database' } }
+tasks.named('test') { useJUnitPlatform { excludeTags 'database', 'work24-live' } }
+
+tasks.register('work24LiveTest', Test) {
+    description = 'Explicit opt-in Work24 open recruitment smoke test; no database writes.'
+    group = 'verification'
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    useJUnitPlatform { includeTags 'work24-live' }
+    doFirst {
+        if (System.getenv('WORK24_LIVE_TEST') != 'true'
+                || !System.getenv('WORK24_AUTH_KEY')?.trim()) {
+            throw new GradleException('Set WORK24_LIVE_TEST=true and inject WORK24_AUTH_KEY in the process environment.')
+        }
+    }
+    // Deliberate invocation should issue a fresh request, without putting secrets in task inputs.
+    outputs.upToDateWhen { false }
+}

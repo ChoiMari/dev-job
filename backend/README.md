@@ -67,3 +67,63 @@ S01은 도메인 테이블을 생성하지 않으며 Flyway 이력 테이블만 
 첫 Entity 단계에서 `src/main/resources/db/migration/V1__description.sql`부터 시작한다.
 기존 schema에 대한 자동 baseline이나 clean을 설정하지 않는다.
 ERD·API의 설계 계약은 변경하지 않았다.
+
+## S09 · 고용24 공채속보 연동
+
+S09의 Work24 연동 범위는 **공채속보 목록**으로 확정했으며 구현·검증 완료다.
+`Work24Adapter`는 개인회원 승인 범위의 목록만 사용한다.
+일반 채용정보목록·상세와 공채속보 상세는 현재 연동 범위에서 제외한다. 공식 근거·필드 한계는
+[architecture S09](../docs/architecture.md#s09-공식-접근계약-조사-2026-10-06)를 참고한다.
+
+키는 Windows 사용자 환경에 한 번 등록한다. 아래 입력은 화면·명령 이력에 키를 남기지 않는다.
+사용자 환경 등록은 로컬 편의를 위한 설정이며 암호화된 비밀 저장소는 아니다.
+실제 키를 명령 인자·소스·.env 파일·Git·로그에 넣지 않는다.
+
+```powershell
+$s09SecureKey = Read-Host '고용24 인증키' -AsSecureString
+$s09Credential = [System.Net.NetworkCredential]::new('', $s09SecureKey)
+[Environment]::SetEnvironmentVariable('WORK24_AUTH_KEY', $s09Credential.Password, 'User')
+Remove-Variable s09SecureKey, s09Credential
+```
+
+현재 PowerShell에서 Backend를 실행하기 전에 값을 출력하지 않고 프로세스로 읽는다.
+기존 실행 중인 서버는 재시작해야 새 환경값을 사용한다.
+
+```powershell
+$env:WORK24_AUTH_KEY = [Environment]::GetEnvironmentVariable('WORK24_AUTH_KEY', 'User')
+Set-Location backend
+.\gradlew.bat bootRun
+```
+
+키가 없으면 애플리케이션은 기동하며 수집 요청만 SOURCE_FAILED로 처리한다.
+수집은 서버 내부에서 기존 서비스와 Adapter를 주입해 명시적으로 실행하는 경계다.
+아래는 내부 호출 예시이며 실행용 REST API·CLI·기동 작업은 추가하지 않았다.
+
+```java
+collection.collect(work24Adapter, new JobSearchCondition(keyword, 0, 20));
+```
+
+한 번에 한 페이지만 요청하며 공채속보 제목 검색을 사용한다. 본문·경력·지역·날짜는
+이번 목록 매핑에서 null이다. 추가 상세·전체 페이지 순회·자동 재시도를 하지 않는다.
+저장·재배포·AI 용도와 실제 호출 빈도 한도는 제공기관 승인 조건을 더 확인해야 한다.
+
+실제 연동 테스트는 일반 build·dbTest에서 제외된다. 승인된 키를 프로세스에 주입하고
+아래 명시적 opt-in 명령을 실행하면 목록 1회(display=1)를 호출한다.
+빈 목록도 허용하며 응답 내용·키를 출력하지 않고 DB에 쓰지 않는다.
+
+```powershell
+try {
+    $env:WORK24_AUTH_KEY = [Environment]::GetEnvironmentVariable('WORK24_AUTH_KEY', 'User')
+    $env:WORK24_LIVE_TEST = 'true'
+    .\gradlew.bat work24LiveTest --no-daemon
+} finally {
+    Remove-Item Env:WORK24_AUTH_KEY -ErrorAction SilentlyContinue
+    Remove-Item Env:WORK24_LIVE_TEST -ErrorAction SilentlyContinue
+}
+```
+
+Work24 DB 회귀는 loopback 모의 제공기관+실제 PostgreSQL을 사용한다.
+`DB_NAME=devjob_s07_test`인 **격리된 일회용 DB**만 사용해야 한다.
+테스트가 공고·회사·출처 테이블을 비우므로 기존 개발 DB를 이 이름으로 지정하지 않는다.
+DB_HOST·DB_PORT·DB_USERNAME·DB_PASSWORD를 격리 DB에 맞춰 주입한 뒤 `dbTest`를 실행한다.
+이번 작업의 검증 결과는 일반 73건·DB 20건·실제 smoke 1건 통과이며 새 migration은 없다.

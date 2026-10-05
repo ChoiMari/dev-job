@@ -10,6 +10,8 @@ S01에서 스키마 적용은 Flyway SQL migration + JPA `validate`로 확정했
 
 S07에서 `Company`·`JobSource`·`JobPosting`의 Entity·Repository를 구현했다. 아래 필드·관계·유일 키 계약을 유지하며 PostgreSQL 17에서 Flyway 적용과 JPA `validate`를 확인했다. 출처·외부 ID 중복은 기존 공고와 회사 연결을 보존한다. 신규 공고는 회사 고유 식별 근거가 없으므로 별도 Company를 연결하고 회사명만으로 기존 기업을 합치지 않는다. AI·CRM 테이블은 이 단계에 포함하지 않는다.
 
+S09는 기존 스키마를 재사용한다. 공채속보의 JobSource.code는 `WORK24_OPEN_RECRUITMENT`, external_id는 공식 `empSeqno`다. 회사·제목·원문 URL과 고용형태 표시값만 목록에서 매핑하며 본문·경력·지역·게시일·마감일은 null이다. 일반 채용정보 출처와 ID 공간을 합치지 않는다. 새 migration 없이 반복·동시 수집과 외부 장애 격리를 일회용 PostgreSQL에서 검증했다.
+
 | 판단 지점 | MVP 결정과 근거 |
 | --- | --- |
 | 사용자와 프로필 | `User`에는 인증용 이메일과 비밀번호 해시를, `Profile`에는 취업 정보를 둔다. 이메일을 두 테이블에 중복 저장하지 않는다. 프로필은 가입 직후 아직 없을 수 있어 `User` 1 : `Profile` 0..1로 둔다. |

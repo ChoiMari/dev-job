@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Synthetic values using the official open recruitment list field names, not a live response. -->
+<dhsOpenEmpInfoList>
+  <total>3</total><startPage>1</startPage><display>20</display>
+  <dhsOpenEmpInfo>
+    <empSeqno> Open-AbC-1 </empSeqno>
+    <empBusiNm> 모의 기업 </empBusiNm>
+    <empWantedTitle> 백엔드 개발자 공채 </empWantedTitle>
+    <empWantedTypeNm> 정규직 </empWantedTypeNm>
+    <empWantedHomepgDetail>https://example.com/recruit/Open-AbC-1</empWantedHomepgDetail>
+  </dhsOpenEmpInfo>
+  <dhsOpenEmpInfo>
+    <empSeqno>Open-AbC-1</empSeqno><empBusiNm>변경 기업</empBusiNm>
+    <empWantedTitle>변경 제목</empWantedTitle>
+    <empWantedHomepgDetail>https://example.com/recruit/changed</empWantedHomepgDetail>
+  </dhsOpenEmpInfo>
+  <dhsOpenEmpInfo>
+    <empSeqno>invalid</empSeqno><empWantedTitle>회사가 없는 모의 공고</empWantedTitle>
+    <empWantedHomepgDetail>https://example.com/recruit/invalid</empWantedHomepgDetail>
+  </dhsOpenEmpInfo>
+</dhsOpenEmpInfoList>

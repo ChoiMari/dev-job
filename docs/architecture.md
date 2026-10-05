@@ -871,6 +871,81 @@ S08 저장 공고 조회는 `JobController → JobQueryService → JobPostingRep
 - 필수값 누락·잘못된 날짜/URL은 해당 공고만 거절한다. 외부 호출 실패는 재시도 없이 SOURCE_FAILED, 출처 저장 실패는 STORAGE_FAILED, 일부 공고 거절/저장 실패는 PARTIAL_FAILURE로 반환한다. 내부 수집 결과와 로그에는 건수·상태를 기록하며 외부 응답 원문·예외 메시지는 넣지 않는다. 실패 이력 테이블은 추가하지 않는다.
 - 검증은 테스트 전용 모의 응답과 PostgreSQL 17을 사용했다. `gradlew.bat build dbTest`의 S07 DB 테스트는 `DB_NAME=devjob_s07_test`인 일회용 DB에서만 실행하며 대상 세 테이블을 테스트마다 비운다. 저장 데이터 조회는 Repository에서 검증하고 검색·상세 API는 S08에 남긴다.
 
+### S09 공식 접근·계약 조사 (2026-10-06)
+
+사용자가 S09의 Work24 연동 범위를 **공채속보 목록**으로 확정했다. 이 범위는 구현·검증 완료다. 일반 채용정보목록·상세와 공채속보 상세는 완료 조건에서 제외하며 호출하지 않는다. 일반 채용정보목록·상세는 개인회원 접근 권한에도 포함되지 않는다. `Work24Adapter`는 S07의 `JobSourceAdapter` 구현이며 기존 Normalizer·CollectionService·Writer를 그대로 재사용한다.
+
+#### 공식 근거와 이용 조건
+
+| 출처 | 확인한 사실 |
+| --- | --- |
+| [고용24 OPEN-API 소개](https://www.work24.go.kr/cm/e/a/0110/selectOpenApiIntro.do) | 승인 후 인증키 발급, 키 양도 금지, 명세·신청 용도 준수 및 이용 제한 가능성, HTTP XML(UTF-8)을 확인했다. |
+| [개인회원 개방 공지](https://www.work24.go.kr/cm/c/a/0410/selectBbttInfo.do?ntceStno=9&bbsClCd=OosccI71O3P2dBxVz5A40Q%3D%3D) | 2025-02-10 공지는 개인회원에게 일부 API를 개방하며 일반 채용정보목록·상세는 제외한다. 사용자가 확인한 허용 범위는 채용행사·공채속보·공채기업정보다. |
+| [공채속보 목록 명세](https://www.work24.go.kr/cm/e/a/0110/selectOpenApiSvcInfo.do?apiSvcId=000000000000000000000000000002&fullApiSvcId=000000000000000000000000000000%5E000000000000000000000000000079&upprApiSvcId=000000000000000000000000000001) | 아래 요청·필드 계약의 구현 근거다. |
+| [공채속보 상세 명세](https://www.work24.go.kr/cm/e/a/0110/selectOpenApiSvcInfo.do?fullApiSvcId=000000000000000000000000000000%5E000000000000000000000000000079%5E000000000000000000000000000081) | 별도 상세 API와 본문·모집분야 필드를 확인했다. 이번 구현은 목록만 사용하며 공고별 상세 호출을 추가하지 않았다. |
+
+공지·일부 상세 명세는 웹 검색 도구에서 조회가 실패해 공식 페이지의 읽기 전용 HTTP 응답으로 확인했다. 일반 채용정보의 [공공데이터포털 메타데이터](https://www.data.go.kr/data/3038225/openapi.do)에 표시된 이용허락을 다른 API인 공채속보에 그대로 적용하지 않는다. 공채속보의 저장·정규화·재배포·후속 AI 이용에 대한 상세 조건과 승인 용도, 초·분·일 호출 한도 수치는 추가 확인이 필요하다. 페이지 크기를 호출 빈도 한도로 해석하지 않는다. 실제 인증 성공은 모든 활용 용도의 승인을 입증하지 않는다.
+
+#### 구현한 요청과 필드 매핑
+
+목록 URL은 `https://www.work24.go.kr/cm/openApi/call/wk/callOpenApiSvcInfo210L21.do`다. 필수 쿼리는 `authKey`, `callTp=L`, `returnType=XML`, `startPage`, `display`다. 내부 page 0~999를 공식 1~1000으로 변환하고 size 1~100을 제한한다. 내부 keyword는 공식 제목 검색 `empWantedTitle`에 UTF-8로 인코딩한다. 한 번의 내부 수집은 한 페이지만 요청하며 재시도·전체 페이지 순회·상세 추가 호출은 없다.
+
+응답 루트 `dhsOpenEmpInfoList`의 `total`과 직계 반복 `dhsOpenEmpInfo`를 검사한다. 오류 응답의 코드·메시지 형식을 가정하지 않고 계약에 맞지 않는 XML은 안전한 실패로 처리한다.
+
+| 공식 목록 필드 | 내부 저장 필드 |
+| --- | --- |
+| `empSeqno` | externalId; 출처 코드 `WORK24_OPEN_RECRUITMENT`와 함께 중복 식별 |
+| `empBusiNm`, `empWantedTitle` | companyName, title |
+| `empWantedTypeNm` | employmentType; 표시값을 보존 |
+| `empWantedHomepgDetail` | sourceUrl; URL 합성·모바일 URL 대체 없음 |
+
+필수값 누락·잘못된 URL은 기존 Normalizer가 해당 공고만 거절한다. 목록에 없는 본문·경력·지역은 null이다. `empWantedStdt`는 모집 시작일이며 게시일로 간주하지 않는다. 날짜는 String 타입만 확인되어 형식을 추측하지 않고 postedDate·deadlineDate를 null로 둔다. 따라서 이번 데이터만으로 본문 AI 분석·지역/경력/마감 필터의 완성을 주장하지 않는다.
+
+#### 보안·장애 경계
+
+- `WORK24_AUTH_KEY`를 서버 프로세스 환경에서 주입한다. 키가 없어도 기동·기존 데이터 처리는 가능하며 수집 시에만 SOURCE_FAILED가 된다. Windows 사용자 환경 등록과 현재 프로세스 로딩 방법은 [Backend README](../backend/README.md#s09--고용24-공채속보-연동)에 있다.
+- JDK HTTP Client는 연결 3초·소켓 읽기 10초 및 본문 읽기 기한·2MiB 크기 제한을 둔다. redirect·자동 재시도·요청/응답 로그를 추가하지 않는다. 인증 쿼리나 외부 본문을 포함할 수 있는 예외 cause도 보존하지 않는다.
+- XML 외부 엔티티·DTD·외부 schema를 차단한다. 중복 scalar·중첩 공고·불일치 건수·키가 반사된 응답을 거절한다. 파서 오류 출력도 외부 본문 없이 고정된 사유로 바꾼다.
+- 외부 실패는 S07의 SOURCE_FAILED 경계에서 격리한다. 공개 수집 REST API·스케줄러·기동 자동 호출은 없다. DB·REST 계약과 migration은 변경하지 않아 새 migration 버전 충돌을 만들지 않았다.
+- S08 공고 조회 API와 S10·S11 CRM은 이 main 기준에 아직 없다. 저장 공고 조회·수정, 호출자 트랜잭션 보존 및 기존 인증 회귀를 검증했으며 미구현 CRM 전체 경로의 검증 완료를 주장하지 않는다.
+
+#### 완료 검증과 제외 범위
+
+- 시작 시 main(`D:/workspace/dev-job`)·원래 worktree(`8db0/dev-job`)·새 worktree(`s09-work24/dev-job`)는 모두 clean, `fab6792aa41f91bfaa93fbc89c93787e4294b9f9`였다. 새 worktree는 main에서 생성한 detached HEAD다.
+- `gradlew.bat build dbTest --offline --no-daemon` 통과: 일반 73건·DB 20건, 실패·오류·skip 0건. Work24 모의 XML 21건·loopback HTTP 7건·실제 PostgreSQL 연동 3건 및 기존 45건·17건 회귀를 포함한다.
+- Work24 DB 회귀는 반복·동시 수집 생성 1건과 중복 집계, 필수값 누락의 부분 실패, HTTP 503·계약 불일치 후 기존 공고·인증 데이터 및 호출자 변경 보존·수집 복구를 확인했다.
+- PostgreSQL 17 tmpfs 작업 전용 컨테이너, `DB_NAME=devjob_s07_test`, 전용 사용자·임의 loopback 포트(최종 39680)를 사용했다. 임시 DB 비밀번호는 프로세스에만 주입했다. 개발 DB·Compose volume·기존 Flyway 이력을 초기화하지 않았다.
+- 사용자가 Windows 사용자 환경에 등록한 키를 출력 없이 프로세스에 로딩해 `work24LiveTest --offline --no-daemon` 통과: 실제 공채속보 목록 요청 1회, display=1, 테스트 1건·skip 0건. 빈 목록도 허용하는 인증·XML·내부 정규화 smoke 검증이며 실제 공고·키·URL을 출력하거나 DB에 저장하지 않았다. 일반 build·dbTest에는 실제 호출 테스트가 포함되지 않는다.
+- 확정 범위에서 제외·미실행: 일반 채용정보목록·상세 및 공채속보 상세. 일반 채용정보목록·상세는 개인회원 권한으로도 이용할 수 없다. 실데이터 DB 저장/중복 수집·실제 제공기관 오류/호출 한도 유발·AI 활용은 실행하지 않았다. 중복과 장애 검증은 모의 응답+격리 PostgreSQL 근거다.
+- 커밋·push·main 통합·worktree 삭제는 하지 않는다. 활용 조건·실제 호출 한도는 운영 전 추가 확인 사항이며 S09의 일반 채용정보 권한 대기로 표시하지 않는다. 날짜 매핑·상세·다른 API로 범위를 확장하려면 별도 작업에서 계약과 요구사항을 갱신한다.
+
+#### 변경 파일
+
+- Adapter: [Work24Adapter.java](../backend/src/main/java/com/devjob/job/adapter/work24/Work24Adapter.java), [Work24HttpClient.java](../backend/src/main/java/com/devjob/job/adapter/work24/Work24HttpClient.java), [Work24SourceException.java](../backend/src/main/java/com/devjob/job/adapter/work24/Work24SourceException.java).
+- 검증: [Work24AdapterTest.java](../backend/src/test/java/com/devjob/job/adapter/work24/Work24AdapterTest.java), [Work24HttpClientTest.java](../backend/src/test/java/com/devjob/job/adapter/work24/Work24HttpClientTest.java), [Work24CollectionDatabaseTest.java](../backend/src/test/java/com/devjob/job/adapter/work24/Work24CollectionDatabaseTest.java), [Work24LiveTest.java](../backend/src/test/java/com/devjob/job/adapter/work24/Work24LiveTest.java), [모의 XML](../backend/src/test/resources/fixtures/work24-open-recruitment.xml), [build.gradle](../backend/build.gradle).
+- 문서: 이 architecture의 S09 절, [requirements](requirements.md), [ERD](erd.md), [user-flow](user-flow.md), [implementation-roadmap](implementation-roadmap.md), [portfolio-log](portfolio-log.md), [Backend README](../backend/README.md).
+- 구현 검증 종료 시 확인: 소스·테스트 보고서에서 실제 키 원문/URL 인코딩 값 유출 0건, `git diff --check` 통과. 당시 main과 원래 worktree는 clean·같은 HEAD였다. 검증용 컨테이너만 소유 라벨 확인 후 정리했고 S09 worktree는 유지했다.
+
+### 사람인 보완 연동 공식 조사 (2026-10-06)
+
+사용자는 고용24 공채속보 목록의 제한을 사람인 연동으로 보완하는 방향을 요청했다. S09의 **Work24 범위 완료**와 사람인 후속 연동의 승인·구현 상태를 구분한다. 현재 사람인 Adapter·실제 API 호출·새 migration은 없다. 사용자가 승인 전에는 진행하지 말라고 요청해 구현을 보류했다. 잠시 작성한 미검증 사람인 코드·fixture는 이번 작업에서 만든 내용과 일치하는지 확인한 뒤 제거했고 테스트·build·실제 호출은 실행하지 않았다.
+
+| 공식 출처 | 확인 내용 |
+| --- | --- |
+| [API 이용신청](https://oapi.saramin.co.kr/join) | 개발자 정보를 받으며 회사명/학교명·부서명/전공명·사용 URL·50자 이상 이용목적을 요구한다. 개인/학생도 신청하는 형태로 보이나 이는 신청서에서의 추론이며 승인 보장은 아니다. 일반 사람인 회원가입과 별도 API 이용 승인 절차다. |
+| [API 사용안내](https://oapi.saramin.co.kr/guide/info) | 신청 승인 후 로그인·access-key 발급, 일 최대 500회 호출을 안내한다. |
+| [채용 공고 명세](https://oapi.saramin.co.kr/guide/job-search) | GET `https://oapi.saramin.co.kr/job-search`, 필수 `access-key`, Accept XML/JSON. page는 `start` 0 기반, `count` 최대 110이다. |
+| [FAQ](https://oapi.saramin.co.kr/help) | 현재 진행 중인 공고만 조회 가능하며 마감 공고는 조회할 수 없다. |
+| [이용자 주의사항](https://oapi.saramin.co.kr/caution) | 키 공유·타인 정보 도용 및 서비스 재판매·이용 대가 수취, 제공 주체 사칭을 금지한다. DevJob의 저장·정규화·AI 활용 목적은 신청에 명시하고 승인된 조건을 확인해야 한다. |
+
+공식 검색·공고번호 검색 명세에서 회사·제목·원문 URL·지역·경력·고용형태·학력·급여·직무/키워드·게시일·마감 표현을 확인했다. **공고 본문 필드는 확인되지 않았다.** 직무 키워드를 공고 원문 본문으로 취급하거나 이것만으로 본문 기반 AI 분석을 완성하지 않는다. 채용시·상시 등 마감 유형은 실제 날짜로 임의 변환하지 않는다.
+
+사람인은 별도 출처의 공고를 추가해 데이터와 필터 범위를 보완한다. 고용24 공고와 회사명·제목만으로 같은 공고라고 가정하거나 빈 필드를 섞어 저장하지 않는다. 승인 확인 후 S07 Adapter·Normalizer·Writer를 재사용할 수 있다. 별도 외부 ID 공간을 유지하고 필드 매핑·마감 처리·호출 예산·mock 회귀를 구현 범위에서 확정한다. 공개 수집 API·자동 호출은 추가하지 않는다.
+
+사람인 API는 승인 대기이며 사용자 요청에 따라 구현·호출을 보류한다. 승인 후 사용자가 재개를 요청하면 승인된 용도·키 주입·계약을 확인하고 진행한다. 신청·메일 발송·개인정보 입력·유효 키 호출은 이번 조사에서 하지 않았다.
+
+문서 범위 동기화 검증: 관련 문서의 상대 파일 링크와 `git diff --check`를 통과했다. 이번 후속 수정은 문서만 변경해 build·실제 API 호출을 재실행하지 않았다. main 재확인에서는 별도 S08 변경과 `docs/api-spec.md`, `docs/portfolio-log.md`, `frontend/src/App.tsx`의 병합 충돌(UU)을 발견했다. 해당 main 변경·충돌에는 손대지 않았으며 S09 worktree에서만 작업했다.
+
 \# 11. Why Adapter Architecture?
 
 
