@@ -2,7 +2,7 @@
 
 ## 사용 방법
 
-2026-10-05 기준 **S01·S02는 구현·검증 완료**, S03~S17은 **미착수**다. S01은 Backend 빌드·기본 테스트·기동, PostgreSQL Compose·연결, 공통 오류 응답을 검증했다. S02는 Frontend 빌드·공통 API 클라이언트 테스트·기본 화면과 상태 표시를 검증했다. 도메인 테이블·API는 아직 구현하지 않았다. 한 단계의 선행 작업을 마치면 그 단계만 구현·검증한다. 독립적인 단계는 동시에 진행할 수 있다.
+2026-10-05 기준 main에는 **S01·S02가 구현·검증 완료** 상태로 통합되어 있다. S01은 Backend 빌드·기본 테스트·기동, PostgreSQL Compose·연결, 공통 오류 응답을 검증했다. S02는 Frontend 빌드·공통 API 클라이언트 테스트·기본 화면과 상태 표시를 검증했으며, 픽셀 아트 공통 디자인은 S02-V에서 진행한다. 나머지 단계의 통합 여부는 작업을 시작할 때 Git 상태로 확인한다. 한 단계의 선행 작업을 마치면 그 단계만 구현·검증한다. 독립적인 단계는 동시에 진행할 수 있다.
 
 각 단계에 적힌 관련 문서만 우선 확인한다. 공통 규칙은 [AGENTS.md](../AGENTS.md), 복잡한 작업의 실행계획 기준은 [.agent/PLANS.md](../.agent/PLANS.md)를 따른다. DB·API 계약은 [ERD](erd.md)와 [API 명세](api-spec.md)가 기준이다. 모든 API는 현재 **설계 예정**이다.
 
@@ -14,27 +14,28 @@
 | --- | --- | --- | --- |
 | S01 | Backend·PostgreSQL 공통 기반 | 없음 | GPT-6.1 Sol · medium |
 | S02 | React 공통 기반 | 없음 | GPT-6.1 Sol · medium |
+| S02-V | 픽셀 아트 공통 디자인 | S02 | GPT-6.1 Sol · medium |
 | S03 | 계정·인증 | S01, S02 | GPT-6.1 Sol · high |
-| S04 | 프로필 | S02, S03 | GPT-6.1 Sol · medium |
-| S05 | 기술 목록·정규화 | S02, S03 | GPT-6.1 Sol · high |
-| S06 | 프로젝트 관리 | S02, S05 | GPT-6.1 Sol · medium |
+| S04 | 프로필 | S02-V, S03 | GPT-6.1 Sol · medium |
+| S05 | 기술 목록·정규화 | S02-V, S03 | GPT-6.1 Sol · high |
+| S06 | 프로젝트 관리 | S02-V, S05 | GPT-6.1 Sol · medium |
 | S07 | 채용공고 Adapter·모의 수집 | S01 | GPT-6.1 Sol · high |
-| S08 | 공고 검색·상세 | S02, S03, S07 | GPT-6.1 Sol · medium |
+| S08 | 공고 검색·상세 | S02-V, S03, S07 | GPT-6.1 Sol · medium |
 | S09 | Work24 실제 연동 | S07 | GPT-6.1 Sol · high |
-| S10 | 북마크 | S08 | GPT-6.1 Sol · medium |
-| S11 | 지원·상태 이력 | S08 | GPT-6.1 Sol · high |
+| S10 | 북마크 | S02-V, S08 | GPT-6.1 Sol · medium |
+| S11 | 지원·상태 이력 | S02-V, S08 | GPT-6.1 Sol · high |
 | S12 | AI 공고 분석 | S07, S10, S11 | GPT-6 Astra · high |
-| S13 | 공고별 역량 비교 | S05, S06, S08, S12 | GPT-6.1 Sol · high |
-| S14 | 시장 기술 수요 | S07, S12 | GPT-6.1 Sol · medium |
-| S15 | Skill Gap·학습 우선순위 | S04, S13, S14 | GPT-6.1 Sol · high |
-| S16 | 대시보드 | S10, S11, S13, S15 | GPT-6.1 Sol · medium |
+| S13 | 공고별 역량 비교 | S02-V, S05, S06, S08, S12 | GPT-6.1 Sol · high |
+| S14 | 시장 기술 수요 | S02-V, S07, S12 | GPT-6.1 Sol · medium |
+| S15 | Skill Gap·학습 우선순위 | S02-V, S04, S13, S14 | GPT-6.1 Sol · high |
+| S16 | 대시보드 | S02-V, S10, S11, S13, S15 | GPT-6.1 Sol · medium |
 | S17 | MVP 통합·배포 검증 | S09, S16 | GPT-6 Astra · high |
 
 ### 병렬 작업
 
 - 시작: **S01 ∥ S02**.
-- S01·S02 후: **S03 ∥ S07**. S07 후 S09를 별도로 진행할 수 있다.
-- S02·S03 후: **S04 ∥ S05**. S05 후 S06을 진행한다.
+- S02 후 S02-V, S01·S02 후 S03, S01 후 S07을 시작할 수 있다. 이 세 작업은 병렬로 가능하다. S03 인증 화면은 병합 순서와 관계없이 S02-V의 공통 시각 기준으로 최종 확인한다. 같은 Frontend 파일을 동시에 수정하지 않도록 작업 영역과 통합 순서를 조정한다. S07 후 S09도 별도로 진행할 수 있다.
+- S02-V·S03 후: **S04 ∥ S05**. S05 후 S06을 진행한다.
 - S08 후: **S10 ∥ S11**. 공고 상세 화면을 함께 수정할 때는 담당 영역이나 병합 순서를 정한다.
 - S12 후: **S13 ∥ S14**. S13에는 S06 완료도 필요하다.
 - 합류: **S15 → S16 → S17**. S09는 S17 전에 완료하면 된다.
@@ -52,6 +53,11 @@
 - 문서: [architecture](architecture.md), [UI](ui-spec.md), [API](api-spec.md).
 - 구현: React 실행 환경, 화면 이동, 공통 레이아웃, API 호출 기반과 로딩·빈 화면·오류 상태를 마련한다. Frontend 언어와 인증 전달 방식은 확정된 계약을 따른다.
 - 완료: Frontend Build, 기본 화면·공통 상태 표시 확인.
+
+**S02-V · 픽셀 아트 공통 디자인**
+- 문서: [requirements](requirements.md), [UI](ui-spec.md). 기존 Frontend의 공통 레이아웃·상태 컴포넌트를 확인한다.
+- 구현: 현대적인 SaaS 레이아웃과 가독성을 유지하면서 공통 색상·아이콘·배지·빈 상태·성공 상태에 절제된 픽셀 아트 아이덴티티를 적용하고 기본 캐릭터 표시를 마련한다. 이미 구현된 인증 화면이 있다면 공통 스타일과 맞춘다. 캐릭터 성장·꾸미기, 복잡한 게이미피케이션은 포함하지 않는다.
+- 완료: 기본 화면과 공통 상태에서 픽셀 아트 요소가 실제로 보이고, Desktop·Tablet·Mobile에서 가독성·상태 식별을 확인하며 Frontend Build를 통과한다. 이후 기능 화면에 재사용할 수 있는 공통 기준을 남긴다.
 
 ### 계정과 사용자 데이터
 
