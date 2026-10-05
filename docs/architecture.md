@@ -907,7 +907,7 @@ S08 저장 공고 조회는 `JobController → JobQueryService → JobPostingRep
 - JDK HTTP Client는 연결 3초·소켓 읽기 10초 및 본문 읽기 기한·2MiB 크기 제한을 둔다. redirect·자동 재시도·요청/응답 로그를 추가하지 않는다. 인증 쿼리나 외부 본문을 포함할 수 있는 예외 cause도 보존하지 않는다.
 - XML 외부 엔티티·DTD·외부 schema를 차단한다. 중복 scalar·중첩 공고·불일치 건수·키가 반사된 응답을 거절한다. 파서 오류 출력도 외부 본문 없이 고정된 사유로 바꾼다.
 - 외부 실패는 S07의 SOURCE_FAILED 경계에서 격리한다. 공개 수집 REST API·스케줄러·기동 자동 호출은 없다. DB·REST 계약과 migration은 변경하지 않아 새 migration 버전 충돌을 만들지 않았다.
-- S08 공고 조회 API와 S10·S11 CRM은 이 main 기준에 아직 없다. 저장 공고 조회·수정, 호출자 트랜잭션 보존 및 기존 인증 회귀를 검증했으며 미구현 CRM 전체 경로의 검증 완료를 주장하지 않는다.
+- S08 공고 조회 API는 main에 통합되어 있으며 S10·S11 CRM은 아직 없다. S09 작업 당시 저장 공고의 Repository 조회·수정, 호출자 트랜잭션 보존 및 기존 인증 회귀를 검증했다. 미구현 CRM 전체 경로의 검증 완료를 주장하지 않는다.
 
 #### 완료 검증과 제외 범위
 
@@ -917,7 +917,7 @@ S08 저장 공고 조회는 `JobController → JobQueryService → JobPostingRep
 - PostgreSQL 17 tmpfs 작업 전용 컨테이너, `DB_NAME=devjob_s07_test`, 전용 사용자·임의 loopback 포트(최종 39680)를 사용했다. 임시 DB 비밀번호는 프로세스에만 주입했다. 개발 DB·Compose volume·기존 Flyway 이력을 초기화하지 않았다.
 - 사용자가 Windows 사용자 환경에 등록한 키를 출력 없이 프로세스에 로딩해 `work24LiveTest --offline --no-daemon` 통과: 실제 공채속보 목록 요청 1회, display=1, 테스트 1건·skip 0건. 빈 목록도 허용하는 인증·XML·내부 정규화 smoke 검증이며 실제 공고·키·URL을 출력하거나 DB에 저장하지 않았다. 일반 build·dbTest에는 실제 호출 테스트가 포함되지 않는다.
 - 확정 범위에서 제외·미실행: 일반 채용정보목록·상세 및 공채속보 상세. 일반 채용정보목록·상세는 개인회원 권한으로도 이용할 수 없다. 실데이터 DB 저장/중복 수집·실제 제공기관 오류/호출 한도 유발·AI 활용은 실행하지 않았다. 중복과 장애 검증은 모의 응답+격리 PostgreSQL 근거다.
-- 커밋·push·main 통합·worktree 삭제는 하지 않는다. 활용 조건·실제 호출 한도는 운영 전 추가 확인 사항이며 S09의 일반 채용정보 권한 대기로 표시하지 않는다. 날짜 매핑·상세·다른 API로 범위를 확장하려면 별도 작업에서 계약과 요구사항을 갱신한다.
+- S09 worktree에서의 위 검증 후 커밋을 만들어 main에 통합했다. push·worktree 삭제는 하지 않았다. 활용 조건·실제 호출 한도는 운영 전 추가 확인 사항이며 S09의 일반 채용정보 권한 대기로 표시하지 않는다. 날짜 매핑·상세·다른 API로 범위를 확장하려면 별도 작업에서 계약과 요구사항을 갱신한다.
 
 #### 변경 파일
 
@@ -944,7 +944,7 @@ S08 저장 공고 조회는 `JobController → JobQueryService → JobPostingRep
 
 사람인 API는 승인 대기이며 사용자 요청에 따라 구현·호출을 보류한다. 승인 후 사용자가 재개를 요청하면 승인된 용도·키 주입·계약을 확인하고 진행한다. 신청·메일 발송·개인정보 입력·유효 키 호출은 이번 조사에서 하지 않았다.
 
-문서 범위 동기화 검증: 관련 문서의 상대 파일 링크와 `git diff --check`를 통과했다. 이번 후속 수정은 문서만 변경해 build·실제 API 호출을 재실행하지 않았다. main 재확인에서는 별도 S08 변경과 `docs/api-spec.md`, `docs/portfolio-log.md`, `frontend/src/App.tsx`의 병합 충돌(UU)을 발견했다. 해당 main 변경·충돌에는 손대지 않았으며 S09 worktree에서만 작업했다.
+S09 worktree의 사람인 조사 당시에는 관련 문서의 상대 파일 링크와 `git diff --check`를 확인했다. 해당 후속 수정은 문서만 변경해 build·실제 API 호출을 재실행하지 않았다. 당시 main에서 발견한 S08 병합 충돌에는 손대지 않았으며, 이후 S08과 S09를 순서대로 main에 통합했다.
 
 \# 11. Why Adapter Architecture?
 

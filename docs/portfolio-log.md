@@ -54,3 +54,4 @@
 - 보안·실패 근거: 환경변수 키, 인증 URL·본문·cause를 보존하지 않는 예외, redirect 차단·연결/읽기 시간 및 크기 제한, DTD/외부 엔티티 차단을 구현했다. 모의 XML 21건·loopback HTTP 7건에서 계약 불일치·키 반사·XXE·대용량·느린 응답·redirect를 검증했다.
 - DB 근거: PostgreSQL 17 tmpfs 격리 DB에서 Work24 회귀 3건을 실행했다. 반복·동시 수집에서 생성 1건 및 중복 집계, 필수값 누락 부분 실패, HTTP 503/잘못된 XML 후 기존 공고·사용자 데이터·호출자 트랜잭션 변경 보존과 재수집을 확인했다. 개발 DB·migration은 변경하지 않았다.
 - 실행 근거: 새 S09 worktree에서 Backend build 일반 73건·dbTest 20건을 모두 통과했다(실패·오류·skip 0건). 사용자가 등록한 환경 키로 실제 공채속보 목록 1회(display=1)의 인증·XML·내부 정규화 smoke 1건도 통과했다. 빈 목록을 허용하며 실제 데이터는 출력·저장하지 않았다. 실데이터 중복/장애 테스트·일반 채용정보 접근·CRM 미구현 전체 흐름·AI 활용 검증으로 확대 해석하지 않는다.
+- main 통합 검증: S04·S05·S08이 반영된 main에서 Backend `build` 일반 테스트 81건, 새 격리 PostgreSQL `devjob_s07_test`의 `dbTest` 실행 20건, Frontend `build`·테스트 29건이 통과했다. DB 이름 가드가 다른 15건은 이번 DB 실행에서 건너뛰었다. 격리 DB에 Flyway 사용자 V1→공고 V2→프로필 V3→기술 V4와 JPA `validate`를 적용했고 기존 개발 DB의 이력은 비어 있었다. 실제 Work24 목록 smoke는 S09 worktree에서 수행한 1회를 근거로 하며 main에서는 재호출하지 않았다.
