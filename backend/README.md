@@ -1,5 +1,26 @@
 # DevJob Backend · S01
 
+## S06 · 프로젝트 관리
+
+`com.devjob.project`에 Project·ProjectSkill, DTO·Controller·Service·Repository를 추가했다.
+`/api/me/projects`의 목록·등록과 `/{projectId}`의 상세·수정·삭제는 S03 세션 인증을 사용하고
+변경 요청은 CSRF 토큰을 요구한다. 계약은 `docs/api-spec.md` 3절이다.
+`V5__create_projects.sql`은 프로젝트 테이블만 추가하며 기존 migration을 수정하지 않는다.
+기존 DB의 적용 이력을 먼저 확인하고 S05의 기술 V3 이력 DB에 통합본을 직접 적용하지 않는다.
+
+검증용 새 PostgreSQL DB에서 다음을 실행한다. 개발 DB로 S06 테스트를 실행하지 않는다.
+
+```powershell
+# DB_HOST/DB_PORT/DB_USERNAME/DB_PASSWORD를 격리 PostgreSQL에 맞춰 설정한다.
+$env:DB_NAME = 'devjob_s06_test'
+.\gradlew.bat build dbTest --offline --no-daemon
+```
+
+S06 테스트는 `DB_NAME`와 실제 DB 이름을 모두 확인하며 트랜잭션을 롤백한다.
+2026-10-06 build·일반 84개, S06 DB 7개·기존 DB 회귀 9개가 통과했다.
+다른 단계의 DB 이름 가드로 26개를 건너뛰었고, 별도 새 S05 DB에서 기술 회귀 6개도 통과했다.
+아래 S01 설명은 초기 기반 구성 당시의 기록이다.
+
 Java 17, Spring Boot 3.5.16, Gradle Wrapper 8.14.3, PostgreSQL 17을 사용한다.
 MVC / Spring Data JPA / Jakarta Validation / Flyway / PostgreSQL driver / Spring Boot Test만 구성한다.
 인증, AI, Frontend, 도메인 Entity·Repository·API는 후속 단계의 범위다.

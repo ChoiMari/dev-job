@@ -34,6 +34,25 @@ pnpm preview
 
 ## 검증
 
+S06 프로젝트 관리는 로그인 후 `#/projects`에서 사용할 수 있다. 표준 기술을 선택해 등록하고
+상세에서 수정·삭제한다. 프로젝트 기술은 보유 기술과 독립적으로 저장한다.
+현재 S03 인증은 same-origin 쿠키와 CSRF 토큰을 사용하며 위의 S02 인증 미확정 설명은 초기 기록이다.
+
+S06의 실제 브라우저 검증은 새 격리 `devjob_s06_test`를 사용하는 Backend(로컬 HTTP에서는
+`SESSION_COOKIE_SECURE=false`)와 Vite proxy에서 실행한다. 테스트 계정·페이지 검사 프로젝트를
+생성하므로 개발/운영 DB에는 실행하지 않는다. 기존 Playwright 설치를 사용하며 의존성을 추가하지 않는다.
+
+```powershell
+# Vite를 VITE_API_PROXY_TARGET=http://127.0.0.1:8086, 포트 5176으로 실행한다.
+# 로컬 설치 경로에 맞춰 설정한다.
+$env:PLAYWRIGHT_MODULE = '<기존 playwright 모듈 절대 경로>'
+$env:S06_FRONTEND_URL = 'http://127.0.0.1:5176'
+node tests/projects-flow.mjs
+```
+
+2026-10-06 `pnpm test` 33개·`pnpm build`, 실제 Edge 브라우저의 프로젝트 CRUD·새로고침·
+기술 관계 독립성·20+1 페이지·오류 재시도·모바일 배치 검사가 통과했다.
+
 `pnpm build`는 TypeScript 검사와 프로덕션 빌드를 수행합니다. `pnpm test`는 Node 기본 테스트 러너와 주입된 모의 fetch로 공통 API 계약, 204, 오류·네트워크·취소를 검증하며 실제 API에 접속하지 않습니다. 테스트의 `/example`은 테스트 전용 경로입니다.
 
 브라우저에서는 기본 화면 → 공통 상태 확인 → 각 상태 선택 → 오류의 다시 시도, 뒤로/앞으로, 새로고침, `#/missing` 안내, 좁은 화면 레이아웃을 확인합니다.

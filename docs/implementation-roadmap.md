@@ -84,6 +84,7 @@
 - 문서: [requirements](requirements.md), [user flow](user-flow.md), [ERD](erd.md), [API](api-spec.md), [UI](ui-spec.md).
 - 구현: Project·ProjectSkill 관계와 내 프로젝트 CRUD API·화면을 구현한다. 프로젝트 기술은 사용자 기술 목록과 독립적으로 관리한다.
 - 완료: CRUD·기술 관계·타인 접근 테스트, Build와 등록→수정→삭제 확인.
+- 상태: 2026-10-06 현재 worktree에서 구현·검증 완료. V5로 Project·ProjectSkill을 추가하고 보호된 프로젝트 목록·등록·상세·수정·삭제 화면을 연결했다. Backend build·일반 테스트 84개, 격리 PostgreSQL의 S06 7개·기존 인증 등 9개, 별도 DB의 S05 회귀 6개, Frontend build·테스트 33개가 통과했다. DB 이름이 다른 26개는 S06 DB 실행에서 제외했다. 실제 Edge 브라우저에서 등록→새로고침→수정→삭제, 기술 관계 독립성, 20+1 페이지·페이지 오류 재시도, Tablet·Mobile 화면을 검증했다. 기존 개발 DB·적용 이력은 변경하지 않았다. 검증 재현은 Backend·Frontend README, 설계·문제 해결 근거는 [구현 근거](portfolio-log.md)를 따른다.
 
 ### 채용공고
 

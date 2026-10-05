@@ -2,7 +2,7 @@
 
 ## 1. 상태와 공통 계약
 
-S03의 인증 API(`/api/auth/*`), S04의 프로필 API(`/api/me/profile`), S05의 기술 API(`/api/skills`, `/api/me/skills`), S08의 저장 공고 조회 API(`GET /api/jobs`, `GET /api/jobs/{jobId}`)는 구현했다. 그 밖의 API는 설계 예정이며 구현 완료를 뜻하지 않는다. 기준 문서는 `requirements.md`, `user-flow.md`, `architecture.md`, `erd.md`다. 기본 경로는 `/api`, 요청·응답 본문은 JSON이다. 외부 채용 API 수집은 Backend의 Adapter 처리 범위이며, 근거 없는 공개 수집·관리자 API를 추가하지 않는다.
+S03의 인증 API(`/api/auth/*`), S04의 프로필 API(`/api/me/profile`), S05의 기술 API(`/api/skills`, `/api/me/skills`), S06의 프로젝트 API(`/api/me/projects`, `/api/me/projects/{projectId}`), S08의 저장 공고 조회 API(`GET /api/jobs`, `GET /api/jobs/{jobId}`)는 구현했다. 그 밖의 API는 설계 예정이며 구현 완료를 뜻하지 않는다. 기준 문서는 `requirements.md`, `user-flow.md`, `architecture.md`, `erd.md`다. 기본 경로는 `/api`, 요청·응답 본문은 JSON이다. 외부 채용 API 수집은 Backend의 Adapter 처리 범위이며, 근거 없는 공개 수집·관리자 API를 추가하지 않는다.
 
 - `{...Id}`는 양의 정수 식별자다. 날짜는 `YYYY-MM-DD`, 일시는 시간대가 포함된 ISO 8601 문자열로 표현한다. 값이 없는 선택 필드는 `null`로 응답한다.
 - `page`·`size`를 받는 목록은 `page`(0부터 시작, 기본 0), `size`(1~100, 기본 20)를 사용하고 `{ "items": [], "page": 0, "size": 20, "totalElements": 0 }` 형태로 응답한다. 공고 `sort`는 `latest`(기본), `deadline`, `matchRate`를 허용한다. 내 기술 목록과 한 지원 건의 상태 이력은 페이지 없이 반환한다.
@@ -57,7 +57,15 @@ S04 구현: 이메일은 앞뒤 공백 제거·소문자 정규화 후 최대 25
 | 내 프로젝트 수정 `PUT /api/me/projects/{projectId}` | 예 | Path: `projectId` | 아래 `Project` 입력 | `Project` · `200` | 값 오류 `400`, 없음 `404`, 타인 소유 `403` |
 | 내 프로젝트 삭제 `DELETE /api/me/projects/{projectId}` | 예 | Path: `projectId` | 없음 | 본문 없음 · `204` | 없음 `404`, 타인 소유 `403` |
 
-`Project` 입력: `{ "name": "프로젝트명", "description": "...", "startDate": "2026-01-01", "endDate": null, "role": "백엔드", "keyFeatures": "...", "outcome": "...", "projectUrl": null, "skillIds": [1, 2] }`. `name`, `startDate`, `skillIds`는 필수이고 `skillIds`는 빈 배열이 가능하다. 그 외 텍스트·URL·종료일은 선택이다. 응답에는 `id`, 위 정보, `skills: Skill[]`를 포함한다. 수정 시 `skillIds`는 전달한 목록으로 프로젝트 기술 관계를 교체한다. 프로젝트 기술을 수정해도 보유 기술 목록이 자동으로 변하지 않는다.
+`Project` 입력: `{ "name": "프로젝트명", "description": "...", "startDate": "2026-01-01", "endDate": null, "role": "백엔드", "keyFeatures": "...", "outcome": "...", "projectUrl": null, "skillIds": [1, 2] }`. `name`, `startDate`, `skillIds`는 필수이고 `skillIds`는 빈 배열이 가능하다. 그 외 텍스트·URL·종료일은 선택이다. 응답에는 `id`와 입력 정보 중 `skillIds`를 제외한 필드, `skills: Skill[]`를 포함한다. 수정 시 `skillIds`는 전달한 목록으로 프로젝트 기술 관계를 교체한다. 프로젝트 기술을 수정해도 보유 기술 목록이 자동으로 변하지 않는다.
+
+S06 구현 계약:
+
+- 프로젝트명·역할은 최대 100자, 설명·주요 기능·성과·URL은 최대 2000자다. 문자열은 앞뒤 공백을 제거하며 선택 문자열의 공백뿐인 값·누락은 `null`이다. 텍스트의 NUL 등 제어 문자는 `400`이며 줄바꿈·탭은 허용한다. 숫자·객체를 문자열로 변환하지 않는다.
+- 시작일은 필수 ISO 날짜, 종료일은 선택이며 시작일보다 빠르면 `400`이다. URL은 호스트가 있는 `http`/`https` 절대 주소만 허용하고 계정 정보가 포함된 URL은 `400`이다.
+- `skillIds`는 JSON 양의 정수(Long 범위) 배열이다. 누락·null 배열·null 원소·문자열/소수/0/음수 ID는 `400`이다. 중복 ID는 하나의 관계로 저장하고, 하나라도 없는 ID이면 `404`로 전체 생성·수정을 거부한다. 선택한 기술이 UserSkill에 없어도 연결할 수 있다. 새 기술명 생성은 프로젝트 API에 포함하지 않는다.
+- 목록은 생성 시각·ID 내림차순, 1절의 페이지 규칙을 사용하며 `page × size > 2147483647`은 `400`이다. 범위 밖 페이지는 빈 `items`와 실제 전체 건수를 반환한다. 상세·수정·삭제의 비양수/잘못된 ID는 `400`, 없는 프로젝트는 `404`, 다른 사용자 소유는 `403`이다.
+- 사용자 ID는 S03 세션에서만 얻고 요청의 `userId`·`X-User-Id`로 바꾸지 않는다. POST·PUT·DELETE는 최신 CSRF 토큰을 요구한다. 수정은 텍스트·날짜·선택 기술을 교체하고 선택 필드 누락은 `null`로 처리한다. 삭제는 해당 Project·ProjectSkill만 제거하며 UserSkill·공통 Skill·SkillAlias를 유지한다.
 
 기술 추가 요청은 `skillId`와 `name` 중 하나만 보낸다. `name`은 기존 표준 기술명·별칭으로 먼저 정규화하고, 일치 항목이 없으면 해당 이름의 표준 `Skill`을 생성해 연결한다. 문자열 자체를 `UserSkill`에 저장하지 않는다. 별칭 목록 관리는 공개 사용자 API 범위에 넣지 않는다.
 
