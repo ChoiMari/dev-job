@@ -22,6 +22,7 @@
 
 # Spring Boot / Gradle
 **/.gradle/
+**/.gradle-user-home/
 **/build/
 *.class
 hs_err_pid*

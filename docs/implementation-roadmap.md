@@ -2,7 +2,7 @@
 
 ## 사용 방법
 
-2026-10-05 기준 저장소에는 설계 문서와 Git 설정만 있고 Backend·Frontend 코드와 테스트는 없다. 아래 단계는 모두 **미착수**다. 한 단계의 선행 작업을 마치면 그 단계만 구현·검증한다. 독립적인 단계는 동시에 진행할 수 있다.
+2026-10-05 기준 **S01은 구현·검증 완료**, S02~S17은 **미착수**다. S01은 Backend 빌드·기본 테스트·기동, PostgreSQL Compose·연결, 공통 오류 응답을 검증했다. 도메인 테이블·API는 아직 구현하지 않았다. 한 단계의 선행 작업을 마치면 그 단계만 구현·검증한다. 독립적인 단계는 동시에 진행할 수 있다.
 
 각 단계에 적힌 관련 문서만 우선 확인한다. 공통 규칙은 [AGENTS.md](../AGENTS.md), 복잡한 작업의 실행계획 기준은 [.agent/PLANS.md](../.agent/PLANS.md)를 따른다. DB·API 계약은 [ERD](erd.md)와 [API 명세](api-spec.md)가 기준이다. 모든 API는 현재 **설계 예정**이다.
 
@@ -45,7 +45,7 @@
 
 **S01 · Backend·PostgreSQL 공통 기반**
 - 문서: [architecture](architecture.md), [ERD](erd.md), [API](api-spec.md).
-- 구현: 문서의 Spring Boot·Gradle·PostgreSQL·Docker Compose 개발 환경을 구성한다. Controller → Service → Repository 구조, 공통 입력 검증·오류 응답과 DB 연결을 마련한다. 스키마 적용 방식은 확정 후 사용한다.
+- 구현: 문서의 Spring Boot·Gradle·PostgreSQL·Docker Compose 개발 환경을 구성한다. Controller → Service → Repository 구조, 공통 입력 검증·오류 응답과 DB 연결을 마련한다. 스키마 적용은 확정된 Flyway SQL migration + JPA `validate`를 사용한다.
 - 완료: Backend Compile·기본 테스트·기동, DB 연결과 오류 응답 확인.
 
 **S02 · React 공통 기반**
@@ -144,7 +144,7 @@
 
 | 결정 | 필요한 단계 |
 | --- | --- |
-| PostgreSQL 스키마 적용·변경 방식 | S01, 첫 Entity 작업 |
+| PostgreSQL 스키마 적용·변경 방식: Flyway SQL migration + JPA `validate`로 확정. S01에서는 도메인 migration을 만들지 않는다. | S01, 첫 Entity 작업 |
 | React 프로젝트의 JavaScript/TypeScript 선택 | S02 |
 | 인증 전달·로그아웃 방식, 회원가입 화면 최소 구성 | S03 |
 | 프로젝트 관리 화면 최소 구성 | S06 |

@@ -258,13 +258,15 @@ Backend는 DevJob의 핵심 비즈니스 로직과 외부 서비스 연동을 �
 
 | ORM                | Spring Data JPA            |
 
-| Migration          | Flyway 또는 동등한 Migration 도구 |
+| Migration          | Flyway SQL migration (S01 확정) |
 
 | Character Encoding | UTF-8                      |
 
 
 
 PostgreSQL은 다음 데이터를 저장한다.
+
+S01에서 스키마 적용 방식은 Flyway SQL migration으로 확정했다. JPA는 `ddl-auto=validate`로 매핑만 검증하며, 자동 생성·갱신하지 않는다. 도메인 테이블은 각 후속 단계에서 Entity와 migration을 함께 추가한다.
 
 
 
