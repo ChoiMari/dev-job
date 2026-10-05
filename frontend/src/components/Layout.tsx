@@ -1,24 +1,30 @@
+import { useState } from 'react';
 import type { ReactNode } from 'react';
 import type { CurrentUser } from '../api/auth';
+import { PixelCharacter, PixelIcon } from './PixelArt';
 
 export function Layout({ title, path, children, user, onLogout, loggingOut }: {
   title: string; path: string; children: ReactNode; user: CurrentUser; onLogout: () => void; loggingOut: boolean;
 }) {
+  const [menuOpen, setMenuOpen] = useState(false);
   return <div className="app-layout">
     <a className="skip-link" href="#main-content" onClick={(event) => {
       event.preventDefault();
       document.getElementById('main-content')?.focus();
     }}>본문으로 이동</a>
-    <header className="header"><a className="brand" href="#/">DEVJOB</a><span>{title}</span>
-      <div className="account-controls"><span>{user.email}</span>
+    <header className="header"><a className="brand" href="#/"><PixelIcon name="home" />DEVJOB</a><span className="header-title">{title}</span>
+      <div className="account-controls"><span className="account-avatar"><PixelCharacter /></span><span className="account-email">{user.email}</span>
         <button type="button" onClick={onLogout} disabled={loggingOut}>{loggingOut ? '로그아웃 중…' : '로그아웃'}</button>
       </div>
     </header>
     <aside className="sidebar">
-      <nav aria-label="주요 메뉴">
-        <a href="#/" aria-current={path === '/' ? 'page' : undefined}><span aria-hidden="true">⌂</span> 기본 화면</a>
-        <a href="#/states" aria-current={path === '/states' ? 'page' : undefined}><span aria-hidden="true">◇</span> 공통 상태 확인</a>
+      <button className="menu-toggle" type="button" aria-expanded={menuOpen} aria-controls="main-navigation"
+        onClick={() => setMenuOpen(value => !value)}><PixelIcon name="menu" />{menuOpen ? '메뉴 닫기' : '메뉴 열기'}</button>
+      <nav id="main-navigation" className={menuOpen ? 'is-open' : ''} aria-label="주요 메뉴">
+        <a href="#/" onClick={() => setMenuOpen(false)} aria-current={path === '/' ? 'page' : undefined}><PixelIcon name="home" />기본 화면</a>
+        <a href="#/states" onClick={() => setMenuOpen(false)} aria-current={path === '/states' ? 'page' : undefined}><PixelIcon name="grid" />공통 상태 확인</a>
       </nav>
+      <p className="sidebar-note">한 걸음씩 준비하는<br />나의 다음 커리어</p>
     </aside>
     <main id="main-content" tabIndex={-1} className="main-content">
       <h1>{title}</h1>{children}

@@ -3,6 +3,8 @@ import type { FormEvent } from 'react';
 import { authApi } from '../api';
 import { ApiError } from '../api/client';
 import type { CurrentUser } from '../api/auth';
+import { PixelCharacter, PixelIcon } from '../components/PixelArt';
+import { SuccessState } from '../components/States';
 
 export function AuthPage({ register, registered, onLogin }: {
   register: boolean; registered: boolean; onLogin: (user: CurrentUser) => void;
@@ -41,10 +43,11 @@ export function AuthPage({ register, registered, onLogin }: {
 
   return <main id="main-content" tabIndex={-1} className="auth-page">
     <section className="card auth-card">
-      <a className="brand" href="#/login">DEVJOB</a>
-      <span className="auth-symbol" aria-hidden="true">⌂</span>
+      <a className="brand" href="#/login"><PixelIcon name="home" />DEVJOB</a>
+      <span className="character-stage auth-character"><PixelCharacter /></span>
       <h1>{register ? '회원가입' : '로그인'}</h1>
-      {!register && registered && <p role="status">가입이 완료되었습니다. 로그인해 주세요.</p>}
+      <p className="auth-intro">{register ? '취업 준비를 함께할 공간을 만들어 보세요.' : '나의 다음 기회를 준비하는 공간'}</p>
+      {!register && registered && <SuccessState compact title="가입이 완료되었습니다." message="로그인해 주세요." />}
       <form onSubmit={submit} aria-busy={pending}>
         <label htmlFor="email">이메일</label>
         <input id="email" name="email" type="email" required maxLength={254} autoComplete="email"
@@ -57,7 +60,7 @@ export function AuthPage({ register, registered, onLogin }: {
         {register && <><label htmlFor="confirmation">비밀번호 확인</label>
           <input id="confirmation" name="confirmation" type="password" required autoComplete="new-password"
             value={confirmation} onChange={event => setConfirmation(event.target.value)} disabled={pending} /></>}
-        {error && <p className="form-error" role="alert">{error}</p>}
+        {error && <p className="form-error" role="alert"><PixelIcon name="error" /><span>{error}</span></p>}
         <button type="submit" disabled={pending}>{pending ? '처리 중…' : register ? '가입하기' : '로그인'}</button>
       </form>
       <a href={register ? '#/login' : '#/register'}>{register ? '로그인으로 돌아가기' : '회원가입'}</a>

@@ -6,6 +6,7 @@ import { Layout } from './components/Layout';
 import { EmptyState, ErrorState, LoadingState } from './components/States';
 import { AuthPage } from './pages/AuthPage';
 import { StatePreview } from './pages/StatePreview';
+import { Badge, PixelCharacter } from './components/PixelArt';
 
 const getPath = () => window.location.hash.slice(1) || '/';
 
@@ -84,11 +85,14 @@ export function App() {
 
   return <Layout title={title} path={path} user={user} onLogout={logout} loggingOut={loggingOut}>
     {error && <ErrorState message={error} onRetry={() => setRetry(value => value + 1)} />}
-    {path === '/' ? <section className="card">
-      <p className="eyebrow">DevJob</p>
-      <h2>취업 준비를 위한 시작 공간</h2>
-      <p>{user.email} 계정으로 로그인했습니다.</p>
-      <a className="button-link" href="#/states">공통 상태 확인하기</a>
+    {path === '/' ? <section className="card welcome-card">
+      <div className="welcome-copy">
+        <Badge tone="primary" icon="home">나의 준비 공간</Badge>
+        <h2>취업 준비를 위한 시작 공간</h2>
+        <p>{user.email} 계정으로 로그인했습니다.</p>
+        <a className="button-link button-primary" href="#/states">공통 상태 확인하기</a>
+      </div>
+      <div className="welcome-companion"><span className="character-stage"><PixelCharacter /></span><p>함께 준비해요</p></div>
     </section> : path === '/states' ? <StatePreview /> : <section className="card">
       <EmptyState title="화면을 찾을 수 없습니다." message="주소를 확인하거나 기본 화면으로 돌아가 주세요." />
       <a className="button-link" href="#/">기본 화면으로</a>
