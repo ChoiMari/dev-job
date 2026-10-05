@@ -1,11 +1,14 @@
 package com.devjob.job.service;
 
 import com.devjob.job.dto.*;
+import com.devjob.bookmark.repository.BookmarkRepository;
 import com.devjob.job.entity.JobPosting;
 import com.devjob.job.repository.JobPostingRepository;
 import jakarta.persistence.criteria.*;
 import java.util.ArrayList;
 import java.util.Locale;
+import java.util.HashSet;
+import java.util.Set;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
@@ -17,9 +20,12 @@ import org.springframework.web.server.ResponseStatusException;
 @Transactional(readOnly = true)
 public class JobQueryService {
     private final JobPostingRepository jobs;
-    public JobQueryService(JobPostingRepository jobs) { this.jobs = jobs; }
+    private final BookmarkRepository bookmarks;
+    public JobQueryService(JobPostingRepository jobs, BookmarkRepository bookmarks) {
+        this.jobs = jobs; this.bookmarks = bookmarks;
+    }
 
-    public JobPage search(JobQuery input) {
+    public JobPage search(Long userId, JobQuery input) {
         input.validate();
         Specification<JobPosting> specification = (root, query, cb) -> {
             var company = root.join("company");
@@ -42,12 +48,16 @@ public class JobQueryService {
             return cb.and(filters.toArray(Predicate[]::new));
         };
         var page = jobs.findAll(specification, PageRequest.of(input.page(), input.size()));
-        return new JobPage(page.getContent().stream().map(JobSummary::from).toList(), input.page(), input.size(), page.getTotalElements());
+        var ids = page.getContent().stream().map(JobPosting::getId).toList();
+        Set<Long> saved = ids.isEmpty() ? Set.of() : new HashSet<>(bookmarks.findSavedJobIds(userId, ids));
+        return new JobPage(page.getContent().stream().map(job -> JobSummary.from(job, saved.contains(job.getId()))).toList(),
+                input.page(), input.size(), page.getTotalElements());
     }
 
-    public JobDetail detail(long id) {
+    public JobDetail detail(Long userId, long id) {
         if (id < 1) throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
-        return JobDetail.from(jobs.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND)));
+        var job = jobs.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        return JobDetail.from(job, bookmarks.existsByUserIdAndJobId(userId, id));
     }
 
     private Predicate contains(CriteriaBuilder cb, Expression<String> field, String value) {

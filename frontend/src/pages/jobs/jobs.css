@@ -11,4 +11,10 @@
 .job-metadata dt { color: var(--muted); font-size: .8125rem; }
 .job-metadata dd { margin: 0; }
 .job-description { white-space: pre-wrap; overflow-wrap: anywhere; }
+.bookmark-control { margin-top: 16px; }
+.bookmark-control button { display: inline-flex; align-items: center; gap: 8px; }
+.bookmark-control button[aria-pressed="true"] { background: var(--success-soft); color: var(--success); border-color: var(--success); }
+.bookmark-control button[aria-pressed="true"]:hover { background: var(--success); color: var(--surface); }
+.bookmark-control p { font-size: .875rem; }
+.bookmark-control [role="alert"] { color: var(--error); }
 @media (max-width: 600px) { .job-filter-grid, .job-metadata { grid-template-columns: 1fr; } .jobs-page > .card { padding: 20px; } }

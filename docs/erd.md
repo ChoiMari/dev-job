@@ -2,11 +2,11 @@
 
 ## 1. 범위와 설계 판단
 
-이 문서는 `requirements.md`, `user-flow.md`, `ui-spec.md`, `architecture.md`, `development-plan.md`에 명시된 **MVP 데이터 구조의 설계안**이다. S03의 `User`, S04의 `Profile`, S05의 `Skill`·`SkillAlias`·`UserSkill`, S06의 `Project`·`ProjectSkill`, S07의 `Company`·`JobSource`·`JobPosting`을 Entity와 migration으로 구현했으며 나머지는 설계 예정이다. DB는 `architecture.md`의 PostgreSQL을 전제로 한다.
+이 문서는 `requirements.md`, `user-flow.md`, `ui-spec.md`, `architecture.md`, `development-plan.md`에 명시된 **MVP 데이터 구조의 설계안**이다. S03의 `User`, S04의 `Profile`, S05의 `Skill`·`SkillAlias`·`UserSkill`, S06의 `Project`·`ProjectSkill`, S07의 `Company`·`JobSource`·`JobPosting`, S10의 `Bookmark`를 Entity와 migration으로 구현했으며 나머지는 설계 예정이다. DB는 `architecture.md`의 PostgreSQL을 전제로 한다.
 
 S01에서 스키마 적용은 Flyway SQL migration + JPA `validate`로 확정했다. S01은 연결 기반과 Flyway 이력 테이블만 구성하며, 아래 도메인 테이블은 후속 단계에서 Entity와 migration을 함께 구현한다.
 
-통합 migration 순서는 S03 `V1__create_users.sql` → S07 `V2__create_job_collection.sql` → S04 `V3__create_profiles.sql` → S05 `V4__create_skills.sql` → S06 `V5__create_projects.sql`이다. 기존 개발 DB의 Flyway 이력은 이전 통합 검증 때 비어 있었고, S03 검증 DB는 V1, S07 검증 DB는 V1·V2가 적용되어 있었다. S05 격리 DB에는 기술 생성이 V3으로 이미 적용되어 있으므로 통합본을 그대로 실행하면 Flyway 검증이 실패한다. 각 DB의 이력을 확인하고 이력 수정·DB 초기화를 자동으로 수행하지 않는다.
+통합 migration 순서는 S03 `V1__create_users.sql` → S07 `V2__create_job_collection.sql` → S04 `V3__create_profiles.sql` → S05 `V4__create_skills.sql` → S06 `V5__create_projects.sql` → S10 `V6__create_bookmarks.sql`이다. 기존 개발 DB의 Flyway 이력은 비어 있고 S06·S10·S11의 tmpfs 검증 DB는 재기동 후 이력 테이블이 없는 상태였다. S05 격리 DB에는 기술 생성이 V3으로 이미 적용되어 있으므로 통합본을 그대로 실행하면 Flyway 검증이 실패한다. 각 DB의 이력을 확인하고 이력 수정·DB 초기화를 자동으로 수행하지 않는다.
 
 S07에서 `Company`·`JobSource`·`JobPosting`의 Entity·Repository를 구현했다. 아래 필드·관계·유일 키 계약을 유지하며 PostgreSQL 17에서 Flyway 적용과 JPA `validate`를 확인했다. 출처·외부 ID 중복은 기존 공고와 회사 연결을 보존한다. 신규 공고는 회사 고유 식별 근거가 없으므로 별도 Company를 연결하고 회사명만으로 기존 기업을 합치지 않는다. AI·CRM 테이블은 이 단계에 포함하지 않는다.
 
@@ -90,6 +90,8 @@ S06 물리 매핑: `V5__create_projects.sql`은 `project`·`project_skill`만 �
 `JobSkill`은 공고와 기술 간 N:M 관계에 필수·우대 구분을 추가한다. 한 공고에서 같은 기술이 필수와 우대로 모두 추출되면 `REQUIRED` 한 행으로 정규화한다. `JobSkill`은 유효한 분석이 완료된 뒤 저장하며, 분석 전이거나 실패한 공고는 기술 행이 없어도 기본 정보 조회가 가능하다. `AIAnalysis.result_json`은 검증을 통과한 구조화 결과만 보관하고, 비교·집계는 `JobSkill`을 기준으로 한다. 무효한 응답을 재사용 가능한 결과로 취급하지 않는다.
 
 ### 3.3 관심 공고와 지원 관리
+
+S10 물리 매핑: `V6__create_bookmarks.sql`은 `bookmark` 테이블만 추가한다. `id`는 BIGINT identity, `user_id`·`job_posting_id`는 필수 FK, `created_at`은 필수 TIMESTAMPTZ이며 DB 현재 시각을 기본값으로 사용한다. `(user_id, job_posting_id)` UNIQUE로 동시 중복을 방지하고 `(user_id, created_at DESC, id DESC)` 인덱스로 사용자별 저장순 목록을 지원한다. FK cascade는 없으며 해제는 해당 사용자·공고 관계만 삭제한다. 기존 테이블·데이터·migration은 변경하지 않는다.
 
 | 엔티티 | 목적 | 주요 컬럼 및 키 | 핵심 제약 |
 | --- | --- | --- | --- |

@@ -907,7 +907,7 @@ S08 저장 공고 조회는 `JobController → JobQueryService → JobPostingRep
 - JDK HTTP Client는 연결 3초·소켓 읽기 10초 및 본문 읽기 기한·2MiB 크기 제한을 둔다. redirect·자동 재시도·요청/응답 로그를 추가하지 않는다. 인증 쿼리나 외부 본문을 포함할 수 있는 예외 cause도 보존하지 않는다.
 - XML 외부 엔티티·DTD·외부 schema를 차단한다. 중복 scalar·중첩 공고·불일치 건수·키가 반사된 응답을 거절한다. 파서 오류 출력도 외부 본문 없이 고정된 사유로 바꾼다.
 - 외부 실패는 S07의 SOURCE_FAILED 경계에서 격리한다. 공개 수집 REST API·스케줄러·기동 자동 호출은 없다. DB·REST 계약과 migration은 변경하지 않아 새 migration 버전 충돌을 만들지 않았다.
-- S08 공고 조회 API는 main에 통합되어 있으며 S10·S11 CRM은 아직 없다. S09 작업 당시 저장 공고의 Repository 조회·수정, 호출자 트랜잭션 보존 및 기존 인증 회귀를 검증했다. 미구현 CRM 전체 경로의 검증 완료를 주장하지 않는다.
+- S09 작업 당시 S08 공고 조회 API는 main에 통합되어 있었으며 S10·S11 CRM은 아직 없었다. 당시 저장 공고의 Repository 조회·수정, 호출자 트랜잭션 보존 및 기존 인증 회귀를 검증했다. 현재 S10 북마크 구현·검증 범위는 [S10 기록](s10-validation.md)을 따르며 S11 전체 경로의 검증 완료를 주장하지 않는다.
 
 #### 완료 검증과 제외 범위
 

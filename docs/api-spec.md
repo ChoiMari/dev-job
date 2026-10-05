@@ -2,7 +2,7 @@
 
 ## 1. 상태와 공통 계약
 
-S03의 인증 API(`/api/auth/*`), S04의 프로필 API(`/api/me/profile`), S05의 기술 API(`/api/skills`, `/api/me/skills`), S06의 프로젝트 API(`/api/me/projects`, `/api/me/projects/{projectId}`), S08의 저장 공고 조회 API(`GET /api/jobs`, `GET /api/jobs/{jobId}`)는 구현했다. 그 밖의 API는 설계 예정이며 구현 완료를 뜻하지 않는다. 기준 문서는 `requirements.md`, `user-flow.md`, `architecture.md`, `erd.md`다. 기본 경로는 `/api`, 요청·응답 본문은 JSON이다. 외부 채용 API 수집은 Backend의 Adapter 처리 범위이며, 근거 없는 공개 수집·관리자 API를 추가하지 않는다.
+S03의 인증 API(`/api/auth/*`), S04의 프로필 API(`/api/me/profile`), S05의 기술 API(`/api/skills`, `/api/me/skills`), S06의 프로젝트 API(`/api/me/projects`, `/api/me/projects/{projectId}`), S08의 저장 공고 조회 API(`GET /api/jobs`, `GET /api/jobs/{jobId}`), S10의 북마크 API(`GET/POST /api/bookmarks`, `DELETE /api/bookmarks/{jobId}`)는 구현했다. 그 밖의 API는 설계 예정이며 구현 완료를 뜻하지 않는다. 기준 문서는 `requirements.md`, `user-flow.md`, `architecture.md`, `erd.md`다. 기본 경로는 `/api`, 요청·응답 본문은 JSON이다. 외부 채용 API 수집은 Backend의 Adapter 처리 범위이며, 근거 없는 공개 수집·관리자 API를 추가하지 않는다.
 
 - `{...Id}`는 양의 정수 식별자다. 날짜는 `YYYY-MM-DD`, 일시는 시간대가 포함된 ISO 8601 문자열로 표현한다. 값이 없는 선택 필드는 `null`로 응답한다.
 - `page`·`size`를 받는 목록은 `page`(0부터 시작, 기본 0), `size`(1~100, 기본 20)를 사용하고 `{ "items": [], "page": 0, "size": 20, "totalElements": 0 }` 형태로 응답한다. 공고 `sort`는 `latest`(기본), `deadline`, `matchRate`를 허용한다. 내 기술 목록과 한 지원 건의 상태 이력은 페이지 없이 반환한다.
@@ -87,7 +87,7 @@ S05 구현 계약:
 - `page`는 0 이상 정수, `size`는 1~100(기본 20)이다. 결과가 없거나 범위를 벗어난 페이지는 `items: []`와 조건에 맞는 전체 건수를 반환한다.
 - 현재 정렬은 `latest`(게시일 내림차순)·`deadline`(마감일 오름차순)이며 날짜 null은 뒤에 둔다. 날짜가 같으면 `id` 내림차순으로 안정적인 페이지 순서를 유지한다.
 - `skillId`, `minMatchRate`, `applicationStatus`, `sort=matchRate`는 후속 단계이며 전달 시 `400 INVALID_INPUT`이다. 기본 필터처럼 무시하지 않는다. 그 밖의 잘못된 페이지·필터·식별자는 `400`, 없는 양의 공고 ID는 `404 NOT_FOUND`다.
-- 기존 응답 형태를 유지하되 S08에서는 `matchRate: null`, `bookmarked: false`, `applicationStatus: null`, `requiredSkills: []`, `preferredSkills: []`, `analysis: null`을 반환한다. 이는 후속 기능 미구현에 따른 값이며 해당 상태를 UI에 표시하지 않는다. 북마크 S10, 지원 S11, AI S12, 역량 비교 S13에서 실제 데이터를 연결한다. 본문이 null이어도 기본 정보와 HTTP(S) `sourceUrl`은 반환한다.
+- 기존 응답 형태를 유지하며 S10부터 `bookmarked`는 현재 세션 사용자의 실제 저장 상태다. 목록은 현재 페이지의 공고 ID를 한 번에 조회하며 상세에서도 사용자별로 확인한다. `matchRate: null`, `applicationStatus: null`, `requiredSkills: []`, `preferredSkills: []`, `analysis: null`은 후속 기능 미구현에 따른 값이며 해당 상태를 UI에 표시하지 않는다. 지원 S11, AI S12, 역량 비교 S13에서 실제 데이터를 연결한다. 본문이 null이어도 기본 정보와 HTTP(S) `sourceUrl`은 반환한다.
 
 아래 표·분석 응답 설명은 후속 단계를 포함한 최종 MVP 계약이다.
 
@@ -111,9 +111,18 @@ S05 구현 계약:
 
 ## 5. 북마크와 지원 관리
 
+### S10 구현 계약
+
+- 세 북마크 API 모두 S03 쿠키 세션 인증을 사용한다. POST·DELETE는 최신 `X-CSRF-TOKEN`이 필요하며 인증 없음은 `401`, CSRF 없음·불일치는 `403`이다. 사용자 ID는 서버 `CurrentUser`에서만 얻고 본문·Query의 `userId`나 `X-User-Id`로 소유자를 선택하지 않는다.
+- POST의 `jobId`는 필수 JSON 양의 정수(Long 범위)다. 누락·null·문자열·소수·범위 초과는 `400 INVALID_INPUT`, 없는 공고는 `404 NOT_FOUND`, 이미 저장된 사용자·공고는 `409 CONFLICT`다. 동시 저장도 유일 제약과 `ON CONFLICT`로 같은 결과를 유지한다.
+- 목록은 공통 `page`·`size` 계약을 따르고 `page × size > 2147483647`은 `400`이다. 저장 시각 내림차순·동률 ID 내림차순으로 정렬하며 빈 목록·범위 밖 페이지는 `items: []`와 정확한 `totalElements`를 반환한다. 마감된 공고와 마감일 없는 공고도 유지한다. 모든 반환 Bookmark의 `job.bookmarked`는 `true`다.
+- DELETE 경로는 **공고 ID**이며 북마크 ID가 아니다. 현재 사용자의 관계만 삭제하고 공고·타인 관계를 보존한다. 없는 관계·타인만 저장한 관계는 `404`; 잘못된 ID는 `400`이다. 성공은 `204`다. 북마크는 지원·AI와 독립적이며 외부 API·LLM을 호출하지 않는다.
+
+아래 지원 API는 S11 설계 예정이다.
+
 | 목적 / Method·URL | 인증 | Path / Query | Request Body | 성공 Response Body·Status | 주요 오류 |
 | --- | --- | --- | --- | --- | --- |
-| 관심 공고 목록 `GET /api/bookmarks` | 예 | Query: `page`, `size` | 없음 | `Bookmark` 목록 · `200` | 인증 없음 `401` |
+| 관심 공고 목록 `GET /api/bookmarks` | 예 | Query: `page`, `size` | 없음 | `Bookmark` 목록 · `200` | 페이지 오류 `400`, 인증 없음 `401` |
 | 관심 공고 저장 `POST /api/bookmarks` | 예 | 없음 | `{ "jobId": 10 }` | `Bookmark` · `201` | 공고 없음 `404`, 이미 저장 `409` |
 | 관심 공고 삭제 `DELETE /api/bookmarks/{jobId}` | 예 | Path: `jobId` | 없음 | 본문 없음 · `204` | 저장 기록 없음 `404` |
 | 내 지원 목록 `GET /api/applications` | 예 | Query: `status`, `page`, `size` | 없음 | `Application` 목록 · `200` | 상태값 오류 `400` |

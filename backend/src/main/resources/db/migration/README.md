@@ -6,7 +6,8 @@ JPA는 `validate`로 매핑을 검증하며 테이블을 생성하거나 갱신�
 이미 적용된 migration은 수정하지 않고 후속 버전을 추가한다.
 
 통합 순서는 S03 `V1__create_users.sql`, S07 `V2__create_job_collection.sql`,
-S04 `V3__create_profiles.sql`, S05 `V4__create_skills.sql`, S06 `V5__create_projects.sql`이다.
+S04 `V3__create_profiles.sql`, S05 `V4__create_skills.sql`,
+S06 `V5__create_projects.sql`, S10 `V6__create_bookmarks.sql`이다.
 S05 격리 DB `devjob_s05_test`에는 기술 migration이 이미 V3으로 적용되어 있으므로
 통합본을 해당 DB에 직접 실행하지 않는다. 각 DB의 `flyway_schema_history`를 확인하고
 이미 적용한 파일의 이름·checksum을 임의로 바꾸거나 `repair`·`clean`으로 해결하지 않는다.

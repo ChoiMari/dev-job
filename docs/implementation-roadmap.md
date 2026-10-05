@@ -118,6 +118,7 @@
 - 문서: [requirements](requirements.md), [user flow](user-flow.md), [ERD](erd.md), [API](api-spec.md), [UI](ui-spec.md).
 - 구현: 사용자·공고 북마크 목록·추가·삭제 API와 공고 화면의 저장/해제를 연결한다. 같은 공고의 중복 저장을 막는다.
 - 완료: 중복·타인 데이터 분리 테스트, Build와 저장→목록→해제 확인.
+- 상태: 2026-10-06 별도 worktree에서 구현·검증 후 main에 통합했다. V6 북마크 migration·세 API·사용자별 공고 상태·관심 목록/저장/해제를 연결했다. Backend build 일반 83건·격리 DB 실행 23건(S10 동시 중복/소유권 등 7건·S08 7건·인증/연결/User 9건), Frontend build·33건과 실제 Edge 저장→목록→해제·사용자 분리·오류/재시도·반응형 검증을 통과했다. DB 이름 가드가 다른 19건은 건너뛰었다. [S10 검증](s10-validation.md).
 
 **S11 · 지원·상태 이력**
 - 문서: [requirements](requirements.md), [user flow](user-flow.md), [ERD](erd.md), [API](api-spec.md), [UI](ui-spec.md).
