@@ -2,7 +2,7 @@
 
 ## 1. 상태와 공통 계약
 
-S03의 인증 API(`/api/auth/*`)는 구현했다. 그 밖의 API는 설계 예정이며 구현 완료를 뜻하지 않는다. 기준 문서는 `requirements.md`, `user-flow.md`, `architecture.md`, `erd.md`다. 기본 경로는 `/api`, 요청·응답 본문은 JSON이다. 외부 채용 API 수집은 Backend의 Adapter 처리 범위이며, 근거 없는 공개 수집·관리자 API를 추가하지 않는다.
+S03의 인증 API(`/api/auth/*`)와 S04의 프로필 API(`/api/me/profile`)는 구현했다. 그 밖의 API는 설계 예정이며 구현 완료를 뜻하지 않는다. 기준 문서는 `requirements.md`, `user-flow.md`, `architecture.md`, `erd.md`다. 기본 경로는 `/api`, 요청·응답 본문은 JSON이다. 외부 채용 API 수집은 Backend의 Adapter 처리 범위이며, 근거 없는 공개 수집·관리자 API를 추가하지 않는다.
 
 - `{...Id}`는 양의 정수 식별자다. 날짜는 `YYYY-MM-DD`, 일시는 시간대가 포함된 ISO 8601 문자열로 표현한다. 값이 없는 선택 필드는 `null`로 응답한다.
 - `page`·`size`를 받는 목록은 `page`(0부터 시작, 기본 0), `size`(1~100, 기본 20)를 사용하고 `{ "items": [], "page": 0, "size": 20, "totalElements": 0 }` 형태로 응답한다. 공고 `sort`는 `latest`(기본), `deadline`, `matchRate`를 허용한다. 내 기술 목록과 한 지원 건의 상태 이력은 페이지 없이 반환한다.
@@ -37,9 +37,11 @@ S03 인증 계약:
 | 로그아웃 `POST /api/auth/logout` | 예 | 없음 | 없음 | 본문 없음 · `204` | 인증 없음 `401` |
 | 현재 사용자 확인 `GET /api/auth/me` | 예 | 없음 | 없음 | `{ "id": 1, "email": "..." }` · `200` | 인증 없음 `401` |
 | 내 프로필 조회 `GET /api/me/profile` | 예 | 없음 | 없음 | 아래 `Profile` · `200`; 프로필 미설정 시 `404` | 인증 없음 `401` |
-| 내 프로필 생성·수정 `PUT /api/me/profile` | 예 | 없음 | `Profile` 입력 필드 | 아래 `Profile` · 최초 `201`, 수정 `200` | 값 오류 `400`, 인증 없음 `401`, 이메일 중복 `409` |
+| 내 프로필 생성·수정 `PUT /api/me/profile` | 예 | 없음 | `Profile` 입력 필드 | 아래 `Profile` · 최초 `201`, 수정 `200` | 값 오류 `400`, 인증 없음 `401`, 이메일 중복·동시 생성 충돌 `409` |
 
 `Profile` 입력 필드: `email`, `name`, `desiredRole`, `careerLevel`, `desiredLocation`, `introduction`, `education`, `certifications`. `email`과 `name`은 필수, 나머지는 선택이다. 응답은 `{ "id": 1, "email": "user@example.com", "name": "홍길동", "desiredRole": "백엔드 개발자", "careerLevel": "신입", "desiredLocation": "서울", "introduction": null, "education": null, "certifications": null }` 형태다. 이메일은 `User.email`을 조회·갱신하고 `Profile`에 중복 저장하지 않는다. `PUT`은 같은 사용자 프로필 한 건을 생성 또는 교체하며, 선택 필드는 누락 시 `null`로 본다.
+
+S04 구현: 이메일은 앞뒤 공백 제거·소문자 정규화 후 최대 254자와 이메일 형식을 검증한다. 이름은 공백을 제거한 필수값(최대 100자)이다. 선택 문자열은 공백뿐이면 `null`로 저장하며 희망 직무·경력 수준·희망 지역은 각 100자, 자기소개 2000자, 학력·자격증은 각 1000자까지 허용한다. 사용자 ID는 세션에서만 가져오며 요청에서 다른 사용자를 지정할 수 없다. `PUT`에도 `GET /api/auth/csrf`의 `X-CSRF-TOKEN`이 필요하다.
 
 ## 3. 기술과 프로젝트
 

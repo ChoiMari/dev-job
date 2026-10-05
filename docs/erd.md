@@ -2,11 +2,11 @@
 
 ## 1. 범위와 설계 판단
 
-이 문서는 `requirements.md`, `user-flow.md`, `ui-spec.md`, `architecture.md`, `development-plan.md`에 명시된 **MVP 데이터 구조의 설계안**이다. S03의 `User`와 S07의 `Company`·`JobSource`·`JobPosting`만 Entity와 migration으로 구현했으며 나머지는 설계 예정이다. DB는 `architecture.md`의 PostgreSQL을 전제로 한다.
+이 문서는 `requirements.md`, `user-flow.md`, `ui-spec.md`, `architecture.md`, `development-plan.md`에 명시된 **MVP 데이터 구조의 설계안**이다. S03의 `User`, S04의 `Profile`, S07의 `Company`·`JobSource`·`JobPosting`을 Entity와 migration으로 구현했으며 나머지는 설계 예정이다. DB는 `architecture.md`의 PostgreSQL을 전제로 한다.
 
 S01에서 스키마 적용은 Flyway SQL migration + JPA `validate`로 확정했다. S01은 연결 기반과 Flyway 이력 테이블만 구성하며, 아래 도메인 테이블은 후속 단계에서 Entity와 migration을 함께 구현한다.
 
-통합 migration 순서는 S03 `V1__create_users.sql` 다음 S07 `V2__create_job_collection.sql`이다. 두 작업의 분리된 DB에서는 각자의 V1을 적용했으므로, 기존 DB의 `flyway_schema_history`가 사용자 V1인지 공고 V1인지 먼저 확인해야 한다. 공고 V1이 이미 적용된 DB에는 통합본을 그대로 실행하면 Flyway 검증이 실패한다. 이력 수정이나 DB 초기화는 자동으로 수행하지 않는다.
+통합 migration 순서는 S03 `V1__create_users.sql` 다음 S07 `V2__create_job_collection.sql`, S04 `V3__create_profiles.sql`이다. 두 초기 작업의 분리된 DB에서는 각자의 V1을 적용했으므로, 기존 DB의 `flyway_schema_history`가 사용자 V1인지 공고 V1인지 먼저 확인해야 한다. 공고 V1이 이미 적용된 DB에는 통합본을 그대로 실행하면 Flyway 검증이 실패한다. 이력 수정이나 DB 초기화는 자동으로 수행하지 않는다. S05 병렬 작업의 migration 버전은 통합 전에 조정한다.
 
 S07에서 `Company`·`JobSource`·`JobPosting`의 Entity·Repository를 구현했다. 아래 필드·관계·유일 키 계약을 유지하며 PostgreSQL 17에서 Flyway 적용과 JPA `validate`를 확인했다. 출처·외부 ID 중복은 기존 공고와 회사 연결을 보존한다. 신규 공고는 회사 고유 식별 근거가 없으므로 별도 Company를 연결하고 회사명만으로 기존 기업을 합치지 않는다. AI·CRM 테이블은 이 단계에 포함하지 않는다.
 
@@ -54,6 +54,8 @@ erDiagram
 ### 3.1 계정, 역량, 프로젝트
 
 S03 물리 매핑: `User`는 `users` 테이블로 구현한다. `id`는 BIGINT identity, `email`은 VARCHAR(254), `password_hash`는 VARCHAR(100), `created_at`은 TIMESTAMP WITH TIME ZONE이며 모두 필수다. `V1__create_users.sql`은 정규화된 이메일의 UNIQUE와 `email = lower(btrim(email))` CHECK를 적용한다. 서버 세션은 메모리에 보관하며 인증용 DB 테이블은 추가하지 않는다. 기존 데이터 삭제·변경 migration은 없다.
+
+S04 물리 매핑: `V3__create_profiles.sql`은 `profiles`를 새로 만들고 `user_id`의 FK·UNIQUE로 사용자당 0..1건을 보장한다. 이메일은 `users.email`에만 저장한다. 프로필은 `id` BIGINT identity, `name` VARCHAR(100) 필수, 희망 직무·경력·지역 각 VARCHAR(100), 자기소개 VARCHAR(2000), 학력·자격증 각 VARCHAR(1000), `updated_at` TIMESTAMP WITH TIME ZONE 필수다. 기존 테이블이나 데이터를 변경하지 않는다. 병렬 단계의 Flyway 버전과 파일명은 통합 전에 조정해야 한다.
 
 | 엔티티 | 목적 | 주요 컬럼 및 키 | 핵심 제약 |
 | --- | --- | --- | --- |

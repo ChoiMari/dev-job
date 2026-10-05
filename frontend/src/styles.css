@@ -144,6 +144,13 @@ p { color: var(--muted); }
 .field-help { font-size: .8125rem; margin: 0 0 6px; }
 .form-error { display: flex; gap: 8px; align-items: flex-start; color: var(--error); background: var(--error-soft); border: 1px solid #e7b8c1; border-radius: 8px; padding: 12px; font-size: .875rem; }
 .form-error .pixel-icon { margin-top: 3px; }
+.profile-intro { margin-top: 0; }
+.profile-form { display: grid; gap: 18px; }
+.profile-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.profile-form label { display: grid; gap: 6px; font-size: .875rem; font-weight: 600; }
+.profile-form input, .profile-form textarea { width: 100%; min-width: 0; min-height: 44px; padding: 10px 12px; font: inherit; color: var(--text); background: var(--surface); border: 1px solid var(--input-border); border-radius: 8px; }
+.profile-form textarea { resize: vertical; }
+.profile-form button[type="submit"] { justify-self: start; }
 .skip-link { position: absolute; left: 16px; top: -80px; padding: 12px; background: var(--surface); z-index: 1; }
 .skip-link:focus { top: 12px; }
 @keyframes pulse { 50% { opacity: .45; } }
@@ -159,6 +166,7 @@ p { color: var(--muted); }
   .main-content { padding: 28px 24px; }
 }
 @media (max-width: 599px) {
+  .profile-grid { grid-template-columns: 1fr; }
   .header { gap: 12px; padding: 16px; }
   .header-title { margin-left: auto; }
   .account-controls { width: 100%; margin-left: 0; }

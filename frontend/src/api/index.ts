@@ -1,6 +1,7 @@
 import { createApiClient } from './client';
 import { ApiError } from './client';
 import { createAuthApi } from './auth';
+import { createProfileApi } from './profile';
 
 const request = createApiClient(import.meta.env.VITE_API_BASE_URL || '/api');
 export const apiRequest: typeof request = async (path, options) => {
@@ -11,3 +12,4 @@ export const apiRequest: typeof request = async (path, options) => {
   }
 };
 export const authApi = createAuthApi(apiRequest);
+export const profileApi = createProfileApi(apiRequest);
