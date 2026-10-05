@@ -2,7 +2,7 @@
 
 ## 1. 상태와 공통 계약
 
-S03의 인증 API(`/api/auth/*`), S04의 프로필 API(`/api/me/profile`), S05의 기술 API(`/api/skills`, `/api/me/skills`)는 구현했다. 그 밖의 API는 설계 예정이며 구현 완료를 뜻하지 않는다. 기준 문서는 `requirements.md`, `user-flow.md`, `architecture.md`, `erd.md`다. 기본 경로는 `/api`, 요청·응답 본문은 JSON이다. 외부 채용 API 수집은 Backend의 Adapter 처리 범위이며, 근거 없는 공개 수집·관리자 API를 추가하지 않는다.
+S03의 인증 API(`/api/auth/*`), S04의 프로필 API(`/api/me/profile`), S05의 기술 API(`/api/skills`, `/api/me/skills`), S08의 저장 공고 조회 API(`GET /api/jobs`, `GET /api/jobs/{jobId}`)는 구현했다. 그 밖의 API는 설계 예정이며 구현 완료를 뜻하지 않는다. 기준 문서는 `requirements.md`, `user-flow.md`, `architecture.md`, `erd.md`다. 기본 경로는 `/api`, 요청·응답 본문은 JSON이다. 외부 채용 API 수집은 Backend의 Adapter 처리 범위이며, 근거 없는 공개 수집·관리자 API를 추가하지 않는다.
 
 - `{...Id}`는 양의 정수 식별자다. 날짜는 `YYYY-MM-DD`, 일시는 시간대가 포함된 ISO 8601 문자열로 표현한다. 값이 없는 선택 필드는 `null`로 응답한다.
 - `page`·`size`를 받는 목록은 `page`(0부터 시작, 기본 0), `size`(1~100, 기본 20)를 사용하고 `{ "items": [], "page": 0, "size": 20, "totalElements": 0 }` 형태로 응답한다. 공고 `sort`는 `latest`(기본), `deadline`, `matchRate`를 허용한다. 내 기술 목록과 한 지원 건의 상태 이력은 페이지 없이 반환한다.
@@ -70,6 +70,18 @@ S05 구현 계약:
 - 공개 정규화·별칭 관리 API는 없다. Backend `SkillNormalizer.resolveExisting`은 AI/외부 입력용 경계로 같은 문자열 검증 뒤 기존 목록만 조회하고 알 수 없는 이름은 `Optional.empty()`로 반환한다. 호출자는 AI JSON·요구유형 등 자신의 형식 검증 후 이를 호출하고, 미해결 입력의 보류·실패 정책을 정한 뒤 표준 ID만 저장해야 한다. 자동 기술 생성은 명시적 사용자 추가용 `resolveForUser`에만 있다. S05는 LLM/외부 호출·JobSkill 저장을 추가하지 않는다.
 
 ## 4. 채용공고, AI 분석, 역량 비교
+
+### S08 구현 계약
+
+- 저장된 공고만 조회하며 외부 Adapter·AI를 호출하지 않는다. 두 GET API 모두 S03 쿠키 세션 인증이 필요하다.
+- 현재 지원 Query는 `q`, `company`, `careerLevel`, `location`, `employmentType`, `deadlineBefore`, `page`, `size`, `sort`다. `q`는 제목 또는 회사명, `company`·`location`은 해당 필드의 대소문자 무시 부분 일치다. `%`, `_`, `\`는 검색 문자 그대로 취급한다. `careerLevel`·`employmentType`은 저장된 문자열과 대소문자 무시 정확히 일치한다. 기술 검색은 S12~S13에서 연결한다.
+- 검색 문자열은 양끝 공백을 제거하고 공백뿐이면 조건을 생략한다. 각 검색 문자열은 최대 200자다. `deadlineBefore`는 유효한 `YYYY-MM-DD` 날짜이며 당일을 포함한다. 날짜가 없는 공고는 마감일 필터 결과에서 제외한다. 여러 필터는 AND로 결합한다.
+- `page`는 0 이상 정수, `size`는 1~100(기본 20)이다. 결과가 없거나 범위를 벗어난 페이지는 `items: []`와 조건에 맞는 전체 건수를 반환한다.
+- 현재 정렬은 `latest`(게시일 내림차순)·`deadline`(마감일 오름차순)이며 날짜 null은 뒤에 둔다. 날짜가 같으면 `id` 내림차순으로 안정적인 페이지 순서를 유지한다.
+- `skillId`, `minMatchRate`, `applicationStatus`, `sort=matchRate`는 후속 단계이며 전달 시 `400 INVALID_INPUT`이다. 기본 필터처럼 무시하지 않는다. 그 밖의 잘못된 페이지·필터·식별자는 `400`, 없는 양의 공고 ID는 `404 NOT_FOUND`다.
+- 기존 응답 형태를 유지하되 S08에서는 `matchRate: null`, `bookmarked: false`, `applicationStatus: null`, `requiredSkills: []`, `preferredSkills: []`, `analysis: null`을 반환한다. 이는 후속 기능 미구현에 따른 값이며 해당 상태를 UI에 표시하지 않는다. 북마크 S10, 지원 S11, AI S12, 역량 비교 S13에서 실제 데이터를 연결한다. 본문이 null이어도 기본 정보와 HTTP(S) `sourceUrl`은 반환한다.
+
+아래 표·분석 응답 설명은 후속 단계를 포함한 최종 MVP 계약이다.
 
 | 목적 / Method·URL | 인증 | Path / Query | Request Body | 성공 Response Body·Status | 주요 오류 |
 | --- | --- | --- | --- | --- | --- |

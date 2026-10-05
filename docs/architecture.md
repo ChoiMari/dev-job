@@ -862,6 +862,8 @@ PostgreSQL
 
 ### S07 구현 경계
 
+S08 저장 공고 조회는 `JobController → JobQueryService → JobPostingRepository`로 구현했다. 조회 트랜잭션 안에서 Entity를 별도 목록·상세 DTO로 변환하고, 목록은 회사·출처를 함께 fetch하되 count 쿼리는 fetch 없이 실행한다. 외부 Adapter·AI 호출이나 추가 저장 테이블·migration은 사용하지 않는다. 입력·정렬·후속 필터 경계는 `api-spec.md` 4절을 따른다. 아래 S07 검증의 “검색·상세 API는 S08”은 당시 단계의 범위를 뜻한다.
+
 - `com.devjob.job.adapter.JobSourceAdapter`는 출처 정보와 내부 수집 조건을 받아 외부 공고 모델을 반환한다. 모의 Adapter는 테스트에만 두며 실제 HTTP 호출이나 자동 수집, 공개 수집 API는 추가하지 않는다.
 - `JobPostingNormalizer`는 필수값(외부 ID·회사명·제목·원문 URL)을 검증하고 문자열 양끝 공백을 제거한다. 선택 필드의 빈 문자열은 null, 날짜는 ISO 날짜에서 LocalDate로 변환한다. 본문의 줄바꿈과 외부 ID 대소문자는 보존하며 HTTP(S) 원문 URL과 게시일·마감일 순서를 검증한다.
 - `JobCollectionService`는 외부 호출 때 호출자 트랜잭션을 일시 중지하고, `JobPostingWriter`는 출처 등록과 공고별 저장을 독립 트랜잭션으로 실행한다. 회사·공고를 함께 저장해 한 공고의 DB 오류가 다른 공고의 저장에 영향을 주지 않게 한다. 출처 행 잠금과 유일 키로 동시 수집 중복을 막는다.

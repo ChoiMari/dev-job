@@ -24,6 +24,7 @@ export function Layout({ title, path, children, user, onLogout, loggingOut }: {
         <a href="#/" onClick={() => setMenuOpen(false)} aria-current={path === '/' ? 'page' : undefined}><PixelIcon name="home" />기본 화면</a>
         <a href="#/profile" onClick={() => setMenuOpen(false)} aria-current={path === '/profile' ? 'page' : undefined}><PixelIcon name="grid" />내 프로필</a>
         <a href="#/states" onClick={() => setMenuOpen(false)} aria-current={path === '/states' ? 'page' : undefined}><PixelIcon name="grid" />공통 상태 확인</a>
+        <a href="#/jobs" onClick={() => setMenuOpen(false)} aria-current={path === '/jobs' || path.startsWith('/jobs/') ? 'page' : undefined}><PixelIcon name="grid" />채용공고</a>
       </nav>
       <p className="sidebar-note">한 걸음씩 준비하는<br />나의 다음 커리어</p>
     </aside>

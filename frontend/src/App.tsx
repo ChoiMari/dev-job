@@ -9,6 +9,7 @@ import { StatePreview } from './pages/StatePreview';
 import { ProfilePage } from './pages/ProfilePage';
 import { Badge, PixelCharacter } from './components/PixelArt';
 import { ProfileSkills } from './components/ProfileSkills';
+import { JobsPage, JobDetailPage } from './pages/jobs/JobsPage';
 
 const getPath = () => window.location.hash.slice(1) || '/';
 
@@ -61,7 +62,7 @@ export function App() {
   }, [checking, error, user, publicPath]);
 
   const title = publicPath ? path === '/register' ? '회원가입' : '로그인'
-    : path === '/' ? '기본 화면' : path === '/profile' ? '내 프로필' : path === '/states' ? '공통 상태 확인' : '화면을 찾을 수 없습니다';
+    : path === '/' ? '기본 화면' : path === '/profile' ? '내 프로필' : path === '/states' ? '공통 상태 확인' : path === '/jobs' ? '채용공고' : path.startsWith('/jobs/') ? '공고 상세' : '화면을 찾을 수 없습니다';
   useEffect(() => {
     document.title = `${title} · DevJob`;
     document.getElementById('main-content')?.focus();
@@ -98,7 +99,8 @@ export function App() {
     </section> : path === '/profile' ? <>
       <ProfilePage key={user.id} email={user.email} onEmailChange={email => setUser(current => current ? { ...current, email } : current)} />
       <ProfileSkills key={user.id} />
-    </> : path === '/states' ? <StatePreview /> : <section className="card">
+    </> : path === '/states' ? <StatePreview /> : path === '/jobs' ? <JobsPage location={location} />
+      : path.startsWith('/jobs/') ? <JobDetailPage location={location} /> : <section className="card">
       <EmptyState title="화면을 찾을 수 없습니다." message="주소를 확인하거나 기본 화면으로 돌아가 주세요." />
       <a className="button-link" href="#/">기본 화면으로</a>
     </section>}

@@ -2,9 +2,9 @@
 
 ## 사용 방법
 
-2026-10-06 기준 main에는 **S01·S02·S02-V·S03·S07이 구현·검증 완료** 상태로 통합되어 있다. S01은 Backend 빌드·기본 테스트·기동, PostgreSQL Compose·연결, 공통 오류 응답을 검증했다. S02는 Frontend 빌드·공통 API 클라이언트 테스트·기본 화면과 상태 표시를 검증했으며, 픽셀 아트 공통 디자인은 S02-V에서 기본 화면·상태·인증 화면에 적용했다. S03은 User 저장과 인증 API·화면·보호 경로를 구현하고 비밀번호·이메일 중복·세션·CSRF·사용자 분리를 검증했다. S07은 채용공고 저장 테이블·Adapter 계약·모의 수집을 검증했으며 공고 조회 API는 아직 구현하지 않았다. 나머지 단계의 통합 여부는 작업을 시작할 때 Git 상태로 확인한다. 한 단계의 선행 작업을 마치면 그 단계만 구현·검증한다. 독립적인 단계는 동시에 진행할 수 있다.
+2026-10-06 기준 main에는 **S01·S02·S02-V·S03·S04·S05·S07·S08**이 통합되어 있다. S01은 Backend·PostgreSQL 기반, S02와 S02-V는 Frontend 공통 기반·픽셀 디자인, S03은 계정·인증, S04는 프로필, S05는 기술 목록·정규화, S07은 공고 저장·모의 수집, S08은 저장 공고 검색·상세를 구현했다. S04·S05·S08의 개별 검증 근거는 각 단계와 보고서에 기록하고, 통합 검증 결과는 별도로 확인한다. 한 단계의 선행 작업을 마치면 그 단계만 구현·검증한다. 독립적인 단계는 동시에 진행할 수 있다.
 
-각 단계에 적힌 관련 문서만 우선 확인한다. 공통 규칙은 [AGENTS.md](../AGENTS.md), 복잡한 작업의 실행계획 기준은 [.agent/PLANS.md](../.agent/PLANS.md)를 따른다. DB·API 계약은 [ERD](erd.md)와 [API 명세](api-spec.md)가 기준이다. S03 인증 API는 구현했으며 나머지는 **설계 예정**이다.
+각 단계에 적힌 관련 문서만 우선 확인한다. 공통 규칙은 [AGENTS.md](../AGENTS.md), 복잡한 작업의 실행계획 기준은 [.agent/PLANS.md](../.agent/PLANS.md)를 따른다. DB·API 계약은 [ERD](erd.md)와 [API 명세](api-spec.md)가 기준이다. 구현된 API 범위는 API 명세에 표시하고, 나머지는 **설계 예정**이다.
 
 ## 단계·의존성·권장 모델
 
@@ -72,12 +72,13 @@
 - 문서: [requirements](requirements.md), [user flow](user-flow.md), [ERD](erd.md), [API](api-spec.md), [UI](ui-spec.md).
 - 구현: 사용자별 Profile 조회·저장 API와 첫 설정·수정 화면을 연결한다. 이메일은 User에만 저장하고 소유권을 확인한다.
 - 완료: 신규/기존 프로필·타인 접근 테스트, Build와 저장 후 재조회 확인.
+- 상태: 2026-10-06 구현·검증 후 main에 통합했다. 격리 DB에서 최초 저장·재조회·수정·사용자 분리·이메일 중복·CSRF를 확인했으며 Frontend 빌드·테스트와 실제 브라우저 프로필 흐름이 통과했다. 통합본에서는 S05 기술 관리와 같은 프로필 경로에 표시한다.
 
 **S05 · 기술 목록·정규화**
 - 문서: [requirements](requirements.md), [ERD](erd.md), [API](api-spec.md), [UI](ui-spec.md).
 - 구현: Skill·SkillAlias·UserSkill, 표준 기술 검색·별칭 정규화·내 기술 추가/삭제 API와 프로필 기술 UI를 구현한다.
 - 완료: 중복·별칭·소유권·없는 기술 테스트, Build와 화면 추가/삭제 확인.
-- 상태: 2026-10-06 S05 별도 worktree에서 구현·검증 완료, main 미통합. 일반 Backend 테스트 49개, 격리 DB 테스트 15개(S05 6개 포함), Frontend 테스트 23개와 양쪽 build를 통과했다. S07 DB 테스트 8개는 전용 DB 이름 가드로 이번 실행에서 제외했다. 실제 브라우저 별칭 추가→새로고침 조회→삭제→빈 목록 재조회와 중복 오류를 확인했다. S04와의 공유 파일·V3 migration 충돌은 [S05 보고](s05-implementation-report.md)에 기록했다.
+- 상태: 2026-10-06 별도 worktree에서 구현·검증 후 main에 통합했다. 일반 Backend 테스트 49개, 격리 DB 테스트 15개(S05 6개 포함), Frontend 테스트 23개와 양쪽 build를 통과했다. S07 DB 테스트 8개는 전용 DB 이름 가드로 당시 실행에서 제외했다. 실제 브라우저 별칭 추가→새로고침 조회→삭제→빈 목록 재조회와 중복 오류를 확인했다. 통합 시 기술 migration을 V4로 조정했고 기존 S05 격리 DB의 V3 이력은 보존했다. [S05 보고](s05-implementation-report.md)에 당시 검증 근거가 있다.
 
 **S06 · 프로젝트 관리**
 - 문서: [requirements](requirements.md), [user flow](user-flow.md), [ERD](erd.md), [API](api-spec.md), [UI](ui-spec.md).
@@ -96,6 +97,7 @@
 - 문서: [requirements](requirements.md), [user flow](user-flow.md), [API](api-spec.md), [UI](ui-spec.md).
 - 구현: 저장된 공고의 목록·검색·기본 필터·상세 API와 화면을 연결한다. AI 기술·적합도·지원 상태에 의존하는 필터와 표시는 S11~S13에서 완성한다. 분석이 없어도 공고 원문은 볼 수 있어야 한다.
 - 완료: 검색·페이지·기본 필터·없는 공고 테스트, Build와 목록→상세 흐름 확인.
+- 작업 상태: 2026-10-06 별도 worktree에서 구현·검증 후 main에 통합했다. Backend `build`·일반 테스트 45개, 격리 PostgreSQL `devjob_s08_test`에서 S08 7개·기존 DB 회귀 9개, Frontend `build`·테스트 23개가 통과했다. 실제 쿠키 인증과 목록→상세→목록·빈 결과·404·재시도·모바일 화면을 검증했다. S07 전용 DB 테스트 8개는 DB 이름 조건으로 당시 실행에서 제외했다. 새 migration은 없다. 재현과 공유 파일은 [S08 검증·통합 기록](s08-validation.md)을 참고한다.
 
 **S09 · Work24 실제 연동**
 - 문서: [architecture](architecture.md), [requirements](requirements.md), [ERD](erd.md).
