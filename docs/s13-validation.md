@@ -1,5 +1,7 @@
 # S13 공고별 역량 비교 검증 (2026-10-06)
 
+main 통합 메모 (2026-10-07): S13 worktree 커밋 `e2e06d3`을 S14 통합본 뒤에 적용했다. main Backend build·일반 테스트 94건, Frontend build·테스트 49건이 통과했다. 새 격리 PostgreSQL `devjob_s13_test`에서 Flyway V1~V8·JPA `validate`와 DB 테스트 실행 19건을 확인했고, 별도 `devjob_s14_test`에서 S14 집계 회귀 2건도 통과했다. 아래 브라우저 확인은 S13 worktree 당시 기록이며 main 통합에서 재실행하지 않았다.
+
 ## 구현
 
 - `GET /api/jobs/{jobId}/match`는 완료된 분석의 공고 기술과 세션 사용자의 `UserSkill`·소유 프로젝트의 `ProjectSkill`을 공통 Skill ID로 비교한다. 필수·우대 각각의 일치/부족 기술과 반올림한 기술 일치도를 반환한다. 분석 미완료는 409, 공고 기술 없음과 사용자 기술 없음은 각각 구분된 `available: false` 응답이다.
