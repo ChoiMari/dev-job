@@ -13,11 +13,16 @@ java {
 
 repositories { mavenCentral() }
 
+dependencyManagement {
+    imports { mavenBom 'org.springframework.ai:spring-ai-bom:1.1.8' }
+}
+
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework.ai:spring-ai-starter-model-openai'
     implementation 'org.flywaydb:flyway-core'
     runtimeOnly 'org.flywaydb:flyway-database-postgresql'
     runtimeOnly 'org.postgresql:postgresql'
@@ -37,7 +42,7 @@ tasks.register('dbTest', Test) {
     shouldRunAfter tasks.named('test')
 }
 
-tasks.named('test') { useJUnitPlatform { excludeTags 'database', 'work24-live' } }
+tasks.named('test') { useJUnitPlatform { excludeTags 'database', 'work24-live', 'ai-live' } }
 
 tasks.register('work24LiveTest', Test) {
     description = 'Explicit opt-in Work24 open recruitment smoke test; no database writes.'
@@ -52,5 +57,20 @@ tasks.register('work24LiveTest', Test) {
         }
     }
     // Deliberate invocation should issue a fresh request, without putting secrets in task inputs.
+    outputs.upToDateWhen { false }
+}
+
+tasks.register('aiLiveTest', Test) {
+    description = 'Explicit opt-in single OpenAI analysis request against the isolated S12 database.'
+    group = 'verification'
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    useJUnitPlatform { includeTags 'ai-live' }
+    doFirst {
+        if (System.getenv('AI_LIVE_TEST') != 'true' || !System.getenv('OPENAI_API_KEY')?.trim()
+                || System.getenv('DB_NAME') != 'devjob_s12_test') {
+            throw new GradleException('Set AI_LIVE_TEST=true, OPENAI_API_KEY and DB_NAME=devjob_s12_test.')
+        }
+    }
     outputs.upToDateWhen { false }
 }

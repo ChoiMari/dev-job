@@ -91,6 +91,8 @@ S06 물리 매핑: `V5__create_projects.sql`은 `project`·`project_skill`만 �
 
 `JobSkill`은 공고와 기술 간 N:M 관계에 필수·우대 구분을 추가한다. 한 공고에서 같은 기술이 필수와 우대로 모두 추출되면 `REQUIRED` 한 행으로 정규화한다. `JobSkill`은 유효한 분석이 완료된 뒤 저장하며, 분석 전이거나 실패한 공고는 기술 행이 없어도 기본 정보 조회가 가능하다. `AIAnalysis.result_json`은 검증을 통과한 구조화 결과만 보관하고, 비교·집계는 `JobSkill`을 기준으로 한다. 무효한 응답을 재사용 가능한 결과로 취급하지 않는다.
 
+S12 물리 매핑: `V8__create_job_analysis.sql`은 기존 V1~V7 뒤에 `ai_analysis`와 `job_skill`만 추가한다. `ai_analysis.job_posting_id`는 필수·유일 FK, `status`는 세 상태만 허용하고 `result_json`은 JSONB, `updated_at`은 필수 TIMESTAMPTZ다. `job_skill`은 공고·기술 FK와 `(job_posting_id, skill_id)` UNIQUE, 기술 ID 인덱스를 갖는다. AI가 검증된 미등록 기술명을 반환하면 공통 `skill`·`skill_alias`에도 행이 추가될 수 있으며 기존 migration·데이터는 수정하지 않는다. 분석 요청과 완료 쓰기는 공고 행 잠금으로 직렬화하고 완료 결과는 재사용한다.
+
 ### 3.3 관심 공고와 지원 관리
 
 S10 물리 매핑: `V6__create_bookmarks.sql`은 `bookmark` 테이블만 추가한다. `id`는 BIGINT identity, `user_id`·`job_posting_id`는 필수 FK, `created_at`은 필수 TIMESTAMPTZ이며 DB 현재 시각을 기본값으로 사용한다. `(user_id, job_posting_id)` UNIQUE로 동시 중복을 방지하고 `(user_id, created_at DESC, id DESC)` 인덱스로 사용자별 저장순 목록을 지원한다. FK cascade는 없으며 해제는 해당 사용자·공고 관계만 삭제한다. 기존 테이블·데이터·migration은 변경하지 않는다.

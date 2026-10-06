@@ -9,6 +9,7 @@ import { EmptyState, ErrorState, LoadingState } from '../../components/States';
 import { applicationStatuses, statusLabels, isApplicationStatus } from '../../api/application-status';
 import { ApplicationStatusBadge } from '../../components/ApplicationStatusBadge';
 import { ApplicationRegistration } from '../../components/ApplicationRegistration';
+import { JobAnalysis } from '../../components/JobAnalysis';
 import './jobs.css';
 
 const jobs = createJobsApi(apiRequest);
@@ -123,6 +124,7 @@ export function JobDetailPage({ location }: { location: string }) {
           onChange={saved => setData(current => current?.id === id ? { ...current, bookmarked: saved } : current)} />
         <ApplicationRegistration key={data.id} jobId={data.id} status={data.applicationStatus}
           onCreated={applicationStatus => setData(current => current?.id === id ? { ...current, applicationStatus } : current)} />
+        <JobAnalysis key={data.id} jobId={data.id} initialStatus={data.analysis && typeof data.analysis === 'object' && 'status' in data.analysis ? String(data.analysis.status) : null} />
         <h3>채용공고 원문</h3>{data.description ? <div className="job-description">{data.description}</div>
           : <p>저장된 본문이 없습니다. 외부 원문에서 채용 조건을 확인해 주세요.</p>}
       </>}

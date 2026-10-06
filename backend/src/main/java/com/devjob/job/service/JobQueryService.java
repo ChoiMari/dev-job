@@ -2,6 +2,9 @@ package com.devjob.job.service;
 
 import com.devjob.job.dto.*;
 import com.devjob.bookmark.repository.BookmarkRepository;
+import com.devjob.analysis.repository.AIAnalysisRepository;
+import com.devjob.analysis.repository.JobSkillRepository;
+import com.devjob.analysis.entity.AIAnalysis;
 import com.devjob.job.entity.JobPosting;
 import com.devjob.job.repository.JobPostingRepository;
 import com.devjob.application.entity.Application;
@@ -25,8 +28,12 @@ public class JobQueryService {
     private final JobPostingRepository jobs;
     private final BookmarkRepository bookmarks;
     private final ApplicationRepository applications;
-    public JobQueryService(JobPostingRepository jobs, BookmarkRepository bookmarks, ApplicationRepository applications) {
+    private final AIAnalysisRepository analyses;
+    private final JobSkillRepository jobSkills;
+    public JobQueryService(JobPostingRepository jobs, BookmarkRepository bookmarks, ApplicationRepository applications,
+            AIAnalysisRepository analyses, JobSkillRepository jobSkills) {
         this.jobs = jobs; this.bookmarks = bookmarks; this.applications = applications;
+        this.analyses = analyses; this.jobSkills = jobSkills;
     }
 
     public JobPage search(Long userId, JobQuery input) {
@@ -74,8 +81,10 @@ public class JobQueryService {
         if (id < 1) throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
         var job = jobs.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         var owned = applications.findByUserIdAndJobIdIn(userId, java.util.List.of(id));
+        var analysis = analyses.findByJobId(id).orElse(null);
         return JobDetail.from(job, bookmarks.existsByUserIdAndJobId(userId, id),
-                owned.isEmpty() ? null : owned.get(0).getCurrentStatus().name());
+                owned.isEmpty() ? null : owned.get(0).getCurrentStatus().name(), analysis,
+                analysis != null && analysis.getStatus() == AIAnalysis.Status.COMPLETED ? jobSkills.findForJob(id) : java.util.List.of());
     }
 
     private Predicate contains(CriteriaBuilder cb, Expression<String> field, String value) {

@@ -14,7 +14,7 @@ S03의 인증 API(`/api/auth/*`), S04의 프로필 API(`/api/me/profile`), S05�
 
 - 지원 상태: `INTERESTED`, `PLANNED`, `APPLIED`, `DOCUMENT_PASSED`, `INTERVIEW`, `FINAL_PASSED`, `REJECTED`, `WITHDRAWN`.
 - 공고 기술 유형: `REQUIRED`, `PREFERRED`.
-- AI 분석 상태: `PENDING`, `COMPLETED`, `FAILED`. 분석 행이 아직 없는 공고는 상세에서 `analysis: null`로 표현한다.
+- AI 분석 상태: `PENDING`, `COMPLETED`, `FAILED`. 분석 행이 아직 없는 공고는 상세에서 `analysis: null`로 표현한다. S12는 분석 요청·상태 API와 상세 기술을 구현했으며 공고별 역량 비교·적합도는 S13 범위다.
 - `Skill` 응답: `{ "id": 1, "name": "PostgreSQL" }`. `JobSkill` 응답: `{ "skill": { "id": 1, "name": "PostgreSQL" }, "requirementType": "REQUIRED" }`.
 - 아래 예시의 `Skill`, `JobSummary`, `Skill[]` 같은 표기는 위에서 정의한 응답 타입 참조이며 JSON 문자열 값이 아니다.
 - 모든 생성·수정 요청은 필수값, 길이·형식, 참조 ID의 존재, 상태값을 검증한다. 알 수 없는 기술명을 임의 문자열로 `UserSkill`·`ProjectSkill`·`JobSkill`에 저장하지 않는다.
@@ -75,7 +75,7 @@ S05 구현 계약:
 - 추가 본문의 `skillId`는 JSON 양의 정수(Long 범위), `name`은 JSON 문자열(입력·정규화 후 모두 최대 100자)이다. 문자열 ID·소수 ID·숫자 name·빈 이름·제어/format 문자는 `400`이다. 두 값 모두 제공하거나 모두 없으면 `400`; `null`은 미선택으로 취급한다.
 - `Postgres`·`POSTGRES`·`PostgreSQL`은 같은 ID의 `PostgreSQL`, `SpringBoot`는 `Spring Boot`로 연결한다. 구두점은 보존하므로 `C++`와 `C#`, `JPA`와 `Spring Data JPA`는 다른 기술이다. 알 수 없는 유효한 사용자 이름은 표준 Skill과 표준명 별칭을 생성한다. 동시 요청도 표준 키·별칭 키·보유 관계 유일 제약으로 보호한다. 같은 기술 재추가는 `409`이다.
 - 모든 기술 API는 S03 세션 인증을 사용하고 POST·DELETE는 최신 CSRF 토큰을 요구한다. 내 목록·추가·삭제의 사용자 ID는 서버 `CurrentUser`에서만 얻는다. 입력 `userId`·`X-User-Id`는 사용자 선택에 사용하지 않는다. 타인만 보유한 기술을 삭제하면 내 관계가 없으므로 `404`이며 타인 데이터는 유지한다. 삭제는 UserSkill 관계만 제거하고 공통 Skill·SkillAlias는 유지한다.
-- 공개 정규화·별칭 관리 API는 없다. Backend `SkillNormalizer.resolveExisting`은 AI/외부 입력용 경계로 같은 문자열 검증 뒤 기존 목록만 조회하고 알 수 없는 이름은 `Optional.empty()`로 반환한다. 호출자는 AI JSON·요구유형 등 자신의 형식 검증 후 이를 호출하고, 미해결 입력의 보류·실패 정책을 정한 뒤 표준 ID만 저장해야 한다. 자동 기술 생성은 명시적 사용자 추가용 `resolveForUser`에만 있다. S05는 LLM/외부 호출·JobSkill 저장을 추가하지 않는다.
+- 공개 정규화·별칭 관리 API는 없다. S05의 `SkillNormalizer.resolveExisting`은 AI/외부 입력에서 기존 목록만 조회하는 경계로 남겨 둔다. S12는 사용자 결정에 따라 형식 검증을 마친 AI 기술명에 `resolveForAnalysis`를 사용해 기존 표준명·별칭을 해석하거나 유효한 새 표준 Skill·별칭을 만든다. S05 자체는 LLM/외부 호출·JobSkill 저장을 추가하지 않았다.
 
 ## 4. 채용공고, AI 분석, 역량 비교
 
@@ -106,6 +106,8 @@ S05 구현 계약:
 `JobDetail`은 `JobSummary`의 필드에 `description`, `postedDate`, `sourceUrl`, `requiredSkills: JobSkill[]`, `preferredSkills: JobSkill[]`, `analysis: { "status": "PENDING|COMPLETED|FAILED" } | null`을 추가한다. 분석 전·실패 상태여도 원문과 기본 정보는 반환한다. `source`는 `JobSource.code`다.
 
 `AIAnalysis`: `{ "status": "COMPLETED", "requiredSkills": [Skill], "preferredSkills": [Skill], "analyzedAt": "2026-10-05T10:00:00+09:00" }`. `PENDING`에는 기술 목록을 빈 배열로, `FAILED`에는 기술 목록을 빈 배열과 일반적인 `failureReason`을 반환한다. 검증되지 않은 LLM 원문이나 Secret은 반환하지 않는다. 이미 완료된 결과는 다시 호출하지 않고 재사용한다. 실패 상태에서 다시 POST하면 같은 분석 대상을 재시도한다.
+
+S12 구현 계약: `POST`는 서버 세션·CSRF가 필요하며 작업을 비동기로 접수해 `202 PENDING`을 반환한다. 이미 진행 중인 요청도 같은 행의 `202 PENDING`, 완료 결과는 추가 호출 없이 `200 COMPLETED`다. `GET`은 행이 없으면 `404`; 실패 시 `FAILED`, 빈 기술 배열, 일반적인 `failureReason`을 반환한다. `analyzedAt`과 `failureReason`은 상태에 맞지 않으면 `null`이다. 5분 넘게 진행 중인 행은 다음 명시적 `POST`에서 재접수할 수 있다. 출력은 단일 `skills` 배열(JSON 객체)이며 항목은 기술명과 `REQUIRED`/`PREFERRED` 유형만 허용한다. 검증된 미등록 기술은 공통 Skill·표준명 별칭으로 생성하고 정규화된 ID를 저장한다. 같은 기술이 중복되면 `REQUIRED`가 우선한다. 분석 실패는 공고 상세·목록과 북마크·지원 API의 조회를 막지 않는다.
 
 `JobMatch`: `{ "available": true, "required": { "matched": [Skill], "missing": [Skill], "total": 4 }, "preferred": { "matched": [Skill], "missing": [Skill], "total": 2 }, "matchRate": 83 }`. `UserSkill`과 사용자의 `ProjectSkill`을 합친 기술 집합으로 비교한다. `matchRate`는 `(일치한 필수 + 일치한 우대) / (전체 필수 + 전체 우대) × 100`을 반올림한 0~100 값이다. 공고에 분석된 기술이 전혀 없거나 사용자·프로젝트 양쪽에 기술이 없으면 `available: false`, 각 목록은 빈 배열, `matchRate: null`, `reason: "NO_JOB_SKILLS"` 또는 `"USER_SKILLS_EMPTY"`로 응답한다.
 

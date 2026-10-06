@@ -132,6 +132,7 @@
 - 문서: [architecture](architecture.md), [requirements](requirements.md), [ERD](erd.md), [API](api-spec.md), [user flow](user-flow.md).
 - 구현: 공고별 AIAnalysis 요청·상태·결과 API를 구현한다. LLM 출력 검증, 기술 정규화, 결과 저장·재사용, 실패·재시도를 처리한다. 제공자와 처리 방식은 착수 전에 확정한다.
 - 완료: 유효/무효 출력·중복 요청·실패/재시도 테스트와 Build, 실패 시 공고 조회·CRM 유지 확인.
+- S12 구현: 교육프로그램의 OpenAI 호환 API(`https://copa.codyssey.kr`, 모델 `gpt-5.4-mini`, 차감 배수 0.5)를 사용한다. 키는 서버 `OPENAI_API_KEY` 환경변수로만 주입한다. 사용자가 상세에서 요청한 분석만 비동기로 실행하고 `202 PENDING`을 GET으로 확인한다. 유효한 미등록 기술은 표준 Skill·별칭을 생성하는 것으로 사용자와 확정했다. S13 비교·적합도는 포함하지 않는다. 모의 응답·DB 검증 근거와 실제 API 검증 상태는 [S12 보고](s12-validation.md)를 따른다.
 
 **S13 · 공고별 역량 비교**
 - 문서: [requirements](requirements.md), [ERD](erd.md), [API](api-spec.md), [UI](ui-spec.md).
@@ -172,7 +173,7 @@
 | 프로젝트 관리 화면 최소 구성 | S06 |
 | Work24 공채속보 목록 접근·매핑은 검증 완료; 활용 조건·호출 빈도 한도는 운영 전 확인 | S09 완료 / 운영 전 |
 | 사람인 개인 개발자 API 승인·활용 조건·필드 매핑 | 사람인 후속 연동 |
-| LLM 제공자·자격 정보·비용 범위와 202/PENDING 처리 방식 | S12 |
+| 교육프로그램 OpenAI 호환 API·`gpt-5.4-mini`·서버 환경변수 키·차감 배수 0.5로 확정. 금액 요금은 교육프로그램 안내에 없어 임의 환산하지 않는다. 202/PENDING은 비동기 접수와 GET 조회로 확정. | S12 |
 | Skill Gap 우선순위 구간 | S15 |
 | 대시보드 추천·다음 행동 선정 기준 | S16 |
 | 실제 배포 대상·운영 설정 범위 | S17 |

@@ -1546,6 +1546,8 @@ AWS           PREFERRED
 
 \# 20. AI Analysis Persistence
 
+S12 구현 경계: Spring AI의 OpenAI 호환 ChatModel은 교육프로그램 API의 `/v1/chat/completions`에 연결한다. 서버 키 `OPENAI_API_KEY`는 환경변수에서만 읽고, 기본 API 주소는 `https://copa.codyssey.kr`, 모델은 `gpt-5.4-mini`다. 사용자 요청 후 공고 행 잠금으로 분석 한 건을 `PENDING`으로 접수하고 트랜잭션 커밋 뒤 별도 작업 스레드에서 외부 호출한다. JSON 구조·기술명·요구유형을 검증한 뒤 기존 별칭을 정규화하며, 유효한 미등록 기술은 공통 Skill·표준명 별칭으로 생성한다. 검증 결과와 JobSkill은 한 트랜잭션으로 저장하고 완료 분석은 재사용한다. 실패 시 일반적인 `FAILED` 이유만 저장하며 공고·CRM 조회는 별도 트랜잭션으로 유지한다.
+
 
 
 AI 분석 결과는 매번 LLM을 호출하지 않는다.

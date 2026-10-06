@@ -25,6 +25,16 @@ public class SkillNormalizer {
     /** Only an explicit user add may expand the catalog. Canonical names also reserve the alias namespace. */
     @Transactional
     public Skill resolveForUser(String input) {
+        return resolveOrCreate(input);
+    }
+
+    /** S12: validated AI skill names use the same canonical namespace as explicit user additions. */
+    @Transactional
+    public Skill resolveForAnalysis(String input) {
+        return resolveOrCreate(input);
+    }
+
+    private Skill resolveOrCreate(String input) {
         var name = SkillName.parse(input);
         var existing = find(name.key());
         if (existing.isPresent()) return existing.get();

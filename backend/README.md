@@ -25,9 +25,14 @@ S06 테스트는 `DB_NAME`와 실제 DB 이름을 모두 확인하며 트랜잭�
 
 S11 지원·상태 이력은 [검증 보고](../docs/s11-validation.md)와 [API 명세 5절](../docs/api-spec.md#5-북마크와-지원-관리)를 따른다. `V7__create_applications.sql`은 기존 V1~V6 뒤에 새 지원·이력 테이블만 추가한다. S11 DB 테스트는 `DB_NAME=devjob_s11_test`인 별도 검증 DB에서 실행한다. 기존 DB의 Flyway 이력을 수정하거나 초기화하지 않는다.
 
+## S12 · AI 공고 분석
+
+교육프로그램 OpenAI 호환 API(`https://copa.codyssey.kr`)의 `gpt-5.4-mini`를 사용한다. 발급받은 virtual key를 서버 프로세스의 `OPENAI_API_KEY`에 주입한다. 키가 없으면 AI 요청은 `FAILED`가 되지만 저장 공고·CRM 조회는 계속 동작한다. 키는 `.env` 등 Git 제외 파일 또는 환경변수로만 관리하고 로그·응답에 넣지 않는다. `AI_BASE_URL`은 테스트·운영 환경에서 호환 API 주소를 바꿀 때만 사용한다.
+
+S12는 `V8__create_job_analysis.sql`을 추가한다. 새 격리 DB `devjob_s12_test`에서 `build dbTest`를 실행해 Flyway V1~V8과 분석 성공·무효 출력·외부 실패·재사용을 검증한다. 실제 제공기관 호출은 `OPENAI_API_KEY`, `DB_NAME=devjob_s12_test`, `AI_LIVE_TEST=true`를 주입한 뒤 `aiLiveTest`를 명시적으로 실행할 때만 발생한다.
+
 Java 17, Spring Boot 3.5.16, Gradle Wrapper 8.14.3, PostgreSQL 17을 사용한다.
-MVC / Spring Data JPA / Jakarta Validation / Flyway / PostgreSQL driver / Spring Boot Test만 구성한다.
-인증, AI, Frontend, 도메인 Entity·Repository·API는 후속 단계의 범위다.
+아래 S01 기반 구성 설명은 초기 상태를 기록한 것이며 현재 Backend에는 인증·AI·도메인 API가 포함된다.
 
 ## PostgreSQL 실행
 

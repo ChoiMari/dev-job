@@ -17,4 +17,7 @@
 .bookmark-control button[aria-pressed="true"]:hover { background: var(--success); color: var(--surface); }
 .bookmark-control p { font-size: .875rem; }
 .bookmark-control [role="alert"] { color: var(--error); }
+.job-analysis { margin-top: 20px; padding: 20px; border: 1px solid var(--border); border-radius: 8px; }
+.job-analysis ul { display: flex; flex-wrap: wrap; gap: 8px; padding: 0; list-style: none; }
+.job-analysis li { padding: 6px 10px; background: var(--success-soft); border-radius: 6px; }
 @media (max-width: 600px) { .job-filter-grid, .job-metadata { grid-template-columns: 1fr; } .jobs-page > .card { padding: 20px; } }
