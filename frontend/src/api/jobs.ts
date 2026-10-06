@@ -14,7 +14,8 @@ export type JobDetail = JobSummary & {
 };
 export type JobPage = { items: JobSummary[]; page: number; size: number; totalElements: number };
 export type JobFilters = { q?: string; company?: string; careerLevel?: string; location?: string;
-  employmentType?: string; deadlineBefore?: string; applicationStatus?: ApplicationStatus; page?: number; size?: number; sort?: 'latest' | 'deadline' };
+  employmentType?: string; deadlineBefore?: string; applicationStatus?: ApplicationStatus;
+  skillId?: number; minMatchRate?: number; page?: number; size?: number; sort?: 'latest' | 'deadline' | 'matchRate' };
 
 const object = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null;
 const integer = (v: unknown): v is number => typeof v === 'number' && Number.isSafeInteger(v) && v >= 0;

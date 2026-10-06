@@ -138,6 +138,7 @@
 - 문서: [requirements](requirements.md), [ERD](erd.md), [API](api-spec.md), [UI](ui-spec.md).
 - 구현: UserSkill과 ProjectSkill을 합쳐 분석된 공고 기술과 비교한다. 일치·부족 기술, 규칙 기반 적합도, 데이터 부족 응답을 만들고 공고 화면에 표시한다. 목록의 기술·최소 적합도 필터와 적합도 정렬을 완성한다.
 - 완료: 계산 경계·기술 중복·분석 미완료 테스트, Build와 비교 화면 확인.
+- 상태: 비교 API·목록 필터/정렬·상세 비교 화면을 구현했다. 빌드와 테스트 근거는 [S13 보고](s13-validation.md)를 따른다.
 
 **S14 · 시장 기술 수요**
 - 문서: [requirements](requirements.md), [ERD](erd.md), [API](api-spec.md), [UI](ui-spec.md).

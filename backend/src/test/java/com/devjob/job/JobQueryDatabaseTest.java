@@ -21,7 +21,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @Tag("database")
-@EnabledIfEnvironmentVariable(named = "DB_NAME", matches = "devjob_s08_test|devjob_s10_test|devjob_s11_test")
+@EnabledIfEnvironmentVariable(named = "DB_NAME", matches = "devjob_s08_test|devjob_s10_test|devjob_s11_test|devjob_s13_test")
 @SpringBootTest
 @AutoConfigureMockMvc
 @Transactional
@@ -36,7 +36,7 @@ class JobQueryDatabaseTest {
     long first, second, unknown;
 
     @BeforeEach void seed() {
-        assertThat(jdbc.queryForObject("select current_database()", String.class)).isIn("devjob_s08_test", "devjob_s10_test", "devjob_s11_test");
+        assertThat(jdbc.queryForObject("select current_database()", String.class)).isIn("devjob_s08_test", "devjob_s10_test", "devjob_s11_test", "devjob_s13_test");
         var owner = users.saveAndFlush(new User("s08-query@example.com", "hash"));
         principal = org.springframework.security.authentication.UsernamePasswordAuthenticationToken.authenticated(
                 new CurrentUser(owner.getId(), owner.getEmail()), null, java.util.List.of());
@@ -97,10 +97,10 @@ class JobQueryDatabaseTest {
         mvc.perform(get("/api/jobs/9223372036854775807").with(authentication(principal)))
                 .andExpect(status().isNotFound()).andExpect(jsonPath("$.code").value("NOT_FOUND"));
     }
-    @Test void invalidFiltersDatesIdsAndFutureFeaturesReturn400() throws Exception {
+    @Test void invalidFiltersDatesAndIdsReturn400() throws Exception {
         String[][] invalid = {{"page", "-1"}, {"page", "abc"}, {"size", "0"}, {"size", "101"}, {"sort", "other"},
-                {"sort", "matchRate"}, {"deadlineBefore", "2026-02-30"}, {"q", "x".repeat(201)},
-                {"skillId", "1"}, {"minMatchRate", "50"}, {"applicationStatus", "UNKNOWN"}};
+                {"deadlineBefore", "2026-02-30"}, {"q", "x".repeat(201)},
+                {"skillId", "0"}, {"minMatchRate", "101"}, {"applicationStatus", "UNKNOWN"}};
         for (var filter : invalid) mvc.perform(get("/api/jobs").with(authentication(principal)).param(filter[0], filter[1]))
                 .andExpect(status().isBadRequest()).andExpect(jsonPath("$.code").value("INVALID_INPUT"));
         for (String id : new String[]{"0", "-1", "invalid", "9223372036854775808"})

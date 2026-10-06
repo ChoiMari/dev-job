@@ -14,7 +14,7 @@ S03의 인증 API(`/api/auth/*`), S04의 프로필 API(`/api/me/profile`), S05�
 
 - 지원 상태: `INTERESTED`, `PLANNED`, `APPLIED`, `DOCUMENT_PASSED`, `INTERVIEW`, `FINAL_PASSED`, `REJECTED`, `WITHDRAWN`.
 - 공고 기술 유형: `REQUIRED`, `PREFERRED`.
-- AI 분석 상태: `PENDING`, `COMPLETED`, `FAILED`. 분석 행이 아직 없는 공고는 상세에서 `analysis: null`로 표현한다. S12는 분석 요청·상태 API와 상세 기술을 구현했으며 공고별 역량 비교·적합도는 S13 범위다.
+- AI 분석 상태: `PENDING`, `COMPLETED`, `FAILED`. 분석 행이 아직 없는 공고는 상세에서 `analysis: null`로 표현한다. S12는 분석 요청·상태 API와 상세 기술을, S13은 공고별 역량 비교·적합도를 구현했다.
 - `Skill` 응답: `{ "id": 1, "name": "PostgreSQL" }`. `JobSkill` 응답: `{ "skill": { "id": 1, "name": "PostgreSQL" }, "requirementType": "REQUIRED" }`.
 - 아래 예시의 `Skill`, `JobSummary`, `Skill[]` 같은 표기는 위에서 정의한 응답 타입 참조이며 JSON 문자열 값이 아니다.
 - 모든 생성·수정 요청은 필수값, 길이·형식, 참조 ID의 존재, 상태값을 검증한다. 알 수 없는 기술명을 임의 문자열로 `UserSkill`·`ProjectSkill`·`JobSkill`에 저장하지 않는다.
@@ -82,12 +82,12 @@ S05 구현 계약:
 ### S08 구현 계약
 
 - 저장된 공고만 조회하며 외부 Adapter·AI를 호출하지 않는다. 두 GET API 모두 S03 쿠키 세션 인증이 필요하다.
-- 현재 지원 Query는 `q`, `company`, `careerLevel`, `location`, `employmentType`, `deadlineBefore`, `applicationStatus`, `page`, `size`, `sort`다. `q`는 제목 또는 회사명, `company`·`location`은 해당 필드의 대소문자 무시 부분 일치다. `%`, `_`, `\`는 검색 문자 그대로 취급한다. `careerLevel`·`employmentType`은 저장된 문자열과 대소문자 무시 정확히 일치한다. 기술 검색은 S12~S13에서 연결한다. S11의 `applicationStatus`는 현재 세션 사용자의 지원 상태로 AND 필터링하며 빈 문자열·알 수 없는 상태는 `400`이다.
+- 지원 Query는 `q`, `company`, `skillId`, `careerLevel`, `location`, `employmentType`, `deadlineBefore`, `minMatchRate`, `applicationStatus`, `page`, `size`, `sort`다. `q`는 제목 또는 회사명, `company`·`location`은 해당 필드의 대소문자 무시 부분 일치다. `%`, `_`, `\`는 검색 문자 그대로 취급한다. `careerLevel`·`employmentType`은 저장된 문자열과 대소문자 무시 정확히 일치한다. `skillId`는 완료된 분석의 공고 기술과 정확히 일치할 때만 포함한다. `applicationStatus`는 현재 세션 사용자의 지원 상태로 AND 필터링하며 빈 문자열·알 수 없는 상태는 `400`이다.
 - 검색 문자열은 양끝 공백을 제거하고 공백뿐이면 조건을 생략한다. 각 검색 문자열은 최대 200자다. `deadlineBefore`는 유효한 `YYYY-MM-DD` 날짜이며 당일을 포함한다. 날짜가 없는 공고는 마감일 필터 결과에서 제외한다. 여러 필터는 AND로 결합한다.
 - `page`는 0 이상 정수, `size`는 1~100(기본 20)이다. `page × size > 2147483647`은 `400`이다. 결과가 없거나 범위를 벗어난 페이지는 `items: []`와 조건에 맞는 전체 건수를 반환한다.
-- 현재 정렬은 `latest`(게시일 내림차순)·`deadline`(마감일 오름차순)이며 날짜 null은 뒤에 둔다. 날짜가 같으면 `id` 내림차순으로 안정적인 페이지 순서를 유지한다.
-- `skillId`, `minMatchRate`, `sort=matchRate`는 후속 단계이며 전달 시 `400 INVALID_INPUT`이다. `applicationStatus`는 현재 세션 사용자의 지원 상태로 필터링한다. 그 밖의 잘못된 페이지·필터·식별자는 `400`, 없는 양의 공고 ID는 `404 NOT_FOUND`다.
-- 기존 응답 형태를 유지하며 `bookmarked`와 `applicationStatus`는 현재 세션 사용자의 실제 저장·지원 상태다. 목록은 현재 페이지의 공고 ID에 대해 두 상태를 각각 일괄 조회하며 상세에서도 사용자별로 확인한다. 지원 미등록 시 상태는 `null`이다. `matchRate: null`, `requiredSkills: []`, `preferredSkills: []`, `analysis: null`은 후속 기능 미구현에 따른 값이다. 본문이 null이어도 기본 정보와 HTTP(S) `sourceUrl`은 반환한다.
+- 정렬은 `latest`(게시일 내림차순)·`deadline`(마감일 오름차순)·`matchRate`(기술 일치도 내림차순)이며 날짜·계산 불가 일치도는 뒤에 둔다. 값이 같으면 `id` 내림차순으로 안정적인 페이지 순서를 유지한다.
+- `skillId`는 양의 Long, `minMatchRate`는 0~100 정수다. 잘못된 페이지·필터·식별자는 `400`, 없는 양의 공고 ID는 `404 NOT_FOUND`다.
+- 기존 응답 형태를 유지하며 `bookmarked`와 `applicationStatus`는 현재 세션 사용자의 실제 저장·지원 상태다. 목록은 현재 페이지의 공고 ID에 대해 상태와 적합도를 일괄 조회하며 상세에서도 사용자별로 확인한다. 지원 미등록 시 상태는 `null`이다. 분석 전에는 `matchRate: null`, `requiredSkills: []`, `preferredSkills: []`, `analysis: null`이다. 본문이 null이어도 기본 정보와 HTTP(S) `sourceUrl`은 반환한다.
 
 아래 표·분석 응답 설명은 후속 단계를 포함한 최종 MVP 계약이다.
 
@@ -110,6 +110,8 @@ S05 구현 계약:
 S12 구현 계약: `POST`는 서버 세션·CSRF가 필요하며 작업을 비동기로 접수해 `202 PENDING`을 반환한다. 이미 진행 중인 요청도 같은 행의 `202 PENDING`, 완료 결과는 추가 호출 없이 `200 COMPLETED`다. `GET`은 행이 없으면 `404`; 실패 시 `FAILED`, 빈 기술 배열, 일반적인 `failureReason`을 반환한다. `analyzedAt`과 `failureReason`은 상태에 맞지 않으면 `null`이다. 5분 넘게 진행 중인 행은 다음 명시적 `POST`에서 재접수할 수 있다. 출력은 단일 `skills` 배열(JSON 객체)이며 항목은 기술명과 `REQUIRED`/`PREFERRED` 유형만 허용한다. 검증된 미등록 기술은 공통 Skill·표준명 별칭으로 생성하고 정규화된 ID를 저장한다. 같은 기술이 중복되면 `REQUIRED`가 우선한다. 분석 실패는 공고 상세·목록과 북마크·지원 API의 조회를 막지 않는다.
 
 `JobMatch`: `{ "available": true, "required": { "matched": [Skill], "missing": [Skill], "total": 4 }, "preferred": { "matched": [Skill], "missing": [Skill], "total": 2 }, "matchRate": 83 }`. `UserSkill`과 사용자의 `ProjectSkill`을 합친 기술 집합으로 비교한다. `matchRate`는 `(일치한 필수 + 일치한 우대) / (전체 필수 + 전체 우대) × 100`을 반올림한 0~100 값이다. 공고에 분석된 기술이 전혀 없거나 사용자·프로젝트 양쪽에 기술이 없으면 `available: false`, 각 목록은 빈 배열, `matchRate: null`, `reason: "NO_JOB_SKILLS"` 또는 `"USER_SKILLS_EMPTY"`로 응답한다.
+
+S13 구현: 비교 API는 완료된 분석이 없으면 `409 CONFLICT`를 반환한다. 기술은 공통 Skill ID로 중복 제거하고 필수·우대를 합산해 일치도를 계산한다. 목록·상세의 `matchRate`는 분석이 완료됐고 공고 기술과 사용자·프로젝트 기술이 모두 있을 때만 채운다. `minMatchRate`는 반올림한 일치도에 적용하며, `sort=matchRate`에서는 계산 불가 공고를 마지막에 둔다. 필터·정렬은 페이지를 자르기 전에 적용한다.
 
 ## 5. 북마크와 지원 관리
 

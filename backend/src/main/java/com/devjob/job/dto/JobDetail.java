@@ -25,7 +25,11 @@ public record JobDetail(@JsonUnwrapped JobSummary summary, String description, L
     }
     public static JobDetail from(JobPosting job, boolean bookmarked, String applicationStatus,
             AIAnalysis analysis, List<JobSkill> skills) {
-        return new JobDetail(JobSummary.from(job, bookmarked, applicationStatus), job.getDescription(), job.getPostedDate(),
+        return from(job, bookmarked, applicationStatus, analysis, skills, null);
+    }
+    public static JobDetail from(JobPosting job, boolean bookmarked, String applicationStatus,
+            AIAnalysis analysis, List<JobSkill> skills, Integer matchRate) {
+        return new JobDetail(JobSummary.from(job, bookmarked, applicationStatus, matchRate), job.getDescription(), job.getPostedDate(),
                 job.getSourceUrl(), skills.stream().filter(s -> s.getRequirementType() == JobSkill.RequirementType.REQUIRED)
                         .map(JobSkillResponse::from).toList(),
                 skills.stream().filter(s -> s.getRequirementType() == JobSkill.RequirementType.PREFERRED)

@@ -7,6 +7,8 @@ import com.devjob.analysis.repository.JobSkillRepository;
 import com.devjob.analysis.entity.AIAnalysis;
 import com.devjob.job.entity.JobPosting;
 import com.devjob.job.repository.JobPostingRepository;
+import com.devjob.job.repository.JobMatchQueryRepository;
+import com.devjob.analysis.entity.JobSkill;
 import com.devjob.application.entity.Application;
 import com.devjob.application.repository.ApplicationRepository;
 import com.devjob.application.service.ApplicationService;
@@ -30,14 +32,16 @@ public class JobQueryService {
     private final ApplicationRepository applications;
     private final AIAnalysisRepository analyses;
     private final JobSkillRepository jobSkills;
+    private final JobMatchQueryRepository matchQueries;
     public JobQueryService(JobPostingRepository jobs, BookmarkRepository bookmarks, ApplicationRepository applications,
-            AIAnalysisRepository analyses, JobSkillRepository jobSkills) {
+            AIAnalysisRepository analyses, JobSkillRepository jobSkills, JobMatchQueryRepository matchQueries) {
         this.jobs = jobs; this.bookmarks = bookmarks; this.applications = applications;
-        this.analyses = analyses; this.jobSkills = jobSkills;
+        this.analyses = analyses; this.jobSkills = jobSkills; this.matchQueries = matchQueries;
     }
 
     public JobPage search(Long userId, JobQuery input) {
         input.validate();
+        if (input.sort().equals("matchRate") || input.minimumRate() != null) return rankedSearch(userId, input);
         Specification<JobPosting> specification = (root, query, cb) -> {
             var company = root.join("company");
             if (query.getResultType() != Long.class) {
@@ -64,17 +68,44 @@ public class JobQueryService {
             if (input.careerLevel() != null) filters.add(cb.equal(cb.lower(root.get("careerRequirement")), input.careerLevel().toLowerCase(Locale.ROOT)));
             if (input.employmentType() != null) filters.add(cb.equal(cb.lower(root.get("employmentType")), input.employmentType().toLowerCase(Locale.ROOT)));
             if (input.deadline() != null) filters.add(cb.lessThanOrEqualTo(root.get("deadlineDate"), input.deadline()));
+            if (input.skill() != null) {
+                var matching = query.subquery(Long.class);
+                var requirement = matching.from(JobSkill.class);
+                var analysis = matching.from(AIAnalysis.class);
+                matching.select(requirement.get("id")).where(
+                        cb.equal(requirement.get("job").get("id"), root.get("id")),
+                        cb.equal(requirement.get("skill").get("id"), input.skill()),
+                        cb.equal(analysis.get("job").get("id"), root.get("id")),
+                        cb.equal(analysis.get("status"), AIAnalysis.Status.COMPLETED));
+                filters.add(cb.exists(matching));
+            }
             return cb.and(filters.toArray(Predicate[]::new));
         };
         var page = jobs.findAll(specification, PageRequest.of(input.page(), input.size()));
         var ids = page.getContent().stream().map(JobPosting::getId).toList();
         Set<Long> saved = ids.isEmpty() ? Set.of() : new HashSet<>(bookmarks.findSavedJobIds(userId, ids));
         var statuses = new java.util.HashMap<Long, String>();
+        var rates = matchQueries.ratesForJobs(userId, ids);
         if (!ids.isEmpty()) applications.findByUserIdAndJobIdIn(userId, ids)
                 .forEach(application -> statuses.put(application.getJob().getId(), application.getCurrentStatus().name()));
         return new JobPage(page.getContent().stream().map(job ->
-                JobSummary.from(job, saved.contains(job.getId()), statuses.get(job.getId()))).toList(),
+                JobSummary.from(job, saved.contains(job.getId()), statuses.get(job.getId()), rates.get(job.getId()))).toList(),
                 input.page(), input.size(), page.getTotalElements());
+    }
+
+    private JobPage rankedSearch(Long userId, JobQuery input) {
+        var ranked = matchQueries.ranked(userId, input);
+        var ids = ranked.ids();
+        if (ids.isEmpty()) return new JobPage(java.util.List.of(), input.page(), input.size(), ranked.total());
+        var byId = new java.util.HashMap<Long, JobPosting>();
+        jobs.findAllById(ids).forEach(job -> byId.put(job.getId(), job));
+        var saved = new HashSet<>(bookmarks.findSavedJobIds(userId, ids));
+        var statuses = new java.util.HashMap<Long, String>();
+        applications.findByUserIdAndJobIdIn(userId, ids)
+                .forEach(application -> statuses.put(application.getJob().getId(), application.getCurrentStatus().name()));
+        var rates = matchQueries.ratesForJobs(userId, ids);
+        return new JobPage(ids.stream().map(id -> JobSummary.from(byId.get(id), saved.contains(id), statuses.get(id), rates.get(id))).toList(),
+                input.page(), input.size(), ranked.total());
     }
 
     public JobDetail detail(Long userId, long id) {
@@ -84,7 +115,8 @@ public class JobQueryService {
         var analysis = analyses.findByJobId(id).orElse(null);
         return JobDetail.from(job, bookmarks.existsByUserIdAndJobId(userId, id),
                 owned.isEmpty() ? null : owned.get(0).getCurrentStatus().name(), analysis,
-                analysis != null && analysis.getStatus() == AIAnalysis.Status.COMPLETED ? jobSkills.findForJob(id) : java.util.List.of());
+                analysis != null && analysis.getStatus() == AIAnalysis.Status.COMPLETED ? jobSkills.findForJob(id) : java.util.List.of(),
+                matchQueries.ratesForJobs(userId, java.util.List.of(id)).get(id));
     }
 
     private Predicate contains(CriteriaBuilder cb, Expression<String> field, String value) {

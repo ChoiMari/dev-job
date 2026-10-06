@@ -17,8 +17,11 @@ public record JobSummary(Long id, String title, CompanyView company, String sour
         return from(job, false, applicationStatus);
     }
     public static JobSummary from(JobPosting job, boolean bookmarked, String applicationStatus) {
+        return from(job, bookmarked, applicationStatus, null);
+    }
+    public static JobSummary from(JobPosting job, boolean bookmarked, String applicationStatus, Integer matchRate) {
         return new JobSummary(job.getId(), job.getTitle(), new CompanyView(job.getCompany().getId(),
                 job.getCompany().getName()), job.getJobSource().getCode(), job.getLocation(),
-                job.getCareerRequirement(), job.getEmploymentType(), job.getDeadlineDate(), null, bookmarked, applicationStatus);
+                job.getCareerRequirement(), job.getEmploymentType(), job.getDeadlineDate(), matchRate, bookmarked, applicationStatus);
     }
 }

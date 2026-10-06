@@ -5,14 +5,14 @@ import type { Analysis } from '../api/analysis';
 import { ErrorState } from './States';
 
 const api = createAnalysisApi(apiRequest);
-export function JobAnalysis({ jobId, initialStatus }: { jobId: number; initialStatus: string | null }) {
+export function JobAnalysis({ jobId, initialStatus, onStatusChange }: { jobId: number; initialStatus: string | null; onStatusChange?: (status: string) => void }) {
   const [analysis, setAnalysis] = useState<Analysis>();
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   useEffect(() => {
     if (!initialStatus) return;
     const controller = new AbortController();
-    api.get(jobId, controller.signal).then(setAnalysis).catch(failure => {
+    api.get(jobId, controller.signal).then(value => { setAnalysis(value); onStatusChange?.(value.status); }).catch(failure => {
       if (!controller.signal.aborted) setError(failure instanceof Error ? failure.message : '분석을 불러오지 못했습니다.');
     });
     return () => controller.abort();
@@ -21,14 +21,14 @@ export function JobAnalysis({ jobId, initialStatus }: { jobId: number; initialSt
     if (analysis?.status !== 'PENDING') return;
     let active = true;
     const timer = window.setInterval(() => api.get(jobId).then(value => {
-      if (active) { setAnalysis(value); setError(''); }
+      if (active) { setAnalysis(value); onStatusChange?.(value.status); setError(''); }
     }).catch(failure => { if (active) setError(failure instanceof Error ? failure.message : '분석 상태를 확인하지 못했습니다.'); }), 2000);
     return () => { active = false; window.clearInterval(timer); };
   }, [jobId, analysis?.status]);
   const run = async () => {
     if (busy) return;
     setBusy(true); setError('');
-    try { setAnalysis(await api.request(jobId)); }
+    try { const value = await api.request(jobId); setAnalysis(value); onStatusChange?.(value.status); }
     catch (failure) { setError(failure instanceof Error ? failure.message : '분석 요청에 실패했습니다.'); }
     finally { setBusy(false); }
   };
@@ -45,7 +45,7 @@ export function JobAnalysis({ jobId, initialStatus }: { jobId: number; initialSt
       <h4>우대 기술</h4>{analysis.preferredSkills.length ? <ul>{analysis.preferredSkills.map(s => <li key={s.id}>{s.name}</li>)}</ul> : <p>추출된 기술이 없습니다.</p>}
     </>}
     {error && <ErrorState message={error} onRetry={() => {
-      setError(''); if (initialStatus || analysis) api.get(jobId).then(setAnalysis).catch(failure => setError(failure instanceof Error ? failure.message : '분석을 불러오지 못했습니다.'));
+      setError(''); if (initialStatus || analysis) api.get(jobId).then(value => { setAnalysis(value); onStatusChange?.(value.status); }).catch(failure => setError(failure instanceof Error ? failure.message : '분석을 불러오지 못했습니다.'));
       else void run();
     }} />}
   </section>;
