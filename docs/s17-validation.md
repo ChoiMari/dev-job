@@ -40,3 +40,7 @@
 - S03~S16 API가 구현됐는데 API 명세 첫 문단과 Frontend README가 초기 단계 상태를 설명하던 불일치를 수정했다. 사용자 흐름의 S05 숙련도·경험 입력은 후속 구상으로, 개발 계획의 CORS 항목은 확정된 같은 출처 설정으로 명시했다. DB 스키마·REST 계약은 변경하지 않았다. migration 파일은 V1~V8 순서로 유지했다.
 - 운영 배포 대상, 같은 출처 `/api` 제공·HTTPS·Secure 쿠키 설정을 사용자가 정한 뒤 검증해야 한다. Work24의 승인된 저장·AI 사용 범위와 호출 빈도 한도도 확인이 남았다. 실제 Work24/LLM 호출, 운영 DB migration, 실서비스 배포는 이번 작업에서 실행하지 않았다.
 - 재현: 격리 PostgreSQL에 새 단계 이름 DB를 만들고 Backend `DB_HOST`·`DB_PORT`·`DB_NAME`·`DB_USERNAME`·`DB_PASSWORD`를 주입해 `build`와 각 `dbTest`를 실행한다. S17 HTTP/브라우저는 새 `devjob_s17_test`에서 Backend를 먼저 기동해 Flyway를 적용하고 fixture를 넣은 뒤 [Backend README](../backend/README.md)와 [Frontend README](../frontend/README.md)의 환경 설정으로 실행한다. 스크립트는 계정을 생성하므로 재실행할 때는 새 일회용 DB를 사용한다.
+
+## main 통합과 로컬 시연 (2026-10-07)
+
+S17을 main에 충돌 없이 반영한 뒤 Backend build·일반 테스트 97건과 Frontend build·테스트 53건을 재확인했다. 별도 Compose 프로젝트 `devjob-s17-demo`의 신규 `devjob_s17_test` DB에 Flyway V1~V8과 합성 공고 7건을 적용하고 실제 HTTP 통합 스크립트를 통과했다. Backend `127.0.0.1:8097`, Frontend `127.0.0.1:5173`과 같은 출처 API proxy가 응답했으며 브라우저에서 회원가입 화면을 열었다. 이 로컬 시연은 운영 배포가 아니며 기존 개발 DB를 사용하지 않았다.
