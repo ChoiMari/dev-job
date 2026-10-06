@@ -2,7 +2,7 @@
 
 ## 사용 방법
 
-2026-10-06 기준 main에는 **S01·S02·S02-V·S03·S04·S05·S06·S07·S08·S09·S10·S11**이 통합되어 있다. S01은 Backend·PostgreSQL 기반, S02와 S02-V는 Frontend 공통 기반·픽셀 디자인, S03은 계정·인증, S04는 프로필, S05는 기술 목록·정규화, S07은 공고 저장·모의 수집, S08은 저장 공고 검색·상세, S09는 Work24 공채속보 목록 Adapter를 구현했다. 각 단계의 개별 검증 근거는 단계별 보고서에, 통합 검증 결과는 [구현 근거](portfolio-log.md)에 기록했다. 한 단계의 선행 작업을 마치면 그 단계만 구현·검증한다. 독립적인 단계는 동시에 진행할 수 있다.
+2026-10-06 기준 main에는 **S01·S02·S02-V·S03·S04·S05·S06·S07·S08·S09·S10·S11·S12**가 통합되어 있다. S01은 Backend·PostgreSQL 기반, S02와 S02-V는 Frontend 공통 기반·픽셀 디자인, S03은 계정·인증, S04는 프로필, S05는 기술 목록·정규화, S07은 공고 저장·모의 수집, S08은 저장 공고 검색·상세, S09는 Work24 공채속보 목록 Adapter를 구현했다. 각 단계의 개별 검증 근거는 단계별 보고서에, 통합 검증 결과는 [구현 근거](portfolio-log.md)에 기록했다. 한 단계의 선행 작업을 마치면 그 단계만 구현·검증한다. 독립적인 단계는 동시에 진행할 수 있다.
 
 각 단계에 적힌 관련 문서만 우선 확인한다. 공통 규칙은 [AGENTS.md](../AGENTS.md), 복잡한 작업의 실행계획 기준은 [.agent/PLANS.md](../.agent/PLANS.md)를 따른다. DB·API 계약은 [ERD](erd.md)와 [API 명세](api-spec.md)가 기준이다. 구현된 API 범위는 API 명세에 표시하고, 나머지는 **설계 예정**이다.
 
@@ -132,7 +132,7 @@
 - 문서: [architecture](architecture.md), [requirements](requirements.md), [ERD](erd.md), [API](api-spec.md), [user flow](user-flow.md).
 - 구현: 공고별 AIAnalysis 요청·상태·결과 API를 구현한다. LLM 출력 검증, 기술 정규화, 결과 저장·재사용, 실패·재시도를 처리한다. 제공자와 처리 방식은 착수 전에 확정한다.
 - 완료: 유효/무효 출력·중복 요청·실패/재시도 테스트와 Build, 실패 시 공고 조회·CRM 유지 확인.
-- S12 구현: 교육프로그램의 OpenAI 호환 API(`https://copa.codyssey.kr`, 모델 `gpt-5.4-mini`, 차감 배수 0.5)를 사용한다. 키는 서버 `OPENAI_API_KEY` 환경변수로만 주입한다. 사용자가 상세에서 요청한 분석만 비동기로 실행하고 `202 PENDING`을 GET으로 확인한다. 유효한 미등록 기술은 표준 Skill·별칭을 생성하는 것으로 사용자와 확정했다. S13 비교·적합도는 포함하지 않는다. 모의 응답·DB 검증 근거와 실제 API 검증 상태는 [S12 보고](s12-validation.md)를 따른다.
+- 상태: 2026-10-06 별도 worktree에서 구현·검증 후 main에 통합했다. 교육프로그램의 OpenAI 호환 API(`https://copa.codyssey.kr`, 모델 `gpt-5.4-mini`, 차감 배수 0.5)를 사용한다. 키는 서버 `OPENAI_API_KEY` 환경변수로만 주입한다. 사용자가 상세에서 요청한 분석만 비동기로 실행하고 `202 PENDING`을 GET으로 확인한다. 유효한 미등록 기술은 표준 Skill·별칭을 생성하는 것으로 사용자와 확정했다. S13 비교·적합도는 포함하지 않는다. 모의 응답·DB 검증 근거와 실제 API 검증 상태는 [S12 보고](s12-validation.md)를 따른다.
 
 **S13 · 공고별 역량 비교**
 - 문서: [requirements](requirements.md), [ERD](erd.md), [API](api-spec.md), [UI](ui-spec.md).

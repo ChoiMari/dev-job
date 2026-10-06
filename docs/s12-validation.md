@@ -1,5 +1,7 @@
 # S12 AI 공고 분석 검증 (2026-10-06)
 
+main 통합 메모: S12 worktree 커밋 `5f949b0`을 S11 통합본 뒤에 적용했다. main에서 Backend build·일반 테스트 92건, Frontend build·테스트 44건이 통과했다. 별도 새 PostgreSQL `devjob_s12_test`에서 Flyway V1~V8·JPA `validate`, DB 테스트 실행 14건을 확인했다. 아래 worktree 검증 기록의 외부 호출은 이번 통합에서 재실행하지 않았다.
+
 ## 범위와 계약
 
 - 로컬 `main`의 S11 통합 커밋 `23c576d`에서 분리한 worktree에서 작업했다. `main`은 수정하지 않았다.
