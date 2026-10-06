@@ -7,8 +7,17 @@ import java.util.List;
 
 public record JobDetail(@JsonUnwrapped JobSummary summary, String description, LocalDate postedDate,
         String sourceUrl, List<Object> requiredSkills, List<Object> preferredSkills, Object analysis) {
+    public static JobDetail from(JobPosting job) {
+        return from(job, false, null);
+    }
     public static JobDetail from(JobPosting job, boolean bookmarked) {
-        return new JobDetail(JobSummary.from(job, bookmarked), job.getDescription(), job.getPostedDate(),
+        return from(job, bookmarked, null);
+    }
+    public static JobDetail from(JobPosting job, String applicationStatus) {
+        return from(job, false, applicationStatus);
+    }
+    public static JobDetail from(JobPosting job, boolean bookmarked, String applicationStatus) {
+        return new JobDetail(JobSummary.from(job, bookmarked, applicationStatus), job.getDescription(), job.getPostedDate(),
                 job.getSourceUrl(), List.of(), List.of(), null);
     }
 }

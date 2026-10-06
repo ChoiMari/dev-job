@@ -907,7 +907,7 @@ S08 저장 공고 조회는 `JobController → JobQueryService → JobPostingRep
 - JDK HTTP Client는 연결 3초·소켓 읽기 10초 및 본문 읽기 기한·2MiB 크기 제한을 둔다. redirect·자동 재시도·요청/응답 로그를 추가하지 않는다. 인증 쿼리나 외부 본문을 포함할 수 있는 예외 cause도 보존하지 않는다.
 - XML 외부 엔티티·DTD·외부 schema를 차단한다. 중복 scalar·중첩 공고·불일치 건수·키가 반사된 응답을 거절한다. 파서 오류 출력도 외부 본문 없이 고정된 사유로 바꾼다.
 - 외부 실패는 S07의 SOURCE_FAILED 경계에서 격리한다. 공개 수집 REST API·스케줄러·기동 자동 호출은 없다. DB·REST 계약과 migration은 변경하지 않아 새 migration 버전 충돌을 만들지 않았다.
-- S09 작업 당시 S08 공고 조회 API는 main에 통합되어 있었으며 S10·S11 CRM은 아직 없었다. 당시 저장 공고의 Repository 조회·수정, 호출자 트랜잭션 보존 및 기존 인증 회귀를 검증했다. 현재 S10 북마크 구현·검증 범위는 [S10 기록](s10-validation.md)을 따르며 S11 전체 경로의 검증 완료를 주장하지 않는다.
+- S09 작업 당시 S08 공고 조회 API는 main에 통합되어 있었으며 S10·S11 CRM은 아직 없었다. 당시 저장 공고의 Repository 조회·수정, 호출자 트랜잭션 보존 및 기존 인증 회귀를 검증했다. 이후 S10 북마크와 S11 지원 구현·검증은 각각 [S10 기록](s10-validation.md), [S11 기록](s11-validation.md)을 따른다.
 
 #### 완료 검증과 제외 범위
 
@@ -1850,7 +1850,9 @@ WITHDRAWN
 
 
 
-상태가 변경될 때 필요한 경우 이력을 저장한다.
+최초 등록과 상태가 실제 변경될 때마다 이력을 저장한다.
+
+S11은 `application/controller → service → repository` 계층과 별도 입력·응답 DTO로 구현한다. 현재 상태와 이력 추가는 동일 트랜잭션이고, 메모·일정 수정은 이력을 추가하지 않는다. `ApplicationRepository.findForUpdate`의 지원 행 잠금으로 수정·전이를 직렬화해 최신 상태를 검증한다. 중복 등록은 사용자·공고 UNIQUE로 보호하고 `409`로 반환한다. 세션 사용자로 소유권을 확인하며 외부 Adapter·AI는 호출하지 않는다. 공고 검색은 사용자·지원 상태 EXISTS 조건을 사용하고 페이지별 실제 상태를 일괄 조회한다. `V7__create_applications.sql`과 API·ERD·화면 계약, [S11 검증](s11-validation.md)을 따른다.
 
 
 

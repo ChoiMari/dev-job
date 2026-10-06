@@ -1,0 +1,36 @@
+.applications-page { display: grid; gap: 24px; max-width: 1280px; margin: 0 auto; min-width: 0; }
+.application-actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; margin-top: 16px; }
+.application-actions > label { min-width: min(220px, 100%); }
+.application-board { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin: 24px 0; }
+.application-column { padding: 12px; border: 1px solid var(--border); background: var(--background); border-radius: 8px; min-width: 0; }
+.application-column h2 { margin-top: 0; }
+.application-column ul { list-style: none; padding: 0; display: grid; gap: 12px; }
+.application-card { background: var(--surface); padding: 16px; border: 1px solid var(--border); border-radius: 8px; }
+.application-card h3 { font-size: 1rem; }
+.application-card p { margin-top: 0; }
+.application-card dl { font-size: .875rem; }
+.application-card dt { color: var(--muted); }
+.application-card dd { margin: 2px 0 12px; }
+.application-note { white-space: pre-wrap; overflow-wrap: anywhere; }
+.application-card .application-note { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.application-registration { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+.application-form fieldset { margin: 0; padding: 16px; border: 1px solid var(--border); border-radius: 8px; min-width: 0; display: grid; gap: 16px; }
+.application-form legend { font-weight: 700; padding: 0 4px; }
+.application-form label, .application-actions label { display: grid; gap: 8px; min-width: 0; }
+.application-form input, .application-form select, .application-form textarea, .application-actions select {
+  width: 100%; min-width: 0; min-height: 44px; padding: 10px 12px; font: inherit; color: var(--text);
+  background: var(--surface); border: 1px solid var(--input-border); border-radius: 6px;
+}
+.application-form textarea { resize: vertical; }
+.application-form input[type="date"], .application-form input[type="datetime-local"] { max-width: 100%; }
+.application-editor { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; margin-top: 24px; }
+.application-history { padding-left: 24px; }
+.application-history li { padding: 12px 0; }
+.application-history time { display: block; color: var(--muted); margin-top: 4px; font-size: .875rem; }
+@media (max-width: 1200px) { .application-board { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 700px) {
+  .application-board, .application-editor { grid-template-columns: minmax(0, 1fr); }
+  .application-results { padding: 16px; }
+  .application-form fieldset { padding: 12px; }
+  .application-actions > * { width: 100%; }
+}

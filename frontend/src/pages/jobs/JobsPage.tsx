@@ -6,6 +6,9 @@ import type { JobDetail, JobPage, JobSummary } from '../../api/jobs';
 import { Badge } from '../../components/PixelArt';
 import { BookmarkButton } from '../../components/BookmarkButton';
 import { EmptyState, ErrorState, LoadingState } from '../../components/States';
+import { applicationStatuses, statusLabels, isApplicationStatus } from '../../api/application-status';
+import { ApplicationStatusBadge } from '../../components/ApplicationStatusBadge';
+import { ApplicationRegistration } from '../../components/ApplicationRegistration';
 import './jobs.css';
 
 const jobs = createJobsApi(apiRequest);
@@ -26,7 +29,9 @@ export function JobsPage({ location }: { location: string }) {
   const page = Number(params.get('page') || 0);
   const size = Number(params.get('size') || 20);
   const sort = params.get('sort') || 'latest';
-  const invalid = !Number.isSafeInteger(page) || page < 0 || !Number.isSafeInteger(size) || size < 1 || size > 100 || !['latest', 'deadline'].includes(sort);
+  const applicationStatus = params.get('applicationStatus');
+  const invalid = !Number.isSafeInteger(page) || page < 0 || !Number.isSafeInteger(size) || size < 1 || size > 100 || !['latest', 'deadline'].includes(sort)
+    || (applicationStatus !== null && !isApplicationStatus(applicationStatus));
   const [data, setData] = useState<JobPage>();
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
@@ -37,11 +42,11 @@ export function JobsPage({ location }: { location: string }) {
     if (invalid) { setError('검색 주소의 페이지·정렬값을 확인해 주세요.'); setLoading(false); return; }
     const values = new URLSearchParams(search);
     jobs.list({ ...Object.fromEntries(fields.map(key => [key, values.get(key) || undefined])), page, size,
-      sort: sort as 'latest' | 'deadline' }, controller.signal)
+      sort: sort as 'latest' | 'deadline', applicationStatus: isApplicationStatus(applicationStatus) ? applicationStatus : undefined }, controller.signal)
       .then(value => { if (!controller.signal.aborted) setData(value); }).catch(failure => { if (!controller.signal.aborted) setError(failure instanceof Error ? failure.message : '공고를 불러오지 못했습니다.'); })
       .finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
-  }, [search, page, size, sort, invalid, retry]);
+  }, [search, page, size, sort, applicationStatus, invalid, retry]);
   const navigatePage = (next: number) => { const query = new URLSearchParams(search); query.set('page', String(next)); window.location.hash = `/jobs?${query}`; };
   return <div className="jobs-page">
     <form key={search} className="card job-search" onSubmit={event => {
@@ -56,6 +61,9 @@ export function JobsPage({ location }: { location: string }) {
           placeholder={field === 'careerLevel' ? '예: 신입 (정확히 일치)' : field === 'employmentType' ? '예: 정규직 (정확히 일치)' : undefined} />
       </label>)}
         <label>정렬<select name="sort" defaultValue={sort}><option value="latest">최신순</option><option value="deadline">마감 임박순</option></select></label>
+        <label>내 지원 상태<select name="applicationStatus" defaultValue={applicationStatus || ''}><option value="">전체 공고</option>
+          {applicationStatuses.map(status => <option key={status} value={status}>{statusLabels[status]}</option>)}
+        </select></label>
         <label>페이지당 공고<select name="size" defaultValue={size}><option value="20">20개</option><option value="50">50개</option><option value="100">100개</option></select></label>
       </div>
       <div className="job-actions"><button className="button-primary" type="submit">검색</button><a className="button-link" href="#/jobs">조건 초기화</a></div>
@@ -65,7 +73,7 @@ export function JobsPage({ location }: { location: string }) {
         <p role="status">총 {data.totalElements}건 · {data.page + 1}페이지</p>
         {data.items.length === 0 ? <><EmptyState title="검색 결과가 없습니다." message="조건을 바꾸거나 다른 페이지를 확인해 주세요." />
           {page > 0 && <button onClick={() => navigatePage(0)}>첫 페이지로</button>}</> : <ul className="job-list">{data.items.map(job => <li key={job.id} className="job-card">
-          <Badge icon="grid">{job.source}</Badge><p>{job.company.name}</p>
+          <Badge icon="grid">{job.source}</Badge>{job.applicationStatus && <ApplicationStatusBadge status={job.applicationStatus} />}<p>{job.company.name}</p>
           <h2><a href={`#/jobs/${job.id}?${new URLSearchParams({ from: search })}`}>{job.title}</a></h2><Metadata job={job} />
           <BookmarkButton jobId={job.id} saved={job.bookmarked} onChange={saved => setData(current => current && ({
             ...current, items: current.items.map(item => item.id === job.id ? { ...item, bookmarked: saved } : item),
@@ -113,6 +121,8 @@ export function JobDetailPage({ location }: { location: string }) {
         <a className="button-link button-primary" href={data.sourceUrl} target="_blank" rel="noopener noreferrer">외부 원문 보기 (새 창)</a>
         <BookmarkButton key={data.id} jobId={data.id} saved={data.bookmarked}
           onChange={saved => setData(current => current?.id === id ? { ...current, bookmarked: saved } : current)} />
+        <ApplicationRegistration key={data.id} jobId={data.id} status={data.applicationStatus}
+          onCreated={applicationStatus => setData(current => current?.id === id ? { ...current, applicationStatus } : current)} />
         <h3>채용공고 원문</h3>{data.description ? <div className="job-description">{data.description}</div>
           : <p>저장된 본문이 없습니다. 외부 원문에서 채용 조건을 확인해 주세요.</p>}
       </>}

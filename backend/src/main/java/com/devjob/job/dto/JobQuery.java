@@ -4,7 +4,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 import java.time.LocalDate;
 
-/** Only S08 filters; later-stage parameters are rejected rather than silently ignored. */
+/** Stored job filters; unsupported AI parameters remain explicit errors. */
 public record JobQuery(String q, String company, String careerLevel, String location,
         String employmentType, String deadlineBefore, Integer page, Integer size, String sort,
         String skillId, String minMatchRate, String applicationStatus) {
@@ -22,7 +22,8 @@ public record JobQuery(String q, String company, String careerLevel, String loca
             if (value != null && value.length() > 200) invalid();
         }
         if (page < 0 || size < 1 || size > 100 || !java.util.Set.of("latest", "deadline").contains(sort)
-                || skillId != null || minMatchRate != null || applicationStatus != null) invalid();
+                || skillId != null || minMatchRate != null || (long) page * size > Integer.MAX_VALUE) invalid();
+        com.devjob.application.service.ApplicationService.parseStatus(applicationStatus);
         if (deadlineBefore != null) {
             if (!deadlineBefore.matches("\\d{4}-\\d{2}-\\d{2}")) invalid();
             try { LocalDate.parse(deadlineBefore); }

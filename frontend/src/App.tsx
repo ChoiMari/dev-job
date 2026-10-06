@@ -12,6 +12,7 @@ import { ProfileSkills } from './components/ProfileSkills';
 import { JobsPage, JobDetailPage } from './pages/jobs/JobsPage';
 import { ProjectsPage } from './pages/projects/ProjectsPage';
 import { BookmarksPage } from './pages/jobs/BookmarksPage';
+import { ApplicationsPage, ApplicationDetailPage } from './pages/applications/ApplicationsPage';
 
 const getPath = () => window.location.hash.slice(1) || '/';
 
@@ -64,7 +65,11 @@ export function App() {
   }, [checking, error, user, publicPath]);
 
   const title = publicPath ? path === '/register' ? '회원가입' : '로그인'
-    : path === '/' ? '기본 화면' : path === '/profile' ? '내 프로필' : path === '/states' ? '공통 상태 확인' : path === '/projects' || path.startsWith('/projects/') ? '프로젝트 관리' : path === '/jobs' ? '채용공고' : path === '/bookmarks' ? '관심 공고' : path.startsWith('/jobs/') ? '공고 상세' : '화면을 찾을 수 없습니다';
+    : path === '/' ? '기본 화면' : path === '/profile' ? '내 프로필' : path === '/states' ? '공통 상태 확인'
+      : path === '/projects' || path.startsWith('/projects/') ? '프로젝트 관리'
+      : path === '/jobs' ? '채용공고' : path === '/bookmarks' ? '관심 공고'
+      : path.startsWith('/jobs/') ? '공고 상세'
+      : path === '/applications' ? '지원 관리' : path.startsWith('/applications/') ? '지원 상세' : '화면을 찾을 수 없습니다';
   useEffect(() => {
     document.title = `${title} · DevJob`;
     document.getElementById('main-content')?.focus();
@@ -104,7 +109,9 @@ export function App() {
     </> : path === '/projects' || path.startsWith('/projects/') ? <ProjectsPage key={`${user.id}:${path}`} location={location} />
       : path === '/states' ? <StatePreview /> : path === '/jobs' ? <JobsPage location={location} />
       : path === '/bookmarks' ? <BookmarksPage location={location} />
-      : path.startsWith('/jobs/') ? <JobDetailPage location={location} /> : <section className="card">
+      : path.startsWith('/jobs/') ? <JobDetailPage location={location} />
+      : path === '/applications' ? <ApplicationsPage location={location} />
+      : path.startsWith('/applications/') ? <ApplicationDetailPage key={path} location={location} /> : <section className="card">
       <EmptyState title="화면을 찾을 수 없습니다." message="주소를 확인하거나 기본 화면으로 돌아가 주세요." />
       <a className="button-link" href="#/">기본 화면으로</a>
     </section>}

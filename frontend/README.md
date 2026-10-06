@@ -1,5 +1,7 @@
 # DevJob Frontend · S02
 
+통합본에는 S11 공고 지원 등록, `#/applications` Kanban·상태 필터·페이지, `#/applications/{id}` 메모·일정·상태·이력 화면을 연결했다. S03의 같은 출처 세션 쿠키·CSRF를 사용한다. 구현 범위·실제 Backend 브라우저 검증·재현은 [S11 보고](../docs/s11-validation.md)를 따른다. 아래 내용은 S02 당시의 기반 구축 기록이다.
+
 S02는 React 실행 환경과 공통 기반만 제공합니다. 실제 서비스 기능과 Backend 호출은 기본 화면에서 실행하지 않습니다.
 
 ## 실행

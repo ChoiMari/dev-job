@@ -2,7 +2,7 @@
 
 ## 사용 방법
 
-2026-10-06 기준 main에는 **S01·S02·S02-V·S03·S04·S05·S07·S08·S09**가 통합되어 있다. S01은 Backend·PostgreSQL 기반, S02와 S02-V는 Frontend 공통 기반·픽셀 디자인, S03은 계정·인증, S04는 프로필, S05는 기술 목록·정규화, S07은 공고 저장·모의 수집, S08은 저장 공고 검색·상세, S09는 Work24 공채속보 목록 Adapter를 구현했다. 각 단계의 개별 검증 근거는 단계별 보고서에, 통합 검증 결과는 [구현 근거](portfolio-log.md)에 기록했다. 한 단계의 선행 작업을 마치면 그 단계만 구현·검증한다. 독립적인 단계는 동시에 진행할 수 있다.
+2026-10-06 기준 main에는 **S01·S02·S02-V·S03·S04·S05·S06·S07·S08·S09·S10·S11**이 통합되어 있다. S01은 Backend·PostgreSQL 기반, S02와 S02-V는 Frontend 공통 기반·픽셀 디자인, S03은 계정·인증, S04는 프로필, S05는 기술 목록·정규화, S07은 공고 저장·모의 수집, S08은 저장 공고 검색·상세, S09는 Work24 공채속보 목록 Adapter를 구현했다. 각 단계의 개별 검증 근거는 단계별 보고서에, 통합 검증 결과는 [구현 근거](portfolio-log.md)에 기록했다. 한 단계의 선행 작업을 마치면 그 단계만 구현·검증한다. 독립적인 단계는 동시에 진행할 수 있다.
 
 각 단계에 적힌 관련 문서만 우선 확인한다. 공통 규칙은 [AGENTS.md](../AGENTS.md), 복잡한 작업의 실행계획 기준은 [.agent/PLANS.md](../.agent/PLANS.md)를 따른다. DB·API 계약은 [ERD](erd.md)와 [API 명세](api-spec.md)가 기준이다. 구현된 API 범위는 API 명세에 표시하고, 나머지는 **설계 예정**이다.
 
@@ -84,7 +84,7 @@
 - 문서: [requirements](requirements.md), [user flow](user-flow.md), [ERD](erd.md), [API](api-spec.md), [UI](ui-spec.md).
 - 구현: Project·ProjectSkill 관계와 내 프로젝트 CRUD API·화면을 구현한다. 프로젝트 기술은 사용자 기술 목록과 독립적으로 관리한다.
 - 완료: CRUD·기술 관계·타인 접근 테스트, Build와 등록→수정→삭제 확인.
-- 상태: 2026-10-06 현재 worktree에서 구현·검증 완료. V5로 Project·ProjectSkill을 추가하고 보호된 프로젝트 목록·등록·상세·수정·삭제 화면을 연결했다. Backend build·일반 테스트 84개, 격리 PostgreSQL의 S06 7개·기존 인증 등 9개, 별도 DB의 S05 회귀 6개, Frontend build·테스트 33개가 통과했다. DB 이름이 다른 26개는 S06 DB 실행에서 제외했다. 실제 Edge 브라우저에서 등록→새로고침→수정→삭제, 기술 관계 독립성, 20+1 페이지·페이지 오류 재시도, Tablet·Mobile 화면을 검증했다. 기존 개발 DB·적용 이력은 변경하지 않았다. 검증 재현은 Backend·Frontend README, 설계·문제 해결 근거는 [구현 근거](portfolio-log.md)를 따른다.
+- 상태: 2026-10-06 별도 worktree에서 구현·검증 후 main에 통합했다. V5로 Project·ProjectSkill을 추가하고 보호된 프로젝트 목록·등록·상세·수정·삭제 화면을 연결했다. Backend build·일반 테스트 84개, 격리 PostgreSQL의 S06 7개·기존 인증 등 9개, 별도 DB의 S05 회귀 6개, Frontend build·테스트 33개가 통과했다. DB 이름이 다른 26개는 S06 DB 실행에서 제외했다. 실제 Edge 브라우저에서 등록→새로고침→수정→삭제, 기술 관계 독립성, 20+1 페이지·페이지 오류 재시도, Tablet·Mobile 화면을 검증했다. 기존 개발 DB·적용 이력은 변경하지 않았다. 검증 재현은 Backend·Frontend README, 설계·문제 해결 근거는 [구현 근거](portfolio-log.md)를 따른다.
 
 ### 채용공고
 
@@ -96,7 +96,7 @@
 
 **S08 · 공고 검색·상세**
 - 문서: [requirements](requirements.md), [user flow](user-flow.md), [API](api-spec.md), [UI](ui-spec.md).
-- 구현: 저장된 공고의 목록·검색·기본 필터·상세 API와 화면을 연결한다. AI 기술·적합도·지원 상태에 의존하는 필터와 표시는 S11~S13에서 완성한다. 분석이 없어도 공고 원문은 볼 수 있어야 한다.
+- 구현: 저장된 공고의 목록·검색·기본 필터·상세 API와 화면을 연결한다. AI 기술·적합도·지원 상태에 의존하는 필터와 표시는 S11에서 지원 상태를 연결했고 기술·적합도는 S12~S13에서 완성한다. 분석이 없어도 공고 원문은 볼 수 있어야 한다.
 - 완료: 검색·페이지·기본 필터·없는 공고 테스트, Build와 목록→상세 흐름 확인.
 - 작업 상태: 2026-10-06 별도 worktree에서 구현·검증 후 main에 통합했다. Backend `build`·일반 테스트 45개, 격리 PostgreSQL `devjob_s08_test`에서 S08 7개·기존 DB 회귀 9개, Frontend `build`·테스트 23개가 통과했다. 실제 쿠키 인증과 목록→상세→목록·빈 결과·404·재시도·모바일 화면을 검증했다. S07 전용 DB 테스트 8개는 DB 이름 조건으로 당시 실행에서 제외했다. 새 migration은 없다. 재현과 공유 파일은 [S08 검증·통합 기록](s08-validation.md)을 참고한다.
 
@@ -124,6 +124,7 @@
 - 문서: [requirements](requirements.md), [user flow](user-flow.md), [ERD](erd.md), [API](api-spec.md), [UI](ui-spec.md).
 - 구현: Application 등록·조회·메모/일정 수정, 허용된 상태 전이, 모든 상태 변경의 이력 저장과 지원 관리 화면을 구현한다. 공고의 사용자별 지원 상태도 연결한다.
 - 완료: 최초 이력·전이·중복·소유권 테스트, Build와 등록→상태 변경→이력 조회 확인.
+- 상태: 2026-10-06 별도 worktree에서 구현·검증 후 main에 통합했다. 지원 API 6개, 사용자별 공고 지원 상태·필터, Kanban·상세·등록 화면과 V7 migration을 추가했다. Backend build 일반 85개·격리 PostgreSQL DB 25개(S11 9개, S08 7개 포함), Frontend build·테스트 34개와 실제 쿠키 세션 브라우저 흐름을 통과했다. 다른 단계 전용 DB 테스트 19개는 DB 이름 가드로 건너뛰었다. 자세한 동시성·원자성·반응형 검증과 미실행 범위는 [S11 보고](s11-validation.md)에 기록한다.
 
 ### AI와 분석
 

@@ -21,6 +21,10 @@ S06 테스트는 `DB_NAME`와 실제 DB 이름을 모두 확인하며 트랜잭�
 다른 단계의 DB 이름 가드로 26개를 건너뛰었고, 별도 새 S05 DB에서 기술 회귀 6개도 통과했다.
 아래 S01 설명은 초기 기반 구성 당시의 기록이다.
 
+## S11 · 지원·상태 이력
+
+S11 지원·상태 이력은 [검증 보고](../docs/s11-validation.md)와 [API 명세 5절](../docs/api-spec.md#5-북마크와-지원-관리)를 따른다. `V7__create_applications.sql`은 기존 V1~V6 뒤에 새 지원·이력 테이블만 추가한다. S11 DB 테스트는 `DB_NAME=devjob_s11_test`인 별도 검증 DB에서 실행한다. 기존 DB의 Flyway 이력을 수정하거나 초기화하지 않는다.
+
 Java 17, Spring Boot 3.5.16, Gradle Wrapper 8.14.3, PostgreSQL 17을 사용한다.
 MVC / Spring Data JPA / Jakarta Validation / Flyway / PostgreSQL driver / Spring Boot Test만 구성한다.
 인증, AI, Frontend, 도메인 Entity·Repository·API는 후속 단계의 범위다.

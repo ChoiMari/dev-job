@@ -2,7 +2,7 @@
 
 ## 1. 상태와 공통 계약
 
-S03의 인증 API(`/api/auth/*`), S04의 프로필 API(`/api/me/profile`), S05의 기술 API(`/api/skills`, `/api/me/skills`), S06의 프로젝트 API(`/api/me/projects`, `/api/me/projects/{projectId}`), S08의 저장 공고 조회 API(`GET /api/jobs`, `GET /api/jobs/{jobId}`), S10의 북마크 API(`GET/POST /api/bookmarks`, `DELETE /api/bookmarks/{jobId}`)는 구현했다. 그 밖의 API는 설계 예정이며 구현 완료를 뜻하지 않는다. 기준 문서는 `requirements.md`, `user-flow.md`, `architecture.md`, `erd.md`다. 기본 경로는 `/api`, 요청·응답 본문은 JSON이다. 외부 채용 API 수집은 Backend의 Adapter 처리 범위이며, 근거 없는 공개 수집·관리자 API를 추가하지 않는다.
+S03의 인증 API(`/api/auth/*`), S04의 프로필 API(`/api/me/profile`), S05의 기술 API(`/api/skills`, `/api/me/skills`), S06의 프로젝트 API(`/api/me/projects`, `/api/me/projects/{projectId}`), S08의 저장 공고 조회 API(`GET /api/jobs`, `GET /api/jobs/{jobId}`), S10의 북마크 API(`GET/POST /api/bookmarks`, `DELETE /api/bookmarks/{jobId}`)와 S11의 지원·상태 이력 API(`/api/applications` 하위 6개)는 구현했다. 그 밖의 API는 설계 예정이며 구현 완료를 뜻하지 않는다. 기준 문서는 `requirements.md`, `user-flow.md`, `architecture.md`, `erd.md`다. 기본 경로는 `/api`, 요청·응답 본문은 JSON이다. 외부 채용 API 수집은 Backend의 Adapter 처리 범위이며, 근거 없는 공개 수집·관리자 API를 추가하지 않는다.
 
 - `{...Id}`는 양의 정수 식별자다. 날짜는 `YYYY-MM-DD`, 일시는 시간대가 포함된 ISO 8601 문자열로 표현한다. 값이 없는 선택 필드는 `null`로 응답한다.
 - `page`·`size`를 받는 목록은 `page`(0부터 시작, 기본 0), `size`(1~100, 기본 20)를 사용하고 `{ "items": [], "page": 0, "size": 20, "totalElements": 0 }` 형태로 응답한다. 공고 `sort`는 `latest`(기본), `deadline`, `matchRate`를 허용한다. 내 기술 목록과 한 지원 건의 상태 이력은 페이지 없이 반환한다.
@@ -82,12 +82,12 @@ S05 구현 계약:
 ### S08 구현 계약
 
 - 저장된 공고만 조회하며 외부 Adapter·AI를 호출하지 않는다. 두 GET API 모두 S03 쿠키 세션 인증이 필요하다.
-- 현재 지원 Query는 `q`, `company`, `careerLevel`, `location`, `employmentType`, `deadlineBefore`, `page`, `size`, `sort`다. `q`는 제목 또는 회사명, `company`·`location`은 해당 필드의 대소문자 무시 부분 일치다. `%`, `_`, `\`는 검색 문자 그대로 취급한다. `careerLevel`·`employmentType`은 저장된 문자열과 대소문자 무시 정확히 일치한다. 기술 검색은 S12~S13에서 연결한다.
+- 현재 지원 Query는 `q`, `company`, `careerLevel`, `location`, `employmentType`, `deadlineBefore`, `applicationStatus`, `page`, `size`, `sort`다. `q`는 제목 또는 회사명, `company`·`location`은 해당 필드의 대소문자 무시 부분 일치다. `%`, `_`, `\`는 검색 문자 그대로 취급한다. `careerLevel`·`employmentType`은 저장된 문자열과 대소문자 무시 정확히 일치한다. 기술 검색은 S12~S13에서 연결한다. S11의 `applicationStatus`는 현재 세션 사용자의 지원 상태로 AND 필터링하며 빈 문자열·알 수 없는 상태는 `400`이다.
 - 검색 문자열은 양끝 공백을 제거하고 공백뿐이면 조건을 생략한다. 각 검색 문자열은 최대 200자다. `deadlineBefore`는 유효한 `YYYY-MM-DD` 날짜이며 당일을 포함한다. 날짜가 없는 공고는 마감일 필터 결과에서 제외한다. 여러 필터는 AND로 결합한다.
-- `page`는 0 이상 정수, `size`는 1~100(기본 20)이다. 결과가 없거나 범위를 벗어난 페이지는 `items: []`와 조건에 맞는 전체 건수를 반환한다.
+- `page`는 0 이상 정수, `size`는 1~100(기본 20)이다. `page × size > 2147483647`은 `400`이다. 결과가 없거나 범위를 벗어난 페이지는 `items: []`와 조건에 맞는 전체 건수를 반환한다.
 - 현재 정렬은 `latest`(게시일 내림차순)·`deadline`(마감일 오름차순)이며 날짜 null은 뒤에 둔다. 날짜가 같으면 `id` 내림차순으로 안정적인 페이지 순서를 유지한다.
-- `skillId`, `minMatchRate`, `applicationStatus`, `sort=matchRate`는 후속 단계이며 전달 시 `400 INVALID_INPUT`이다. 기본 필터처럼 무시하지 않는다. 그 밖의 잘못된 페이지·필터·식별자는 `400`, 없는 양의 공고 ID는 `404 NOT_FOUND`다.
-- 기존 응답 형태를 유지하며 S10부터 `bookmarked`는 현재 세션 사용자의 실제 저장 상태다. 목록은 현재 페이지의 공고 ID를 한 번에 조회하며 상세에서도 사용자별로 확인한다. `matchRate: null`, `applicationStatus: null`, `requiredSkills: []`, `preferredSkills: []`, `analysis: null`은 후속 기능 미구현에 따른 값이며 해당 상태를 UI에 표시하지 않는다. 지원 S11, AI S12, 역량 비교 S13에서 실제 데이터를 연결한다. 본문이 null이어도 기본 정보와 HTTP(S) `sourceUrl`은 반환한다.
+- `skillId`, `minMatchRate`, `sort=matchRate`는 후속 단계이며 전달 시 `400 INVALID_INPUT`이다. `applicationStatus`는 현재 세션 사용자의 지원 상태로 필터링한다. 그 밖의 잘못된 페이지·필터·식별자는 `400`, 없는 양의 공고 ID는 `404 NOT_FOUND`다.
+- 기존 응답 형태를 유지하며 `bookmarked`와 `applicationStatus`는 현재 세션 사용자의 실제 저장·지원 상태다. 목록은 현재 페이지의 공고 ID에 대해 두 상태를 각각 일괄 조회하며 상세에서도 사용자별로 확인한다. 지원 미등록 시 상태는 `null`이다. `matchRate: null`, `requiredSkills: []`, `preferredSkills: []`, `analysis: null`은 후속 기능 미구현에 따른 값이다. 본문이 null이어도 기본 정보와 HTTP(S) `sourceUrl`은 반환한다.
 
 아래 표·분석 응답 설명은 후속 단계를 포함한 최종 MVP 계약이다.
 
@@ -118,7 +118,13 @@ S05 구현 계약:
 - 목록은 공통 `page`·`size` 계약을 따르고 `page × size > 2147483647`은 `400`이다. 저장 시각 내림차순·동률 ID 내림차순으로 정렬하며 빈 목록·범위 밖 페이지는 `items: []`와 정확한 `totalElements`를 반환한다. 마감된 공고와 마감일 없는 공고도 유지한다. 모든 반환 Bookmark의 `job.bookmarked`는 `true`다.
 - DELETE 경로는 **공고 ID**이며 북마크 ID가 아니다. 현재 사용자의 관계만 삭제하고 공고·타인 관계를 보존한다. 없는 관계·타인만 저장한 관계는 `404`; 잘못된 ID는 `400`이다. 성공은 `204`다. 북마크는 지원·AI와 독립적이며 외부 API·LLM을 호출하지 않는다.
 
-아래 지원 API는 S11 설계 예정이다.
+### S11 구현 계약
+
+- 지원 목록은 세션 사용자만 조회하고 1절 페이지 응답을 사용한다. `status`는 정확한 상태값이며 잘못된 값·빈 값은 `400`이다. 정렬은 등록 시각·ID 내림차순이다. 이력은 변경 시각·ID 오름차순으로 페이지 없이 반환한다.
+- 생성·상태 변경의 `status`는 필수 JSON 문자열, `jobId`는 필수 양의 JSON 정수(Long 범위)다. 초기 상태 3개 이외의 생성은 `400`이다. `APPLIED` 생성·전이에만 유효한 `appliedDate`가 필수이며 다른 상태 요청에서는 생략 또는 `null`로 보낸다. 이후 전이에서 기존 지원일은 유지한다. 날짜는 연도 0001~9999의 `YYYY-MM-DD`, 일정은 시간대가 포함된 ISO 8601이며 응답 일정은 UTC로 정규화한다.
+- `note`는 선택 JSON 문자열(최대 2000자); 양끝 공백 제거, 공백뿐이면 `null`이다. 줄바꿈·탭 이외 제어 문자는 거부한다. `PATCH` 메모·일정은 누락 필드를 유지하고 명시적 `null`은 비운다. 빈 객체·알 수 없는 필드·잘못된 JSON 타입은 `400`이다. 이 경로로 상태·지원일·사용자·공고를 변경할 수 없다.
+- 모든 변경 요청은 최신 CSRF 토큰이 필요하다. 사용자 ID는 세션에서만 얻으며 타인 소유 상세·수정·상태·이력은 `403`, 없는 지원은 `404`다. 중복 생성은 `(user_id, job_posting_id)` 유일 키로 `409`를 보장한다.
+- 초기 상태와 실제 상태 변경마다 이력을 같은 트랜잭션에 저장한다. 메모·일정 변경은 이력을 만들지 않는다. 수정·전이는 지원 행 잠금으로 직렬화하고 최신 상태로 전이를 검증한다. 같은 상태·건너뛰기·역행·종료 상태 전이는 `409`이며 이력이 추가되지 않는다.
 
 | 목적 / Method·URL | 인증 | Path / Query | Request Body | 성공 Response Body·Status | 주요 오류 |
 | --- | --- | --- | --- | --- | --- |
