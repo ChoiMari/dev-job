@@ -158,6 +158,10 @@ S13 구현: 비교 API는 완료된 분석이 없으면 `409 CONFLICT`를 반환
 
 `SkillGap`: `{ "available": true, "desiredRole": "백엔드 개발자", "analyzedJobCount": 100, "provisional": false, "totalMissingSkills": 8, "items": [{ "skill": Skill, "demandJobCount": 82, "requiredJobCount": 74, "preferredJobCount": 8, "demandRatio": 0.82, "priorityScore": 78.0 }], "reason": null }`. 사용자·프로젝트 기술의 합집합에 없는 기술만 반환한다. `desiredRole` 요청값을 우선 사용하고 없으면 프로필 희망 직무를 사용한다. 둘 다 없으면 모든 완료 분석 공고를 비교한다. 직무명은 S14와 같이 공고 제목의 대소문자 무시 부분 일치이며 200자 초과는 `400`이다. `analyzedJobCount`는 해당 조건의 완료 분석 공고 수, `demandJobCount = requiredJobCount + preferredJobCount`, `demandRatio = demandJobCount / analyzedJobCount`, `priorityScore = 100 × (requiredJobCount + 0.5 × preferredJobCount) / analyzedJobCount`다. 점수 내림차순, 등장 건수 내림차순, 기술명·ID 오름차순으로 정렬한 부족 기술 상위 5개를 `items`에 반환하고 전체 부족 기술 수를 `totalMissingSkills`로 반환한다. 점수는 순위 계산용이며 화면에는 노출하지 않는다. 완료 분석 공고가 5건 미만이면 `available: false`, `items: []`, `reason: "INSUFFICIENT_SAMPLE"`로 순위를 보류한다. 5~19건이면 `provisional: true`로 표본 부족을 알리고 20건 이상이면 `false`다. 보유 기술이 없으면 `USER_SKILLS_EMPTY`, 비교 가능한 공고 기술이 없으면 `NO_JOB_SKILLS`를 `reason`으로 반환한다. 데이터 부족 시 `totalMissingSkills: 0`, `provisional: false`다. 등급·별도 결과 테이블·AI 추천 모델은 사용하지 않는다.
 
+S16 대시보드 선정 기준: `applicationCounts`에는 모든 지원 상태의 사용자별 건수를 0을 포함해 반환한다. `nextActions`는 종료 상태를 제외한 지원 중 일정이 빠른 순(일정 없는 건은 ID 순) 상위 5건이다. `recommendedJobs`는 분석 완료 공고 중 기술 적합도가 0보다 크고 마감되지 않았으며 사용자가 아직 지원하지 않은 공고를 적합도 내림차순·마감일 오름차순·ID 내림차순으로 최대 3건 반환한다. 사용자 기술이나 완료 분석이 없으면 빈 배열이다. `skillGapPreview`는 기본 희망 직무에 대한 사용자의 부족 기술 상위 5개이며 S15 기준상 순위를 보류하면 빈 배열이다. 조회 과정에서 외부 AI·채용 API를 호출하지 않는다.
+
+`nextActions`의 각 항목에는 표시용 `jobTitle`도 포함한다.
+
 ## 7. MVP 이후
 
 이력서·자기소개서 분석, 알림, 관리자 API, 별도 할 일 관리, 복잡한 캐릭터 기능, 의미 기반 추천, 추가 채용 출처 API는 이 명세의 MVP 엔드포인트에 포함하지 않는다. 미확정 운영 계약은 구현 전에 확정하고 이 문서에 반영한다. S03 인증 전달·로그아웃 계약은 2절에 반영했다.

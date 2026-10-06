@@ -156,6 +156,8 @@
 - 문서: [requirements](requirements.md), [user flow](user-flow.md), [API](api-spec.md), [UI](ui-spec.md).
 - 구현: 지원·북마크·적합도·Skill Gap 데이터에서 현황, 다음 행동, 기본 추천 공고와 역량 미리보기를 조합한다. 별도 할 일 기능은 만들지 않는다.
 - 완료: 집계·빈 데이터·사용자 분리 테스트, Build와 관련 화면 이동 확인.
+- 선정 기준: 진행 중 지원의 일정 순 상위 5건을 다음 행동으로 표시한다. 추천은 완료 분석·기술 적합도 양수·미마감·미지원 공고 중 적합도 순 상위 3건이다. 역량 미리보기는 S15 순위를 재사용한다. 상세 계약은 [API](api-spec.md)를 따른다.
+- 상태: 2026-10-07 API·첫 화면·빈/오류 상태를 구현했다. Backend 일반 테스트와 격리 PostgreSQL `devjob_s16_test`의 집계·사용자 분리·추천/인증 테스트, Frontend build·테스트 53건을 통과했다. 390px Edge Chromium에서 대시보드 빈/데이터/오류·재시도, 상세 이동 링크와 가로 넘침·JavaScript 오류를 확인했다(모의 API 응답).
 
 ### 통합
 

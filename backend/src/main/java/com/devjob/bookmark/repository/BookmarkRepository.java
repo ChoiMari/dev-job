@@ -17,6 +17,7 @@ public interface BookmarkRepository extends JpaRepository<Bookmark, Long> {
     Optional<Bookmark> findByUserIdAndJobId(Long userId, Long jobId);
 
     boolean existsByUserIdAndJobId(Long userId, Long jobId);
+    long countByUserId(Long userId);
 
     @Query("select b.job.id from Bookmark b where b.user.id = :userId and b.job.id in :jobIds")
     List<Long> findSavedJobIds(@Param("userId") Long userId, @Param("jobIds") Collection<Long> jobIds);

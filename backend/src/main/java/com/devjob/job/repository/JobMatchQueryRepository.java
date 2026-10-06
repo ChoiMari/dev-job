@@ -35,6 +35,16 @@ public class JobMatchQueryRepository {
         return result;
     }
 
+    public List<Long> recommendedJobIds(Long userId, java.time.LocalDate today, int limit) {
+        var parameters = new MapSqlParameterSource().addValue("userId", userId)
+                .addValue("today", today).addValue("limit", limit);
+        return jdbc.query(RATES + "select j.id from rates r join job_posting j on j.id = r.job_posting_id "
+                + "where r.rate > 0 and (j.deadline_date is null or j.deadline_date >= :today) "
+                + "and not exists (select 1 from application ap where ap.user_id = :userId and ap.job_posting_id = j.id) "
+                + "order by r.rate desc, j.deadline_date asc nulls last, j.id desc limit :limit",
+                parameters, (row, index) -> row.getLong(1));
+    }
+
     public RankedPage ranked(Long userId, JobQuery input) {
         var parameters = new MapSqlParameterSource().addValue("userId", userId);
         var from = new StringBuilder(" from job_posting j join company c on c.id = j.company_id left join rates r on r.job_posting_id = j.id where 1=1");

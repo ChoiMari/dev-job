@@ -21,7 +21,7 @@ export function Layout({ title, path, children, user, onLogout, loggingOut }: {
       <button className="menu-toggle" type="button" aria-expanded={menuOpen} aria-controls="main-navigation"
         onClick={() => setMenuOpen(value => !value)}><PixelIcon name="menu" />{menuOpen ? '메뉴 닫기' : '메뉴 열기'}</button>
       <nav id="main-navigation" className={menuOpen ? 'is-open' : ''} aria-label="주요 메뉴">
-        <a href="#/" onClick={() => setMenuOpen(false)} aria-current={path === '/' ? 'page' : undefined}><PixelIcon name="home" />기본 화면</a>
+        <a href="#/" onClick={() => setMenuOpen(false)} aria-current={path === '/' ? 'page' : undefined}><PixelIcon name="home" />대시보드</a>
         <a href="#/profile" onClick={() => setMenuOpen(false)} aria-current={path === '/profile' ? 'page' : undefined}><PixelIcon name="grid" />내 프로필</a>
         <a href="#/projects" onClick={() => setMenuOpen(false)} aria-current={path === '/projects' || path.startsWith('/projects/') ? 'page' : undefined}><PixelIcon name="grid" />프로젝트 관리</a>
         <a href="#/states" onClick={() => setMenuOpen(false)} aria-current={path === '/states' ? 'page' : undefined}><PixelIcon name="grid" />공통 상태 확인</a>

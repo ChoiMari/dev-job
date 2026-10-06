@@ -7,7 +7,6 @@ import { EmptyState, ErrorState, LoadingState } from './components/States';
 import { AuthPage } from './pages/AuthPage';
 import { StatePreview } from './pages/StatePreview';
 import { ProfilePage } from './pages/ProfilePage';
-import { Badge, PixelCharacter } from './components/PixelArt';
 import { ProfileSkills } from './components/ProfileSkills';
 import { JobsPage, JobDetailPage } from './pages/jobs/JobsPage';
 import { ProjectsPage } from './pages/projects/ProjectsPage';
@@ -15,6 +14,7 @@ import { BookmarksPage } from './pages/jobs/BookmarksPage';
 import { ApplicationsPage, ApplicationDetailPage } from './pages/applications/ApplicationsPage';
 import { MarketAnalyticsPage } from './pages/analytics/MarketAnalyticsPage';
 import { SkillGapPage } from './pages/analytics/SkillGapPage';
+import { DashboardPage } from './pages/dashboard/DashboardPage';
 
 const getPath = () => window.location.hash.slice(1) || '/';
 
@@ -67,7 +67,7 @@ export function App() {
   }, [checking, error, user, publicPath]);
 
   const title = publicPath ? path === '/register' ? '회원가입' : '로그인'
-    : path === '/' ? '기본 화면' : path === '/profile' ? '내 프로필' : path === '/states' ? '공통 상태 확인'
+    : path === '/' ? '대시보드' : path === '/profile' ? '내 프로필' : path === '/states' ? '공통 상태 확인'
       : path === '/projects' || path.startsWith('/projects/') ? '프로젝트 관리'
       : path === '/jobs' ? '채용공고' : path === '/bookmarks' ? '관심 공고'
       : path.startsWith('/jobs/') ? '공고 상세'
@@ -98,15 +98,7 @@ export function App() {
 
   return <Layout title={title} path={path} user={user} onLogout={logout} loggingOut={loggingOut}>
     {error && <ErrorState message={error} onRetry={() => setRetry(value => value + 1)} />}
-    {path === '/' ? <section className="card welcome-card">
-      <div className="welcome-copy">
-        <Badge tone="primary" icon="home">나의 준비 공간</Badge>
-        <h2>취업 준비를 위한 시작 공간</h2>
-        <p>{user.email} 계정으로 로그인했습니다.</p>
-        <a className="button-link button-primary" href="#/states">공통 상태 확인하기</a>
-      </div>
-      <div className="welcome-companion"><span className="character-stage"><PixelCharacter /></span><p>함께 준비해요</p></div>
-    </section> : path === '/profile' ? <>
+    {path === '/' ? <DashboardPage key={user.id} user={user} /> : path === '/profile' ? <>
       <ProfilePage key={user.id} email={user.email} onEmailChange={email => setUser(current => current ? { ...current, email } : current)} />
       <ProfileSkills key={user.id} />
     </> : path === '/projects' || path.startsWith('/projects/') ? <ProjectsPage key={`${user.id}:${path}`} location={location} />

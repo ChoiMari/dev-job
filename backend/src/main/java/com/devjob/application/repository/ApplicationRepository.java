@@ -19,4 +19,11 @@ public interface ApplicationRepository extends JpaRepository<Application, Long> 
     @Query("select a from Application a where a.id = :id")
     Optional<Application> findForUpdate(@Param("id") Long id);
     List<Application> findByUserIdAndJobIdIn(Long userId, Collection<Long> jobIds);
+    @Query("select a.currentStatus, count(a) from Application a where a.user.id = :userId group by a.currentStatus")
+    List<Object[]> countByStatus(@Param("userId") Long userId);
+    @EntityGraph(attributePaths = {"job"})
+    @Query("select a from Application a where a.user.id = :userId and a.currentStatus in :statuses "
+            + "order by case when a.nextScheduleAt is null then 1 else 0 end, a.nextScheduleAt, a.id")
+    List<Application> findNextActions(@Param("userId") Long userId,
+            @Param("statuses") Collection<ApplicationStatus> statuses, Pageable pageable);
 }
