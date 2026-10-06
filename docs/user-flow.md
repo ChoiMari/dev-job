@@ -528,7 +528,7 @@ Skill Matching
 ```text
 채용공고 분석
       ↓
-Required Skills
+Required / Preferred Skills
       ↓
 내 Skills와 비교
       ↓
@@ -799,16 +799,12 @@ Skill Gap 분석
 예:
 
 ```text
-현재 역량       시장 수요       결과
-
-Java            높음            유지
-Spring Boot     높음            유지
-Docker          높음            보완
-AWS             높음            우선 학습
-Redis           중간            후순위
+보유 기술: Java, Spring Boot
+부족 기술 1위 · Docker · 등장률 64% · 필수 48건 / 우대 16건
+부족 기술 2위 · AWS · 등장률 58% · 필수 45건 / 우대 13건
 ```
 
-MVP에서는 복잡한 AI 기반 학습 추천 시스템을 만들기보다 **기술 수요 + Skill Gap 기반의 기본 우선순위**를 제공한다.
+MVP에서는 복잡한 AI 기반 학습 추천 시스템 대신 완료 분석 공고의 필수·우대 건수와 등장률로 부족 기술을 정렬한다. 화면에는 상위 5개의 순위·기술·등장률·필수/우대 건수를 보여주며, 표본이 5건 미만이면 순위를 보류하고 5~19건이면 `표본 적음`을 알린다.
 
 ---
 
