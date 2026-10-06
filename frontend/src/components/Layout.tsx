@@ -28,6 +28,7 @@ export function Layout({ title, path, children, user, onLogout, loggingOut }: {
         <a href="#/jobs" onClick={() => setMenuOpen(false)} aria-current={path === '/jobs' || path.startsWith('/jobs/') ? 'page' : undefined}><PixelIcon name="grid" />채용공고</a>
         <a href="#/bookmarks" onClick={() => setMenuOpen(false)} aria-current={path === '/bookmarks' ? 'page' : undefined}><PixelIcon name="check" />관심 공고</a>
         <a href="#/applications" onClick={() => setMenuOpen(false)} aria-current={path === '/applications' || path.startsWith('/applications/') ? 'page' : undefined}><PixelIcon name="grid" />지원 관리</a>
+        <a href="#/analytics/skills" onClick={() => setMenuOpen(false)} aria-current={path === '/analytics/skills' ? 'page' : undefined}><PixelIcon name="grid" />채용시장 분석</a>
       </nav>
       <p className="sidebar-note">한 걸음씩 준비하는<br />나의 다음 커리어</p>
     </aside>

@@ -2,7 +2,7 @@
 
 ## 사용 방법
 
-2026-10-06 기준 main에는 **S01·S02·S02-V·S03·S04·S05·S06·S07·S08·S09·S10·S11·S12**가 통합되어 있다. S01은 Backend·PostgreSQL 기반, S02와 S02-V는 Frontend 공통 기반·픽셀 디자인, S03은 계정·인증, S04는 프로필, S05는 기술 목록·정규화, S07은 공고 저장·모의 수집, S08은 저장 공고 검색·상세, S09는 Work24 공채속보 목록 Adapter를 구현했다. 각 단계의 개별 검증 근거는 단계별 보고서에, 통합 검증 결과는 [구현 근거](portfolio-log.md)에 기록했다. 한 단계의 선행 작업을 마치면 그 단계만 구현·검증한다. 독립적인 단계는 동시에 진행할 수 있다.
+2026-10-07 기준 main에는 **S01·S02·S02-V·S03·S04·S05·S06·S07·S08·S09·S10·S11·S12·S14**가 통합되어 있다. S01은 Backend·PostgreSQL 기반, S02와 S02-V는 Frontend 공통 기반·픽셀 디자인, S03은 계정·인증, S04는 프로필, S05는 기술 목록·정규화, S07은 공고 저장·모의 수집, S08은 저장 공고 검색·상세, S09는 Work24 공채속보 목록 Adapter를 구현했다. 각 단계의 개별 검증 근거는 단계별 보고서에, 통합 검증 결과는 [구현 근거](portfolio-log.md)에 기록했다. 한 단계의 선행 작업을 마치면 그 단계만 구현·검증한다. 독립적인 단계는 동시에 진행할 수 있다.
 
 각 단계에 적힌 관련 문서만 우선 확인한다. 공통 규칙은 [AGENTS.md](../AGENTS.md), 복잡한 작업의 실행계획 기준은 [.agent/PLANS.md](../.agent/PLANS.md)를 따른다. DB·API 계약은 [ERD](erd.md)와 [API 명세](api-spec.md)가 기준이다. 구현된 API 범위는 API 명세에 표시하고, 나머지는 **설계 예정**이다.
 
@@ -143,6 +143,7 @@
 - 문서: [requirements](requirements.md), [ERD](erd.md), [API](api-spec.md), [UI](ui-spec.md).
 - 구현: 완료된 분석 공고에서 기술 수요를 집계하고 기간·직무 필터와 표본 수를 제공한다. 시장 분석 화면을 연결한다. 별도 통계 저장 테이블은 만들지 않는다.
 - 완료: 집계·필터·빈 결과 테스트, Build와 수요 화면 확인.
+- 상태: 2026-10-06 별도 worktree에서 구현·검증 후 2026-10-07 main에 통합했다. 완료 분석 공고의 게시 기간·제목 필터, 기술별 건수·비율·표본 수·페이지 API와 `#/analytics/skills` 화면을 연결했다. Backend build·일반 테스트, 격리 PostgreSQL S14 DB 테스트 2건, Frontend build·테스트 46건과 모바일 브라우저의 필터·페이지·빈 결과·오류 재시도를 확인했다. 일회용 PostgreSQL의 완료 분석 데이터를 실제 Backend·Frontend로 조회했고, 사용자가 제공한 키를 테스트 프로세스에 주입해 실제 AI 분석→정규화 기술 3개 저장→S14 집계 API→모바일 화면까지 통과했다.
 
 **S15 · Skill Gap·학습 우선순위**
 - 문서: [requirements](requirements.md), [ERD](erd.md), [API](api-spec.md), [UI](ui-spec.md).

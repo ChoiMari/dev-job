@@ -152,7 +152,7 @@ S12 구현 계약: `POST`는 서버 세션·CSRF가 필요하며 작업을 비�
 
 `Dashboard`: `{ "applicationCounts": { "PLANNED": 1, "APPLIED": 2, "INTERVIEW": 0 }, "bookmarkCount": 3, "nextActions": [{ "applicationId": 1, "jobId": 10, "status": "PLANNED", "nextScheduleAt": null }], "recommendedJobs": [JobSummary], "skillGapPreview": [Skill] }`. `nextActions`는 지원 상태·일정에서 도출하는 표시용 항목이며 별도 자유 입력·완료 체크 기능을 뜻하지 않는다. 추천 공고는 기본 규칙 기반 적합도만 사용하며 합격 확률을 의미하지 않는다. 데이터가 없거나 분석이 미완료면 해당 배열은 비어 있다.
 
-`SkillDemand`: `{ "skill": Skill, "jobCount": 136, "analyzedJobCount": 200, "ratio": 0.68 }`. 완료 분석 공고를 모수로 집계하고 표본 수를 함께 반환한다. `dateFrom`·`dateTo`는 공고 게시일 필터, `desiredRole`은 공고 제목 필터다.
+`SkillDemand`: `{ "skill": Skill, "jobCount": 136, "analyzedJobCount": 200, "ratio": 0.68 }`. 완료 분석 공고를 모수로 집계하고 표본 수를 함께 반환한다. S14 응답은 `{ "items": [SkillDemand], "page": 0, "size": 20, "totalElements": 12, "analyzedJobCount": 200 }`이며 기술 건수 내림차순, 기술명·ID 오름차순으로 정렬한다. `dateFrom`·`dateTo`는 공고 게시일의 양 끝을 포함하고, `desiredRole`은 공고 제목의 대소문자 무시 부분 일치 필터다. 날짜가 없는 공고는 기간 필터가 있을 때 제외한다. 필터는 선택 사항이며 `page`는 0부터, `size`는 기본 20·최대 100이다. 기간 역전·잘못된 날짜·페이지 값·200자를 넘는 직무명은 `400`이다. 조건에 맞는 분석이 없으면 `items: []`, `totalElements: 0`, `analyzedJobCount: 0`을 반환한다.
 
 `SkillGap`: `{ "available": true, "desiredRole": "백엔드 개발자", "items": [{ "skill": Skill, "demandJobCount": 136, "requirementType": "REQUIRED", "priority": "HIGH" }] }`. 사용자·프로젝트 기술과 목표 직무·시장 요구 기술을 비교한 기본 규칙 기반 결과다. `desiredRole`은 별도 직무 엔티티 없이 공고 제목 검색에 사용한다. 기술이 전혀 없거나 비교 가능한 공고가 없으면 `available: false`, `items: []`, `reason`으로 부족한 데이터를 알린다. 우선순위는 `HIGH|MEDIUM|LOW`의 설명 가능한 구분이며 별도 AI 추천 모델이나 저장 테이블을 뜻하지 않는다.
 
