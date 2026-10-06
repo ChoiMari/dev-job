@@ -1,8 +1,8 @@
-# DevJob REST API 명세 (MVP 설계 예정)
+# DevJob REST API 명세 (MVP 구현 기준)
 
 ## 1. 상태와 공통 계약
 
-S03의 인증 API(`/api/auth/*`), S04의 프로필 API(`/api/me/profile`), S05의 기술 API(`/api/skills`, `/api/me/skills`), S06의 프로젝트 API(`/api/me/projects`, `/api/me/projects/{projectId}`), S08의 저장 공고 조회 API(`GET /api/jobs`, `GET /api/jobs/{jobId}`), S10의 북마크 API(`GET/POST /api/bookmarks`, `DELETE /api/bookmarks/{jobId}`)와 S11의 지원·상태 이력 API(`/api/applications` 하위 6개)는 구현했다. 그 밖의 API는 설계 예정이며 구현 완료를 뜻하지 않는다. 기준 문서는 `requirements.md`, `user-flow.md`, `architecture.md`, `erd.md`다. 기본 경로는 `/api`, 요청·응답 본문은 JSON이다. 외부 채용 API 수집은 Backend의 Adapter 처리 범위이며, 근거 없는 공개 수집·관리자 API를 추가하지 않는다.
+S03~S16의 표에 있는 MVP API는 구현했다. 인증·프로필·기술·프로젝트, 저장 공고·북마크·지원, AI 분석·공고별 역량 비교·시장 기술 수요·Skill Gap·대시보드가 포함된다. 기준 문서는 `requirements.md`, `user-flow.md`, `architecture.md`, `erd.md`다. 기본 경로는 `/api`, 요청·응답 본문은 JSON이다. 외부 채용 API 수집은 Backend의 Adapter 처리 범위이며, 근거 없는 공개 수집·관리자 API를 추가하지 않는다.
 
 - `{...Id}`는 양의 정수 식별자다. 날짜는 `YYYY-MM-DD`, 일시는 시간대가 포함된 ISO 8601 문자열로 표현한다. 값이 없는 선택 필드는 `null`로 응답한다.
 - `page`·`size`를 받는 목록은 `page`(0부터 시작, 기본 0), `size`(1~100, 기본 20)를 사용하고 `{ "items": [], "page": 0, "size": 20, "totalElements": 0 }` 형태로 응답한다. 공고 `sort`는 `latest`(기본), `deadline`, `matchRate`를 허용한다. 내 기술 목록과 한 지원 건의 상태 이력은 페이지 없이 반환한다.

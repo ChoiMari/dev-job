@@ -40,6 +40,8 @@ tasks.register('dbTest', Test) {
     classpath = sourceSets.test.runtimeClasspath
     useJUnitPlatform { includeTags 'database' }
     shouldRunAfter tasks.named('test')
+    // The selected disposable database changes through DB_NAME, not Gradle task inputs.
+    outputs.upToDateWhen { false }
 }
 
 tasks.named('test') { useJUnitPlatform { excludeTags 'database', 'work24-live', 'ai-live' } }

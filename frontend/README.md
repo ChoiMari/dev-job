@@ -1,8 +1,8 @@
-# DevJob Frontend · S02
+# DevJob Frontend · MVP
 
-통합본에는 S13 공고 기술·최소 일치도 필터, 일치도 정렬, 상세의 사용자 기술 비교를 연결했다. S03의 같은 출처 세션 쿠키·CSRF를 사용한다. 구현 범위·검증은 [S13 보고](../docs/s13-validation.md)를 따른다. 아래 내용은 S02 당시의 기반 구축 기록이다.
+통합본에는 가입·로그인부터 프로필·기술·프로젝트, 공고·CRM, AI 분석·역량 비교·시장 분석·Skill Gap·대시보드까지 연결했다. S03의 같은 출처 세션 쿠키·CSRF를 사용한다. 상세 계약은 [API 명세](../docs/api-spec.md)를 따른다. 아래 S02 설명은 초기 기반 구축 기록이다.
 
-S02는 React 실행 환경과 공통 기반만 제공합니다. 실제 서비스 기능과 Backend 호출은 기본 화면에서 실행하지 않습니다.
+초기 S02 기반 구성 당시에는 React 실행 환경과 공통 화면만 제공했습니다. 현재 기능 범위는 위의 MVP 설명과 API 명세를 따릅니다.
 
 ## 실행
 
@@ -28,17 +28,27 @@ pnpm preview
 
 ## API 경계
 
-`src/api/index.ts`의 `apiRequest`는 `VITE_API_BASE_URL`을 사용합니다. 기본값 `/api`는 API 명세의 기본 경로이며 Backend 주소·포트나 Vite proxy를 임의로 정하지 않습니다. Backend가 준비되면 `.env.example`을 `.env.local`로 복사하고 공개 API URL만 설정합니다. `VITE_*` 값은 브라우저에 공개되므로 Secret을 넣지 않습니다. 교차 출처 접근 정책은 Backend와 함께 확정해야 합니다.
+`src/api/index.ts`의 `apiRequest`는 `VITE_API_BASE_URL`을 사용합니다. 기본값 `/api`는 API 명세의 기본 경로입니다. 개발 시 Vite는 `/api`를 `VITE_API_PROXY_TARGET`(기본 `http://127.0.0.1:8080`)으로 전달합니다. `.env.example`을 `.env.local`로 복사할 때 API 기본값을 `/api`로 유지합니다. `VITE_*` 값은 브라우저에 공개되므로 Secret을 넣지 않습니다. 배포 환경에서도 Frontend와 API는 같은 출처여야 합니다.
 
 공통 클라이언트는 성공 리소스 JSON을 그대로 `unknown`으로 반환합니다. 이후 기능에서 응답을 검증·좁혀 사용해야 합니다. `{ data: ... }` 같은 래퍼를 추가하지 않습니다. 204는 `undefined`, 공통 오류 `{ code, message }`는 `ApiError`로 전달합니다. 명세 밖 오류·HTML·깨진 JSON·네트워크 실패는 공통 메시지로 처리하며 `AbortSignal` 취소는 그대로 전파합니다.
 
-인증 전달 방식은 미확정입니다. 현재 클라이언트는 `credentials: 'omit'`로 쿠키를 전송하지 않고 토큰·저장소·401 리다이렉트도 구현하지 않습니다. S03에서 계약을 확정한 뒤 인증 처리를 추가해야 합니다. 공통 상태 미리보기는 UI 표시만 확인하며 실제 API 성공·실패를 의미하지 않습니다.
+현재 클라이언트는 `credentials: 'same-origin'`으로 HttpOnly 세션 쿠키를 전달하고 변경 요청마다 CSRF 토큰을 준비합니다. 인증 실패 시 로그인 화면으로 이동하며 쿠키·CSRF 토큰을 브라우저 저장소에 보관하지 않습니다. 공통 상태 미리보기는 UI 표시만 확인하며 실제 API 성공·실패를 의미하지 않습니다.
 
 ## 검증
 
+S17의 실제 Backend 화면 검증은 [S17 보고](../docs/s17-validation.md)의 일회용 DB fixture와 같은 출처 Vite proxy를 전제로 한다. 아래 스크립트는 별도로 설치된 기존 Playwright 모듈과 Edge를 사용하며 애플리케이션 의존성을 추가하지 않는다. HTTP 스크립트는 Node.js 기본 `fetch`만 사용한다.
+
+```powershell
+$env:S17_API_URL = 'http://127.0.0.1:8097'
+node tests/s17-http-flow.mjs
+$env:PLAYWRIGHT_MODULE = '<기존 playwright 모듈 절대 경로>'
+$env:S17_FRONTEND_URL = 'http://127.0.0.1:5173'
+node tests/s17-browser-flow.mjs
+```
+
 S06 프로젝트 관리는 로그인 후 `#/projects`에서 사용할 수 있다. 표준 기술을 선택해 등록하고
 상세에서 수정·삭제한다. 프로젝트 기술은 보유 기술과 독립적으로 저장한다.
-현재 S03 인증은 same-origin 쿠키와 CSRF 토큰을 사용하며 위의 S02 인증 미확정 설명은 초기 기록이다.
+현재 S03 인증은 같은 출처 쿠키와 CSRF 토큰을 사용한다.
 
 S06의 실제 브라우저 검증은 새 격리 `devjob_s06_test`를 사용하는 Backend(로컬 HTTP에서는
 `SESSION_COOKIE_SECURE=false`)와 Vite proxy에서 실행한다. 테스트 계정·페이지 검사 프로젝트를

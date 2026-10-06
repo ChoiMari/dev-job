@@ -2434,7 +2434,7 @@ Docker 기반으로 배포 환경을 구성한다.
 
 \[ ] DB Migration
 
-\[ ] CORS 설정
+\[ ] 같은 출처 `/api` 전달·HTTPS·Secure 세션 쿠키 설정
 
 \[ ] API URL 설정
 

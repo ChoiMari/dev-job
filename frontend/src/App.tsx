@@ -99,8 +99,8 @@ export function App() {
   return <Layout title={title} path={path} user={user} onLogout={logout} loggingOut={loggingOut}>
     {error && <ErrorState message={error} onRetry={() => setRetry(value => value + 1)} />}
     {path === '/' ? <DashboardPage key={user.id} user={user} /> : path === '/profile' ? <>
-      <ProfilePage key={user.id} email={user.email} onEmailChange={email => setUser(current => current ? { ...current, email } : current)} />
-      <ProfileSkills key={user.id} />
+      <ProfilePage key={`profile-${user.id}`} email={user.email} onEmailChange={email => setUser(current => current ? { ...current, email } : current)} />
+      <ProfileSkills key={`skills-${user.id}`} />
     </> : path === '/projects' || path.startsWith('/projects/') ? <ProjectsPage key={`${user.id}:${path}`} location={location} />
       : path === '/states' ? <StatePreview /> : path === '/jobs' ? <JobsPage location={location} />
       : path === '/bookmarks' ? <BookmarksPage location={location} />

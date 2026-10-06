@@ -165,6 +165,7 @@
 - 문서: [requirements](requirements.md), [user flow](user-flow.md), [architecture](architecture.md), [API](api-spec.md), [development plan](development-plan.md).
 - 구현: 가입→프로필/기술/프로젝트→공고→북마크/지원→AI→역량·시장 분석→대시보드 흐름을 점검한다. Work24·LLM 장애, Secret 관리, 문서·구현 계약과 개발 환경 재현성을 확인한다. 실제 배포 대상은 결정된 경우에만 검증한다.
 - 완료: Backend/Frontend Build, 관련 자동 테스트·핵심 흐름·장애 회귀, 문서 정합성 점검.
+- 검증 상태 (2026-10-07): 격리 PostgreSQL·실제 HTTP·390px 브라우저 흐름, Backend/Frontend build·테스트, 별도 Compose 기동을 확인했다. [S17 검증 보고](s17-validation.md)에 통과·미실행과 배포 전 결정 사항을 기록했다. 실제 배포는 사용자 검토·후속 지시까지 보류한다.
 
 ## 착수 전 확인이 필요한 결정
 

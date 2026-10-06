@@ -1,4 +1,10 @@
-# DevJob Backend · S01
+# DevJob Backend · MVP
+
+## S17 · 격리 통합 검증
+
+개발 DB 대신 새 PostgreSQL 17 테스트 컨테이너를 사용한다. `DB_HOST`·`DB_PORT`·`DB_USERNAME`·`DB_PASSWORD`를 해당 컨테이너에 맞추고 `DB_NAME=devjob_s17_test`로 새 DB를 만든다. `OPENAI_API_KEY`와 `WORK24_AUTH_KEY`는 키 없는 장애 회귀에서 설정하지 않는다. `build`는 DB 없이 실행하고 `dbTest`는 `DB_NAME`에 맞는 단계별 DB 테스트를 매 호출마다 실행한다. 다른 단계의 가드된 테스트까지 검증하려면 그 이름의 새 DB를 각각 만들고 `dbTest`를 다시 실행한다. S07 테스트는 테이블을 비우므로 반드시 일회용 `devjob_s07_test`에서만 실행한다.
+
+S17 HTTP·브라우저 흐름을 재현할 때는 새 `devjob_s17_test`에 Backend를 먼저 기동해 Flyway V1~V8을 적용한 뒤 [S17 fixture](src/test/resources/fixtures/s17-integration.sql)를 한 번만 입력한다. 이 SQL은 DB 이름과 기존 공고 부재를 확인한다. Backend는 로컬 HTTP에서만 `SESSION_COOKIE_SECURE=false`로 실행하고 Frontend는 `VITE_API_PROXY_TARGET`을 해당 Backend URL로 설정한다. 실행 스크립트와 검증 범위는 [S17 보고](../docs/s17-validation.md)에 있다.
 
 ## S06 · 프로젝트 관리
 
@@ -27,7 +33,7 @@ S11 지원·상태 이력은 [검증 보고](../docs/s11-validation.md)와 [API 
 
 ## S12 · AI 공고 분석
 
-교육프로그램 OpenAI 호환 API(`https://copa.codyssey.kr`)의 `gpt-5.4-mini`를 사용한다. 발급받은 virtual key를 서버 프로세스의 `OPENAI_API_KEY`에 주입한다. 키가 없으면 AI 요청은 `FAILED`가 되지만 저장 공고·CRM 조회는 계속 동작한다. 키는 `.env` 등 Git 제외 파일 또는 환경변수로만 관리하고 로그·응답에 넣지 않는다. `AI_BASE_URL`은 테스트·운영 환경에서 호환 API 주소를 바꿀 때만 사용한다.
+교육프로그램 OpenAI 호환 API(`https://copa.codyssey.kr`)의 `gpt-5.4-mini`를 사용한다. 발급받은 virtual key를 서버 프로세스의 `OPENAI_API_KEY`에 주입한다. 키를 사용하지 않을 때는 변수를 설정하지 않는다. 빈 문자열로 설정하면 Spring AI 초기화가 실패한다. 키가 없으면 AI 요청은 `FAILED`가 되지만 저장 공고·CRM 조회는 계속 동작한다. 키는 `.env` 등 Git 제외 파일 또는 환경변수로만 관리하고 로그·응답에 넣지 않는다. `AI_BASE_URL`은 테스트·운영 환경에서 호환 API 주소를 바꿀 때만 사용한다.
 
 S12는 `V8__create_job_analysis.sql`을 추가한다. 새 격리 DB `devjob_s12_test`에서 `build dbTest`를 실행해 Flyway V1~V8과 분석 성공·무효 출력·외부 실패·재사용을 검증한다. 실제 제공기관 호출은 `OPENAI_API_KEY`, `DB_NAME=devjob_s12_test`, `AI_LIVE_TEST=true`를 주입한 뒤 `aiLiveTest`를 명시적으로 실행할 때만 발생한다.
 
