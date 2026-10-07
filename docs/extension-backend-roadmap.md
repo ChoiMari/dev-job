@@ -1,0 +1,150 @@
+# DevJob 확장 기능 Backend 단계별 구현 계획
+
+상태: 구현 전 계획 · 2026-10-08
+
+## 목적과 적용 순서
+
+[확장 요구사항](extension-requirements.md)의 EXT-01~08을 **Backend API → 계약 검증 → Frontend 연결** 순서로 진행한다. 현재 동작하는 MVP API는 [기존 API 명세](api-spec.md)가 기준이다. 확장 API의 후보와 계약 확정 항목은 [확장 API 명세](extension-api-spec.md)에 둔다. 이 문서는 작업 순서와 각 작업의 완료 조건을 정하며, 미확정 제품 정책을 임의로 채택하지 않는다.
+
+각 단계는 **정책 결정 → 요구사항 갱신 → ERD/데이터 영향 확정 → API 요청·응답·오류 계약 확정 → Backend 구현·테스트 → 명세와 실제 응답 대조**의 순서로 닫는다. 단계 안에서 Controller·DTO·Service·Repository·migration·테스트를 필요한 범위로 묶는다. 이전 단계가 끝나지 않았더라도 의존성이 없는 단계를 착수할 수 있지만, 사용자 데이터 관계가 걸린 단계는 아래 선행 조건을 지킨다.
+
+Frontend는 B01~B15 Backend 단계의 계약 검증이 끝난 뒤 착수한다. 그때 [확장 UI 명세](extension-ui-spec.md), 확정된 API 응답, 로딩·빈 결과·오류 상태를 대조한다. Backend 완료 전 가짜 응답을 실제 기능으로 노출하지 않는다.
+
+## 단계 목록
+
+| 단계 | 요구사항 | Backend 작업 단위 | 선행 | 권장 Codex 모델·리즈닝 | 단계 완료 증거 |
+| --- | --- | --- | --- | --- | --- |
+| B00 | COM-01~06 | 전체 범위·정책 결정표, 공통 인증·CSRF·오류·페이지 계약 확인 | 기존 MVP | GPT-6 Astra · high | B01~B15 범위와 미정 정책 식별 |
+| B01 | EXT-01-01 | 현재 비밀번호 확인 후 변경 | B00 | GPT-6.1 Sol · high | 현재/새 비밀번호 검증, 다른 세션 처리, 재로그인 여부를 계약대로 테스트 |
+| B02 | EXT-02 | 보유 기술별 숙련도·경험 저장/조회 | B00 | GPT-6.1 Sol · high | 미입력·수정·삭제/재등록·사용자 격리 테스트, 기존 적합도 불변 확인 |
+| B03 | EXT-03 | 개인 할 일 CRUD·완료 | B00 | GPT-6.1 Sol · medium | 등록→재조회→수정→완료→삭제, 중복 완료와 타인 접근 테스트 |
+| B04 | EXT-05-01 | 사용자별 관심 기업 관리 | B00 | GPT-6.1 Sol · medium | 동명 기업 분리, 사용자별 메모/상태 보존, 공고와 자동 병합 없음 확인 |
+| B05 | EXT-05-02 | 이력서·버전 관리 | B00 | GPT-6.1 Sol · high | 버전별 내용·소유권·수정/삭제·재조회, 민감 내용 비노출 테스트 |
+| B06 | EXT-05-03 | 면접 일정 관리 | B00, 기존 지원 API | GPT-6.1 Sol · high | 지원 연결·취소·시간대·기존 `nextScheduleAt` 관계 검증 |
+| B07 | EXT-05-04 | 학습 목표 관리 | B02, 기존 Skill Gap API | GPT-6.1 Sol · medium | 목표와 분석 결과 분리, 결과 변경 후 학습 기록 유지 테스트 |
+| B08 | EXT-04 | 경력·지역 분포, 기간별 기술 추이 | B00, 기존 분석/공고 API | GPT-6 Astra · high | 집계 모수·결측·중복·기간 경계·빈 표본 테스트 |
+| B09 | EXT-06-01~02 | 캐릭터 기본 상태·사용 가능한 꾸미기·장착 | B00 | GPT-6.1 Sol · high | 초기 상태·재조회·소유/사용 가능 여부·동시 장착 검증 |
+| B10 | EXT-06-03~04 | 성장·보상·퀘스트 API | B03, B09, 보상 대상 활동의 API | GPT-6 Astra · high | 활동 재시도 중복 지급 방지, 취소·삭제 처리, 상태 재조회 테스트 |
+| B11 | EXT-07 | 새 공식 출처 Adapter·저장·출처 표시 | B00, 출처/이용 조건 결정 | GPT-6 Astra · high | 재수집 중복 방지, 출처 장애와 기존 CRM 격리, 기존 검색 계약 유지 |
+| B12 | EXT-08-01~02 | 이력서·자기소개서의 명시적 AI 분석 | B05, 문서 범위·비용/개인정보 결정 | GPT-6 Astra · high | 원본 버전과 결과 연결, 입력 변경 시 무효화, 실패·재시도·CRM 격리 검증 |
+| B13 | EXT-01-04 | 알림 종류별 설정과 확정된 전달 방식 | B00, 알림 종류·발송 수단 결정, 알림을 발생시키는 기능 | GPT-6.1 Sol · high | 저장/재조회·실제 제공 채널 일치 검증 |
+| B14 | EXT-08-03 | 의미 기반 비교·추천 | B11, B12, 평가 기준 결정 | GPT-6 Astra · high | 기존 적합도와 구분, 근거·한계·재현 가능한 평가 검증 |
+| B15 | EXT-01-02~03 | 삭제 영향 안내·계정 삭제 | B01~B14의 개인 데이터 단계 | GPT-6 Astra · high | 영향 목록과 실제 처리 일치, 재로그인 불가, 타인 데이터 무영향 검증 |
+
+B01~B15를 모두 개발 범위에 포함한다. B10~B14는 제품/외부 조건이 더 필요한 단계이므로 해당 단계 착수 전에 정책·이용 조건을 확정한다. B15는 새 개인 데이터의 삭제 정책까지 묶어 검증하기 위해 마지막에 둔다. 미정 항목은 **단계별 결정 대기**로 남기고 임의 계약으로 구현하지 않는다.
+
+권장 모델은 **구현 작업을 수행하는 Codex 모델**이며 DevJob 서비스가 호출하는 AI 모델이 아니다. [OpenAI 공식 모델 선택 가이드](https://developers.openai.com/api/docs/guides/model-selection)는 GPT-6.1 Sol을 복잡한 기술 작업의 균형형, Astra를 까다로운 분석·고난도 작업에 권장한다. 보안·외부 연동·AI 결과 검증·삭제처럼 설계 경계가 많은 단계에 Astra 또는 `high`를, 범위가 명확한 CRUD에는 Sol `medium`을 배정한 것은 이 프로젝트의 작업 난도에 따른 권장안이다. 모델 사용 가능 여부와 비용은 계정·제품 설정에 따라 다를 수 있다. [GPT-6.1 Sol 모델 설명](https://developers.openai.com/api/docs/models/gpt-6.1-sol)에 `medium`·`high` 지원이 명시되어 있다.
+
+## 병렬 작업과 합류 지점
+
+아래의 `∥`는 **논리적 선행 관계가 없어 동시에 진행할 수 있음**을 뜻한다. 한 번에 모든 독립 단계를 실행하라는 뜻은 아니다. 같은 저장소의 migration·공통 문서·검증 DB 충돌을 고려해 초기에는 **2~3개 단계만 동시 진행하고 순차 통합**하는 것을 권장한다. B00에서는 전체 세부 정책을 한 번에 결정하지 않고, 각 병렬 단계가 시작할 때 필요한 결정만 확정한다.
+
+| 구간 | 동시에 진행 가능한 작업 | 다음 합류 조건 |
+| --- | --- | --- |
+| 공통 출발 | B00 단독 | 공통 계약·단계 범위 정리 |
+| 독립 기반 | B01 ∥ B02 ∥ B03 ∥ B04 ∥ B05 ∥ B06 ∥ B08 ∥ B09 ∥ B11 | 각 단계의 정책/외부 조건이 확정돼야 해당 작업 착수 |
+| 첫 파생 | B07(B02 후) ∥ B10(B03+B09+보상 대상 활동 후) ∥ B12(B05 후) ∥ B13(알림 발생 기능과 종류 확정 후) | 선행 API 계약과 migration이 통합돼야 파생 단계 구현 |
+| 추천 | B14(B11+B12 후) | 새 출처·문서 분석·기존 비교 API의 의미를 함께 검증 |
+| 최종 계정 처리 | B15(B01~B14의 개인 데이터 단계 후) | 모든 개인 데이터의 삭제·보존 정책과 실제 처리가 일치 |
+| Frontend 인계 | B01~B15 완료 후 | API 예시·오류·권한·빈 상태·비동기 결과와 테스트 근거 확인 |
+
+B04 기업과 B11 출처를 동시에 진행할 때는 기업 식별/연결 정책을 먼저 공유한다. B08 통계와 B11 출처를 동시에 진행할 때는 새 출처를 집계 모수에 포함할지 계약을 먼저 맞춘다. B13 알림은 실제로 알림을 발생시키는 기능의 이벤트 계약이 확정된 뒤 연결한다. 서로 다른 작업이 같은 migration 번호, 공통 예외 처리, `docs/api-spec.md`·`docs/erd.md`의 같은 절을 동시에 수정하지 않도록 담당 범위를 정하고 **한 단계씩 통합·회귀 검증**한다. 병렬 작업의 완료 보고는 해당 단계 브랜치의 결과이며 전체 Backend 완료를 뜻하지 않는다.
+
+## 착수 전 결정표
+
+| 결정 | 관련 단계 | 결정이 없을 때 막히는 계약 |
+| --- | --- | --- |
+| 비밀번호 변경 후 현재·다른 세션 처리 | B01 | 성공 응답 후 인증 상태, CSRF 재발급 |
+| 숙련도 척도·경험 단위/범위·삭제 후 재등록 | B02, B07 | 필드 타입·검증·응답값·데이터 보존 |
+| 할 일 필수 필드·기한/시간대·완료 취소·삭제 방식 | B03, B10 | CRUD DTO, 상태 전이, 중복 보상 방지 |
+| 기업 식별·공고 연결 정책 | B04 | 동일 기업 판단, 참조 필드, 중복 오류 |
+| 이력서 텍스트/파일·버전·삭제·민감정보 보관 | B05, B12 | 업로드/본문 계약, 버전 ID, AI 입력 경계 |
+| 면접과 지원 `nextScheduleAt` 동기화·연결 필수 여부 | B06 | 일정 생성·취소의 부작용, 충돌 처리 |
+| 학습 완료와 보유 기술/Skill Gap의 관계 | B07 | 완료 처리와 분석 재계산 여부 |
+| 통계 모수·날짜·경력/지역 구간·미상·표본 기준 | B08 | 집계 DTO, 필터, 비율 분모와 소수점 처리 |
+| 기본 캐릭터/아이템 범위·성장 규칙·소급/취소 | B09~B10 | 카탈로그, 장착·EXP·보상 계약 |
+| 계정 데이터별 삭제/보존·복구 가능 여부 | B15 | 영향 안내, 실제 삭제 트랜잭션과 로그인 무효화 |
+| 새 공식 출처·이용 조건·갱신/실행 방식 | B11 | Adapter, 수집 트리거, 공개 API 필요 여부 |
+| AI 분석 목적·출력 검증·비용·동의·재분석 | B12, B14 | 상태/결과 DTO와 외부 호출 경계 |
+| 알림 종류·전달 수단 | B13 | 설정 목록과 실제 발송의 일치 |
+
+정책 선택은 해당 단계에 필요한 것만 결정한다. 결정 결과를 [확장 요구사항](extension-requirements.md)에 기록하고, 데이터 구조는 [ERD](erd.md), REST 계약은 [확장 API 명세](extension-api-spec.md)에 반영한다.
+
+## 단계별 프롬프트에 지정할 문서
+
+모든 Backend 작업에서 `AGENTS.md`, 이 로드맵, `docs/extension-requirements.md`, `docs/api-spec.md`, `docs/extension-api-spec.md`를 기준으로 한다. **해당 단계에 필요한 절만** 읽고, 아래 추가 문서를 지정한다. 여러 계층·문서·migration을 함께 바꾸는 단계는 `.agent/PLANS.md`에 따라 실행계획을 세운다.
+
+| 단계 | 프롬프트에 추가로 명시할 문서·절 | 확인할 기존 경계 |
+| --- | --- | --- |
+| B00 | `docs/erd.md`, `docs/architecture.md`, `.agent/PLANS.md` | 기존 MVP와 확장의 데이터·계약 경계 |
+| B01 | `docs/api-spec.md` 2절, `docs/architecture.md` 인증 경계 | 세션·CSRF·비밀번호 규칙 |
+| B02 | `docs/api-spec.md` 3·6절, `docs/erd.md` 기술 관계 | 기존 기술 목록과 적합도 계산 |
+| B03 | `docs/api-spec.md` 6절, `docs/erd.md` | 대시보드 `nextActions`와 개인 할 일 분리 |
+| B04 | `docs/api-spec.md` 4절, `docs/erd.md` 회사·공고 관계 | 공용 회사와 사용자 기록 구분 |
+| B05 | `docs/erd.md`, `docs/architecture.md` 데이터 경계 | 이력서 버전·민감 내용 보관 |
+| B06 | `docs/api-spec.md` 5절, `docs/erd.md` 지원 관계 | 지원 상태/다음 일정과 별도 면접 일정 |
+| B07 | `docs/api-spec.md` 6절, `docs/erd.md` 기술 관계 | Skill Gap 결과와 사용자 학습 기록 |
+| B08 | `docs/api-spec.md` 4·6절, `docs/erd.md` 공고·분석 관계 | 기존 기술 수요의 집계 모수 |
+| B09 | `docs/erd.md`, `docs/redesign-image-manifest.md` | 캐릭터 상태와 실제 자산 ID의 연결 |
+| B10 | `docs/erd.md`, `docs/api-spec.md` 6절 | 서버 검증 활동·EXP·중복 지급 |
+| B11 | `docs/architecture.md` 외부 API Adapter 경계, `docs/api-spec.md` 4절 | 저장 공고/출처 필터와 외부 장애 격리 |
+| B12 | `docs/architecture.md` AI 처리 경계, `docs/erd.md` | 원본 버전·출력 검증·저장/재시도 |
+| B13 | `docs/architecture.md` 외부 의존 경계, `docs/erd.md` | 알림 설정과 실제 전달 이벤트 |
+| B14 | `docs/architecture.md` AI 처리 경계, `docs/api-spec.md` 4·6절 | 기존 `matchRate`와 새 추천 구분 |
+| B15 | `docs/erd.md`, `docs/api-spec.md` 2절 | 전체 개인 데이터의 삭제·보존·세션 무효화 |
+
+`docs/extension-ui-spec.md`와 `docs/frontend-redesign-proposal.md`는 **Frontend 인계 시** 기본 참조 문서다. Backend 단계에서 특정 응답 필드가 화면 행동을 바꿀 때만 그 부분을 확인한다. 이미지 산출물 문서는 B09의 자산 ID 확인처럼 필요한 경우에만 읽는다.
+
+## 단계별 Codex 작업 요청 틀
+
+```text
+docs/extension-backend-roadmap.md의 B[번호] 한 단계만 진행해 줘.
+모델은 표의 권장 Codex 모델·리즈닝 수준으로 설정할게.
+AGENTS.md와 이 로드맵, docs/extension-requirements.md의 해당 EXT 항목,
+docs/api-spec.md의 관련 기존 계약, docs/extension-api-spec.md의 해당 B 절,
+[위 표의 단계별 추가 문서]를 참고해. 복잡한 다단계 작업이면 .agent/PLANS.md를 따라.
+먼저 선행 단계의 통합 상태와 이 단계의 미확정 정책을 확인해.
+결정 대기인 정책은 나에게 정확한 선택지를 제시하고, 확정 전에는 해당 API를 구현하지 마.
+확정되면 요구사항→ERD→요청·응답·오류 계약을 동기화한 뒤 Backend만 구현해.
+인증·소유권·입력 검증·중복/동시성·저장 후 재조회·관련 회귀를 검증하고
+문서와 실제 응답을 대조해. 변경 파일, 테스트 결과, 남은 결정을 보고해.
+Frontend와 다른 단계의 파일은 수정하지 마. 커밋·푸시는 요청하지 않았어.
+```
+
+### 복사해서 쓰는 예시
+
+**B02 기술 숙련도 — GPT-6.1 Sol · high**
+
+```text
+B02만 진행해 줘. AGENTS.md, docs/extension-backend-roadmap.md B02,
+docs/extension-requirements.md EXT-02, docs/extension-api-spec.md B02,
+docs/api-spec.md 3·6절, docs/erd.md의 기술 관계를 참고해.
+숙련도 척도·경험 단위·삭제/재등록 정책을 먼저 확인하고 결정 대기라면 선택지를 정리해 줘.
+확정된 뒤 기존 기술 목록/적합도 계약을 유지하며 Backend API·migration·테스트를 구현해.
+Frontend는 수정하지 마.
+```
+
+**B12 문서 AI 분석 — GPT-6 Astra · high**
+
+```text
+B05가 통합된 상태에서 B12만 진행해 줘. AGENTS.md, docs/extension-backend-roadmap.md B12,
+docs/extension-requirements.md EXT-08-01~02, docs/extension-api-spec.md B12,
+docs/architecture.md의 AI 처리 경계, docs/erd.md, docs/api-spec.md 4절을 참고해.
+자기소개서 저장 모델·동의·비용·분석 결과 스키마를 먼저 확인해.
+정책 확정 뒤 원본 버전 연결, 출력 검증·정규화, 실패/재시도, CRM 조회 격리까지
+Backend에서 구현·검증하고 실제 응답과 명세를 맞춰 줘. Frontend는 수정하지 마.
+```
+
+**B15 계정 삭제 — GPT-6 Astra · high**
+
+```text
+B01~B14의 개인 데이터 단계가 통합된 뒤 B15만 진행해 줘.
+AGENTS.md, docs/extension-requirements.md EXT-01-02~03,
+docs/extension-backend-roadmap.md B15, docs/extension-api-spec.md B15,
+docs/api-spec.md 2절, docs/erd.md를 참고해.
+삭제/보존 범위와 복구 가능 여부를 먼저 확정하고 영향 안내 응답과 실제 처리의 일치를 검증해.
+다른 사용자·공용 데이터 보호, 세션 무효화, 재로그인 불가, 실패 시 원자성을 테스트해.
+Frontend는 수정하지 마.
+```
+
+한 단계의 완료는 **코드 작성**이 아니라 계약 표의 요청/응답/오류와 실제 동작, 필요한 데이터 이전, 보안·회귀 테스트가 일치하는 것으로 판정한다. B01~B15 Backend 전체가 끝나면 확정된 API만 기준으로 Frontend 작업 단위를 나눈다.
