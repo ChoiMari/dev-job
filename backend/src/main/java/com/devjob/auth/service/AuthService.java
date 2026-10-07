@@ -37,11 +37,30 @@ public class AuthService {
 
     @Transactional(readOnly = true)
     public CurrentUser authenticate(Credentials credentials) {
+        return authenticateSession(credentials).user();
+    }
+
+    @Transactional(readOnly = true)
+    public SessionLogin authenticateSession(Credentials credentials) {
         var user = users.findByEmail(credentials.email());
         boolean matches = passwords.matches(credentials.password(), user.map(User::getPasswordHash).orElse(dummyHash));
         if (user.isEmpty() || !matches) throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
-        return new CurrentUser(user.get().getId(), user.get().getEmail());
+        return new SessionLogin(new CurrentUser(user.get().getId(), user.get().getEmail()),
+                user.get().getCredentialVersion());
     }
+
+    @Transactional
+    public void changePassword(Long userId, com.devjob.auth.dto.PasswordChangeRequest request) {
+        var user = users.findByIdForUpdate(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+        if (!passwords.matches(request.currentPassword(), user.getPasswordHash()))
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
+        if (passwords.matches(request.newPassword(), user.getPasswordHash()))
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
+        user.changePassword(passwords.encode(request.newPassword()));
+    }
+
+    public record SessionLogin(CurrentUser user, long credentialVersion) { }
 
     @Transactional(readOnly = true)
     public CurrentUser current(Long id) {

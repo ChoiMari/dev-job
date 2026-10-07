@@ -16,6 +16,9 @@ public class User {
     @Column(name = "password_hash", nullable = false, length = 100)
     private String passwordHash;
 
+    @Column(name = "credential_version", nullable = false)
+    private long credentialVersion;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -31,4 +34,9 @@ public class User {
     public String getEmail() { return email; }
     public void changeEmail(String email) { this.email = email; }
     public String getPasswordHash() { return passwordHash; }
+    public long getCredentialVersion() { return credentialVersion; }
+    public void changePassword(String passwordHash) {
+        this.passwordHash = passwordHash;
+        this.credentialVersion++;
+    }
 }

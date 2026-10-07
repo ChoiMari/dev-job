@@ -40,6 +40,12 @@ B01~B15를 모두 개발 범위에 포함한다. B10~B14는 제품/외부 조건
 - 기존 `SecurityConfig`·`AuthController`·`GlobalExceptionHandler`와 페이지 DTO·검증 코드를 명세에 대조했다. Backend 비DB 회귀 테스트 104건이 통과했다. 이 검증은 새 확장 API의 실제 HTTP 응답이나 DB 통합 동작을 검증한 결과는 아니다.
 - 아래 결정표의 항목은 모두 **관련 단계 착수 시 결정 대기**다. B00 자체에는 새 제품 정책 선택이 필요하지 않다. 각 단계는 필요한 선택을 사용자에게 제시하고 확정 전에는 해당 API를 구현하지 않는다.
 
+### B01 통합 확인 (2026-10-08)
+
+- 사용자가 변경 성공 후 현재 세션 로그아웃·다른 세션 모두 무효화·현재 비밀번호 재사용 거절을 확정했다. 요구사항 EXT-01-01, ERD, 확장 API 명세 B01, MVP API 명세 2절과 인증 경계를 동기화했다.
+- `PATCH /api/auth/password`와 Flyway V12의 사용자 인증 버전을 구현했다. 격리 PostgreSQL 17에서 성공 `204`/빈 본문·쿠키 삭제, 잘못된 입력 `400`, 현재 비밀번호 오류 `401`, CSRF 오류 `403`, 기존 세션 `401`, 다른 사용자 세션 유지, 재로그인, 같은 사용자의 동시 변경을 검증했다.
+- Backend 일반 테스트 104건 통과. 격리 DB `dbTest` 85건 중 12건 실행·73건은 다른 단계 전용 DB 가드로 건너뛰었고 실행 실패는 없다. Frontend 및 B02~B15는 이 검증 범위가 아니다.
+
 권장 모델은 **구현 작업을 수행하는 Codex 모델**이며 DevJob 서비스가 호출하는 AI 모델이 아니다. [OpenAI 공식 모델 선택 가이드](https://developers.openai.com/api/docs/guides/model-selection)는 GPT-6.1 Sol을 복잡한 기술 작업의 균형형, Astra를 까다로운 분석·고난도 작업에 권장한다. 보안·외부 연동·AI 결과 검증·삭제처럼 설계 경계가 많은 단계에 Astra 또는 `high`를, 범위가 명확한 CRUD에는 Sol `medium`을 배정한 것은 이 프로젝트의 작업 난도에 따른 권장안이다. 모델 사용 가능 여부와 비용은 계정·제품 설정에 따라 다를 수 있다. [GPT-6.1 Sol 모델 설명](https://developers.openai.com/api/docs/models/gpt-6.1-sol)에 `medium`·`high` 지원이 명시되어 있다.
 
 ## 병렬 작업과 합류 지점

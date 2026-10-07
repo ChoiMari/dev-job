@@ -2073,6 +2073,8 @@ MVP에서는 명시적인 규칙 기반으로 구현할 수 있다.
 
 S03 확정: Spring Security 기반 서버 세션 + HttpOnly `JSESSIONID` 쿠키를 같은 출처에서 전달한다. 로그인 시 세션 ID와 CSRF 토큰을 교체하고 로그아웃 시 서버 세션을 무효화한다. 세션은 메모리에서 비활동 30분 동안 유지되며 서버 재시작 시 만료된다. 다중 서버·세션 공유 저장소는 이번 범위에 추가하지 않는다.
 
+B01 비밀번호 변경은 인증 Controller → AuthService → UserRepository 경계에서 현재 비밀번호를 확인하고 사용자 행 잠금 아래 BCrypt 해시와 인증 버전을 함께 갱신한다. 성공 후 현재 세션을 무효화한다. 다른 세션은 보호 API 요청 시 세션에 기록한 버전과 DB 버전을 비교해 거절하며 세션 저장소는 여전히 메모리 기반이다.
+
 CSRF는 세션에 저장하고 `GET /api/auth/csrf`로 받은 토큰을 POST의 `X-CSRF-TOKEN` 헤더로 보낸다. Spring Security 필터의 인증·권한 오류도 공통 JSON 계약을 따른다. 인증 Controller → AuthService → UserRepository 경계를 유지하고 Entity를 API에 직접 노출하지 않는다. 세션 인증 주체에는 사용자 ID·이메일만 두고 비밀번호·해시는 포함하지 않는다.
 
 비밀번호는 BCrypt로 저장한다. API에서 UTF-8 최대 72바이트를 검증해 BCrypt 입력 잘림을 막는다. 이메일은 공백 제거·소문자로 정규화하고 DB UNIQUE 제약으로 동시 중복 가입을 막는다. 쿠키 Secure는 기본 true이며 로컬 HTTP에서는 `SESSION_COOKIE_SECURE=false`를 명시한다. Frontend 개발은 Vite `/api` proxy, 배포는 같은 출처의 API 제공을 전제로 한다. 상세 요청·응답은 `api-spec.md` 2절을 따른다.

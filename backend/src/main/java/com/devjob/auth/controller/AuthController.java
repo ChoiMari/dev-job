@@ -2,6 +2,7 @@ package com.devjob.auth.controller;
 
 import com.devjob.auth.dto.Credentials;
 import com.devjob.auth.dto.CurrentUser;
+import com.devjob.auth.dto.PasswordChangeRequest;
 import com.devjob.auth.service.AuthService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -44,7 +45,8 @@ public class AuthController {
     @PostMapping("/login")
     public LoginResponse login(@Valid @RequestBody Credentials credentials,
             HttpServletRequest request, HttpServletResponse response) {
-        var user = auth.authenticate(credentials);
+        var sessionLogin = auth.authenticateSession(credentials);
+        var user = sessionLogin.user();
         var authentication = UsernamePasswordAuthenticationToken.authenticated(user, null,
                 List.of(new SimpleGrantedAuthority("ROLE_USER")));
         if (request.getSession(false) != null) request.changeSessionId();
@@ -53,11 +55,21 @@ public class AuthController {
         context.setAuthentication(authentication);
         SecurityContextHolder.setContext(context);
         contexts.saveContext(context, request, response);
+        request.getSession().setAttribute("DEVJOB_CREDENTIAL_VERSION", sessionLogin.credentialVersion());
         return new LoginResponse(user);
     }
 
     @GetMapping("/me")
     public CurrentUser me(@AuthenticationPrincipal CurrentUser user) { return auth.current(user.id()); }
+
+    @PatchMapping("/password")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void changePassword(@AuthenticationPrincipal CurrentUser user,
+            @Valid @RequestBody PasswordChangeRequest body,
+            HttpServletRequest request, HttpServletResponse response) {
+        auth.changePassword(user.id(), body);
+        logout(request, response);
+    }
 
     @PostMapping("/logout")
     @ResponseStatus(HttpStatus.NO_CONTENT)
