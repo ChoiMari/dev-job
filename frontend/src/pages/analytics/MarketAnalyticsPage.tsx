@@ -4,6 +4,7 @@ import { createAnalyticsApi } from '../../api/analytics';
 import type { SkillDemandPage } from '../../api/analytics';
 import { EmptyState, ErrorState, LoadingState } from '../../components/States';
 import './market.css';
+import marketBarsArt from '../../assets/illustrations/market-bars.png';
 
 const analytics = createAnalyticsApi(apiRequest);
 const validDate = (value: string) => !value || /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(`${value}T00:00:00`));
@@ -38,7 +39,7 @@ export function MarketAnalyticsPage({ location }: { location: string }) {
     window.location.hash = `/analytics/skills?${query}`;
   };
   return <div className="market-page">
-    <section className="card"><p>AI 분석이 완료된 저장 공고에서 기술 수요를 집계합니다.</p>
+    <section className="card"><div className="market-intro"><p>AI 분석이 완료된 저장 공고에서 기술 수요를 집계합니다.</p><img src={marketBarsArt} alt="" aria-hidden="true" width="96" height="96" /></div>
       <form className="market-filters" onSubmit={event => {
         event.preventDefault();
         if (!validDate(draft.dateFrom) || !validDate(draft.dateTo) || draft.dateFrom && draft.dateTo && draft.dateFrom > draft.dateTo

@@ -1,0 +1,20 @@
+# Frontend 픽셀 아트 에셋 지도
+
+`docs/ui-spec.md`의 크림 배경, 라벤더 중심 색상, 절제된 픽셀 아트 기준에 맞춰 화면 머리말을 보조한다. 기존 `PixelCharacter`와 상태 아이콘은 유지한다. 첫 묶음 3개(대시보드·공고 목록·지원 목록), 두 번째 묶음 4개(관심 공고·프로젝트·역량·시장), 세 번째 묶음 4개(인증·프로필·공고 상세·지원 상세)에 대시보드 배너 1개를 더했다. 아래 크기는 파일 해상도와 화면 표시 크기를 구분한다.
+
+| 파일 경로 | 화면 경로 · 컴포넌트 | 표시 목적 | 원본 · 권장 표시 크기 | 투명 배경 | 접근성 처리 | 제작·교체 시 주의사항 |
+| --- | --- | --- | --- | --- | --- | --- |
+| `frontend/src/assets/illustrations/dashboard-desk.png` | `#/` · `DashboardPage` 다음 행동 머리말 | 취업 준비 행동의 가벼운 시각 단서 | 192×192px · 데스크톱 64×64px, 모바일 48×48px | 예 | 주변 `다음 행동` 제목이 의미를 전달하므로 `alt=""`, `aria-hidden="true"` | 생성 원본을 최근접 이웃으로 축소한 PNG. 텍스트·수치·상태를 이미지에 넣지 말 것. 기존 캐릭터와 시각적 비중을 경쟁시키지 말 것. |
+| `frontend/src/assets/illustrations/dashboard-hero.webp` | `#/` · `DashboardPage` 첫 화면 배너 | 취업 준비 공간의 따뜻한 분위기와 픽셀 아트 콘셉트 전달 | 708×520px · 데스크톱 최대 460px 너비, 모바일 최대 225px 너비 | 예 | 문구가 별도로 있으므로 `alt=""`, `aria-hidden="true"` | Image Gen 원본을 내용에 맞게 자르고 최근접 이웃으로 축소한 WebP(약 244KB). 텍스트·실제 공고/지원 데이터·성장 상태를 넣지 말고 모바일에서 버튼을 가리지 않도록 배치할 것. |
+| `frontend/src/assets/illustrations/job-search.png` | `#/jobs` · `JobsPage` 검색 폼 머리말 | 공고 탐색의 시각 단서 | 192×192px · 데스크톱 96×96px, 모바일 64×64px | 예 | 검색 폼과 제목에 정보가 있으므로 `alt=""`, `aria-hidden="true"` | 종이 위의 선은 읽을 수 있는 글자가 아니다. 실제 공고 내용이나 검색 결과를 그림으로 암시하지 말 것. |
+| `frontend/src/assets/illustrations/application-cards.png` | `#/applications` · `ApplicationsPage` 소개 카드 | 지원 기록 관리의 시각 단서 | 192×192px · 데스크톱 96×96px, 모바일 64×64px | 예 | 제목·설명과 중복되므로 `alt=""`, `aria-hidden="true"` | 체크 표시는 특정 지원 건의 완료 상태가 아니다. 실제 상태는 텍스트 배지와 이력으로만 전달할 것. |
+| `frontend/src/assets/illustrations/saved-jobs.png` | `#/bookmarks` · `BookmarksPage` 목록 머리말 | 저장한 공고를 다시 확인하는 맥락 | 192×192px · 데스크톱 96×96px, 모바일 64×64px | 예 | 제목·설명이 있으므로 `alt=""`, `aria-hidden="true"` | 리본은 실제 저장 여부를 대신하지 않는다. 카드의 텍스트 배지를 유지할 것. |
+| `frontend/src/assets/illustrations/project-folder.png` | `#/projects`, `#/projects/new`, `#/projects/{id}` · `ProjectsPage` 목록·편집 머리말 | 프로젝트 경험 기록의 시각 단서 | 192×192px · 데스크톱 96×96px, 모바일 64×64px | 예 | 제목·폼 라벨이 있으므로 `alt=""`, `aria-hidden="true"` | 목록·등록·상세에서 같은 파일을 재사용한다. 실제 프로젝트 내용이나 기술을 그림에 넣지 말 것. |
+| `frontend/src/assets/illustrations/skill-puzzle.png` | `#/skill-gap` · `SkillGapPage` 필터 머리말 | 기술 비교의 시각 단서 | 192×192px · 데스크톱 96×96px, 모바일 64×64px | 예 | 설명문과 결과가 의미를 전달하므로 `alt=""`, `aria-hidden="true"` | 퍼즐은 적합도 점수나 결과의 좋고 나쁨을 뜻하지 않는다. |
+| `frontend/src/assets/illustrations/market-bars.png` | `#/analytics/skills` · `MarketAnalyticsPage` 필터 머리말 | 기술 수요 조회의 시각 단서 | 192×192px · 데스크톱 96×96px, 모바일 64×64px | 예 | 실제 수요 수치가 별도 텍스트·막대로 제공되므로 `alt=""`, `aria-hidden="true"` | 그림의 막대 높이는 데이터가 아니다. 실제 차트와 혼동되지 않게 머리말에만 사용할 것. |
+| `frontend/src/assets/illustrations/auth-welcome.png` | `#/login`, `#/register` · `AuthPage` 캐릭터 옆 | 인증 카드의 환영 장식 | 192×192px · 48×48px | 예 | 로그인·가입 설명과 중복되므로 `alt=""`, `aria-hidden="true"` | 기존 SVG 캐릭터를 대체하지 않는다. 보안 상태나 인증 성공을 암시하지 말 것. |
+| `frontend/src/assets/illustrations/profile-card.png` | `#/profile` · `ProfilePage` 소개 문구 | 프로필 입력 맥락 | 192×192px · 데스크톱 96×96px, 모바일 64×64px | 예 | 입력 라벨이 의미를 전달하므로 `alt=""`, `aria-hidden="true"` | 실제 사용자 사진이나 저장된 프로필 데이터로 오인되지 않게 추상적인 형태를 유지할 것. |
+| `frontend/src/assets/illustrations/job-detail.png` | `#/jobs/{id}` · `JobDetailPage` 공고 머리말 | 공고 내용 확인의 시각 단서 | 192×192px · 데스크톱 96×96px, 모바일 64×64px | 예 | 회사·제목·본문이 있으므로 `alt=""`, `aria-hidden="true"` | AI 분석·일치도·공고 출처와 무관한 장식이다. 결과나 점수를 표시하지 말 것. |
+| `frontend/src/assets/illustrations/application-detail.png` | `#/applications/{id}` · `ApplicationDetailPage` 머리말 | 메모·일정 관리의 시각 단서 | 192×192px · 데스크톱 96×96px, 모바일 64×64px | 예 | 텍스트 상태 배지와 일정이 의미를 전달하므로 `alt=""`, `aria-hidden="true"` | 이미지의 달력은 실제 지원 일정·상태를 뜻하지 않는다. 체크·날짜·합격 표현을 넣지 말 것. |
+
+모든 에셋은 `image-rendering: pixelated`로 표시하며 이미지가 로드되지 않아도 제목·필터·상태·행동은 그대로 사용 가능해야 한다. 교체 시 실제 알파 채널, 색상 토큰과의 조화, 모바일 320px 폭에서 가로 넘침을 확인한다. 생성 원본은 앱 외부에 있으며 프론트에서 참조하는 최종 파일은 위 경로다. 공통 상태 미리보기 `#/states`와 UI-010의 안내용 캐릭터는 기존 정적 SVG를 사용한다.

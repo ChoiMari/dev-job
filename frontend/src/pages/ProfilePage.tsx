@@ -3,6 +3,7 @@ import { profileApi } from '../api';
 import { ApiError } from '../api/client';
 import type { Profile, ProfileInput } from '../api/profile';
 import { EmptyState, ErrorState, LoadingState, SuccessState } from '../components/States';
+import profileCardArt from '../assets/illustrations/profile-card.png';
 
 const blank = (email: string): ProfileInput => ({ email, name: '', desiredRole: null, careerLevel: null,
   desiredLocation: null, introduction: null, education: null, certifications: null });
@@ -53,7 +54,7 @@ export function ProfilePage({ email, onEmailChange }: { email: string; onEmailCh
       ? <ErrorState message={loadError} onRetry={() => setRetry(value => value + 1)} />
       : <>
         {!profile && <EmptyState title="아직 프로필이 없습니다." message="기본 정보를 입력해 첫 프로필을 저장해 주세요." />}
-        <p className="profile-intro">{profile ? '저장된 취업 정보를 수정할 수 있습니다.' : '이름과 이메일을 입력하고 필요한 취업 정보를 추가하세요.'}</p>
+        <div className="profile-intro-art"><p className="profile-intro">{profile ? '저장된 취업 정보를 수정할 수 있습니다.' : '이름과 이메일을 입력하고 필요한 취업 정보를 추가하세요.'}</p><img src={profileCardArt} alt="" aria-hidden="true" width="96" height="96" /></div>
         {saved && <SuccessState compact title="프로필을 저장했습니다." message="저장된 정보를 다시 불러와 확인할 수 있습니다." />}
         <form onSubmit={submit} className="profile-form">
           <div className="profile-grid">

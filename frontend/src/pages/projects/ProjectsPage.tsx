@@ -8,6 +8,7 @@ import type { Skill, SkillPage } from '../../api/skills';
 import { Badge } from '../../components/PixelArt';
 import { EmptyState, ErrorState, LoadingState, SuccessState } from '../../components/States';
 import './projects.css';
+import projectFolderArt from '../../assets/illustrations/project-folder.png';
 
 const projects = createProjectsApi(apiRequest);
 const skills = createSkillsApi(apiRequest);
@@ -40,8 +41,8 @@ function ProjectList() {
     return () => controller.abort();
   }, [page, retry]);
   return <section className="card projects-page">
+    <div className="project-intro"><div><h2>프로젝트 관리</h2><p>프로젝트에서 사용한 기술과 역할, 성과를 기록하세요.</p></div><img src={projectFolderArt} alt="" aria-hidden="true" width="96" height="96" /></div>
     <div className="project-actions"><Badge tone="primary" icon="grid">나의 경험</Badge><a className="button-link button-primary" href="#/projects/new">프로젝트 추가</a></div>
-    <p>프로젝트에서 사용한 기술과 역할, 성과를 기록하세요.</p>
     {loading || (!!result && result.page !== page) ? <LoadingState message="프로젝트를 불러오고 있습니다." /> : error ? <ErrorState message={error} onRetry={() => setRetry(v => v + 1)} />
       : result && <>
         {result.items.length === 0 ? <EmptyState title={page === 0 ? '등록한 프로젝트가 없습니다.' : '이 페이지에 프로젝트가 없습니다.'}
@@ -115,6 +116,7 @@ function ProjectEditor({ id }: { id?: number }) {
   }
   return <section className="card projects-page">
     <a className="button-link" href="#/projects">← 프로젝트 목록</a>
+    <div className="project-intro"><h2>{id ? '프로젝트 상세' : '새 프로젝트'}</h2><img src={projectFolderArt} alt="" aria-hidden="true" width="96" height="96" /></div>
     {loading ? <LoadingState message="프로젝트를 불러오고 있습니다." /> : loadError
       ? loadStatus === 404 || loadStatus === 403 ? <EmptyState title={loadStatus === 404 ? '프로젝트를 찾을 수 없습니다.' : '접근 권한이 없습니다.'} message={loadError} />
         : <ErrorState message={loadError} onRetry={() => setRetry(v => v + 1)} />

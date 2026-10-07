@@ -1,4 +1,7 @@
 .projects-page { display: grid; gap: 20px; }
+.project-intro { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.project-intro > div { min-width: 0; }
+.project-intro img { width: 96px; height: 96px; flex: 0 0 auto; object-fit: contain; image-rendering: pixelated; }
 .projects-page h2, .projects-page p { margin: 0; }
 .project-actions, .project-badges { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .project-list, .project-selected, .project-skill-results { list-style: none; padding: 0; margin: 0; display: grid; gap: 16px; }
@@ -18,4 +21,4 @@
 .project-selected li, .project-skill-results li { display: flex; gap: 12px; align-items: center; justify-content: space-between; overflow-wrap: anywhere; }
 .project-skills { border-top: 1px solid var(--border); padding-top: 16px; }
 .project-delete { display: grid; gap: 12px; padding: 16px; border: 1px solid var(--input-border); border-radius: 8px; }
-@media (max-width: 599px) { .project-grid { grid-template-columns: 1fr; } .project-list > li { padding: 16px; } }
+@media (max-width: 599px) { .project-grid { grid-template-columns: 1fr; } .project-list > li { padding: 16px; } .project-intro img { width: 64px; height: 64px; } }

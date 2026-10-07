@@ -7,6 +7,7 @@ import { Badge } from '../../components/PixelArt';
 import { EmptyState, ErrorState, LoadingState } from '../../components/States';
 import { Metadata } from './JobsPage';
 import './jobs.css';
+import savedJobsArt from '../../assets/illustrations/saved-jobs.png';
 
 const bookmarks = createBookmarksApi(apiRequest);
 export function BookmarksPage({ location }: { location: string }) {
@@ -33,6 +34,7 @@ export function BookmarksPage({ location }: { location: string }) {
   }, [search, page, size, retry]);
   return <div className="jobs-page"><a className="button-link" href="#/jobs">채용공고 찾아보기</a>
     <section className="card" aria-label="관심 공고 목록" aria-busy={loading}>
+      <div className="job-search-heading"><div><h2>관심 공고</h2><p>저장한 공고를 다시 확인하세요.</p></div><img src={savedJobsArt} alt="" aria-hidden="true" width="96" height="96" /></div>
       {loading ? <LoadingState message="관심 공고를 불러오고 있습니다." />
         : error ? <ErrorState message={error} onRetry={() => setRetry(value => value + 1)} /> : data && <>
           <p role="status">총 {data.totalElements}건 · {data.page + 1}페이지</p>

@@ -14,6 +14,8 @@ import { JobMatch } from '../../components/JobMatch';
 import { createSkillsApi } from '../../api/skills';
 import type { SkillPage } from '../../api/skills';
 import './jobs.css';
+import jobSearchArt from '../../assets/illustrations/job-search.png';
+import jobDetailArt from '../../assets/illustrations/job-detail.png';
 
 const jobs = createJobsApi(apiRequest);
 const skills = createSkillsApi(apiRequest);
@@ -92,6 +94,7 @@ export function JobsPage({ location }: { location: string }) {
       for (const [key, value] of values) if (String(value).trim()) query.set(key, String(value).trim());
       query.set('page', '0'); window.location.hash = `/jobs?${query}`;
     }}>
+      <div className="job-search-heading"><div><h2>채용공고 탐색</h2><p>검색 조건을 선택해 공고를 찾아보세요.</p></div><img src={jobSearchArt} alt="" aria-hidden="true" width="96" height="96" /></div>
       <div className="job-filter-grid">{fields.map((field, i) => <label key={field}>{labels[i]}
         <input name={field} defaultValue={params.get(field) || ''} type={field === 'deadlineBefore' ? 'date' : 'text'} maxLength={200}
           placeholder={field === 'careerLevel' ? '예: 신입 (정확히 일치)' : field === 'employmentType' ? '예: 정규직 (정확히 일치)' : undefined} />
@@ -156,7 +159,7 @@ export function JobDetailPage({ location }: { location: string }) {
     <section className="card" aria-busy={loading}>{loading ? <LoadingState message="공고 상세를 불러오고 있습니다." />
       : missing ? <EmptyState title="공고를 찾을 수 없습니다." message="삭제되었거나 존재하지 않는 공고입니다. 목록에서 다시 선택해 주세요." />
       : error ? <ErrorState message={error} onRetry={() => setRetry(v => v + 1)} /> : data && <>
-        <Badge icon="grid">{data.source}</Badge><p>{data.company.name}</p><h2>{data.title}</h2>
+        <div className="job-detail-intro"><div><Badge icon="grid">{data.source}</Badge><p>{data.company.name}</p><h2>{data.title}</h2></div><img src={jobDetailArt} alt="" aria-hidden="true" width="96" height="96" /></div>
         <Metadata job={data} /><p>게시일: {shown(data.postedDate)}</p>
         <a className="button-link button-primary" href={data.sourceUrl} target="_blank" rel="noopener noreferrer">외부 원문 보기 (새 창)</a>
         <BookmarkButton key={`${data.id}-bookmark`} jobId={data.id} saved={data.bookmarked}

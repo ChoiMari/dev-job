@@ -15,6 +15,8 @@ import { ApplicationsPage, ApplicationDetailPage } from './pages/applications/Ap
 import { MarketAnalyticsPage } from './pages/analytics/MarketAnalyticsPage';
 import { SkillGapPage } from './pages/analytics/SkillGapPage';
 import { DashboardPage } from './pages/dashboard/DashboardPage';
+import { CharacterPage } from './pages/CharacterPage';
+import { SettingsPage } from './pages/SettingsPage';
 
 const getPath = () => window.location.hash.slice(1) || '/';
 
@@ -72,10 +74,12 @@ export function App() {
       : path === '/jobs' ? '채용공고' : path === '/bookmarks' ? '관심 공고'
       : path.startsWith('/jobs/') ? '공고 상세'
       : path === '/applications' ? '지원 관리' : path.startsWith('/applications/') ? '지원 상세'
-      : path === '/analytics/skills' ? '채용시장 분석' : path === '/skill-gap' ? '역량 분석' : '화면을 찾을 수 없습니다';
+      : path === '/analytics/skills' ? '채용시장 분석' : path === '/skill-gap' ? '역량 분석'
+      : path === '/character' ? '내 캐릭터' : path === '/settings' ? '설정' : '화면을 찾을 수 없습니다';
   useEffect(() => {
     document.title = `${title} · DevJob`;
-    document.getElementById('main-content')?.focus();
+    window.scrollTo(0, 0);
+    document.getElementById('main-content')?.focus({ preventScroll: true });
   }, [path, title, checking]);
 
   async function logout() {
@@ -108,6 +112,8 @@ export function App() {
       : path === '/applications' ? <ApplicationsPage location={location} />
       : path === '/analytics/skills' ? <MarketAnalyticsPage location={location} />
       : path === '/skill-gap' ? <SkillGapPage location={location} />
+      : path === '/character' ? <CharacterPage />
+      : path === '/settings' ? <SettingsPage user={user} onLogout={logout} loggingOut={loggingOut} />
       : path.startsWith('/applications/') ? <ApplicationDetailPage key={path} location={location} /> : <section className="card">
       <EmptyState title="화면을 찾을 수 없습니다." message="주소를 확인하거나 기본 화면으로 돌아가 주세요." />
       <a className="button-link" href="#/">기본 화면으로</a>

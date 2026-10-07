@@ -4,6 +4,7 @@ import { createSkillGapApi } from '../../api/skill-gap';
 import type { SkillGap } from '../../api/skill-gap';
 import { EmptyState, ErrorState, LoadingState } from '../../components/States';
 import './skill-gap.css';
+import skillPuzzleArt from '../../assets/illustrations/skill-puzzle.png';
 
 const api = createSkillGapApi(apiRequest);
 const reasons: Record<string, { title: string; message: string }> = {
@@ -35,7 +36,7 @@ export function SkillGapPage({ location }: { location: string }) {
   } : null;
   return <div className="skill-gap-page">
     <section className="card">
-      <p>내 기술과 분석 완료 공고의 요구 기술을 비교합니다.</p>
+      <div className="skill-gap-intro"><p>내 기술과 분석 완료 공고의 요구 기술을 비교합니다.</p><img src={skillPuzzleArt} alt="" aria-hidden="true" width="96" height="96" /></div>
       <form className="skill-gap-filter" onSubmit={event => {
         event.preventDefault();
         const role = draft.trim();

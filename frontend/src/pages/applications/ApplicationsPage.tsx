@@ -8,6 +8,8 @@ import type { ApplicationStatus } from '../../api/application-status';
 import { ApplicationStatusBadge } from '../../components/ApplicationStatusBadge';
 import { EmptyState, ErrorState, LoadingState, SuccessState } from '../../components/States';
 import './applications.css';
+import applicationCardsArt from '../../assets/illustrations/application-cards.png';
+import applicationDetailArt from '../../assets/illustrations/application-detail.png';
 
 const api = createApplicationsApi(apiRequest);
 const dateTime = (value: string | null) => value ? new Date(value).toLocaleString() : '일정 없음';
@@ -39,12 +41,12 @@ export function ApplicationsPage({ location }: { location: string }) {
   const backQuery = new URLSearchParams({ from: search });
   return <div className="applications-page">
     <section className="card">
+      <div className="application-intro"><div><h2>지원 진행 현황</h2><p>각 지원 건의 상세에서 다음 단계, 메모와 일정을 관리하세요.</p></div><img src={applicationCardsArt} alt="" aria-hidden="true" width="96" height="96" /></div>
       <div className="application-actions"><label>지원 상태 필터<select value={filter || ''} onChange={event => {
         const query = new URLSearchParams(); if (event.target.value) query.set('status', event.target.value);
         query.set('page', '0'); window.location.hash = `/applications?${query}`;
       }}><option value="">전체 상태</option>{applicationStatuses.map(status => <option key={status} value={status}>{statusLabels[status]}</option>)}</select></label>
         <a className="button-link" href="#/jobs">공고에서 지원 등록</a></div>
-      <p>각 지원 건의 상세에서 다음 단계, 메모와 일정을 관리하세요.</p>
     </section>
     <section className="card application-results" aria-busy={loading} aria-label="지원 현황">
       {loading ? <LoadingState message="지원 목록을 불러오고 있습니다." /> : error ? <ErrorState message={error} onRetry={() => setRetry(value => value + 1)} /> : data && <>
@@ -118,7 +120,7 @@ export function ApplicationDetailPage({ location }: { location: string }) {
     <section className="card" aria-busy={loading}>
       {loading ? <LoadingState message="지원 상세를 불러오고 있습니다." /> : missing ? <EmptyState title="지원 기록을 찾을 수 없습니다." message="목록에서 지원 기록을 다시 선택해 주세요." />
         : error ? <ErrorState message={error} onRetry={() => setRetry(value => value + 1)} /> : data && <>
-          <p>{data.job.company.name}</p><h2>{data.job.title}</h2><ApplicationStatusBadge status={data.currentStatus} />
+          <div className="application-detail-intro"><div><p>{data.job.company.name}</p><h2>{data.job.title}</h2></div><img src={applicationDetailArt} alt="" aria-hidden="true" width="96" height="96" /></div><ApplicationStatusBadge status={data.currentStatus} />
           <p>지원일: {data.appliedDate || '지원 전'}</p><a className="button-link" href={`#/jobs/${data.job.id}`}>공고 상세 보기</a>
           {success && <SuccessState message={success} compact />}
           {saveError && <><ErrorState message={saveError} /><button type="button" disabled={busy} onClick={() => {

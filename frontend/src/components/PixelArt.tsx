@@ -8,6 +8,13 @@ const icons = {
   error: 'M4 1h8v2h2v10h-2v2H4v-2H2V3h2zM7 4v5h2V4zM7 11v2h2v-2z',
   clock: 'M4 1h8v2h2v10h-2v2H4v-2H2V3h2zM4 4v8h8V4zM7 5h2v3h2v2H7z',
   menu: 'M2 3h12v2H2zM2 7h12v2H2zM2 11h12v2H2z',
+  jobs: 'M5 2h6v2h4v9H1V4h4zM7 4h2V3H7zM3 6v5h10V6zM6 7h4v2H6z',
+  bookmark: 'M4 1h8v14l-4-3-4 3zM6 3v8l2-2 2 2V3z',
+  profile: 'M6 2h4v4H6zM3 9h10v5H3zM5 11v1h6v-1z',
+  folder: 'M1 3h5l2 2h7v9H1zM3 7v5h10V7z',
+  chart: 'M2 10h2v4H2zM6 7h2v7H6zM10 3h2v11h-2zM14 1h1v13h-1z',
+  spark: 'M7 1h2v4h4v2H9v4H7V7H3V5h4zM12 11h2v2h2v1h-2v2h-2v-2h-2v-1h2z',
+  calendar: 'M3 1h2v2h6V1h2v2h2v12H1V3h2zM3 6v7h10V6zM5 8h2v2H5z',
 } as const;
 
 export type PixelIconName = keyof typeof icons;
