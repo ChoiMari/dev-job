@@ -50,11 +50,17 @@ public final class ApplicationInput {
     }
     private static void invalid() { throw new IllegalArgumentException("Invalid application input"); }
 
-    public record Create(Long jobId, ApplicationStatus status, LocalDate appliedDate, String note, Instant nextScheduleAt) {
+    public record Create(Long jobId, Long personalSavedJobId, ApplicationStatus status, LocalDate appliedDate, String note, Instant nextScheduleAt) {
+        public Create(Long jobId, ApplicationStatus status, LocalDate appliedDate, String note, Instant nextScheduleAt) {
+            this(jobId, null, status, appliedDate, note, nextScheduleAt);
+        }
         @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
         public static Create parse(JsonNode node) {
-            fields(node, Set.of("jobId", "status", "appliedDate", "note", "nextScheduleAt"));
-            return new Create(id(node.get("jobId")), ApplicationInput.status(node.get("status")), date(node.get("appliedDate")),
+            fields(node, Set.of("jobId", "personalSavedJobId", "status", "appliedDate", "note", "nextScheduleAt"));
+            if (node.hasNonNull("jobId") == node.hasNonNull("personalSavedJobId")) invalid();
+            return new Create(node.hasNonNull("jobId") ? id(node.get("jobId")) : null,
+                    node.hasNonNull("personalSavedJobId") ? id(node.get("personalSavedJobId")) : null,
+                    ApplicationInput.status(node.get("status")), date(node.get("appliedDate")),
                     ApplicationInput.note(node.get("note")), schedule(node.get("nextScheduleAt")));
         }
     }

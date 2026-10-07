@@ -30,3 +30,6 @@
 .job-analysis ul { display: flex; flex-wrap: wrap; gap: 8px; padding: 0; list-style: none; }
 .job-analysis li { padding: 6px 10px; background: var(--success-soft); border-radius: 6px; }
 @media (max-width: 600px) { .job-filter-grid, .job-metadata { grid-template-columns: 1fr; } .jobs-page > .card { padding: 20px; } .job-search-heading img, .job-detail-intro img { width: 64px; height: 64px; } }
+.job-recruitment-list { display: grid; gap: .6rem; padding-left: 1.4rem; }
+.job-recruitment-list li { overflow-wrap: anywhere; }
+.job-recruitment-list li span { display: inline-block; margin-left: .7rem; }

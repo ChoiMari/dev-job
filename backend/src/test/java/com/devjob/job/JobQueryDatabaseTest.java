@@ -84,6 +84,34 @@ class JobQueryDatabaseTest {
         mvc.perform(get("/api/jobs").with(authentication(principal)).param("deadlineBefore", "2026-10-10"))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.items[0].id").value(second)).andExpect(jsonPath("$.totalElements").value(1));
     }
+    @Test void itOnlyFiltersBeforePagingInRegularAndMatchRateSearch() throws Exception {
+        for (String sort : new String[]{"latest", "matchRate"}) {
+            mvc.perform(get("/api/jobs").with(authentication(principal)).param("itOnly", "true")
+                    .param("sort", sort).param("size", "1"))
+                    .andExpect(status().isOk()).andExpect(jsonPath("$.totalElements").value(2));
+            mvc.perform(get("/api/jobs").with(authentication(principal)).param("itOnly", "true")
+                    .param("sort", sort).param("size", "1").param("page", "2"))
+                    .andExpect(status().isOk()).andExpect(jsonPath("$.items").isEmpty());
+        }
+    }
+    @Test void sourceFiltersStoredJobsBeforePagingInBothSearchPaths() throws Exception {
+        var alio = sources.save(new JobSource("ALIO_RECRUITMENT", "공공기관 채용"));
+        long alioJob = posting(alio, "Public", "보안 개발자", "서울", "신입", "정규직", "2026-10-03", "2026-11-03", "body");
+        jobs.flush();
+        for (String sort : new String[]{"latest", "matchRate"}) {
+            mvc.perform(get("/api/jobs").with(authentication(principal)).param("source", "ALIO_RECRUITMENT")
+                    .param("itOnly", "true").param("sort", sort).param("size", "1"))
+                    .andExpect(status().isOk()).andExpect(jsonPath("$.totalElements").value(1))
+                    .andExpect(jsonPath("$.items[0].id").value(alioJob))
+                    .andExpect(jsonPath("$.items[0].source").value("ALIO_RECRUITMENT"));
+            mvc.perform(get("/api/jobs").with(authentication(principal)).param("source", "ALIO_RECRUITMENT")
+                    .param("sort", sort).param("size", "1").param("page", "1"))
+                    .andExpect(status().isOk()).andExpect(jsonPath("$.totalElements").value(1))
+                    .andExpect(jsonPath("$.items").isEmpty());
+        }
+        mvc.perform(get("/api/jobs").with(authentication(principal)).param("source", "WORK24_OPEN_RECRUITMENT"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.totalElements").value(0));
+    }
     @Test void emptyResultsAndNoAnalysisDetailKeepOriginalContent() throws Exception {
         mvc.perform(get("/api/jobs").with(authentication(principal)).param("q", "no-such-job"))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.items").isEmpty()).andExpect(jsonPath("$.totalElements").value(0));
@@ -100,7 +128,7 @@ class JobQueryDatabaseTest {
     @Test void invalidFiltersDatesAndIdsReturn400() throws Exception {
         String[][] invalid = {{"page", "-1"}, {"page", "abc"}, {"size", "0"}, {"size", "101"}, {"sort", "other"},
                 {"deadlineBefore", "2026-02-30"}, {"q", "x".repeat(201)},
-                {"skillId", "0"}, {"minMatchRate", "101"}, {"applicationStatus", "UNKNOWN"}};
+                {"skillId", "0"}, {"minMatchRate", "101"}, {"applicationStatus", "UNKNOWN"}, {"source", "bad-source"}};
         for (var filter : invalid) mvc.perform(get("/api/jobs").with(authentication(principal)).param(filter[0], filter[1]))
                 .andExpect(status().isBadRequest()).andExpect(jsonPath("$.code").value("INVALID_INPUT"));
         for (String id : new String[]{"0", "-1", "invalid", "9223372036854775808"})

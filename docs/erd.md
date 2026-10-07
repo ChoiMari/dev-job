@@ -2,7 +2,7 @@
 
 ## 1. 범위와 설계 판단
 
-이 문서는 `requirements.md`, `user-flow.md`, `ui-spec.md`, `architecture.md`, `development-plan.md`에 명시된 **MVP 데이터 구조의 설계안**이다. S03의 `User`, S04의 `Profile`, S05의 `Skill`·`SkillAlias`·`UserSkill`, S06의 `Project`·`ProjectSkill`, S07의 `Company`·`JobSource`·`JobPosting`, S10의 `Bookmark`, S11의 `Application`·`ApplicationStatusHistory`를 Entity와 migration으로 구현했으며 나머지는 설계 예정이다. DB는 `architecture.md`의 PostgreSQL을 전제로 한다.
+이 문서는 `requirements.md`, `user-flow.md`, `ui-spec.md`, `architecture.md`, `development-plan.md`에 명시된 **MVP 데이터 구조의 설계안**이다. S03의 `User`, S04의 `Profile`, S05의 `Skill`·`SkillAlias`·`UserSkill`, S06의 `Project`·`ProjectSkill`, S07의 `Company`·`JobSource`·`JobPosting`, S10의 `Bookmark`, S11의 `Application`·`ApplicationStatusHistory`와 추가 개인 관심공고 `PersonalSavedJob`을 Entity와 migration으로 구현했다. DB는 `architecture.md`의 PostgreSQL을 전제로 한다.
 
 S01에서 스키마 적용은 Flyway SQL migration + JPA `validate`로 확정했다. S01은 연결 기반과 Flyway 이력 테이블만 구성하며, 아래 도메인 테이블은 후속 단계에서 Entity와 migration을 함께 구현한다.
 
@@ -44,8 +44,11 @@ erDiagram
     JobPosting ||--o| AIAnalysis : analyzed_as
     User ||--o{ Bookmark : saves
     JobPosting ||--o{ Bookmark : saved_as
+    User ||--o{ PersonalSavedJob : saves_directly
     User ||--o{ Application : submits
     JobPosting ||--o{ Application : applied_to
+    PersonalSavedJob ||--o{ Application : applied_to
+    PersonalSavedJob ||--o| PersonalSavedJobAnalysis : analyzed_as
     Application ||--o{ ApplicationStatusHistory : changes
 ```
 
@@ -84,8 +87,10 @@ S06 물리 매핑: `V5__create_projects.sql`은 `project`·`project_skill`만 �
 | 엔티티 | 목적 | 주요 컬럼 및 키 | 핵심 제약 |
 | --- | --- | --- | --- |
 | `Company` | 공고를 게시한 기업 | `id` PK, `name` | `name` 필수; 동명 기업 가능성을 고려해 이름만으로 유일성을 강제하지 않음 |
-| `JobSource` | 공식 채용 데이터 출처 | `id` PK, `code`, `name` | `code` 필수·유일; MVP 출처는 Work24, Saramin은 공식 사용 조건을 충족한 이후 추가 |
+| `JobSource` | 공식 채용 데이터 출처 | `id` PK, `code`, `name` | `code` 필수·유일; 출처는 Work24와 ALIO_RECRUITMENT를 구분 |
 | `JobPosting` | 외부 공고의 정규화된 원문·기본 정보 | `id` PK, `job_source_id` FK, `external_id`, `company_id` FK, `title`, `description`, `employment_type`, `career_requirement`, `location`, `posted_date`, `deadline_date`, `source_url`, `created_at`, `updated_at` | 출처·외부 ID·회사·제목·원문 URL 필수; `(job_source_id, external_id)` 유일. 마감일이 있으면 게시일보다 빠를 수 없음 |
+| `JobRecruitmentStep` | 청년일자리 공고의 전형 단계 | `job_posting_id`·`external_id` 복합 PK, `sort_order`, `title`, `openings`, `applicants`, `competition_rate`, `event_date` | 공고 FK는 삭제 시 단계 메타정보만 함께 삭제 |
+| `JobRecruitmentAttachment` | 청년일자리 공고의 첨부파일 메타정보 | `job_posting_id`·`external_id` 복합 PK, `sort_order`, `name`, `file_type`, `url` | 파일 본문은 저장하지 않음; 공고 FK는 삭제 시 메타정보만 함께 삭제 |
 | `AIAnalysis` | 공고별 현재 분석 상태와 검증된 구조화 결과 | `id` PK, `job_posting_id` FK, `status`, `result_json`, `failure_reason`, `analyzed_at`, `updated_at` | `job_posting_id` 필수·유일; `status ∈ {PENDING, COMPLETED, FAILED}`. `COMPLETED` 결과만 검증·정규화해 저장; 실패 시 공고 본문은 유지 |
 | `JobSkill` | 공고의 정규화된 요구 기술 | `id` PK, `job_posting_id` FK, `skill_id` FK, `requirement_type` | `(job_posting_id, skill_id)` 유일; `requirement_type ∈ {REQUIRED, PREFERRED}` |
 
@@ -102,10 +107,14 @@ S11 물리 매핑: `V7__create_applications.sql`은 기존 데이터를 변경�
 | 엔티티 | 목적 | 주요 컬럼 및 키 | 핵심 제약 |
 | --- | --- | --- | --- |
 | `Bookmark` | 사용자별 관심 공고 | `id` PK, `user_id` FK, `job_posting_id` FK, `created_at` | `(user_id, job_posting_id)` 유일 |
-| `Application` | 공고별 현재 지원 상황 | `id` PK, `user_id` FK, `job_posting_id` FK, `current_status`, `applied_date`, `next_schedule_at`, `note`, `created_at`, `updated_at` | `(user_id, job_posting_id)` 유일; 상태는 아래 허용값 중 하나 |
+| `PersonalSavedJob` | 사용자 직접 등록 개인 관심공고 | `id` PK, `user_id` FK, `url`, `company_name`, `title`, `role`, `career_level`, `location`, `employment_type`, `deadline_date`, `note`, `description`, `created_at`, `updated_at`, `deleted_at` | 활성 `(user_id, url)` 부분 UNIQUE. 삭제는 `deleted_at`을 채워 이력 보존 |
+| `PersonalSavedJobAnalysis` | 사용자가 붙여넣은 개인 공고 본문의 AI 분석 | `personal_saved_job_id` PK·FK, `status`, `result_json`, `failure_reason`, `analyzed_at`, `updated_at` | 개인 공고당 최대 한 행. 제목·본문 수정 시 기존 결과 삭제 |
+| `Application` | 공고별 현재 지원 상황 | `id` PK, `user_id` FK, nullable `job_posting_id` FK, nullable `personal_saved_job_id` FK, `current_status`, `applied_date`, `next_schedule_at`, `note`, `created_at`, `updated_at` | 두 공고 FK 중 정확히 하나만 값; 사용자·공고 종류별 유일; 상태는 아래 허용값 중 하나 |
 | `ApplicationStatusHistory` | 지원 상태 변경 기록 | `id` PK, `application_id` FK, `from_status`, `to_status`, `changed_at` | `to_status`, `changed_at` 필수; 최초 등록 시 `from_status`는 비움; 상태가 실제 변경될 때마다 한 행 추가 |
 
 `Bookmark`와 `Application`은 각각 사용자와 공고 사이의 관계에 별도 의미와 속성이 있어 중간 테이블로 둔다. `Application.current_status`의 허용값은 `INTERESTED`, `PLANNED`, `APPLIED`, `DOCUMENT_PASSED`, `INTERVIEW`, `FINAL_PASSED`, `REJECTED`, `WITHDRAWN`이다. 지원일은 실제 지원을 기록할 때 사용하며, 메모와 다음 일정은 사용자 흐름에 있는 선택 정보다. 상태의 전이 가능 여부는 `user-flow.md`를 따르며 DB의 허용값 제약만으로 전이 규칙을 대신하지 않는다.
+
+`V10__personal_saved_jobs.sql`은 공용 `JobPosting`/`Bookmark`를 변경하지 않고 `personal_saved_job`을 추가한다. 기존 `application.job_posting_id`는 nullable로 바뀌지만 기존 행은 그대로 유지한다. `ck_application_one_job`과 개인 공고별 부분 UNIQUE가 두 참조를 보호한다. `V11__personal_saved_job_analysis.sql`은 개인 공고 본문과 별도 분석 테이블을 추가한다. 개인 공고는 `JobSource`나 공용 `ai_analysis`·`job_skill`에 연결하지 않는다.
 
 ## 4. 공통 제약과 조회 기준
 

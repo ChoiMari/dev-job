@@ -8,6 +8,7 @@ import com.devjob.analysis.entity.AIAnalysis;
 import com.devjob.job.entity.JobPosting;
 import com.devjob.job.repository.JobPostingRepository;
 import com.devjob.job.repository.JobMatchQueryRepository;
+import com.devjob.job.repository.JobRecruitmentDetailRepository;
 import com.devjob.analysis.entity.JobSkill;
 import com.devjob.application.entity.Application;
 import com.devjob.application.repository.ApplicationRepository;
@@ -33,10 +34,13 @@ public class JobQueryService {
     private final AIAnalysisRepository analyses;
     private final JobSkillRepository jobSkills;
     private final JobMatchQueryRepository matchQueries;
+    private final JobRecruitmentDetailRepository recruitmentDetails;
     public JobQueryService(JobPostingRepository jobs, BookmarkRepository bookmarks, ApplicationRepository applications,
-            AIAnalysisRepository analyses, JobSkillRepository jobSkills, JobMatchQueryRepository matchQueries) {
+            AIAnalysisRepository analyses, JobSkillRepository jobSkills, JobMatchQueryRepository matchQueries,
+            JobRecruitmentDetailRepository recruitmentDetails) {
         this.jobs = jobs; this.bookmarks = bookmarks; this.applications = applications;
         this.analyses = analyses; this.jobSkills = jobSkills; this.matchQueries = matchQueries;
+        this.recruitmentDetails = recruitmentDetails;
     }
 
     public JobPage search(Long userId, JobQuery input) {
@@ -53,6 +57,11 @@ public class JobQueryService {
                         cb.desc(root.get("id")));
             }
             var filters = new ArrayList<Predicate>();
+            if (input.itOnly()) filters.add(cb.or(ItJobTitles.TERMS.stream()
+                    .map(term -> contains(cb, root.get("title"), term)).toArray(Predicate[]::new)));
+            if (input.role() != null) filters.add(cb.or(JobRoles.TERMS.get(input.role()).stream()
+                    .map(term -> contains(cb, root.get("title"), term)).toArray(Predicate[]::new)));
+            if (input.source() != null) filters.add(cb.equal(root.join("jobSource").get("code"), input.source()));
             if (input.applicationStatus() != null) {
                 var owned = query.subquery(Long.class);
                 var application = owned.from(Application.class);
@@ -61,8 +70,10 @@ public class JobQueryService {
                         cb.equal(application.get("currentStatus"), ApplicationService.parseStatus(input.applicationStatus())));
                 filters.add(cb.exists(owned));
             }
-            if (input.q() != null) filters.add(cb.or(contains(cb, root.get("title"), input.q()),
-                    contains(cb, company.get("name"), input.q())));
+            if (input.q() != null) filters.add(input.q().length() < 3
+                    ? cb.or(contains(cb, root.get("title"), input.q()), contains(cb, company.get("name"), input.q()))
+                    : cb.or(contains(cb, root.get("title"), input.q()), contains(cb, company.get("name"), input.q()),
+                            contains(cb, root.get("description"), input.q())));
             if (input.company() != null) filters.add(contains(cb, company.get("name"), input.company()));
             if (input.location() != null) filters.add(contains(cb, root.get("location"), input.location()));
             if (input.careerLevel() != null) filters.add(cb.equal(cb.lower(root.get("careerRequirement")), input.careerLevel().toLowerCase(Locale.ROOT)));
@@ -116,7 +127,8 @@ public class JobQueryService {
         return JobDetail.from(job, bookmarks.existsByUserIdAndJobId(userId, id),
                 owned.isEmpty() ? null : owned.get(0).getCurrentStatus().name(), analysis,
                 analysis != null && analysis.getStatus() == AIAnalysis.Status.COMPLETED ? jobSkills.findForJob(id) : java.util.List.of(),
-                matchQueries.ratesForJobs(userId, java.util.List.of(id)).get(id));
+                matchQueries.ratesForJobs(userId, java.util.List.of(id)).get(id),
+                "ALIO_RECRUITMENT".equals(job.getJobSource().getCode()) ? recruitmentDetails.find(id) : null);
     }
 
     private Predicate contains(CriteriaBuilder cb, Expression<String> field, String value) {

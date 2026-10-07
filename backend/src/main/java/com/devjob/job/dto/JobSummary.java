@@ -1,11 +1,12 @@
 package com.devjob.job.dto;
 
 import com.devjob.job.entity.JobPosting;
+import com.devjob.job.service.JobRoles;
 import java.time.LocalDate;
 
 public record JobSummary(Long id, String title, CompanyView company, String source, String location,
         String careerRequirement, String employmentType, LocalDate deadlineDate,
-        Integer matchRate, boolean bookmarked, String applicationStatus) {
+        Integer matchRate, boolean bookmarked, String applicationStatus, String role) {
     public record CompanyView(Long id, String name) { }
     public static JobSummary from(JobPosting job) {
         return from(job, false, null);
@@ -22,6 +23,7 @@ public record JobSummary(Long id, String title, CompanyView company, String sour
     public static JobSummary from(JobPosting job, boolean bookmarked, String applicationStatus, Integer matchRate) {
         return new JobSummary(job.getId(), job.getTitle(), new CompanyView(job.getCompany().getId(),
                 job.getCompany().getName()), job.getJobSource().getCode(), job.getLocation(),
-                job.getCareerRequirement(), job.getEmploymentType(), job.getDeadlineDate(), matchRate, bookmarked, applicationStatus);
+                job.getCareerRequirement(), job.getEmploymentType(), job.getDeadlineDate(), matchRate, bookmarked, applicationStatus,
+                JobRoles.classify(job.getTitle()));
     }
 }

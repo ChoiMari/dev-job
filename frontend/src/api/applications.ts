@@ -2,17 +2,18 @@ import { ApiError } from './client.ts';
 import type { createApiClient } from './client.ts';
 import { isJobSummary } from './jobs.ts';
 import type { JobSummary } from './jobs.ts';
+import type { ManualSavedJob } from './saved-jobs.ts';
 import { isApplicationStatus } from './application-status.ts';
 import type { ApplicationStatus } from './application-status.ts';
 
 export type Application = {
-  id: number; job: JobSummary; currentStatus: ApplicationStatus; appliedDate: string | null;
+  id: number; job: JobSummary | null; personalSavedJob: ManualSavedJob | null; currentStatus: ApplicationStatus; appliedDate: string | null;
   nextScheduleAt: string | null; note: string | null; createdAt: string; updatedAt: string;
 };
 export type ApplicationPage = { items: Application[]; page: number; size: number; totalElements: number };
 export type ApplicationHistory = { id: number; fromStatus: ApplicationStatus | null; toStatus: ApplicationStatus; changedAt: string };
 export type CreateApplication = {
-  jobId: number; status: 'INTERESTED' | 'PLANNED' | 'APPLIED'; appliedDate: string | null; note: string | null; nextScheduleAt: string | null;
+  jobId?: number; personalSavedJobId?: number; status: 'INTERESTED' | 'PLANNED' | 'APPLIED'; appliedDate: string | null; note: string | null; nextScheduleAt: string | null;
 };
 const object = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null;
 const integer = (v: unknown): v is number => typeof v === 'number' && Number.isSafeInteger(v) && v >= 0;
@@ -20,10 +21,12 @@ const text = (v: unknown) => v === null || typeof v === 'string';
 const instant = (v: unknown) => typeof v === 'string' && /(?:Z|[+-]\d{2}:\d{2})$/.test(v) && Number.isFinite(Date.parse(v));
 const invalid = () => new ApiError('지원 정보 응답을 확인할 수 없습니다.', 200, 'INVALID_RESPONSE');
 function parse(v: unknown): Application {
-  if (!object(v) || !integer(v.id) || v.id < 1 || !isJobSummary(v.job) || !isApplicationStatus(v.currentStatus)
+  if (!object(v) || !integer(v.id) || v.id < 1 || (isJobSummary(v.job) === (v.personalSavedJob !== null))
+      || (v.personalSavedJob !== null && (!object(v.personalSavedJob) || !integer(v.personalSavedJob.id)))
+      || !isApplicationStatus(v.currentStatus)
       || !text(v.note) || !(v.appliedDate === null || (typeof v.appliedDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v.appliedDate)))
       || !(v.nextScheduleAt === null || instant(v.nextScheduleAt)) || !instant(v.createdAt) || !instant(v.updatedAt)
-      || v.job.applicationStatus !== v.currentStatus) throw invalid();
+      || (isJobSummary(v.job) && v.job.applicationStatus !== v.currentStatus)) throw invalid();
   return v as Application;
 }
 function validId(id: number) {
@@ -49,7 +52,10 @@ export function createApplicationsApi(request: ReturnType<typeof createApiClient
         && (item.fromStatus === null || isApplicationStatus(item.fromStatus)) && isApplicationStatus(item.toStatus) && instant(item.changedAt))) throw invalid();
       return v as ApplicationHistory[];
     },
-    create(input: CreateApplication) { validId(input.jobId); return mutate('/applications', 'POST', input); },
+    create(input: CreateApplication) {
+      if (!!input.jobId === !!input.personalSavedJobId) throw new ApiError('지원 공고를 선택해 주세요.', 400, 'INVALID_INPUT');
+      validId(input.jobId || input.personalSavedJobId || 0); return mutate('/applications', 'POST', input);
+    },
     update(id: number, input: { note?: string | null; nextScheduleAt?: string | null }) {
       validId(id); return mutate(`/applications/${id}`, 'PATCH', input);
     },

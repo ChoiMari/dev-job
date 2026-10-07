@@ -9,7 +9,7 @@ import type { Skill } from './analysis.ts';
 export type Dashboard = {
   applicationCounts: Record<ApplicationStatus, number>;
   bookmarkCount: number;
-  nextActions: { applicationId: number; jobId: number; jobTitle: string; status: ApplicationStatus; nextScheduleAt: string | null }[];
+  nextActions: { applicationId: number; jobId: number | null; jobTitle: string; status: ApplicationStatus; nextScheduleAt: string | null }[];
   recommendedJobs: JobSummary[];
   skillGapPreview: Skill[];
 };
@@ -19,7 +19,7 @@ export function isDashboard(value: unknown): value is Dashboard {
   return object(value) && object(value.applicationCounts) && applicationStatuses.every(status => count((value.applicationCounts as Record<string, unknown>)[status]))
     && count(value.bookmarkCount) && Array.isArray(value.nextActions) && value.nextActions.length <= 5
     && value.nextActions.every(action => object(action) && count(action.applicationId) && action.applicationId > 0
-      && count(action.jobId) && action.jobId > 0 && typeof action.jobTitle === 'string' && isApplicationStatus(action.status)
+      && (action.jobId === null || (count(action.jobId) && action.jobId > 0)) && typeof action.jobTitle === 'string' && isApplicationStatus(action.status)
       && (action.nextScheduleAt === null || (typeof action.nextScheduleAt === 'string' && Number.isFinite(Date.parse(action.nextScheduleAt)))))
     && Array.isArray(value.recommendedJobs) && value.recommendedJobs.length <= 3 && value.recommendedJobs.every(isJobSummary)
     && Array.isArray(value.skillGapPreview) && value.skillGapPreview.length <= 5

@@ -1,6 +1,8 @@
 package com.devjob.job.repository;
 
 import com.devjob.job.dto.JobQuery;
+import com.devjob.job.service.ItJobTitles;
+import com.devjob.job.service.JobRoles;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,8 +50,33 @@ public class JobMatchQueryRepository {
     public RankedPage ranked(Long userId, JobQuery input) {
         var parameters = new MapSqlParameterSource().addValue("userId", userId);
         var from = new StringBuilder(" from job_posting j join company c on c.id = j.company_id left join rates r on r.job_posting_id = j.id where 1=1");
+        if (input.source() != null) {
+            from.append(" and exists (select 1 from job_source s where s.id = j.job_source_id and s.code = :source)");
+            parameters.addValue("source", input.source());
+        }
+        if (input.itOnly()) {
+            from.append(" and (");
+            for (int i = 0; i < ItJobTitles.TERMS.size(); i++) {
+                if (i > 0) from.append(" or ");
+                from.append("lower(j.title) like :itTerm").append(i).append(" escape '\\'");
+                parameters.addValue("itTerm" + i, pattern(ItJobTitles.TERMS.get(i)));
+            }
+            from.append(")");
+        }
+        if (input.role() != null) {
+            from.append(" and (");
+            var terms = JobRoles.TERMS.get(input.role());
+            for (int i = 0; i < terms.size(); i++) {
+                if (i > 0) from.append(" or ");
+                from.append("lower(j.title) like :roleTerm").append(i).append(" escape '\\'");
+                parameters.addValue("roleTerm" + i, pattern(terms.get(i)));
+            }
+            from.append(")");
+        }
         if (input.q() != null) {
-            from.append(" and (lower(j.title) like :q escape '\\' or lower(c.name) like :q escape '\\')");
+            from.append(" and (lower(j.title) like :q escape '\\' or lower(c.name) like :q escape '\\'");
+            if (input.q().length() >= 3) from.append(" or lower(j.description) like :q escape '\\'");
+            from.append(")");
             parameters.addValue("q", pattern(input.q()));
         }
         if (input.company() != null) { from.append(" and lower(c.name) like :company escape '\\'"); parameters.addValue("company", pattern(input.company())); }

@@ -1,6 +1,7 @@
 package com.devjob.application.entity;
 
 import com.devjob.job.entity.JobPosting;
+import com.devjob.savedjob.entity.PersonalSavedJob;
 import com.devjob.user.entity.User;
 import jakarta.persistence.*;
 import java.time.Instant;
@@ -13,8 +14,10 @@ public class Application {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY) private Long id;
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false) private User user;
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "job_posting_id", nullable = false) private JobPosting job;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "job_posting_id") private JobPosting job;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "personal_saved_job_id") private PersonalSavedJob personalSavedJob;
     @Enumerated(EnumType.STRING) @Column(name = "current_status", nullable = false, length = 30)
     private ApplicationStatus currentStatus;
     @Column(name = "applied_date") private LocalDate appliedDate;
@@ -30,6 +33,12 @@ public class Application {
         this.note = note; this.nextScheduleAt = nextScheduleAt;
         this.createdAt = this.updatedAt = Instant.now();
     }
+    public Application(User user, PersonalSavedJob personalSavedJob, ApplicationStatus status, LocalDate appliedDate,
+            String note, Instant nextScheduleAt) {
+        this.user = user; this.personalSavedJob = personalSavedJob; this.currentStatus = status;
+        this.appliedDate = appliedDate; this.note = note; this.nextScheduleAt = nextScheduleAt;
+        this.createdAt = this.updatedAt = Instant.now();
+    }
     public void update(boolean noteProvided, String note, boolean scheduleProvided, Instant schedule) {
         if (noteProvided) this.note = note;
         if (scheduleProvided) this.nextScheduleAt = schedule;
@@ -43,6 +52,7 @@ public class Application {
     public Long getId() { return id; }
     public User getUser() { return user; }
     public JobPosting getJob() { return job; }
+    public PersonalSavedJob getPersonalSavedJob() { return personalSavedJob; }
     public ApplicationStatus getCurrentStatus() { return currentStatus; }
     public LocalDate getAppliedDate() { return appliedDate; }
     public String getNote() { return note; }

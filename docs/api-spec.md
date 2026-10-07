@@ -82,7 +82,7 @@ S05 구현 계약:
 ### S08 구현 계약
 
 - 저장된 공고만 조회하며 외부 Adapter·AI를 호출하지 않는다. 두 GET API 모두 S03 쿠키 세션 인증이 필요하다.
-- 지원 Query는 `q`, `company`, `skillId`, `careerLevel`, `location`, `employmentType`, `deadlineBefore`, `minMatchRate`, `applicationStatus`, `page`, `size`, `sort`다. `q`는 제목 또는 회사명, `company`·`location`은 해당 필드의 대소문자 무시 부분 일치다. `%`, `_`, `\`는 검색 문자 그대로 취급한다. `careerLevel`·`employmentType`은 저장된 문자열과 대소문자 무시 정확히 일치한다. `skillId`는 완료된 분석의 공고 기술과 정확히 일치할 때만 포함한다. `applicationStatus`는 현재 세션 사용자의 지원 상태로 AND 필터링하며 빈 문자열·알 수 없는 상태는 `400`이다.
+- 지원 Query는 `q`, `company`, `role`, `skillId`, `careerLevel`, `location`, `employmentType`, `deadlineBefore`, `minMatchRate`, `applicationStatus`, `itOnly`, `source`, `page`, `size`, `sort`다. `q`는 제목·회사명 부분 일치이며 길이가 3자 이상일 때만 저장된 본문도 검색한다. 짧은 일반 단어가 긴 설명에서 우연히 매칭되는 잡음을 줄이기 위한 기준이다. `company`·`location`은 해당 필드의 대소문자 무시 부분 일치다. `role`은 제목 기반 `DEVELOPMENT`, `DATA_AI`, `SECURITY`, `INFRA`, `IT_OPERATIONS` 중 하나이며 잘못된 값은 `400`이다. `itOnly=true`는 개발·데이터·보안·인프라·전산 제목 신호가 있는 저장 공고만 조회한다(생략 시 false, 화면 기본값 true). 제목에 직무가 드러나지 않으면 누락될 수 있다. `%`, `_`, `\`는 검색 문자 그대로 취급한다. `careerLevel`·`employmentType`은 저장된 문자열과 대소문자 무시 정확히 일치한다. `skillId`는 완료된 분석의 공고 기술과 정확히 일치할 때만 포함한다. `applicationStatus`는 현재 세션 사용자의 지원 상태로 AND 필터링하며 빈 문자열·알 수 없는 상태는 `400`이다. `source`는 `JobSource.code`와 정확히 일치하며 대문자·숫자·밑줄 형식으로 최대 100자다. 형식 오류는 `400`, 존재하지 않는 코드는 빈 결과다. 화면 선택지는 전체·`ALIO_RECRUITMENT`·`WORK24_OPEN_RECRUITMENT`다.
 - 검색 문자열은 양끝 공백을 제거하고 공백뿐이면 조건을 생략한다. 각 검색 문자열은 최대 200자다. `deadlineBefore`는 유효한 `YYYY-MM-DD` 날짜이며 당일을 포함한다. 날짜가 없는 공고는 마감일 필터 결과에서 제외한다. 여러 필터는 AND로 결합한다.
 - `page`는 0 이상 정수, `size`는 1~100(기본 20)이다. `page × size > 2147483647`은 `400`이다. 결과가 없거나 범위를 벗어난 페이지는 `items: []`와 조건에 맞는 전체 건수를 반환한다.
 - 정렬은 `latest`(게시일 내림차순)·`deadline`(마감일 오름차순)·`matchRate`(기술 일치도 내림차순)이며 날짜·계산 불가 일치도는 뒤에 둔다. 값이 같으면 `id` 내림차순으로 안정적인 페이지 순서를 유지한다.
@@ -93,17 +93,22 @@ S05 구현 계약:
 
 | 목적 / Method·URL | 인증 | Path / Query | Request Body | 성공 Response Body·Status | 주요 오류 |
 | --- | --- | --- | --- | --- | --- |
-| 공고 검색·필터 `GET /api/jobs` | 예 | Query: `q`, `company`, `skillId`, `careerLevel`, `location`, `employmentType`, `deadlineBefore`, `minMatchRate`, `applicationStatus`, `page`, `size`, `sort` | 없음 | `JobSummary` 목록 · `200` | 필터·정렬값 오류 `400` |
+| 공고 검색·필터 `GET /api/jobs` | 예 | Query: `q`, `company`, `role`, `skillId`, `careerLevel`, `location`, `employmentType`, `deadlineBefore`, `minMatchRate`, `applicationStatus`, `itOnly`, `source`, `page`, `size`, `sort` | 없음 | `JobSummary` 목록 · `200` | 필터·정렬값 오류 `400` |
 | 공고 상세 `GET /api/jobs/{jobId}` | 예 | Path: `jobId` | 없음 | 아래 `JobDetail` · `200` | 공고 없음 `404` |
-| AI 분석 요청·재시도 `POST /api/jobs/{jobId}/analysis` | 예 | Path: `jobId` | 없음 | `AIAnalysis` · 새 요청/진행 중 `202`, 완료 결과 재사용 `200` | 공고 없음 `404`, 분석 요청 접수 실패 `503` |
+| AI 분석 요청·재시도 `POST /api/jobs/{jobId}/analysis` | 예 | Path: `jobId` | 없음 | `AIAnalysis` · 새 요청/진행 중 `202`, 완료 결과 재사용 `200` | 본인 북마크 없음 `403`, 공고 없음 `404`, 분석 요청 접수 실패 `503` |
 | AI 분석 상태·결과 `GET /api/jobs/{jobId}/analysis` | 예 | Path: `jobId` | 없음 | 아래 `AIAnalysis` · `200` | 공고 또는 분석 행 없음 `404` |
 | 내 역량과 공고 비교 `GET /api/jobs/{jobId}/match` | 예 | Path: `jobId` | 없음 | 아래 `JobMatch` · `200` | 공고 없음 `404`, 분석 미완료 `409` |
 
-`JobSummary`: `{ "id": 10, "title": "백엔드 개발자", "company": { "id": 3, "name": "A기업" }, "source": "WORK24", "location": "서울", "careerRequirement": "신입", "employmentType": "정규직", "deadlineDate": "2026-12-31", "matchRate": null, "bookmarked": false, "applicationStatus": null }`. `matchRate`는 사용자 기술과 완료된 분석 결과가 있어 계산 가능할 때만 값이 있으며, 합격 확률이 아니다.
+`JobSummary`: `{ "id": 10, "title": "백엔드 개발자", "company": { "id": 3, "name": "A기업" }, "source": "WORK24", "location": "서울", "careerRequirement": "신입", "employmentType": "정규직", "deadlineDate": "2026-12-31", "matchRate": null, "bookmarked": false, "applicationStatus": null, "role": "DEVELOPMENT" }`. `role`은 제목 기반 표시값이며 직무를 판별할 수 없으면 `null`이다. `matchRate`는 사용자 기술와 완료된 분석 결과가 있어 계산 가능할 때만 값이 있으며, 합격 확률이 아니다.
 
 공고 목록의 `minMatchRate`는 0~100이며 계산 가능한 공고에만 적용하고 분석 전 공고는 해당 필터에서 제외한다. `applicationStatus`는 현재 사용자의 지원 상태로 필터링한다. `sort=matchRate`에서도 계산할 수 없는 공고는 뒤에 둔다.
 
 `JobDetail`은 `JobSummary`의 필드에 `description`, `postedDate`, `sourceUrl`, `requiredSkills: JobSkill[]`, `preferredSkills: JobSkill[]`, `analysis: { "status": "PENDING|COMPLETED|FAILED" } | null`을 추가한다. 분석 전·실패 상태여도 원문과 기본 정보는 반환한다. `source`는 `JobSource.code`다.
+
+청년일자리 출처(`source: "ALIO_RECRUITMENT"`)의 상세에는 `recruitment: { "steps": [{ "externalId": 1, "sortOrder": 1, "title": "서류", "openings": 2, "applicants": null, "competitionRate": null, "eventDate": null }], "attachments": [{ "externalId": 10, "sortOrder": 1, "name": "공고.pdf", "type": "A", "url": "https://..." }] }`가 추가된다. 전형 단계와 첨부파일 메타정보가 없는 ALIO 공고는 빈 배열이며 다른 출처는 `recruitment: null`이다. 첨부 URL은 HTTP(S)만 반환하고 별도 파일 다운로드 API는 없다.
+
+`POST /api/jobs/collections/alio`는 사용자 공고 목록과 분리된 백엔드 수동 수집 요청이며 로그인 세션과 CSRF가 필요하다. 목록·상세 화면은 이 POST를 호출하지 않고 DB에 저장된 공고만 GET으로 조회한다. 선택 Query `keyword`(요청한 페이지들 안의 제목 부분 일치, 최대 100자), `page`(시작, 0~999, 기본 0), `pages`(1~3, 기본 3)를 받으며 `page + pages <= 1000`이어야 한다. 페이지당 최대 20건을 요청하고 마지막 페이지에 도달하면 멈춘다. 제공기관 요청에는 `ncsCdLst=R600020`(정보통신), `ongoingYn=Y`를 고정 적용한다. 제공기관의 한글 `recrutPbancTtl` 조회가 실제로 `resultCode="5"`를 반환하므로 제목 검색은 페이지 응답을 받은 뒤 서버에서 적용한다. 반환 행에서 NCS 코드와 개발·데이터·보안·인프라 제목 신호를 다시 확인한 뒤 해당 공고만 상세 조회·저장한다. 직무가 상세/첨부에만 나타나는 일반 제목 공고는 누락될 수 있다. `200` 응답은 `{ "status": "COMPLETED|PARTIAL_FAILURE|SOURCE_FAILED|STORAGE_FAILED", "created": 0, "duplicates": 0, "rejected": 0, "failed": 0, "sourceError": null }` 형태다. IT 범위 밖 행은 저장 시도 전 제외하므로 `rejected`에 포함하지 않는다. `SOURCE_FAILED`의 `sourceError`는 `PROVIDER_CONNECTION`(제공기관 `resultCode=5`), `AUTHENTICATION`(7), `APPROVAL`(8), `PROVIDER_ERROR`, `REQUEST_FAILED`, `INVALID_RESPONSE`, `NOT_CONFIGURED` 중 하나 또는 null이다. 키·요청 URL·제공기관 원문은 응답하지 않는다. 자동 수집과 자동 재시도는 없다.
+ALIO 재수집으로 제목이나 분석 입력 텍스트가 달라지면 이전 완료 분석은 `FAILED`로 무효화되고 추출 기술은 삭제된다. 사용자가 기존 분석 POST를 다시 호출하면 변경된 공고를 재분석한다.
 
 `AIAnalysis`: `{ "status": "COMPLETED", "requiredSkills": [Skill], "preferredSkills": [Skill], "analyzedAt": "2026-10-05T10:00:00+09:00" }`. `PENDING`에는 기술 목록을 빈 배열로, `FAILED`에는 기술 목록을 빈 배열과 일반적인 `failureReason`을 반환한다. 검증되지 않은 LLM 원문이나 Secret은 반환하지 않는다. 이미 완료된 결과는 다시 호출하지 않고 재사용한다. 실패 상태에서 다시 POST하면 같은 분석 대상을 재시도한다.
 
@@ -125,9 +130,9 @@ S13 구현: 비교 API는 완료된 분석이 없으면 `409 CONFLICT`를 반환
 ### S11 구현 계약
 
 - 지원 목록은 세션 사용자만 조회하고 1절 페이지 응답을 사용한다. `status`는 정확한 상태값이며 잘못된 값·빈 값은 `400`이다. 정렬은 등록 시각·ID 내림차순이다. 이력은 변경 시각·ID 오름차순으로 페이지 없이 반환한다.
-- 생성·상태 변경의 `status`는 필수 JSON 문자열, `jobId`는 필수 양의 JSON 정수(Long 범위)다. 초기 상태 3개 이외의 생성은 `400`이다. `APPLIED` 생성·전이에만 유효한 `appliedDate`가 필수이며 다른 상태 요청에서는 생략 또는 `null`로 보낸다. 이후 전이에서 기존 지원일은 유지한다. 날짜는 연도 0001~9999의 `YYYY-MM-DD`, 일정은 시간대가 포함된 ISO 8601이며 응답 일정은 UTC로 정규화한다.
+- 생성·상태 변경의 `status`는 필수 JSON 문자열이다. 생성 시 양의 JSON 정수(Long 범위) `jobId` 또는 `personalSavedJobId` 중 정확히 하나를 보낸다. 개인 관심공고는 현재 사용자가 소유한 활성 공고여야 하며 다른 사용자 공고는 `404`다. 초기 상태 3개 이외의 생성은 `400`이다. `APPLIED` 생성·전이에만 유효한 `appliedDate`가 필수이며 다른 상태 요청에서는 생략 또는 `null`로 보낸다. 이후 전이에서 기존 지원일은 유지한다. 날짜는 연도 0001~9999의 `YYYY-MM-DD`, 일정은 시간대가 포함된 ISO 8601이며 응답 일정은 UTC로 정규화한다.
 - `note`는 선택 JSON 문자열(최대 2000자); 양끝 공백 제거, 공백뿐이면 `null`이다. 줄바꿈·탭 이외 제어 문자는 거부한다. `PATCH` 메모·일정은 누락 필드를 유지하고 명시적 `null`은 비운다. 빈 객체·알 수 없는 필드·잘못된 JSON 타입은 `400`이다. 이 경로로 상태·지원일·사용자·공고를 변경할 수 없다.
-- 모든 변경 요청은 최신 CSRF 토큰이 필요하다. 사용자 ID는 세션에서만 얻으며 타인 소유 상세·수정·상태·이력은 `403`, 없는 지원은 `404`다. 중복 생성은 `(user_id, job_posting_id)` 유일 키로 `409`를 보장한다.
+- 모든 변경 요청은 최신 CSRF 토큰이 필요하다. 사용자 ID는 세션에서만 얻으며 타인 소유 상세·수정·상태·이력은 `403`, 없는 지원은 `404`다. 중복 생성은 출처별 `(user_id, job_posting_id)` 또는 `(user_id, personal_saved_job_id)` 유일 키로 `409`를 보장한다.
 - 초기 상태와 실제 상태 변경마다 이력을 같은 트랜잭션에 저장한다. 메모·일정 변경은 이력을 만들지 않는다. 수정·전이는 지원 행 잠금으로 직렬화하고 최신 상태로 전이를 검증한다. 같은 상태·건너뛰기·역행·종료 상태 전이는 `409`이며 이력이 추가되지 않는다.
 
 | 목적 / Method·URL | 인증 | Path / Query | Request Body | 성공 Response Body·Status | 주요 오류 |
@@ -142,7 +147,15 @@ S13 구현: 비교 API는 완료된 분석이 없으면 `409 CONFLICT`를 반환
 | 지원 상태 변경 `PATCH /api/applications/{applicationId}/status` | 예 | Path: `applicationId` | `{ "status": "APPLIED", "appliedDate": "2026-10-05" }` | `Application` · `200` | 허용되지 않은 전이·동일 상태 `409`, 값 오류 `400`, 없음 `404`, 타인 소유 `403` |
 | 지원 상태 이력 `GET /api/applications/{applicationId}/history` | 예 | Path: `applicationId` | 없음 | `ApplicationStatusHistory[]` · `200` | 없음 `404`, 타인 소유 `403` |
 
-`Bookmark`: `{ "id": 1, "job": JobSummary, "createdAt": "..." }`. `Application`: `{ "id": 1, "job": JobSummary, "currentStatus": "PLANNED", "appliedDate": null, "nextScheduleAt": null, "note": null, "createdAt": "...", "updatedAt": "..." }`. `ApplicationStatusHistory`: `{ "id": 1, "fromStatus": null, "toStatus": "PLANNED", "changedAt": "..." }`. 지원 생성 시 초기 상태는 `INTERESTED`, `PLANNED`, `APPLIED` 중 하나이며 최초 상태도 이력에 남긴다. `APPLIED`로 생성하거나 변경할 때 `appliedDate`를 입력해 실제 지원일을 기록한다. 상태 전이는 `INTERESTED → PLANNED → APPLIED → DOCUMENT_PASSED → INTERVIEW → FINAL_PASSED`를 기본으로 하고, `INTERESTED`·`PLANNED`·`APPLIED`에서 `WITHDRAWN`, `APPLIED`·`DOCUMENT_PASSED`·`INTERVIEW`에서 `REJECTED`를 허용한다. 종료 상태에서는 추가 전이를 허용하지 않는다. 북마크와 지원은 서로 독립적으로 생성·삭제된다.
+`Bookmark`: `{ "id": 1, "job": JobSummary, "createdAt": "..." }`. `Application`: `{ "id": 1, "job": JobSummary | null, "personalSavedJob": PersonalSavedJob | null, "currentStatus": "PLANNED", "appliedDate": null, "nextScheduleAt": null, "note": null, "createdAt": "...", "updatedAt": "..." }`. 두 공고 필드 중 하나만 값이 있다. `ApplicationStatusHistory`: `{ "id": 1, "fromStatus": null, "toStatus": "PLANNED", "changedAt": "..." }`. 지원 생성 시 초기 상태는 `INTERESTED`, `PLANNED`, `APPLIED` 중 하나이며 최초 상태도 이력에 남긴다. `APPLIED`로 생성하거나 변경할 때 `appliedDate`를 입력해 실제 지원일을 기록한다. 상태 전이는 `INTERESTED → PLANNED → APPLIED → DOCUMENT_PASSED → INTERVIEW → FINAL_PASSED`를 기본으로 하고, `INTERESTED`·`PLANNED`·`APPLIED`에서 `WITHDRAWN`, `APPLIED`·`DOCUMENT_PASSED`·`INTERVIEW`에서 `REJECTED`를 허용한다. 종료 상태에서는 추가 전이를 허용하지 않는다. 북마크와 지원은 서로 독립적으로 생성·삭제된다.
+
+### 개인 관심공고 계약
+
+`POST /api/me/saved-jobs`는 `url`(HTTP(S), 호스트 필수, 사용자 정보·fragment 없음, 최대 2048자), `companyName`(1~200자), `title`(1~300자)을 필수로 받는다. 선택 필드는 `role`·`careerLevel`·`employmentType` 각 최대 120자, `location` 최대 200자, `deadlineDate` 유효한 `YYYY-MM-DD`, `note` 최대 2000자, AI 입력용 `description` 최대 12000자다. 등록 응답은 `PersonalSavedJob`과 `201`; `GET /api/me/saved-jobs/{id}`는 소유한 활성 개인 공고만 `200`; `PUT /api/me/saved-jobs/{id}`는 같은 전체 필드로 수정해 `200`; `DELETE /api/me/saved-jobs/{id}`는 목록에서 숨기고 `204`를 반환한다. 로그인·변경 요청 CSRF가 필요하다. 잘못된 값은 `400`, 존재하지 않거나 타인 소유인 공고는 `404`, 같은 사용자의 활성 동일 URL은 `409`다. 삭제한 공고의 기존 지원 기록은 유지한다. 개인 공고는 `JobPosting`·`JobSource`로 만들지 않는다.
+
+`GET /api/me/saved-jobs?page=0&size=20`은 기존 북마크와 활성 개인 공고를 저장 시각순으로 통합 페이지 처리한다. `{items,page,size,totalElements}`의 각 항목은 `kind: "COLLECTED" | "MANUAL"`, `id`, `jobId`(개인 공고는 null), `url`, `companyName`, `title`, `role`, `careerLevel`, `location`, `employmentType`, `deadlineDate`, `note`, `description`(수집 공고는 null), `source`(개인 공고는 `DIRECT`), `applicationStatus`, `analysisStatus`, `createdAt`이다. 분석 상태가 있으면 기존 수집 공고 분석 GET 또는 개인 공고 분석 GET으로 필수·우대 기술을 조회한다. 기존 `/api/bookmarks` 계약은 유지한다. 개인 URL과 나중에 수집된 공고 URL이 같아도 자동 병합하지 않는다.
+
+개인 공고 `POST /api/me/saved-jobs/{id}/analysis`는 현재 사용자가 소유한 활성 공고와 비어 있지 않은 `description`을 요구한다. 명시적 요청 한 번에 붙여넣은 본문으로 동기 분석하고 정규화·검증된 기술명 배열을 개인 분석 행에 저장해 `200`으로 반환한다. 완료 결과는 재사용하고 실패 시 `FAILED`와 일반 오류를 저장한다. `GET /api/me/saved-jobs/{id}/analysis`는 저장 결과만 반환하며 분석 행이 없으면 `404`다. 두 응답은 `{status, requiredSkills: string[], preferredSkills: string[], analyzedAt, failureReason}`다. 타인·삭제된 공고는 `404`, 본문 없음은 `400`, AI 키 미설정은 `503`, 수정 중 입력 변경은 `409`다. 개인 공고 제목·본문 수정은 이전 분석을 무효화한다. 외부 URL은 자동으로 읽지 않으며 기존 공용 기술·일치도 통계에 개인 분석을 섞지 않는다.
 
 ## 6. 대시보드와 분석
 

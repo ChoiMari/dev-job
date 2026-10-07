@@ -4,5 +4,12 @@ package com.devjob.job.adapter;
 public record ExternalJobPosting(
         String externalId, String companyName, String title, String description,
         String employmentType, String careerRequirement, String location,
-        String postedDate, String deadlineDate, String sourceUrl) {
+        String postedDate, String deadlineDate, String sourceUrl,
+        RecruitmentDetails details, boolean detailFailed) {
+    public ExternalJobPosting(String externalId, String companyName, String title, String description,
+            String employmentType, String careerRequirement, String location,
+            String postedDate, String deadlineDate, String sourceUrl) {
+        this(externalId, companyName, title, description, employmentType, careerRequirement,
+                location, postedDate, deadlineDate, sourceUrl, null, false);
+    }
 }

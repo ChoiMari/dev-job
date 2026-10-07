@@ -1,10 +1,12 @@
 package com.devjob.analysis.service;
 
 import com.devjob.analysis.dto.AnalysisResponse;
+import com.devjob.analysis.adapter.AnalysisGateway;
 import com.devjob.analysis.entity.AIAnalysis;
 import com.devjob.analysis.repository.AIAnalysisRepository;
 import com.devjob.analysis.repository.JobSkillRepository;
 import com.devjob.job.repository.JobPostingRepository;
+import com.devjob.bookmark.repository.BookmarkRepository;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.Executor;
@@ -23,18 +25,21 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 public class AnalysisService {
     public record RequestResult(AnalysisResponse body, boolean accepted) { }
     private final JobPostingRepository jobs;
+    private final BookmarkRepository bookmarks;
     private final AIAnalysisRepository analyses;
     private final JobSkillRepository jobSkills;
     private final AnalysisRunner runner;
+    private final AnalysisGateway gateway;
     private final Executor executor;
-    public AnalysisService(JobPostingRepository jobs, AIAnalysisRepository analyses, JobSkillRepository jobSkills,
-            AnalysisRunner runner, @Qualifier("analysisExecutor") Executor analysisExecutor) {
-        this.jobs = jobs; this.analyses = analyses; this.jobSkills = jobSkills; this.runner = runner; this.executor = analysisExecutor;
+    public AnalysisService(JobPostingRepository jobs, BookmarkRepository bookmarks, AIAnalysisRepository analyses, JobSkillRepository jobSkills,
+            AnalysisRunner runner, AnalysisGateway gateway, @Qualifier("analysisExecutor") Executor analysisExecutor) {
+        this.jobs = jobs; this.bookmarks = bookmarks; this.analyses = analyses; this.jobSkills = jobSkills; this.runner = runner; this.gateway = gateway; this.executor = analysisExecutor;
     }
     @Transactional
-    public RequestResult request(long jobId) {
+    public RequestResult request(Long userId, long jobId) {
         if (jobId < 1) throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
         var job = jobs.lockById(jobId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        if (!bookmarks.existsByUserIdAndJobId(userId, jobId)) throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         var existing = analyses.findByJobId(jobId);
         if (existing.isPresent()) {
             var analysis = existing.get();
@@ -44,6 +49,7 @@ public class AnalysisService {
                     && Duration.between(analysis.getUpdatedAt(), Instant.now()).compareTo(Duration.ofMinutes(5)) < 0)
                 return new RequestResult(AnalysisResponse.from(analysis, java.util.List.of()), true);
         }
+        if (!gateway.available()) throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "AI 분석 서버 키가 설정되지 않았습니다.");
         var analysis = existing.orElseGet(() -> new AIAnalysis(job));
         if (existing.isPresent()) analysis.pending();
         analyses.saveAndFlush(analysis);

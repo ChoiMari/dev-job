@@ -9,6 +9,7 @@ import com.devjob.job.dto.JobSummary;
 import com.devjob.job.entity.JobPosting;
 import com.devjob.job.repository.JobMatchQueryRepository;
 import com.devjob.job.repository.JobPostingRepository;
+import com.devjob.savedjob.repository.PersonalSavedJobRepository;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.EnumMap;
@@ -27,14 +28,15 @@ public class DashboardService {
             ApplicationStatus.INTERVIEW);
     private final ApplicationRepository applications;
     private final BookmarkRepository bookmarks;
+    private final PersonalSavedJobRepository personalJobs;
     private final JobPostingRepository jobs;
     private final JobMatchQueryRepository matches;
     private final SkillGapService skillGaps;
 
     public DashboardService(ApplicationRepository applications, BookmarkRepository bookmarks,
-            JobPostingRepository jobs, JobMatchQueryRepository matches, SkillGapService skillGaps) {
+            PersonalSavedJobRepository personalJobs, JobPostingRepository jobs, JobMatchQueryRepository matches, SkillGapService skillGaps) {
         this.applications = applications; this.bookmarks = bookmarks; this.jobs = jobs;
-        this.matches = matches; this.skillGaps = skillGaps;
+        this.personalJobs = personalJobs; this.matches = matches; this.skillGaps = skillGaps;
     }
 
     public Dashboard get(Long userId) {
@@ -43,7 +45,8 @@ public class DashboardService {
         for (var row : applications.countByStatus(userId)) counts.put((ApplicationStatus) row[0], (Long) row[1]);
 
         var actions = applications.findNextActions(userId, ACTION_STATUSES, PageRequest.of(0, 5)).stream()
-                .map(a -> new Dashboard.NextAction(a.getId(), a.getJob().getId(), a.getJob().getTitle(),
+                .map(a -> new Dashboard.NextAction(a.getId(), a.getJob() == null ? null : a.getJob().getId(),
+                        a.getJob() == null ? a.getPersonalSavedJob().getTitle() : a.getJob().getTitle(),
                         a.getCurrentStatus(), a.getNextScheduleAt()))
                 .toList();
 
@@ -59,6 +62,7 @@ public class DashboardService {
 
         var gap = skillGaps.find(userId, null);
         var preview = gap.available() ? gap.items().stream().map(item -> item.skill()).toList() : List.<com.devjob.skill.dto.SkillResponse>of();
-        return new Dashboard(counts, bookmarks.countByUserId(userId), actions, recommended, preview);
+        return new Dashboard(counts, bookmarks.countByUserId(userId) + personalJobs.countByUserIdAndDeletedAtIsNull(userId),
+                actions, recommended, preview);
     }
 }

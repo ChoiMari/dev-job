@@ -12,6 +12,7 @@ public class OpenAiAnalysisGateway implements AnalysisGateway {
     public OpenAiAnalysisGateway(ChatModel model, @Value("${OPENAI_API_KEY:}") String key) {
         this.model = model; this.key = key;
     }
+    @Override public boolean available() { return !key.isBlank(); }
     @Override public String analyze(String title, String description) {
         if (key.isBlank()) throw new IllegalStateException("AI provider unavailable");
         String source = ("제목: " + title + "\n공고 본문:\n" + (description == null ? "" : description));

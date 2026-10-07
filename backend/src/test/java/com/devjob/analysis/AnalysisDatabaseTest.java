@@ -41,7 +41,7 @@ class AnalysisDatabaseTest {
     long jobId;
     UsernamePasswordAuthenticationToken principal;
 
-    @BeforeEach void seed() {
+    @BeforeEach void seed() throws Exception {
         assertThat(jdbc.queryForObject("select current_database()", String.class)).isEqualTo("devjob_s12_test");
         var user = users.saveAndFlush(new User("s12-" + java.util.UUID.randomUUID() + "@example.com", "hash"));
         principal = UsernamePasswordAuthenticationToken.authenticated(new CurrentUser(user.getId(), user.getEmail()), null, List.of());
@@ -49,8 +49,12 @@ class AnalysisDatabaseTest {
         jobId = jobs.saveAndFlush(new JobPosting(source, companies.save(new Company("S12 Company")),
                 new NormalizedJobPosting("S12 job", "S12 Company", "S12 job", "Postgres, Java, Spring Boot",
                         null, null, null, null, null, "https://example.com/s12"))).getId();
+        mvc.perform(post("/api/bookmarks").with(authentication(principal)).with(csrf())
+                .contentType("application/json").content("{\"jobId\":" + jobId + "}"))
+                .andExpect(status().isCreated());
     }
     private org.springframework.test.web.servlet.ResultActions request() throws Exception {
+        when(gateway.available()).thenReturn(true);
         return mvc.perform(post("/api/jobs/" + jobId + "/analysis").with(authentication(principal)).with(csrf()));
     }
     private void await(String status) throws Exception {
@@ -134,6 +138,19 @@ class AnalysisDatabaseTest {
                 .andExpect(status().isBadRequest());
         mvc.perform(post("/api/jobs/9223372036854775807/analysis").with(authentication(principal)).with(csrf()))
                 .andExpect(status().isNotFound());
+        var other = users.saveAndFlush(new User("s12-other-" + java.util.UUID.randomUUID() + "@example.com", "hash"));
+        var otherPrincipal = UsernamePasswordAuthenticationToken.authenticated(
+                new CurrentUser(other.getId(), other.getEmail()), null, List.of());
+        mvc.perform(post("/api/jobs/" + jobId + "/analysis").with(authentication(otherPrincipal)).with(csrf()))
+                .andExpect(status().isForbidden());
         verifyNoInteractions(gateway);
+    }
+    @Test void missingProviderKeyRejectsRequestWithoutFailedRow() throws Exception {
+        when(gateway.available()).thenReturn(false);
+        mvc.perform(post("/api/jobs/" + jobId + "/analysis").with(authentication(principal)).with(csrf()))
+                .andExpect(status().isServiceUnavailable());
+        assertThat(jdbc.queryForObject("select count(*) from ai_analysis where job_posting_id=?", Integer.class, jobId))
+                .isZero();
+        mvc.perform(get("/api/jobs/" + jobId).with(authentication(principal))).andExpect(status().isOk());
     }
 }

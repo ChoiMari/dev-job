@@ -16,11 +16,13 @@ test('search and list -> detail preserve cookie contract, pagination and origina
     return json(path.startsWith('/api/jobs?') ? { items: [item], page: 1, size: 20, totalElements: 21 } : detail);
   }));
   const page = await api.list({ q: 'Java & Spring', location: '서울', careerLevel: '신입', company: 'Alpha',
-    employmentType: '정규직', deadlineBefore: '2026-12-31', page: 1, size: 20, sort: 'deadline' });
+    employmentType: '정규직', deadlineBefore: '2026-12-31', source: 'ALIO_RECRUITMENT', itOnly: true, page: 1, size: 20, sort: 'deadline' });
   assert.equal(page.totalElements, 21);
   assert.deepEqual(await api.detail(page.items[0].id), detail);
   const query = new URL('http://localhost' + calls[0]).searchParams;
   assert.equal(query.get('q'), 'Java & Spring'); assert.equal(query.get('page'), '1'); assert.equal(query.get('sort'), 'deadline');
+  assert.equal(query.get('itOnly'), 'true');
+  assert.equal(query.get('source'), 'ALIO_RECRUITMENT');
   assert.equal(calls[1], '/api/jobs/1');
 });
 test('empty page is valid; malformed resource and unsafe source URL are rejected', async () => {
@@ -47,4 +49,15 @@ test('abort signal reaches list and detail requests', async () => {
     return path === '/jobs' ? { items: [], page: 0, size: 20, totalElements: 0 } : detail;
   });
   await api.list({}, controller.signal); await api.detail(1, controller.signal);
+});
+
+test('ALIO detail metadata is accepted and unsafe attachment URLs are rejected', async () => {
+  const recruitment = { steps: [{ externalId: 1, sortOrder: 1, title: '서류', openings: 2,
+    applicants: null, competitionRate: null, eventDate: null }],
+  attachments: [{ externalId: 5, sortOrder: 1, name: '공고.pdf', type: 'A', url: 'https://example.com/file.pdf' }] };
+  const alio = { ...detail, source: 'ALIO_RECRUITMENT', recruitment };
+  assert.deepEqual(await createJobsApi(async () => alio).detail(1), alio);
+  await assert.rejects(createJobsApi(async () => ({ ...alio, recruitment: { ...recruitment,
+    attachments: [{ ...recruitment.attachments[0], url: 'javascript:alert(1)' }] } })).detail(1),
+  { code: 'INVALID_RESPONSE' });
 });

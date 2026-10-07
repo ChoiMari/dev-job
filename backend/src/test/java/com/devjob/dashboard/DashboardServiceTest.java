@@ -9,6 +9,7 @@ import com.devjob.bookmark.repository.BookmarkRepository;
 import com.devjob.dashboard.service.DashboardService;
 import com.devjob.job.repository.JobMatchQueryRepository;
 import com.devjob.job.repository.JobPostingRepository;
+import com.devjob.savedjob.repository.PersonalSavedJobRepository;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
@@ -21,10 +22,11 @@ import static org.mockito.Mockito.*;
 class DashboardServiceTest {
     private final ApplicationRepository applications = mock(ApplicationRepository.class);
     private final BookmarkRepository bookmarks = mock(BookmarkRepository.class);
+    private final PersonalSavedJobRepository personalJobs = mock(PersonalSavedJobRepository.class);
     private final JobPostingRepository jobs = mock(JobPostingRepository.class);
     private final JobMatchQueryRepository matches = mock(JobMatchQueryRepository.class);
     private final SkillGapService gaps = mock(SkillGapService.class);
-    private final DashboardService service = new DashboardService(applications, bookmarks, jobs, matches, gaps);
+    private final DashboardService service = new DashboardService(applications, bookmarks, personalJobs, jobs, matches, gaps);
 
     @Test void emptyDashboardHasZeroCountsAndNoExternalCalls() {
         when(applications.countByStatus(7L)).thenReturn(List.of());

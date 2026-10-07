@@ -7,14 +7,17 @@ import java.time.LocalDate;
 /** Stored job filters. */
 public record JobQuery(String q, String company, String careerLevel, String location,
         String employmentType, String deadlineBefore, Integer page, Integer size, String sort,
-        String skillId, String minMatchRate, String applicationStatus) {
+        String skillId, String minMatchRate, String applicationStatus, Boolean itOnly, String source, String role) {
     public JobQuery {
         q = text(q); company = text(company); careerLevel = text(careerLevel);
         location = text(location); employmentType = text(employmentType);
         deadlineBefore = text(deadlineBefore);
+        source = text(source);
+        role = text(role);
         page = page == null ? 0 : page;
         size = size == null ? 20 : size;
         sort = sort == null ? "latest" : sort;
+        itOnly = itOnly == null ? false : itOnly;
     }
 
     public void validate() {
@@ -26,6 +29,8 @@ public record JobQuery(String q, String company, String careerLevel, String loca
         if (skillId != null && !skillId.matches("[1-9]\\d*")) invalid();
         if (skillId != null) try { Long.parseLong(skillId); } catch (NumberFormatException exception) { invalid(); }
         if (minMatchRate != null && (!minMatchRate.matches("\\d{1,3}") || Integer.parseInt(minMatchRate) > 100)) invalid();
+        if (source != null && (source.length() > 100 || !source.matches("[A-Z][A-Z0-9_]*"))) invalid();
+        if (role != null && !com.devjob.job.service.JobRoles.TERMS.containsKey(role)) invalid();
         com.devjob.application.service.ApplicationService.parseStatus(applicationStatus);
         if (deadlineBefore != null) {
             if (!deadlineBefore.matches("\\d{4}-\\d{2}-\\d{2}")) invalid();

@@ -3,6 +3,7 @@ package com.devjob.job.service;
 import com.devjob.job.adapter.ExternalJobPosting;
 import com.devjob.job.adapter.JobSearchCondition;
 import com.devjob.job.adapter.JobSourceAdapter;
+import com.devjob.job.adapter.alio.AlioSourceException;
 import com.devjob.job.model.NormalizedJobPosting;
 import java.util.List;
 import java.util.Objects;
@@ -34,7 +35,8 @@ public class JobCollectionService {
             response = Objects.requireNonNull(adapter.fetchJobs(condition));
         } catch (RuntimeException exception) {
             log.warn("Job collection failed: source={}, reason=SOURCE_FAILED", source.code());
-            return new JobCollectionResult(SOURCE_FAILED, 0, 0, 0, 0);
+            return new JobCollectionResult(SOURCE_FAILED, 0, 0, 0, 0,
+                    exception instanceof AlioSourceException alio ? alio.reason().name() : null);
         }
         try {
             writer.registerSource(source);
@@ -51,15 +53,19 @@ public class JobCollectionService {
                 rejected++;
                 continue;
             }
+            boolean detailFailed = input.detailFailed();
             try {
-                if (writer.store(source.code(), normalized)) {
+                if ("ALIO_RECRUITMENT".equals(source.code())
+                        ? writer.store(source.code(), normalized, input.details())
+                        : writer.store(source.code(), normalized)) {
                     created++;
                 } else {
                     duplicates++;
                 }
             } catch (RuntimeException exception) {
-                failed++;
+                if (!detailFailed) failed++;
             }
+            if (detailFailed) failed++;
         }
         var status = rejected == 0 && failed == 0 ? COMPLETED : PARTIAL_FAILURE;
         log.info("Job collection: source={}, status={}, created={}, duplicates={}, rejected={}, failed={}",

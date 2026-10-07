@@ -57,6 +57,19 @@ public class JobPosting {
         this.sourceUrl = input.sourceUrl();
     }
 
+    public void update(Company updatedCompany, NormalizedJobPosting input, boolean hasDetail) {
+        company = updatedCompany;
+        title = input.title();
+        if (hasDetail) description = input.description();
+        employmentType = input.employmentType();
+        careerRequirement = input.careerRequirement();
+        location = input.location();
+        postedDate = input.postedDate();
+        deadlineDate = input.deadlineDate();
+        sourceUrl = input.sourceUrl();
+        updatedAt = Instant.now();
+    }
+
     @PrePersist
     private void initializeTimestamps() {
         createdAt = updatedAt = Instant.now();

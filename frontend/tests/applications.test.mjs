@@ -7,7 +7,7 @@ import { createJobsApi } from '../src/api/jobs.ts';
 const job = { id: 1, title: 'Backend', company: { id: 2, name: 'Alpha' }, source: 'TEST',
   location: null, careerRequirement: null, employmentType: null, deadlineDate: null,
   matchRate: null, bookmarked: false, applicationStatus: 'PLANNED' };
-const application = { id: 3, job, currentStatus: 'PLANNED', appliedDate: null, note: null, nextScheduleAt: null,
+const application = { id: 3, job, personalSavedJob: null, currentStatus: 'PLANNED', appliedDate: null, note: null, nextScheduleAt: null,
   createdAt: '2026-10-06T01:00:00Z', updatedAt: '2026-10-06T01:00:00Z' };
 const history = [{ id: 4, fromStatus: null, toStatus: 'PLANNED', changedAt: application.createdAt }];
 const json = value => new Response(JSON.stringify(value), { headers: { 'content-type': 'application/json' } });

@@ -4,6 +4,7 @@ import com.devjob.application.dto.*;
 import com.devjob.application.entity.*;
 import com.devjob.application.repository.*;
 import com.devjob.job.repository.JobPostingRepository;
+import com.devjob.savedjob.repository.PersonalSavedJobRepository;
 import com.devjob.user.repository.UserRepository;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -22,9 +23,11 @@ public class ApplicationService {
     private final ApplicationStatusHistoryRepository histories;
     private final UserRepository users;
     private final JobPostingRepository jobs;
+    private final PersonalSavedJobRepository personalJobs;
     public ApplicationService(ApplicationRepository applications, ApplicationStatusHistoryRepository histories,
-            UserRepository users, JobPostingRepository jobs) {
+            UserRepository users, JobPostingRepository jobs, PersonalSavedJobRepository personalJobs) {
         this.applications = applications; this.histories = histories; this.users = users; this.jobs = jobs;
+        this.personalJobs = personalJobs;
     }
     public ApplicationResponse.Page list(Long userId, String status, int page, int size) {
         if (page < 0 || size < 1 || size > 100 || (long) page * size > Integer.MAX_VALUE) fail(HttpStatus.BAD_REQUEST);
@@ -49,10 +52,18 @@ public class ApplicationService {
         if (!input.status().canStart()) fail(HttpStatus.BAD_REQUEST);
         validateAppliedDate(input.status(), input.appliedDate());
         var user = users.findById(userId).orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
-        var job = jobs.findById(input.jobId()).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-        if (applications.existsByUserIdAndJobId(userId, job.getId())) fail(HttpStatus.CONFLICT);
+        if ((input.jobId() == null) == (input.personalSavedJobId() == null)) fail(HttpStatus.BAD_REQUEST);
+        var job = input.jobId() == null ? null : jobs.findById(input.jobId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        var personalJob = input.personalSavedJobId() == null ? null : personalJobs
+                .findByIdAndUserIdAndDeletedAtIsNull(input.personalSavedJobId(), userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        if (job != null && applications.existsByUserIdAndJobId(userId, job.getId())) fail(HttpStatus.CONFLICT);
+        if (personalJob != null && applications.existsByUserIdAndPersonalSavedJobId(userId, personalJob.getId())) fail(HttpStatus.CONFLICT);
         try {
-            var application = applications.saveAndFlush(new Application(user, job, input.status(), input.appliedDate(), input.note(), input.nextScheduleAt()));
+            var application = applications.saveAndFlush(job == null
+                    ? new Application(user, personalJob, input.status(), input.appliedDate(), input.note(), input.nextScheduleAt())
+                    : new Application(user, job, input.status(), input.appliedDate(), input.note(), input.nextScheduleAt()));
             histories.saveAndFlush(new ApplicationStatusHistory(application, null, input.status(), application.getCreatedAt()));
             return ApplicationResponse.from(application);
         } catch (DataIntegrityViolationException exception) {

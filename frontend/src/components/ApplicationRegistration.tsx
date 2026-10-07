@@ -10,8 +10,8 @@ import type { ApplicationStatus } from '../api/application-status';
 import '../pages/applications/applications.css';
 
 const applications = createApplicationsApi(apiRequest);
-export function ApplicationRegistration({ jobId, status, onCreated }: {
-  jobId: number; status: ApplicationStatus | null; onCreated: (status: ApplicationStatus) => void;
+export function ApplicationRegistration({ jobId, personalSavedJobId, status, onCreated }: {
+  jobId?: number; personalSavedJobId?: number; status: ApplicationStatus | null; onCreated: (status: ApplicationStatus) => void;
 }) {
   const [initial, setInitial] = useState<CreateApplication['status']>('PLANNED');
   const [open, setOpen] = useState(false);
@@ -28,7 +28,7 @@ export function ApplicationRegistration({ jobId, status, onCreated }: {
       event.preventDefault(); if (busy) return;
       const values = new FormData(event.currentTarget); setBusy(true); setError('');
       try {
-        const saved = await applications.create({ jobId, status: initial,
+        const saved = await applications.create({ jobId, personalSavedJobId, status: initial,
           appliedDate: initial === 'APPLIED' ? String(values.get('appliedDate')) : null,
           note: String(values.get('note') || '') || null, nextScheduleAt: scheduleInput(String(values.get('nextScheduleAt') || '')) });
         onCreated(saved.currentStatus);
