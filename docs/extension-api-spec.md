@@ -150,7 +150,7 @@ B00은 새 엔드포인트를 확정하거나 구현하지 않는다. 아래 기
 
 `SkillTrend` 예: `{ "skillId": 7, "interval": "MONTH", "periods": [{ "periodStart": "2026-10-01", "analyzedJobCount": 3, "jobCount": 2, "ratio": 0.6667, "insufficientSample": true }, { "periodStart": "2026-11-01", "analyzedJobCount": 0, "jobCount": 0, "ratio": null, "insufficientSample": true }] }`.
 
-**B11 공유 계약:** B11이 새 공식 출처를 공용 `JobSource`·`JobPosting`에 저장하면 B08의 출처 미지정 집계에 자동 포함한다. `source` 지정 시 그 코드만 센다. 별도 출처 허용 목록을 B08에 두지 않는다. 새 출처에 게시일·경력·지역이 비어 있으면 위 결측 규칙을 적용하고 임의 보완하지 않는다. 개인 직접 저장 공고는 공용 집계에 합치지 않는다. 기존 `GET /api/analytics/skills`의 완료 분석 모수·필터·응답은 변경하지 않는다.
+**B11 공유 계약:** B11이 기존 ALIO 공식 출처의 공고를 공용 `JobSource`·`JobPosting`에 저장하면 B08의 출처 미지정 집계에 자동 포함한다. `source` 지정 시 그 코드만 센다. 별도 출처 허용 목록을 B08에 두지 않는다. 새로 저장한 공고에 게시일·경력·지역이 비어 있으면 위 결측 규칙을 적용하고 임의 보완하지 않는다. 개인 직접 저장 공고는 공용 집계에 합치지 않는다. 기존 `GET /api/analytics/skills`의 완료 분석 모수·필터·응답은 변경하지 않는다.
 
 ### B09~B10 · 캐릭터·성장 — EXT-06
 
@@ -167,10 +167,13 @@ B00은 새 엔드포인트를 확정하거나 구현하지 않는다. 아래 기
 
 ### B11 · 채용 출처 확장 — EXT-07
 
-| 후보 Method·URL | 요청·필수 응답 | 착수 전 결정 |
+| Method·URL | 요청·응답 | 권한·동작 |
 | --- | --- | --- |
-| 기존 `GET /api/jobs`의 `source` 필터·상세 확장 | 저장된 새 출처 공고와 원문 링크·누락 필드 표현 | 출처 식별자·공고 고유키·필드 대응 |
-| 수집 실행 API는 실행 주체 확정 후 결정 | 실행 결과/부분 실패/중복 건수 | 사용자가 실행하는지, 내부 작업인지 |
+| `POST /api/admin/jobs/collections/alio` | 본문 없음 → `AlioBatchStatus`, `202` | 세션·CSRF·`ALIO_BATCH_ADMIN_EMAILS` 허용 목록. 진행 중 배치는 `409`, 키 미설정 또는 실행기 거부는 `503` |
+| `GET /api/admin/jobs/collections/alio` | `AlioBatchStatus`, `200` | 같은 관리자 권한. 실행 전 `IDLE` |
+| 기존 `GET /api/jobs`·`GET /api/jobs/{id}` | 저장 공고와 `source: ALIO_RECRUITMENT`·원문 링크·누락 필드 | 기존 조회 계약 유지, 외부 API 호출 없음 |
+
+`AlioBatchStatus`는 `runId`, `status`, `startedAt`, `updatedAt`, `finishedAt`, `processedPages`, `created`, `duplicates`, `rejected`, `failed`, `sourceError`를 반환한다. 상태는 `IDLE|RUNNING|COMPLETED|PARTIAL_FAILURE|SOURCE_FAILED|STORAGE_FAILED`다. 시작 후 백그라운드에서 `ncsCdLst=R600020`, `ongoingYn=Y`의 모든 페이지를 차례로 조회하고 각 페이지의 공고를 독립 저장한다. 제목의 IT 신호로 제외하지 않는다. 제공된 URL이 유효하지 않으면 공식 ALIO 공고 상세 화면의 ID 링크를 사용한다. 페이지당 20건이며 기존 수집 입력 범위에 맞춘 1000페이지 안전 상한에 도달하면 `PARTIAL_FAILURE`와 `PAGE_LIMIT`을 남긴다. 진행과 누적 건수는 DB에 저장하고 실패 전 저장된 페이지는 유지한다. 10분 이상 진행 기록이 갱신되지 않으면 다음 명시적 요청이 실행을 재접수할 수 있다. 자동 실행·자동 재시도는 없다. 기존 사용자용 최대 3페이지 `POST /api/jobs/collections/alio` 계약은 유지한다.
 
 새 제공기관의 공식 접근 조건·호출 제한을 먼저 확인한다. 수집 실패는 기존 저장 공고·북마크·지원 조회에 영향을 주지 않는다. 외부 서비스의 공식 로고나 제휴 표식을 임의 노출하지 않는다.
 

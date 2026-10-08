@@ -42,21 +42,30 @@ public class AlioAdapter implements JobSourceAdapter {
         return new JobSourceDescriptor("ALIO_RECRUITMENT", "청년일자리 공공기관 채용");
     }
 
+    public boolean isConfigured() { return !key.isBlank(); }
+
     @Override public List<ExternalJobPosting> fetchJobs(JobSearchCondition condition) {
         if (condition == null || condition.size() > 20 || condition.page() > 999)
             throw new IllegalArgumentException("Invalid ALIO collection page");
         if (key.isBlank()) throw new AlioSourceException(AlioSourceException.Reason.NOT_CONFIGURED);
         List<ExternalJobPosting> postings = new ArrayList<>();
         for (int offset = 0; offset < condition.pages(); offset++) {
-            var fetched = fetchPage(condition, condition.page() + offset);
+            var fetched = fetchPage(condition, condition.page() + offset, true);
             postings.addAll(fetched.jobs());
             if (fetched.last()) break;
         }
         return List.copyOf(postings);
     }
 
-    private record Page(List<ExternalJobPosting> jobs, boolean last) { }
-    private Page fetchPage(JobSearchCondition condition, int page) {
+    /** Batch scope: all ongoing information-communications NCS rows, including non-IT titles. */
+    public Page fetchBatchPage(int page) {
+        var condition = new JobSearchCondition(null, page, 20);
+        if (key.isBlank()) throw new AlioSourceException(AlioSourceException.Reason.NOT_CONFIGURED);
+        return fetchPage(condition, page, false);
+    }
+
+    public record Page(List<ExternalJobPosting> jobs, boolean last) { }
+    private Page fetchPage(JobSearchCondition condition, int page, boolean itTitlesOnly) {
         String query = "serviceKey=" + encode(key) + "&resultType=json&pageNo=" + (page + 1)
                 + "&numOfRows=" + condition.size();
         query += "&ncsCdLst=R600020&ongoingYn=Y";
@@ -67,7 +76,7 @@ public class AlioAdapter implements JobSourceAdapter {
             throw new AlioSourceException(AlioSourceException.Reason.INVALID_RESPONSE);
         List<ExternalJobPosting> postings = new ArrayList<>();
         for (JsonNode row : rows) {
-            if (!ItJobTitles.matches(text(row, "recrutPbancTtl"))
+            if ((itTitlesOnly && !ItJobTitles.matches(text(row, "recrutPbancTtl")))
                     || !List.of(first(text(row, "ncsCdLst"), "").split(",")).contains("R600020")
                     || (condition.keyword() != null && !first(text(row, "recrutPbancTtl"), "")
                             .toLowerCase(java.util.Locale.ROOT).contains(condition.keyword().toLowerCase(java.util.Locale.ROOT)))) continue;
@@ -90,7 +99,8 @@ public class AlioAdapter implements JobSourceAdapter {
                     first(text(values, "workRgnNmLst"), text(row, "workRgnNmLst")),
                     date(first(text(values, "pbancBgngYmd"), text(row, "pbancBgngYmd"))),
                     date(first(text(values, "pbancEndYmd"), text(row, "pbancEndYmd"))),
-                    first(text(values, "srcUrl"), text(row, "srcUrl")),
+                    itTitlesOnly ? first(text(values, "srcUrl"), text(row, "srcUrl"))
+                            : batchSourceUrl(values, row, id),
                     detail == null ? null : details(detail), detailFailed));
         }
         return new Page(List.copyOf(postings), (long) (page + 1) * condition.size() >= list.path("totalCount").longValue());
@@ -159,6 +169,27 @@ public class AlioAdapter implements JobSourceAdapter {
         return value.isNumber() ? value.asText() : null;
     }
     private static String first(String a, String b) { return a == null ? b : a; }
+
+    private static String batchSourceUrl(JsonNode values, JsonNode row, Long id) {
+        String detailUrl = text(values, "srcUrl");
+        if (validHttpUrl(detailUrl)) return detailUrl;
+        String listUrl = text(row, "srcUrl");
+        if (validHttpUrl(listUrl)) return listUrl;
+        // Verified official public detail page uses the same recruitment announcement number.
+        return id == null ? first(detailUrl, listUrl)
+                : BASE + "/new/odaApiMng/recrutInquiryDetail.do?sn=" + id;
+    }
+
+    private static boolean validHttpUrl(String value) {
+        if (value == null) return false;
+        try {
+            URI uri = URI.create(value);
+            return ("http".equalsIgnoreCase(uri.getScheme()) || "https".equalsIgnoreCase(uri.getScheme()))
+                    && uri.getHost() != null && uri.getUserInfo() == null;
+        } catch (IllegalArgumentException exception) {
+            return false;
+        }
+    }
     private static String date(String value) {
         if (value != null && value.matches("\\d{8}"))
             return value.substring(0, 4) + "-" + value.substring(4, 6) + "-" + value.substring(6);

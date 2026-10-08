@@ -94,6 +94,20 @@ class AlioAdapterTest {
         verify(client, times(1)).post(any());
     }
 
+    @Test
+    void batchUsesVerifiedOfficialDetailLinkWhenProvidedUrlIsInvalid() {
+        when(client.post(any())).thenAnswer(invocation -> bytes(
+                ((URI) invocation.getArgument(0)).getPath().endsWith("list.do")
+                        ? list().replace("https://example.com/recruit/123", "해당없음")
+                        : detail().replace("https://example.com/recruit/123", "해당없음")));
+        var batchRow = adapter.fetchBatchPage(0).jobs().get(0);
+        assertThat(batchRow.sourceUrl()).isEqualTo(
+                "https://opendata.alio.go.kr/new/odaApiMng/recrutInquiryDetail.do?sn=123");
+        assertThat(new JobPostingNormalizer().normalize(batchRow).externalId()).isEqualTo("123");
+        var oldManualRow = adapter.fetchJobs(new JobSearchCondition(null, 0, 1)).get(0);
+        assertThat(oldManualRow.sourceUrl()).isEqualTo("해당없음");
+    }
+
     private static byte[] bytes(String value) { return value.getBytes(StandardCharsets.UTF_8); }
     private static String list() { return """
             {"resultCode":200,"totalCount":1,"result":[{"recrutPblntSn":123,
