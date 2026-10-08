@@ -113,6 +113,22 @@ S12 구현 계약: `POST`는 서버 세션·CSRF가 필요하며 작업을 비�
 
 S13 구현: 비교 API는 완료된 분석이 없으면 `409 CONFLICT`를 반환한다. 기술은 공통 Skill ID로 중복 제거하고 필수·우대를 합산해 일치도를 계산한다. 목록·상세의 `matchRate`는 분석이 완료됐고 공고 기술과 사용자·프로젝트 기술이 모두 있을 때만 채운다. `minMatchRate`는 반올림한 일치도에 적용하며, `sort=matchRate`에서는 계산 불가 공고를 마지막에 둔다. 필터·정렬은 페이지를 자르기 전에 적용한다.
 
+### B04 관심 기업 관리 계약 — EXT-05-01
+
+/api/me/companies는 세션 사용자의 독립적인 InterestedCompany 기록이다. 공고의 공용 Company ID와 다른 ID 공간이며 JobPosting.company_id와 자동 연결·병합하지 않는다. 현재 공고 수집은 신규 공고마다 공용 Company 행을 만들고 이름에 유일성을 두지 않는다. 동명 기업은 이름만으로 같은 기업이라고 판단하지 않는다. B11 출처 확장도 검증된 별도 기업 식별 근거가 생기기 전까지 이 경계를 유지한다.
+
+| 목적 / Method·URL | 인증 | Path / Query | Request Body | 성공 Response Body·Status | 주요 오류 |
+| --- | --- | --- | --- | --- | --- |
+| 내 기업 목록 GET /api/me/companies | 예 | page, size | 없음 | InterestedCompany 페이지 · 200 | 페이지 오류 400 |
+| 관심 기업 등록 POST /api/me/companies | 예 | 없음 | name, websiteUrl, note, status | InterestedCompany · 201 | 입력 오류 400, 같은 웹사이트 중복 409 |
+| 관심 기업 상세 GET /api/me/companies/{companyId} | 예 | 양의 ID | 없음 | InterestedCompany · 200 | 없음 404, 타인 소유 403 |
+| 관심 기업 수정 PATCH /api/me/companies/{companyId} | 예 | 양의 ID | 변경할 필드 한 개 이상 | InterestedCompany · 200 | 입력 오류 400, 중복 409, 없음 404, 타인 소유 403 |
+| 관심 기업 삭제 DELETE /api/me/companies/{companyId} | 예 | 양의 ID | 없음 | 본문 없음 · 204 | 없음 404, 타인 소유 403 |
+
+InterestedCompany 응답은 id, name, websiteUrl, note, status, createdAt, updatedAt을 포함한다. name은 공백을 제거한 1~200자 필수 문자열, websiteUrl은 선택 HTTP(S) URL(호스트 필수, 사용자 정보·fragment 금지, 정규화 후 최대 2048자), note는 선택 최대 2000자다. 상태는 필수 INTERESTED, RESEARCHING, ARCHIVED 중 하나다. PATCH는 누락 필드를 유지하고 websiteUrl·note의 명시적 null은 값을 비운다. name·status의 null, 빈 객체, 알 수 없는 수정 필드는 400이다.
+
+웹사이트 URL의 scheme·host 소문자화, 기본 포트와 루트 경로의 끝 / 제거 후 (user_id, website_url)이 같으면 이름이 달라도 409다. 같은 URL은 한 사용자 안에서만 중복이며 다른 사용자는 독립적으로 등록할 수 있다. URL이 없으면 같은 이름의 기록도 별도 ID로 보존한다. 삭제는 본인 기록만 물리 삭제하고 공용 Company·공고·북마크·지원 기록은 변경하지 않는다. 모든 경로는 세션 인증, 변경 경로는 CSRF를 요구한다. 목록은 생성 시각·ID 내림차순이며 공통 페이지 범위, 빈 목록, 초과 페이지 계약을 따른다.
+
 ## 5. 북마크와 지원 관리
 
 ### S10 구현 계약
