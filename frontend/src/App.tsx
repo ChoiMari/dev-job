@@ -10,6 +10,7 @@ import { ProfilePage } from './pages/ProfilePage';
 import { ProfileSkills } from './components/ProfileSkills';
 import { JobsPage, JobDetailPage } from './pages/jobs/JobsPage';
 import { ProjectsPage } from './pages/projects/ProjectsPage';
+import { CompaniesPage } from './pages/companies/CompaniesPage';
 import { BookmarksPage } from './pages/jobs/BookmarksPage';
 import { ApplicationsPage, ApplicationDetailPage } from './pages/applications/ApplicationsPage';
 import { MarketAnalyticsPage } from './pages/analytics/MarketAnalyticsPage';
@@ -69,6 +70,7 @@ export function App() {
   const title = publicPath ? path === '/register' ? '회원가입' : '로그인'
     : path === '/' ? '대시보드' : path === '/profile' ? '내 프로필' : path === '/states' ? '공통 상태 확인'
       : path === '/projects' || path.startsWith('/projects/') ? '프로젝트 관리'
+      : path === '/companies' || path.startsWith('/companies/') ? '기업 관리'
       : path === '/jobs' ? '채용공고' : path === '/bookmarks' ? '관심 공고'
       : path.startsWith('/jobs/') ? '공고 상세'
       : path === '/applications' ? '지원 관리' : path.startsWith('/applications/') ? '지원 상세'
@@ -102,6 +104,7 @@ export function App() {
       <ProfilePage key={`profile-${user.id}`} email={user.email} onEmailChange={email => setUser(current => current ? { ...current, email } : current)} />
       <ProfileSkills key={`skills-${user.id}`} />
     </> : path === '/projects' || path.startsWith('/projects/') ? <ProjectsPage key={`${user.id}:${path}`} location={location} />
+      : path === '/companies' || path.startsWith('/companies/') ? <CompaniesPage key={user.id + ':' + path} location={location} />
       : path === '/states' ? <StatePreview /> : path === '/jobs' ? <JobsPage location={location} />
       : path === '/bookmarks' ? <BookmarksPage location={location} />
       : path.startsWith('/jobs/') ? <JobDetailPage location={location} />
