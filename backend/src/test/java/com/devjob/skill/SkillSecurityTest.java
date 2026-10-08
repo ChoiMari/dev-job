@@ -33,9 +33,13 @@ class SkillSecurityTest {
         mvc.perform(post("/api/me/skills").with(csrf()).contentType("application/json").content("{\"skillId\":1}"))
                 .andExpect(status().isUnauthorized());
         mvc.perform(delete("/api/me/skills/1")).andExpect(status().isUnauthorized());
+        mvc.perform(patch("/api/me/skills/1/experience").with(csrf()).contentType("application/json")
+                .content("{\"proficiencyLevel\":3}")).andExpect(status().isUnauthorized());
         mvc.perform(post("/api/me/skills").with(authenticated()).contentType("application/json").content("{\"skillId\":1}"))
                 .andExpect(status().isForbidden());
         mvc.perform(delete("/api/me/skills/1").with(authenticated())).andExpect(status().isForbidden());
+        mvc.perform(patch("/api/me/skills/1/experience").with(authenticated()).contentType("application/json")
+                .content("{\"proficiencyLevel\":3}")).andExpect(status().isForbidden());
         verifyNoInteractions(skills);
     }
     @Test void rejectsMalformedOrAmbiguousSelectionBeforeService() throws Exception {
@@ -43,6 +47,18 @@ class SkillSecurityTest {
                 "{\"skillId\":1.5}", "{\"skillId\":\"1\"}", "{\"name\":123}",
                 "{\"skillId\":1,\"name\":\"Java\"}", "{\"name\":\"" + "a".repeat(101) + "\"}"}) {
             mvc.perform(post("/api/me/skills").with(authenticated()).with(csrf()).contentType("application/json").content(input))
+                    .andExpect(status().isBadRequest()).andExpect(jsonPath("$.code").value("INVALID_INPUT"));
+        }
+        verifyNoInteractions(skills);
+    }
+    @Test void rejectsInvalidExperienceBodiesBeforeService() throws Exception {
+        for (String input : new String[]{"{}", "[]", "null", "{\"unknown\":1}",
+                "{\"proficiencyLevel\":0}", "{\"proficiencyLevel\":6}",
+                "{\"experienceMonths\":-1}", "{\"experienceMonths\":601}",
+                "{\"proficiencyLevel\":1.5}", "{\"experienceMonths\":\"24\"}",
+                "{\"proficiencyLevel\":true}"}) {
+            mvc.perform(patch("/api/me/skills/1/experience").with(authenticated()).with(csrf())
+                    .contentType("application/json").content(input))
                     .andExpect(status().isBadRequest()).andExpect(jsonPath("$.code").value("INVALID_INPUT"));
         }
         verifyNoInteractions(skills);

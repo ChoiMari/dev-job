@@ -26,7 +26,16 @@ public class SkillService {
         return skills.search(key, PageRequest.of(page, size, Sort.by("normalizedName", "id"))).map(SkillResponse::from);
     }
     @Transactional(readOnly = true)
-    public List<SkillResponse> list(Long userId) { return owned.findSkills(userId).stream().map(SkillResponse::from).toList(); }
+    public List<OwnedSkillResponse> list(Long userId) { return owned.findOwned(userId).stream().map(OwnedSkillResponse::from).toList(); }
+
+    @Transactional
+    public OwnedSkillResponse updateExperience(Long userId, Long skillId, SkillExperiencePatch input) {
+        if (skillId == null || skillId <= 0) throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
+        if (owned.updateExperience(userId, skillId, input.levelPresent(), input.level(),
+                input.monthsPresent(), input.months()) == 0) throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        return owned.findOwned(userId, skillId).map(OwnedSkillResponse::from)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+    }
     @Transactional
     public SkillResponse add(Long userId, AddSkillRequest input) {
         if (!input.isSingleSelection() || input.skillId() != null && input.skillId() <= 0) {

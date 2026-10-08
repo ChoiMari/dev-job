@@ -17,5 +17,12 @@ public class UserSkill {
     private Skill skill;
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
+    @Column(name = "proficiency_level")
+    private Integer proficiencyLevel;
+    @Column(name = "experience_months")
+    private Integer experienceMonths;
     protected UserSkill() { }
+    public Skill getSkill() { return skill; }
+    public Integer getProficiencyLevel() { return proficiencyLevel; }
+    public Integer getExperienceMonths() { return experienceMonths; }
 }

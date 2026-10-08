@@ -49,9 +49,12 @@ S04 구현: 이메일은 앞뒤 공백 제거·소문자 정규화 후 최대 25
 | 목적 / Method·URL | 인증 | Path / Query | Request Body | 성공 Response Body·Status | 주요 오류 |
 | --- | --- | --- | --- | --- | --- |
 | 표준 기술 검색 `GET /api/skills` | 예 | Query: `q`, `page`, `size` | 없음 | `Skill` 목록 · `200` | 잘못된 검색값 `400` |
-| 내 기술 목록 `GET /api/me/skills` | 예 | 없음 | 없음 | `{ "items": [{ "id": 1, "name": "Java" }] }` · `200` | 인증 없음 `401` |
+| 내 기술 목록 `GET /api/me/skills` | 예 | 없음 | 없음 | `{ "items": [{ "id": 1, "name": "Java", "proficiencyLevel": null, "experienceMonths": null }] }` · `200` | 인증 없음 `401` |
 | 내 기술 추가 `POST /api/me/skills` | 예 | 없음 | `{ "skillId": 1 }` 또는 `{ "name": "Postgres" }` | `Skill` · `201` | 값 오류 `400`, 기술 ID 없음 `404`, 이미 보유 `409` |
+| 내 기술 숙련도·경험 수정 `PATCH /api/me/skills/{skillId}/experience` | 예 | Path: `skillId` | `{ "proficiencyLevel": 3, "experienceMonths": 24 }`의 부분 변경 | 변경된 보유 기술 · `200` | 값 오류 `400`, 인증 없음 `401`, 미보유 기술 `404` |
 | 내 기술 삭제 `DELETE /api/me/skills/{skillId}` | 예 | Path: `skillId` | 없음 | 본문 없음 · `204` | 등록된 기술 없음 `404` |
+
+B02에서 내 기술 목록의 각 항목만 `proficiencyLevel`(1~5 정수 또는 `null`)과 `experienceMonths`(0~600개월 정수 또는 `null`)를 추가한다. PATCH는 두 필드 중 하나 이상을 요구하며 누락은 값 유지, `null`은 제거다. 빈 객체·알 수 없는 필드·잘못된 타입과 범위는 `400`이다. 기존 등록 요청/응답과 공용 `Skill` 형식은 유지한다. 등록 시 두 값은 `null`, 삭제 후 재등록 시에도 `null`이며 프로젝트 기술은 자동 반영하지 않는다. 세부 예시는 [확장 API 명세 B02](extension-api-spec.md)를 따른다.
 | 내 프로젝트 목록 `GET /api/me/projects` | 예 | Query: `page`, `size` | 없음 | `Project` 목록 · `200` | 잘못된 페이지 `400` |
 | 내 프로젝트 등록 `POST /api/me/projects` | 예 | 없음 | 아래 `Project` 입력 | `Project` · `201` | 값 오류 `400`, 기술 없음 `404` |
 | 내 프로젝트 상세 `GET /api/me/projects/{projectId}` | 예 | Path: `projectId` | 없음 | `Project` · `200` | 없음 `404`, 타인 소유 `403` |

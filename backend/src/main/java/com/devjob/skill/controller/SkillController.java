@@ -3,6 +3,7 @@ package com.devjob.skill.controller;
 import com.devjob.auth.dto.CurrentUser;
 import com.devjob.skill.dto.*;
 import com.devjob.skill.service.SkillService;
+import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.http.HttpStatus;
@@ -14,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 public class SkillController {
     private final SkillService skills;
     public SkillController(SkillService skills) { this.skills = skills; }
-    public record SkillList(List<SkillResponse> items) { }
+    public record SkillList(List<OwnedSkillResponse> items) { }
     public record SkillPage(List<SkillResponse> items, int page, int size, long totalElements) { }
     @GetMapping("/skills")
     public SkillPage search(@RequestParam(required = false) String q,
@@ -27,6 +28,11 @@ public class SkillController {
     @PostMapping("/me/skills") @ResponseStatus(HttpStatus.CREATED)
     public SkillResponse add(@AuthenticationPrincipal CurrentUser user, @Valid @RequestBody AddSkillRequest input) {
         return skills.add(user.id(), input);
+    }
+    @PatchMapping("/me/skills/{skillId}/experience")
+    public OwnedSkillResponse updateExperience(@AuthenticationPrincipal CurrentUser user, @PathVariable Long skillId,
+            @RequestBody JsonNode input) {
+        return skills.updateExperience(user.id(), skillId, SkillExperiencePatch.from(input));
     }
     @DeleteMapping("/me/skills/{skillId}") @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@AuthenticationPrincipal CurrentUser user, @PathVariable Long skillId) { skills.delete(user.id(), skillId); }

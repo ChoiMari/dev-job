@@ -47,14 +47,16 @@ B00은 새 엔드포인트를 확정하거나 구현하지 않는다. 아래 기
 
 성공하면 해시와 `credential_version`을 하나의 잠금 트랜잭션에서 갱신한다. 현재 세션을 로그아웃시키고 다른 세션은 다음 보호 API 요청에서 버전 불일치로 `401 UNAUTHORIZED`가 된다. 변경 전 세션의 CSRF 토큰은 재사용할 수 없으며 재로그인 후 `GET /api/auth/csrf`로 새 토큰을 받는다. 같은 사용자의 동시 변경은 사용자 행 잠금 순서로 재검증하므로 오래된 현재 비밀번호를 사용한 후속 요청은 `401`이다. 실패 시 해시·버전·세션은 유지한다. 새 데이터 테이블이나 외부 호출은 없다.
 
-### B02 · 기술 숙련도·경험 — EXT-02
+### B02 · 기술 숙련도·경험 — EXT-02 (확정)
 
-| 후보 Method·URL | 요청·필수 응답 | 착수 전 결정 |
+| Method·URL | 요청 | 성공 응답 |
 | --- | --- | --- |
-| 기존 `GET /api/me/skills` 확장 | 기술별 숙련도·경험 또는 명시적 `null` | 척도·단위, 기존 데이터 기본값 |
-| `PATCH /api/me/skills/{skillId}/experience` | 본인 보유 기술의 숙련도·경험 변경 → 변경된 기술 | 부분 변경과 값 제거 표현, 범위·형식 |
+| `GET /api/me/skills` | 없음 | `200` `{ "items": [{ "id": 1, "name": "Java", "proficiencyLevel": null, "experienceMonths": null }] }`; 기존 정렬 유지 |
+| `PATCH /api/me/skills/{skillId}/experience` | 아래 부분 변경 객체 | `200` `{ "id": 1, "name": "Java", "proficiencyLevel": 3, "experienceMonths": 24 }` |
 
-기존 `POST /api/me/skills`·`DELETE /api/me/skills/{skillId}`의 추가 정보 처리와 재등록 결과를 확정한다. 기존 공고 적합도·Skill Gap 계산은 별도 결정 전까지 바꾸지 않는다.
+`proficiencyLevel`은 `1`~`5`의 JSON 정수, `experienceMonths`는 `0`~`600`의 JSON 정수다. 두 값은 각각 선택 사항이며 `{ "proficiencyLevel": 3, "experienceMonths": 24 }`처럼 함께 보낼 수 있다. 필드 누락은 기존 값 유지, 명시적 `null`은 해당 값 제거다. 최소 한 필드를 보내야 하며 빈 객체·알 수 없는 필드·소수·문자열·불리언·범위 밖 값은 `400 INVALID_INPUT`이다. 경로 ID가 양수가 아니어도 `400 INVALID_INPUT`이다. 미인증은 `401 UNAUTHORIZED`, 본인이 보유하지 않은 기술 ID는 `404 NOT_FOUND`다. 쓰기 요청은 기존 세션·CSRF 규칙을 따른다.
+
+기존 `POST /api/me/skills`의 선택 입력 `{ "skillId": 1 }` 또는 `{ "name": "Java" }`와 `201` `Skill` 응답은 유지한다. 새 보유 관계의 두 값은 `null`이다. 기존 `DELETE /api/me/skills/{skillId}`는 해당 사용자 관계와 두 값을 함께 제거하고 `204`를 반환한다. 삭제 후 재등록하면 이전 값은 복원하지 않는다. `GET /api/skills`와 다른 API의 `Skill` `{id, name}` 형식은 유지한다. 프로젝트 기술은 자동으로 보유 기술이 되지 않으며 기존 공고 적합도·Skill Gap 계산도 바뀌지 않는다.
 
 ### B03 · 개인 할 일 — EXT-03
 
