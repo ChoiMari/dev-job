@@ -1,6 +1,6 @@
 # DevJob 확장 REST API 명세 준비본
 
-상태: **B01~B03·B05·B06 확정·구현, B04 및 다른 단계는 계약 초안** · 2026-10-09
+상태: **B01~B03·B05·B06·B08 확정·구현, B04 및 다른 단계는 계약 초안** · 2026-10-09
 
 ## 1. 사용 방법과 계약 상태
 
@@ -35,7 +35,7 @@ B00은 새 엔드포인트를 확정하거나 구현하지 않는다. 아래 기
 
 ## 2. 단계별 API 후보와 확정할 계약
 
-후보 표의 `필수 응답`은 프론트 연결에 필요한 최소 정보이며, **아직 확정 DTO가 아니다**. B01~B03·B05의 확정 계약은 아래 별도 절을 따른다. 다른 단계는 확정 전 API 문서와 ERD를 함께 갱신한다. 기존 GET을 확장할 경우 현재 응답 필드를 제거하지 않는다.
+후보 표의 `필수 응답`은 프론트 연결에 필요한 최소 정보이며, **아직 확정 DTO가 아니다**. B01~B03·B05·B06·B08의 확정 계약은 아래 별도 절을 따른다. 다른 단계는 확정 전 API 문서와 ERD를 함께 갱신한다. 기존 GET을 확장할 경우 현재 응답 필드를 제거하지 않는다.
 
 ### B01 · 계정 비밀번호 — EXT-01-01 (확정)
 
@@ -132,15 +132,25 @@ B00은 새 엔드포인트를 확정하거나 구현하지 않는다. 아래 기
 
 기존 `GET /api/me/skill-gap`의 읽기 전용 분석 결과와 사용자 학습 기록을 구분한다.
 
-### B08 · 채용시장 확장 분석 — EXT-04
+### B08 · 채용시장 확장 분석 — EXT-04 확정
 
-| 후보 Method·URL | 요청·필수 응답 | 착수 전 결정 |
+세 GET API 모두 로그인 세션이 필요하고 저장된 공용 공고만 읽는다. 외부 출처나 AI를 호출하지 않는다. `source`는 `JobSource.code`의 정확한 값(대문자·숫자·밑줄, 1~100자), `desiredRole`은 공고 제목의 대소문자 무시 부분 일치(최대 200자)다. 날짜는 게시일 `YYYY-MM-DD`의 양 끝을 포함한다. 날짜 역전·형식 오류·출처 형식 오류·잘못된 기술 ID·간격은 `400 INVALID_INPUT`, 인증 없음은 `401`이다. 존재하지 않는 출처 코드나 기술 ID는 빈 집계로 응답한다.
+
+| Method·URL | Query | 성공 응답 |
 | --- | --- | --- |
-| `GET /api/analytics/career-levels` | 기간·출처 등 필터 → 구간별 건수/비율, 전체 표본 | 경력 구간·미상·분모 |
-| `GET /api/analytics/locations` | 필터 → 지역별 건수/비율, 전체 표본 | 지역 정규화·미상·분모 |
-| `GET /api/analytics/skills/trends` | 기간·기술·간격 필터 → 기간별 수치·표본 | 날짜 기준·주/월 간격·중복·필수/우대 합산 |
+| `GET /api/analytics/career-levels` | `dateFrom`, `dateTo`, `source`, `desiredRole` 모두 선택 | `MarketDistribution` · `200` |
+| `GET /api/analytics/locations` | 동일 | `MarketDistribution` · `200` |
+| `GET /api/analytics/skills/trends` | `dateFrom`, `dateTo`, 양의 `skillId` 필수; `interval=WEEK|MONTH`(기본 `MONTH`), `source`, `desiredRole` 선택. 날짜 범위는 최대 1830일 | `SkillTrend` · `200` |
 
-기존 `GET /api/analytics/skills`의 필터 의미·표본 정의를 확인하고, 새로운 통계가 동일한 모수를 쓰는지 명시한다. 빈 결과와 결측은 `0` 통계로 단정하지 않는다.
+분포의 모수는 해당 필터에 맞는 공용 `JobPosting` 수다. 분석 상태와 관계없이 출처·외부 ID로 고유하게 저장된 공고 한 행을 한 번 센다. 출처가 다른 동일 내용은 각각 한 건이다. 날짜 필터가 없으면 게시일 미상 공고도 포함하고, 날짜 필터가 있으면 제외한다. 경력 분류 키는 `ENTRY`(신입), `EXPERIENCED`(경력 또는 연차), `ANY`(무관·신입/경력), `OTHER`(그 외 명시값), `UNKNOWN`(null·공백·미상·미정·정보없음)이다. 지역 키는 `SEOUL`, `BUSAN`, `DAEGU`, `INCHEON`, `GWANGJU`, `DAEJEON`, `ULSAN`, `SEJONG`, `GYEONGGI`, `GANGWON`, `CHUNGBUK`, `CHUNGNAM`, `JEONBUK`, `JEONNAM`, `GYEONGBUK`, `GYEONGNAM`, `JEJU`의 17개 광역시도와 `NATIONWIDE_REMOTE`(전국·원격·재택), `OTHER`(식별 불가 또는 여러 광역시도), `UNKNOWN`(null·공백·미상·미정·정보없음)이다. 분포 항목은 건수가 있는 키만 키 오름차순으로 반환한다. 각 비율은 **전체 공고 수(미상 포함)** 대비 0~1을 소수 넷째 자리까지 반올림한다. 따라서 항목의 반올림된 비율 합계는 1과 조금 다를 수 있다.
+
+`MarketDistribution` 예: `{ "jobCount": 5, "insufficientSample": true, "buckets": [{ "key": "ENTRY", "jobCount": 2, "ratio": 0.4 }, { "key": "UNKNOWN", "jobCount": 3, "ratio": 0.6 }] }`. 0건이면 `jobCount: 0`, `buckets: []`, `insufficientSample: true`다. 10건 미만은 표본 부족이며 전체 채용시장의 대표값으로 해석하지 않는다.
+
+기술 추이는 **완료된 `AIAnalysis`가 있고 게시일이 있는 공고**만 각 기간의 `analyzedJobCount`로 센다. 기술별 `jobCount`는 그 중 해당 `JobSkill`을 가진 공고 수다. 필수·우대 모두 포함하며 `(job_posting_id, skill_id)` 한 관계를 한 번 센다. 기간 시작은 월요일(주) 또는 매월 1일(월)이고, 요청 날짜와 겹치는 기간을 첫 구간부터 마지막 구간까지 반환한다. 첫·끝 구간은 요청 날짜 범위 안의 공고만 센다. 기간에 공고가 없으면 표본 `0`, 기술 건수 `0`, 비율 `null`, `insufficientSample: true`다. 비율을 0으로 단정하지 않는다. 각 구간 비율의 분모는 해당 구간의 완료 분석 공고 수다.
+
+`SkillTrend` 예: `{ "skillId": 7, "interval": "MONTH", "periods": [{ "periodStart": "2026-10-01", "analyzedJobCount": 3, "jobCount": 2, "ratio": 0.6667, "insufficientSample": true }, { "periodStart": "2026-11-01", "analyzedJobCount": 0, "jobCount": 0, "ratio": null, "insufficientSample": true }] }`.
+
+**B11 공유 계약:** B11이 새 공식 출처를 공용 `JobSource`·`JobPosting`에 저장하면 B08의 출처 미지정 집계에 자동 포함한다. `source` 지정 시 그 코드만 센다. 별도 출처 허용 목록을 B08에 두지 않는다. 새 출처에 게시일·경력·지역이 비어 있으면 위 결측 규칙을 적용하고 임의 보완하지 않는다. 개인 직접 저장 공고는 공용 집계에 합치지 않는다. 기존 `GET /api/analytics/skills`의 완료 분석 모수·필터·응답은 변경하지 않는다.
 
 ### B09~B10 · 캐릭터·성장 — EXT-06
 

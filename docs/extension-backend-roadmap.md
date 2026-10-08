@@ -1,6 +1,6 @@
 # DevJob 확장 기능 Backend 단계별 구현 계획
 
-상태: B00 확인·B01~B04 Backend/Frontend 구현, B05·B06 Backend 통합, 나머지 단계 계획 · 2026-10-09
+상태: B00 확인·B01~B04 Backend/Frontend 구현, B05·B06·B08 Backend 통합, 나머지 단계 계획 · 2026-10-09
 
 ## 목적과 적용 순서
 
@@ -67,6 +67,12 @@ main 통합본의 Backend 빌드·일반 테스트와 별도 임시 PostgreSQL 1
 ### B06 면접 일정 관리 (2026-10-09)
 
 B06 독립 브랜치의 면접 일정 migration V15를 B04 V15·B05 V16 다음의 V17로 배치했다. 지원 연결은 선택 사항이며 기존 지원 상태·이력·`nextScheduleAt`은 자동 변경하지 않는다. 통합본 Backend 빌드·일반 테스트와 별도 임시 PostgreSQL 17의 Flyway V1~V17·JPA `validate`·B06 DB 테스트가 통과했다.
+
+### B08 채용시장 확장 분석 (2026-10-08)
+
+사용자가 경력·지역 분포와 기간별 기술 추이의 모수·게시일·중복·미상·비율·표본 부족·필수/우대 합산 기준을 확정했다. 공용 수집 공고 전체를 분포에 사용하고 기술 추이는 게시일이 있는 완료 분석 공고만 사용한다. 새 공식 출처는 공용 `JobPosting`에 저장되면 자동 포함하며 개인 직접 저장 공고는 제외한다. B11 인계 계약은 [확장 API B08](extension-api-spec.md#b08--채용시장-확장-분석--ext-04-확정)에 명시했다. 새 migration 없이 읽기 전용 API를 구현했고, 격리 PostgreSQL 17에서 결측·출처별 동일 외부 ID·기간 경계·빈 구간·기술 분모와 기존 `/api/analytics/skills` 회귀를 확인했다. Frontend는 이 단계에서 변경하지 않았다.
+
+main 통합본의 Backend 빌드·일반 테스트와 별도 임시 PostgreSQL 17의 Flyway V1~V17·JPA `validate`·B08 DB 테스트가 통과했다. B11 공유 계약의 출처 미지정/지정 집계, 게시일 결측, 완료 분석 모수는 [확장 API B08](extension-api-spec.md#b08--채용시장-확장-분석--ext-04-확정)과 일치한다.
 
 권장 모델은 **구현 작업을 수행하는 Codex 모델**이며 DevJob 서비스가 호출하는 AI 모델이 아니다. [OpenAI 공식 모델 선택 가이드](https://developers.openai.com/api/docs/guides/model-selection)는 GPT-6.1 Sol을 복잡한 기술 작업의 균형형, Astra를 까다로운 분석·고난도 작업에 권장한다. 보안·외부 연동·AI 결과 검증·삭제처럼 설계 경계가 많은 단계에 Astra 또는 `high`를, 범위가 명확한 CRUD에는 Sol `medium`을 배정한 것은 이 프로젝트의 작업 난도에 따른 권장안이다. 모델 사용 가능 여부와 비용은 계정·제품 설정에 따라 다를 수 있다. [GPT-6.1 Sol 모델 설명](https://developers.openai.com/api/docs/models/gpt-6.1-sol)에 `medium`·`high` 지원이 명시되어 있다.
 
