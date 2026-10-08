@@ -46,6 +46,8 @@ erDiagram
     JobPosting ||--o{ Bookmark : saved_as
     User ||--o{ PersonalSavedJob : saves_directly
     User ||--o{ PersonalTodo : manages
+    User ||--o{ Resume : owns
+    Resume ||--|{ ResumeVersion : has
     User ||--o{ Application : submits
     JobPosting ||--o{ Application : applied_to
     PersonalSavedJob ||--o{ Application : applied_to
@@ -133,5 +135,11 @@ S11 물리 매핑: `V7__create_applications.sql`은 기존 데이터를 변경�
 ### B03 개인 할 일
 
 `V14__personal_todos.sql`은 `personal_todo`를 추가한다. `id` BIGINT identity PK, `user_id` 필수 users FK, `title` 필수 VARCHAR(200)·공백 검사, `description` VARCHAR(2000), `due_at` TIMESTAMPTZ와 `due_time_zone` VARCHAR(100)은 둘 다 있거나 둘 다 없다. `completed_at`·`deleted_at`은 nullable TIMESTAMPTZ, `created_at`·`updated_at`은 필수 TIMESTAMPTZ다. 활성 목록 조회용 `(user_id, due_at ASC NULLS LAST, id DESC)` 부분 인덱스를 둔다. 서버는 `due_time_zone`의 IANA ID와 `due_at`의 요청 오프셋 일치를 검증한다. 완료 취소 시 `completed_at`을 비우고, 삭제 시 `deleted_at`을 채워 일반 조회에서 제외한다. 지원 기록·`nextActions`와 관계를 만들지 않는다. B10 보상과의 관계는 미정이다.
+
+### B05 이력서·불변 버전
+
+`V15__resumes.sql`은 `resume`과 `resume_version`을 추가한다. `resume`은 BIGINT identity `id`, 필수 `user_id` FK, 공백 제외 필수 `title` VARCHAR(200), 필수 `created_at`·`updated_at` TIMESTAMPTZ, 선택 `deleted_at` TIMESTAMPTZ를 가진다. 활성 목록에는 `(user_id, updated_at DESC, id DESC)` 부분 인덱스, 만료 정리에는 `deleted_at` 부분 인덱스를 둔다. 이력서 삭제는 `deleted_at`만 채우고 조회·B12 분석 원본 선택에서 즉시 제외한다.
+
+`resume_version`은 BIGINT identity `id`, 필수 `resume_id` FK, 양의 `version_number`, 필수 `content_ciphertext` BYTEA와 길이 12바이트의 `content_nonce` BYTEA, 필수 `created_at` TIMESTAMPTZ를 가진다. `(resume_id, version_number)` UNIQUE와 버전 순서 인덱스를 둔다. 애플리케이션은 AES-256-GCM, 버전별 난수 nonce, `resumeId`·`versionNumber` AAD로 원문을 암호화하며 DB에 평문을 저장하지 않는다. 번호·ID·생성 시각·암호문은 불변이다. 새 버전 생성은 이력서 행 잠금으로 순차화한다. B12는 `resume_version.id`와 부모 이력서 ID, 버전 생성 시각을 원본 식별에 사용하고 삭제된 부모를 분석하지 않는다. 삭제 30일 이후 매일 03:00 UTC 정리에서 자식 버전과 부모를 물리 삭제한다. DB 백업의 보존 정책은 미정이다.
 
 공식 채용 출처 추가, 의미 기반 매칭·추천, 이력서 분석, 복잡한 게이미피케이션, 알림, 독립적인 면접 일정 관리는 아직 현재 테이블에 포함하지 않는다. 향후 요구사항과 아키텍처가 확정되면 별도 설계한다. 현재의 `JobSource`, 공통 `Skill`, 사용자·공고·프로젝트 관계는 확장 시 재사용할 수 있다.
