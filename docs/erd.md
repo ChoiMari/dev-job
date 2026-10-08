@@ -141,4 +141,10 @@ InterestedCompany는 사용자별 관심 기업 정보로 User 1:N이며 공고 
 
 V15__create_interested_companies.sql은 interested_company만 추가한다. id BIGINT identity, user_id 필수 users FK, name 필수 VARCHAR(200), website_url 선택 VARCHAR(2048), note 선택 VARCHAR(2000), status 필수 VARCHAR(20) CHECK(INTERESTED, RESEARCHING, ARCHIVED), 생성·수정 시각 필수 TIMESTAMPTZ다. (user_id, website_url) UNIQUE는 웹사이트가 있는 기록의 사용자별 중복을 막는다. URL이 null인 동명 기록은 허용한다. 사용자별 목록에 (user_id, created_at DESC, id DESC) 인덱스를 사용한다. 삭제는 사용자 기록 한 건만 제거하고 공용 회사·공고 관계에는 영향이 없다. 기존 테이블·데이터를 변경하지 않는다.
 
+### B09 캐릭터 기본 상태·장착 확장
+
+`V16__character_equipment.sql`은 `character_equipment`만 추가한다. `user_id`는 `users.id`를 참조하는 PK이므로 사용자당 장착 행은 최대 한 건이다. `outfit_item_id`는 필수 `VARCHAR(40)`이며 현재 저장 가능한 값은 `BASE`, `MINT`다. `updated_at`은 필수 `TIMESTAMPTZ`다. 신규·기존 사용자는 장착 행이 없을 때 `BASE` 상태로 조회되며 최초 장착 시 행을 만든다. 사용자 행 잠금 뒤 삽입·변경하므로 같은 사용자의 동시 장착이 직렬화된다. `PEACH`는 B10 보상 조건이 없어 카탈로그에 잠금 상태로만 나타나고 DB 저장을 허용하지 않는다. 카탈로그와 이미지 ID는 애플리케이션의 고정 값으로 관리하며 이 단계에서 보상·EXP·퀘스트 테이블을 추가하지 않는다.
+
+`V17__character_layer_slots.sql`은 기존 V16 이력을 변경하지 않고 같은 행에 필수 `hair_item_id`·`glasses_item_id`(`VARCHAR(40)`)를 추가한다. 기존 행에는 `CLASSIC`·`NONE` 기본값을 적용한다. DB CHECK는 헤어 `CLASSIC`·`BOB`·`PONY`, 안경 `NONE`·`ROUND`·`SQUARE`만 허용한다. 행이 없는 사용자는 `BASE`·`CLASSIC`·`NONE`으로 조회된다. 하나의 사용자 행 잠금으로 서로 다른 슬롯의 동시 변경도 직렬화해 덮어쓰기를 방지한다. 카탈로그와 이미지 자산은 DB에 저장하지 않는다. 화면은 저장된 세 슬롯의 조합으로 완성 PNG 파일을 선택하므로 추가 DB 변경은 없다.
+
 공식 채용 출처 추가, 의미 기반 매칭·추천, 이력서 분석, 복잡한 게이미피케이션, 알림, 독립적인 면접 일정 관리는 아직 현재 테이블에 포함하지 않는다. 향후 요구사항과 아키텍처가 확정되면 별도 설계한다. 현재의 `JobSource`, 공통 `Skill`, 사용자·공고·프로젝트 관계는 확장 시 재사용할 수 있다.
