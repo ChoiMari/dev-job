@@ -8,7 +8,7 @@
 
 각 단계는 **정책 결정 → 요구사항 갱신 → ERD/데이터 영향 확정 → API 요청·응답·오류 계약 확정 → Backend 구현·테스트 → 명세와 실제 응답 대조**의 순서로 닫는다. 단계 안에서 Controller·DTO·Service·Repository·migration·테스트를 필요한 범위로 묶는다. 이전 단계가 끝나지 않았더라도 의존성이 없는 단계를 착수할 수 있지만, 사용자 데이터 관계가 걸린 단계는 아래 선행 조건을 지킨다.
 
-Frontend는 B01~B15 Backend 단계의 계약 검증이 끝난 뒤 착수한다. 그때 [확장 UI 명세](extension-ui-spec.md), 확정된 API 응답, 로딩·빈 결과·오류 상태를 대조한다. Backend 완료 전 가짜 응답을 실제 기능으로 노출하지 않는다.
+Frontend는 원칙적으로 B01~B15 Backend 단계의 계약 검증이 끝난 뒤 착수한다. B02는 사용자 요청에 따라 확정·검증된 B02 Backend 계약을 먼저 Frontend 기술 영역에 연결한다. 이 경우에도 [확장 UI 명세](extension-ui-spec.md), 확정된 API 응답, 로딩·빈 결과·오류 상태를 대조한다. Backend 완료 전 가짜 응답을 실제 기능으로 노출하지 않는다.
 
 ## 단계 목록
 

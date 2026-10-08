@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { apiRequest } from '../api';
 import { createSkillsApi } from '../api/skills';
-import type { Skill, SkillPage } from '../api/skills';
+import type { OwnedSkill, Skill, SkillPage } from '../api/skills';
 import { Badge } from './PixelArt';
 import { EmptyState, ErrorState, LoadingState, SuccessState } from './States';
+import { skillLevelLabel, skillLevelLabels } from './skillLevel';
 import './ProfileSkills.css';
 
 const skillsApi = createSkillsApi(apiRequest);
@@ -11,7 +12,7 @@ const message = (error: unknown) => error instanceof Error ? error.message : '�
 
 /** Mount in S04 ProfilePage as <ProfileSkills />; independent of the profile form and its save request. */
 export function ProfileSkills() {
-  const [owned, setOwned] = useState<Skill[]>([]);
+  const [owned, setOwned] = useState<OwnedSkill[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [retry, setRetry] = useState(0);
@@ -25,6 +26,11 @@ export function ProfileSkills() {
   const [pending, setPending] = useState(false);
   const [mutationError, setMutationError] = useState('');
   const [success, setSuccess] = useState('');
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [draftLevel, setDraftLevel] = useState('');
+  const [draftMonths, setDraftMonths] = useState('');
+  const [editError, setEditError] = useState('');
   const inFlight = useRef(false);
   const mounted = useRef(true);
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
@@ -53,15 +59,39 @@ export function ProfileSkills() {
         await skillsApi.remove(selection.id);
         if (!mounted.current) return;
         setOwned(values => values.filter(item => item.id !== selection.id));
+        setDeletingId(null); setEditingId(null);
         setSuccess(`${selection.name} 기술을 삭제했습니다.`);
       } else {
         const added = await skillsApi.add(typeof selection === 'string' ? { name: selection } : { skillId: selection.id });
         if (!mounted.current) return;
-        setOwned(values => [...values.filter(item => item.id !== added.id), added].sort((a, b) => a.name.localeCompare(b.name)));
+        setOwned(values => [...values.filter(item => item.id !== added.id),
+          { ...added, proficiencyLevel: null, experienceMonths: null }].sort((a, b) => a.name.localeCompare(b.name)));
         setSuccess(`${added.name} 기술을 추가했습니다.`);
         setSearchRetry(value => value + 1);
       }
     } catch (error) { if (mounted.current) setMutationError(message(error)); }
+    finally { inFlight.current = false; if (mounted.current) setPending(false); }
+  }
+  function startEditing(item: OwnedSkill) {
+    setEditingId(item.id); setDeletingId(null); setEditError(''); setSuccess('');
+    setDraftLevel(item.proficiencyLevel === null ? '' : String(item.proficiencyLevel));
+    setDraftMonths(item.experienceMonths === null ? '' : String(item.experienceMonths));
+  }
+  async function saveExperience(item: OwnedSkill) {
+    if (inFlight.current) return;
+    const proficiencyLevel = draftLevel === '' ? null : Number(draftLevel);
+    const experienceMonths = draftMonths === '' ? null : Number(draftMonths);
+    if (proficiencyLevel !== null && (!Number.isInteger(proficiencyLevel) || proficiencyLevel < 1 || proficiencyLevel > 5)
+      || experienceMonths !== null && (!Number.isInteger(experienceMonths) || experienceMonths < 0 || experienceMonths > 600)) {
+      setEditError('숙련도 또는 경험 개월 수를 확인해 주세요.'); return;
+    }
+    inFlight.current = true; setPending(true); setEditError(''); setSuccess('');
+    try {
+      const updated = await skillsApi.updateExperience(item.id, { proficiencyLevel, experienceMonths });
+      if (!mounted.current) return;
+      setOwned(values => values.map(value => value.id === item.id ? updated : value));
+      setEditingId(null); setSuccess(`${item.name} 기술 정보를 저장했습니다.`);
+    } catch (error) { if (mounted.current) setEditError(message(error)); }
     finally { inFlight.current = false; if (mounted.current) setPending(false); }
   }
   const disabled = pending || loading || !!loadError;
@@ -73,8 +103,28 @@ export function ProfileSkills() {
       ? <ErrorState message={loadError} onRetry={() => setRetry(value => value + 1)} />
       : owned.length === 0 ? <EmptyState title="등록한 기술이 없습니다." message="아래에서 첫 기술을 추가해 보세요." />
       : <ul className="profile-skills__owned" aria-label="내 기술 목록">{owned.map(item => <li key={item.id}>
-        <Badge tone="success" icon="check">{item.name}</Badge>
-        <button type="button" disabled={disabled} onClick={() => void mutate(item, true)} aria-label={`${item.name} 삭제`}>삭제</button>
+        <div className="profile-skills__owned-heading"><Badge tone="success" icon="check">{item.name}</Badge>
+          <button type="button" disabled={disabled} onClick={() => startEditing(item)} aria-label={`${item.name} 숙련도와 경험 수정`}>수정</button>
+          <button type="button" disabled={disabled} onClick={() => { setDeletingId(item.id); setEditingId(null); setSuccess(''); }} aria-label={`${item.name} 삭제`}>삭제</button>
+        </div>
+        {editingId === item.id ? <form className="profile-skills__editor" onSubmit={event => { event.preventDefault(); void saveExperience(item); }}>
+          <label htmlFor={`skill-level-${item.id}`}>숙련도</label>
+          <select id={`skill-level-${item.id}`} value={draftLevel} disabled={pending} onChange={event => setDraftLevel(event.target.value)}>
+            <option value="">정보 없음</option>
+            {skillLevelLabels.map((label, index) => <option value={index + 1} key={label}>{label}</option>)}
+          </select>
+          <label htmlFor={`skill-months-${item.id}`}>경험 (개월)</label>
+          <input id={`skill-months-${item.id}`} type="number" min="0" max="600" step="1" value={draftMonths}
+            disabled={pending} onChange={event => setDraftMonths(event.target.value)} placeholder="정보 없음" />
+          <div className="profile-skills__editor-actions"><button type="submit" disabled={pending}>저장</button>
+            <button type="button" disabled={pending} onClick={() => { setEditingId(null); setEditError(''); }}>취소</button></div>
+          {editError && <p className="form-error" role="alert">{editError}</p>}
+        </form> : <p className="profile-skills__values">숙련도: {skillLevelLabel(item.proficiencyLevel)} · 경험: {item.experienceMonths === null ? '정보 없음' : `${item.experienceMonths}개월`}</p>}
+        {deletingId === item.id && <div className="profile-skills__delete-confirm">
+          <p>{item.name} 기술을 삭제하면 숙련도와 경험도 함께 삭제됩니다. 다시 등록해도 복원되지 않습니다.</p>
+          <button type="button" disabled={disabled} onClick={() => void mutate(item, true)}>삭제 확인</button>
+          <button type="button" disabled={disabled} onClick={() => setDeletingId(null)}>취소</button>
+        </div>}
       </li>)}</ul>}
     {success && <SuccessState title={success} compact />}
     {mutationError && <p className="form-error" role="alert">{mutationError}</p>}
