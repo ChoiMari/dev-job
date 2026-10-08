@@ -62,3 +62,37 @@ test('propagates duplicate, invalid credentials, CSRF and network errors without
     assert.equal(calls, 2);
   }
 });
+
+test('password change fetches CSRF, sends only current/new passwords with PATCH, and accepts empty 204', async () => {
+  const calls = [];
+  const auth = createAuthApi(createApiClient('/api', async (path, options) => {
+    calls.push(path);
+    assert.equal(options.credentials, 'same-origin');
+    if (path === '/api/auth/csrf') return json({ headerName: 'X-CSRF-TOKEN', token: 'fresh-token' });
+    assert.equal(path, '/api/auth/password');
+    assert.equal(options.method, 'PATCH');
+    assert.equal(options.headers['X-CSRF-TOKEN'], 'fresh-token');
+    assert.deepEqual(JSON.parse(options.body), {
+      currentPassword: 'password123', newPassword: 'replacement123',
+    });
+    return new Response(null, { status: 204 });
+  }));
+  assert.equal(await auth.changePassword('password123', 'replacement123'), undefined);
+  assert.deepEqual(calls, ['/api/auth/csrf', '/api/auth/password']);
+});
+
+test('password change propagates contract errors once and rejects an unexpected success body', async () => {
+  for (const status of [400, 401, 403]) {
+    let mutations = 0;
+    const auth = createAuthApi(createApiClient('/api', async path => {
+      if (path === '/api/auth/csrf') return json({ headerName: 'X-CSRF-TOKEN', token: 'token' });
+      mutations++;
+      return json({ code: status === 400 ? 'INVALID_INPUT' : status === 401 ? 'UNAUTHORIZED' : 'FORBIDDEN', message: '오류' }, status);
+    }));
+    await assert.rejects(auth.changePassword('password123', 'replacement123'), { status });
+    assert.equal(mutations, 1);
+  }
+  const unexpected = createAuthApi(async path => path === '/auth/csrf'
+    ? { headerName: 'X-CSRF-TOKEN', token: 'token' } : { success: true });
+  await assert.rejects(unexpected.changePassword('password123', 'replacement123'), { code: 'INVALID_RESPONSE' });
+});

@@ -7,8 +7,9 @@ import { PixelCharacter, PixelIcon } from '../components/PixelArt';
 import { SuccessState } from '../components/States';
 import authWelcomeArt from '../assets/illustrations/auth-welcome.png';
 
-export function AuthPage({ register, registered, onLogin }: {
-  register: boolean; registered: boolean; onLogin: (user: CurrentUser) => void;
+export function AuthPage({ register, registered, passwordChanged, sessionExpired, onLogin }: {
+  register: boolean; registered: boolean; passwordChanged: boolean; sessionExpired: boolean;
+  onLogin: (user: CurrentUser) => void;
 }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -49,6 +50,8 @@ export function AuthPage({ register, registered, onLogin }: {
       <h1>{register ? '회원가입' : '로그인'}</h1>
       <p className="auth-intro">{register ? '취업 준비를 함께할 공간을 만들어 보세요.' : '나의 다음 기회를 준비하는 공간'}</p>
       {!register && registered && <SuccessState compact title="가입이 완료되었습니다." message="로그인해 주세요." />}
+      {!register && passwordChanged && <SuccessState compact title="비밀번호가 변경되었습니다." message="새 비밀번호로 다시 로그인해 주세요." />}
+      {!register && sessionExpired && <p className="form-error" role="alert">로그인이 만료되었습니다. 다시 로그인해 주세요.</p>}
       <form onSubmit={submit} aria-busy={pending}>
         <label htmlFor="email">이메일</label>
         <input id="email" name="email" type="email" required maxLength={254} autoComplete="email"

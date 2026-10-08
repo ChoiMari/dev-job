@@ -98,7 +98,9 @@ export function App() {
     <ErrorState message={error} onRetry={() => setRetry(value => value + 1)} />
   </main>;
   if (!user) return <AuthPage key={path} register={path === '/register'}
-    registered={location === '/login?registered=1'} onLogin={value => { setUser(value); window.location.hash = '/'; }} />;
+    registered={location === '/login?registered=1'} passwordChanged={location === '/login?passwordChanged=1'}
+    sessionExpired={location === '/login?sessionExpired=1'}
+    onLogin={value => { setUser(value); window.location.hash = '/'; }} />;
 
   return <Layout title={title} path={path} user={user} onLogout={logout} loggingOut={loggingOut}>
     {error && <ErrorState message={error} onRetry={() => setRetry(value => value + 1)} />}
@@ -113,7 +115,9 @@ export function App() {
       : path === '/analytics/skills' ? <MarketAnalyticsPage location={location} />
       : path === '/skill-gap' ? <SkillGapPage location={location} />
       : path === '/character' ? <CharacterPage />
-      : path === '/settings' ? <SettingsPage user={user} onLogout={logout} loggingOut={loggingOut} />
+      : path === '/settings' ? <SettingsPage user={user} onLogout={logout} loggingOut={loggingOut}
+        onPasswordChanged={() => { setUser(null); window.location.hash = '/login?passwordChanged=1'; }}
+        onSessionExpired={() => { setUser(null); window.location.hash = '/login?sessionExpired=1'; }} />
       : path.startsWith('/applications/') ? <ApplicationDetailPage key={path} location={location} /> : <section className="card">
       <EmptyState title="화면을 찾을 수 없습니다." message="주소를 확인하거나 기본 화면으로 돌아가 주세요." />
       <a className="button-link" href="#/">기본 화면으로</a>
