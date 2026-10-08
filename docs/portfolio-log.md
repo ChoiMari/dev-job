@@ -140,3 +140,4 @@
 - 결정과 Trade-off: 기존 `Skill` 응답과 적합도·Skill Gap의 기술 집합 계산을 유지하기 위해 숙련도 1~5·경험 0~600개월의 nullable 값을 `UserSkill` 관계에만 저장했다. 삭제 후 재등록은 새 관계로 시작하며 이전 값을 복원하지 않는다.
 - 문제와 해결: 첫 격리 DB 테스트에서 JPQL 벌크 UPDATE 뒤 PATCH 응답이 이전 null 값을 반환했다. 관리 중인 JPA 객체가 UPDATE를 반영하지 않은 원인을 확인하고 수정 전 flush·수정 후 영속성 컨텍스트 clear로 재조회했다.
 - 검증 근거: 일회용 PostgreSQL 17 `devjob_b02_test`에서 Flyway V1~V12·JPA `validate`와 B02 DB 테스트 2건이 통과했다. 기존 공용 기술 검색 응답 형식, 부분 수정·명시적 null·사용자 격리·삭제/재등록을 확인했다. 같은 일회용 컨테이너의 별도 DB에서 기존 공고 적합도·Skill Gap DB 테스트도 통과해 계산 계약을 회귀 확인했다. Backend 일반 테스트 105건도 통과했다. 다른 단계 이름의 DB 가드 테스트는 이번 DB 실행에 포함하지 않았다.
+- main 통합: B01과 B02가 각각 Flyway V12를 사용해 합류 시 버전이 중복됐다. B01을 V12로 유지하고 B02를 V13으로 조정했으며, 위 B02 단독 검증 기록의 V12는 통합 전 브랜치에서 실행한 버전이다. 통합본 Backend 빌드·일반 테스트와 별도 임시 PostgreSQL 17의 B01·B02 DB 테스트에서 Flyway V1~V13·JPA 검증이 통과했다.
