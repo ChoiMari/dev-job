@@ -4,7 +4,7 @@
 
 ## 1. 목적과 적용 범위
 
-이 문서는 `extension-requirements.md`의 기능을 화면에 연결할 때 필요한 **배치, 사용자 행동, 표시 상태, 접근성, 화면 검증 기준**을 정의한다. 요구사항에서 미정으로 남긴 정책은 이 문서에서도 미정으로 둔다. [Backend 로드맵](extension-backend-roadmap.md)의 B01~B15 API 구현·검증이 끝난 뒤 확정된 [확장 API 명세](extension-api-spec.md)를 기준으로 화면을 단계별로 연결한다.
+이 문서는 `extension-requirements.md`의 기능을 화면에 연결할 때 필요한 **배치, 사용자 행동, 표시 상태, 접근성, 화면 검증 기준**을 정의한다. 요구사항에서 미정으로 남긴 정책은 이 문서에서도 미정으로 둔다. B01·B02 화면은 검증된 Backend 계약에 연결했으며, 나머지 화면은 [Backend 로드맵](extension-backend-roadmap.md)과 확정된 [확장 API 명세](extension-api-spec.md)를 기준으로 단계별로 연결한다.
 
 현재 화면 기준은 [기존 UI 명세](ui-spec.md)와 `frontend/src` 구현이다. 인증 후 해시 경로, `Layout`의 Header·Sidebar, `LoadingState`·`EmptyState`·`ErrorState`·`SuccessState`, 색상 토큰과 반응형 배치를 재사용한다. 새 기능을 추가해도 기존 공고·관심공고·지원·프로필 흐름은 유지한다. 확장 화면의 새 장식 이미지는 [이미지 제작 가이드](image-generation-brief.md)에 따라 전용 폴더에서 제작한다.
 

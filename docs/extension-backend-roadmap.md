@@ -8,7 +8,7 @@
 
 각 단계는 **정책 결정 → 요구사항 갱신 → ERD/데이터 영향 확정 → API 요청·응답·오류 계약 확정 → Backend 구현·테스트 → 명세와 실제 응답 대조**의 순서로 닫는다. 단계 안에서 Controller·DTO·Service·Repository·migration·테스트를 필요한 범위로 묶는다. 이전 단계가 끝나지 않았더라도 의존성이 없는 단계를 착수할 수 있지만, 사용자 데이터 관계가 걸린 단계는 아래 선행 조건을 지킨다.
 
-Frontend는 원칙적으로 B01~B15 Backend 단계의 계약 검증이 끝난 뒤 착수한다. B02는 사용자 요청에 따라 확정·검증된 B02 Backend 계약을 먼저 Frontend 기술 영역에 연결한다. 이 경우에도 [확장 UI 명세](extension-ui-spec.md), 확정된 API 응답, 로딩·빈 결과·오류 상태를 대조한다. Backend 완료 전 가짜 응답을 실제 기능으로 노출하지 않는다.
+Frontend는 원칙적으로 B01~B15 Backend 단계의 계약 검증이 끝난 뒤 착수한다. B01·B02는 사용자 요청에 따라 확정·검증된 각 Backend 계약을 먼저 Frontend 설정·기술 영역에 연결했다. 이 경우에도 [확장 UI 명세](extension-ui-spec.md), 확정된 API 응답, 로딩·빈 결과·오류 상태를 대조한다. Backend 완료 전 가짜 응답을 실제 기능으로 노출하지 않는다.
 
 ## 단계 목록
 
@@ -50,6 +50,7 @@ B01~B15를 모두 개발 범위에 포함한다. B10~B14는 제품/외부 조건
 
 - B01과 B02의 독립 커밋을 main에 반영했다. 두 작업이 각각 Flyway V12를 사용했으므로 B01의 사용자 인증 버전은 V12로 유지하고 B02의 기술 숙련도·경험 migration을 V13으로 순번 조정했다. 각 단계의 API·데이터 계약은 유지한다.
 - 통합본 Backend 빌드·일반 테스트와 별도 임시 PostgreSQL 17의 B01·B02 DB 테스트가 통과했다. Flyway V1~V13과 JPA `validate`를 함께 확인했다.
+- B01·B02 Frontend 커밋을 반영한 뒤 Frontend 빌드와 전체 테스트 63건이 통과했다.
 
 권장 모델은 **구현 작업을 수행하는 Codex 모델**이며 DevJob 서비스가 호출하는 AI 모델이 아니다. [OpenAI 공식 모델 선택 가이드](https://developers.openai.com/api/docs/guides/model-selection)는 GPT-6.1 Sol을 복잡한 기술 작업의 균형형, Astra를 까다로운 분석·고난도 작업에 권장한다. 보안·외부 연동·AI 결과 검증·삭제처럼 설계 경계가 많은 단계에 Astra 또는 `high`를, 범위가 명확한 CRUD에는 Sol `medium`을 배정한 것은 이 프로젝트의 작업 난도에 따른 권장안이다. 모델 사용 가능 여부와 비용은 계정·제품 설정에 따라 다를 수 있다. [GPT-6.1 Sol 모델 설명](https://developers.openai.com/api/docs/models/gpt-6.1-sol)에 `medium`·`high` 지원이 명시되어 있다.
 
@@ -165,4 +166,4 @@ docs/api-spec.md 2절, docs/erd.md를 참고해.
 Frontend는 수정하지 마.
 ```
 
-한 단계의 완료는 **코드 작성**이 아니라 계약 표의 요청/응답/오류와 실제 동작, 필요한 데이터 이전, 보안·회귀 테스트가 일치하는 것으로 판정한다. B01~B15 Backend 전체가 끝나면 확정된 API만 기준으로 Frontend 작업 단위를 나눈다.
+한 단계의 완료는 **코드 작성**이 아니라 계약 표의 요청/응답/오류와 실제 동작, 필요한 데이터 이전, 보안·회귀 테스트가 일치하는 것으로 판정한다. 나머지 Frontend 작업 단위는 확정된 Backend API를 기준으로 나눈다.
