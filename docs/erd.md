@@ -149,4 +149,8 @@ V15__create_interested_companies.sql은 interested_company만 추가한다. id B
 
 `resume_version`은 BIGINT identity `id`, 필수 `resume_id` FK, 양의 `version_number`, 필수 `content_ciphertext` BYTEA와 길이 12바이트의 `content_nonce` BYTEA, 필수 `created_at` TIMESTAMPTZ를 가진다. `(resume_id, version_number)` UNIQUE와 버전 순서 인덱스를 둔다. 애플리케이션은 AES-256-GCM, 버전별 난수 nonce, `resumeId`·`versionNumber` AAD로 원문을 암호화하며 DB에 평문을 저장하지 않는다. 번호·ID·생성 시각·암호문은 불변이다. 새 버전 생성은 이력서 행 잠금으로 순차화한다. B12는 `resume_version.id`와 부모 이력서 ID, 버전 생성 시각을 원본 식별에 사용하고 삭제된 부모를 분석하지 않는다. 삭제 30일 이후 매일 03:00 UTC 정리에서 자식 버전과 부모를 물리 삭제한다. DB 백업의 보존 정책은 미정이다.
 
-공식 채용 출처 추가, 의미 기반 매칭·추천, 이력서 분석, 복잡한 게이미피케이션, 알림, 독립적인 면접 일정 관리는 아직 현재 테이블에 포함하지 않는다. 향후 요구사항과 아키텍처가 확정되면 별도 설계한다. 현재의 `JobSource`, 공통 `Skill`, 사용자·공고·프로젝트 관계는 확장 시 재사용할 수 있다.
+### B06 면접 일정
+
+`V17__interview_schedules.sql`은 `interview_schedule`을 추가한다. `id` BIGINT identity PK, `user_id` 필수 users FK, `application_id` 선택 application FK, `title` 필수 VARCHAR(200)·공백 검사, `starts_at` 필수 TIMESTAMPTZ, `time_zone` 필수 VARCHAR(100), `cancelled_at` nullable TIMESTAMPTZ, `created_at`·`updated_at` 필수 TIMESTAMPTZ다. 사용자·시각·ID 조회 인덱스와 지원 FK 인덱스를 둔다. 서버는 연결된 지원 건의 소유권과 IANA 시간대·요청 오프셋의 일치를 검증한다. 동일 시작 시각의 일정도 허용한다. 취소는 `cancelled_at`을 기록하고 재활성화는 이를 비운다. `Application.current_status`·상태 이력·`next_schedule_at`은 면접 일정에 의해 자동 변경되지 않는다.
+
+공식 채용 출처 추가, 의미 기반 매칭·추천, 이력서 분석, 복잡한 게이미피케이션, 알림은 아직 현재 테이블에 포함하지 않는다. 향후 요구사항과 아키텍처가 확정되면 별도 설계한다. 현재의 `JobSource`, 공통 `Skill`, 사용자·공고·프로젝트 관계는 확장 시 재사용할 수 있다.

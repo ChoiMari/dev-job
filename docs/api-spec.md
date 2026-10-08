@@ -170,6 +170,8 @@ InterestedCompany 응답은 id, name, websiteUrl, note, status, createdAt, updat
 
 `Bookmark`: `{ "id": 1, "job": JobSummary, "createdAt": "..." }`. `Application`: `{ "id": 1, "job": JobSummary | null, "personalSavedJob": PersonalSavedJob | null, "currentStatus": "PLANNED", "appliedDate": null, "nextScheduleAt": null, "note": null, "createdAt": "...", "updatedAt": "..." }`. 두 공고 필드 중 하나만 값이 있다. `ApplicationStatusHistory`: `{ "id": 1, "fromStatus": null, "toStatus": "PLANNED", "changedAt": "..." }`. 지원 생성 시 초기 상태는 `INTERESTED`, `PLANNED`, `APPLIED` 중 하나이며 최초 상태도 이력에 남긴다. `APPLIED`로 생성하거나 변경할 때 `appliedDate`를 입력해 실제 지원일을 기록한다. 상태 전이는 `INTERESTED → PLANNED → APPLIED → DOCUMENT_PASSED → INTERVIEW → FINAL_PASSED`를 기본으로 하고, `INTERESTED`·`PLANNED`·`APPLIED`에서 `WITHDRAWN`, `APPLIED`·`DOCUMENT_PASSED`·`INTERVIEW`에서 `REJECTED`를 허용한다. 종료 상태에서는 추가 전이를 허용하지 않는다. 북마크와 지원은 서로 독립적으로 생성·삭제된다.
 
+B06 면접 일정은 지원 건 연결이 선택인 별도 리소스다. [확장 API B06](extension-api-spec.md#b06--면접-일정--ext-05-03-확정)에 목록·등록·상세·변경·취소·재활성화 계약을 둔다. 면접 일정의 변경은 이 절의 `nextScheduleAt`, 지원 상태, 상태 이력을 자동 변경하지 않는다.
+
 ### 개인 관심공고 계약
 
 `POST /api/me/saved-jobs`는 `url`(HTTP(S), 호스트 필수, 사용자 정보·fragment 없음, 최대 2048자), `companyName`(1~200자), `title`(1~300자)을 필수로 받는다. 선택 필드는 `role`·`careerLevel`·`employmentType` 각 최대 120자, `location` 최대 200자, `deadlineDate` 유효한 `YYYY-MM-DD`, `note` 최대 2000자, AI 입력용 `description` 최대 12000자다. 등록 응답은 `PersonalSavedJob`과 `201`; `GET /api/me/saved-jobs/{id}`는 소유한 활성 개인 공고만 `200`; `PUT /api/me/saved-jobs/{id}`는 같은 전체 필드로 수정해 `200`; `DELETE /api/me/saved-jobs/{id}`는 목록에서 숨기고 `204`를 반환한다. 로그인·변경 요청 CSRF가 필요하다. 잘못된 값은 `400`, 존재하지 않거나 타인 소유인 공고는 `404`, 같은 사용자의 활성 동일 URL은 `409`다. 삭제한 공고의 기존 지원 기록은 유지한다. 개인 공고는 `JobPosting`·`JobSource`로 만들지 않는다.
@@ -198,4 +200,4 @@ S16 대시보드 선정 기준: `applicationCounts`에는 모든 지원 상태�
 
 ## 7. MVP 이후
 
-이력서·자기소개서 분석, 알림, 캐릭터 성장, 의미 기반 추천, 추가 채용 출처 등은 이 명세의 **구현 완료 MVP 엔드포인트**에 포함하지 않는다. 개인 할 일 B03의 확정 계약은 [확장 API 명세](extension-api-spec.md#b03--개인-할-일--ext-03-확정)를 따른다. EXT-01~08 전체의 Backend 구현 순서는 [확장 Backend 로드맵](extension-backend-roadmap.md), 후보 API와 단계별 계약 확정 항목은 [확장 API 명세 준비본](extension-api-spec.md)을 따른다. 다른 후보 경로는 아직 구현된 계약이 아니며, 각 단계의 정책·ERD·요청/응답/오류를 확정한 뒤 이 문서와 코드에 함께 반영한다. 관리자 API는 현 확장 요구사항에도 없다. S03 인증 전달·로그아웃 계약은 2절에 반영했다.
+이력서·자기소개서 분석, 알림, 캐릭터 성장, 의미 기반 추천, 추가 채용 출처 등은 이 명세의 **구현 완료 MVP 엔드포인트**에 포함하지 않는다. 개인 할 일 B03과 면접 일정 B06의 확정 계약은 [확장 API 명세](extension-api-spec.md)를 따른다. EXT-01~08 전체의 Backend 구현 순서는 [확장 Backend 로드맵](extension-backend-roadmap.md), 후보 API와 단계별 계약 확정 항목은 [확장 API 명세 준비본](extension-api-spec.md)을 따른다. 다른 후보 경로는 아직 구현된 계약이 아니며, 각 단계의 정책·ERD·요청/응답/오류를 확정한 뒤 이 문서와 코드에 함께 반영한다. 관리자 API는 현 확장 요구사항에도 없다. S03 인증 전달·로그아웃 계약은 2절에 반영했다.

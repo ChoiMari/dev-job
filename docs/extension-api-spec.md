@@ -1,6 +1,6 @@
 # DevJob 확장 REST API 명세 준비본
 
-상태: **B01~B03·B05 확정·구현, B04 및 다른 단계는 계약 초안** · 2026-10-09
+상태: **B01~B03·B05·B06 확정·구현, B04 및 다른 단계는 계약 초안** · 2026-10-09
 
 ## 1. 사용 방법과 계약 상태
 
@@ -107,15 +107,20 @@ B00은 새 엔드포인트를 확정하거나 구현하지 않는다. 아래 기
 
 원문은 AES-256-GCM으로 버전별 난수 nonce와 `resumeId`·`versionNumber` AAD를 사용해 암호화한 뒤 PostgreSQL에 저장한다. Base64 인코딩된 32바이트 `RESUME_ENCRYPTION_KEY` 환경변수가 없거나 유효하지 않으면 원문 읽기·쓰기만 `503 SERVICE_UNAVAILABLE`이며 기존 CRM은 계속 사용 가능하다. 키를 잃거나 교체하면 기존 암호문을 읽을 수 없으므로 운영 중 키를 안전하게 보존해야 한다. 삭제는 `deletedAt`을 기록하고 즉시 전체 조회에서 제외한다. 매일 03:00 UTC 정리 작업이 삭제 30일 이상 지난 이력서와 모든 버전을 영구 삭제한다. 따라서 실제 DB 제거는 30일 시점 이후 다음 정리 실행 때 이뤄진다. 백업 보존 정책은 아직 미정이며 DB 정리만으로 백업에서의 삭제를 보증하지 않는다. 자기소개서의 저장 모델과 B12 분석 결과 처리 계약은 B12에서 결정한다.
 
-### B06 · 면접 일정 — EXT-05-03
+### B06 · 면접 일정 — EXT-05-03 (확정)
 
-| 후보 Method·URL | 요청·필수 응답 | 착수 전 결정 |
-| --- | --- | --- |
-| `GET/POST /api/me/interviews` | 목록·생성 → 일정 ID, 시간대 포함 시작 시각, 상태, 지원 연결 | 지원 ID 필수 여부, 일정 충돌 기준 |
-| `GET/PATCH /api/me/interviews/{interviewId}` | 상세·일정 변경 → 최신 일정 | 시간/상태 수정 범위 |
-| `POST /api/me/interviews/{interviewId}/cancel` | 취소 의도 → 취소 상태 | 취소 후 재활성화 여부, 중복 취소 결과 |
+모든 경로는 로그인 세션이 필요하며 POST·PATCH는 CSRF 토큰이 필요하다. 목록은 본인 일정만 시작 시각 오름차순·ID 내림차순으로 반환한다. 같은 시각의 활성 면접도 등록할 수 있다.
 
-기존 `Application.nextScheduleAt`과 독립 일정의 동기화 여부를 정하기 전에는 두 값을 자동 복제하지 않는다. 연결된 지원 건은 본인 소유여야 한다.
+| Method·URL | 요청 | 성공 응답 | 주요 오류 |
+| --- | --- | --- | --- |
+| `GET /api/me/interviews?page=0&size=20` | `page` 0 이상, `size` 1~100 | `{items: Interview[], page, size, totalElements}` · `200` | 페이지 오류 `400` |
+| `POST /api/me/interviews` | `{applicationId?: number|null, title: string, startsAt: string, timeZone: string}` | `Interview` · `201` | 입력·시간대 오류 `400`, 연결 지원 없음 `404`, 타인 지원 `403` |
+| `GET /api/me/interviews/{interviewId}` | 없음 | `Interview` · `200` | 없음 `404`, 타인 일정 `403` |
+| `PATCH /api/me/interviews/{interviewId}` | 위 필드 중 하나 이상. 시간 변경 시 `startsAt`과 `timeZone`을 함께 제공. `applicationId: null`로 연결 해제 | `Interview` · `200` | 입력 오류 `400`, 없음 `404`, 타인 일정·지원 `403` |
+| `POST /api/me/interviews/{interviewId}/cancel` | 없음 | 취소된 `Interview` · `200` | 없음 `404`, 타인 일정 `403` |
+| `POST /api/me/interviews/{interviewId}/reactivate` | 없음 | 활성 `Interview` · `200` | 없음 `404`, 타인 일정 `403` |
+
+`Interview`: `{id, applicationId: number|null, title, startsAt, timeZone, status: "SCHEDULED"|"CANCELLED", cancelledAt: string|null, createdAt, updatedAt}`. `title`은 공백 제외 1~200자다. `startsAt`은 오프셋을 포함한 ISO 8601 날짜·시각, `timeZone`은 IANA 시간대 ID(최대 100자)이며 요청 오프셋이 해당 시각의 시간대 오프셋과 같아야 한다. 응답은 입력 시간대의 오프셋으로 시작 시각을 표시한다. 취소·재활성화는 기록을 보존하며 중복 요청은 같은 상태를 `200`으로 반환한다. 취소된 일정도 목록·상세에서 조회하고 변경할 수 있다. 지원 연결은 선택이며 연결된 지원은 본인 소유여야 한다. 면접 일정과 `Application.nextScheduleAt`은 서로 자동 동기화하지 않고, 지원 상태·이력도 변경하지 않는다.
 
 ### B07 · 학습 목표 — EXT-05-04
 
