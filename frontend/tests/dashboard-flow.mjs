@@ -10,7 +10,7 @@ const errors = [];
 page.on('pageerror', error => errors.push(error.message));
 const counts = { INTERESTED: 0, PLANNED: 0, APPLIED: 0, DOCUMENT_PASSED: 0,
   INTERVIEW: 0, FINAL_PASSED: 0, REJECTED: 0, WITHDRAWN: 0 };
-const empty = { applicationCounts: counts, bookmarkCount: 0, nextActions: [], recommendedJobs: [], skillGapPreview: [] };
+const empty = { applicationCounts: counts, bookmarkCount: 0, nextActions: [], recommendedJobs: [], skillGapPreview: [], personalTodos: [] };
 let state = 'empty';
 try {
   await page.route('**/api/auth/me', route => route.fulfill({ json: { id: 1, email: 's16@example.com' } }));

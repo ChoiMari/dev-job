@@ -11,6 +11,7 @@ const groups = [
   ] },
   { label: '나의 취업 준비', links: [
     { href: '#/applications', label: '지원 관리', icon: 'calendar', active: (path: string) => path.startsWith('/applications') },
+    { href: '#/todos', label: '내 할 일', icon: 'check', active: (path: string) => path.startsWith('/todos') },
     { href: '#/profile', label: '내 프로필', icon: 'profile', active: (path: string) => path === '/profile' },
     { href: '#/projects', label: '프로젝트 관리', icon: 'folder', active: (path: string) => path.startsWith('/projects') },
   ] },

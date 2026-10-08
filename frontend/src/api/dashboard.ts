@@ -5,6 +5,8 @@ import type { ApplicationStatus } from './application-status.ts';
 import { isJobSummary } from './jobs.ts';
 import type { JobSummary } from './jobs.ts';
 import type { Skill } from './analysis.ts';
+import { isTodo } from './todos.ts';
+import type { Todo } from './todos.ts';
 
 export type Dashboard = {
   applicationCounts: Record<ApplicationStatus, number>;
@@ -12,6 +14,7 @@ export type Dashboard = {
   nextActions: { applicationId: number; jobId: number | null; jobTitle: string; status: ApplicationStatus; nextScheduleAt: string | null }[];
   recommendedJobs: JobSummary[];
   skillGapPreview: Skill[];
+  personalTodos: Todo[];
 };
 const object = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null;
 const count = (value: unknown): value is number => typeof value === 'number' && Number.isSafeInteger(value) && value >= 0;
@@ -23,7 +26,9 @@ export function isDashboard(value: unknown): value is Dashboard {
       && (action.nextScheduleAt === null || (typeof action.nextScheduleAt === 'string' && Number.isFinite(Date.parse(action.nextScheduleAt)))))
     && Array.isArray(value.recommendedJobs) && value.recommendedJobs.length <= 3 && value.recommendedJobs.every(isJobSummary)
     && Array.isArray(value.skillGapPreview) && value.skillGapPreview.length <= 5
-    && value.skillGapPreview.every(skill => object(skill) && count(skill.id) && skill.id > 0 && typeof skill.name === 'string' && skill.name.length > 0);
+    && value.skillGapPreview.every(skill => object(skill) && count(skill.id) && skill.id > 0 && typeof skill.name === 'string' && skill.name.length > 0)
+    && Array.isArray(value.personalTodos) && value.personalTodos.length <= 5
+    && value.personalTodos.every(todo => isTodo(todo) && !todo.completed);
 }
 export function createDashboardApi(request: ReturnType<typeof createApiClient>) {
   return { async get(signal?: AbortSignal): Promise<Dashboard> {

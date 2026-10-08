@@ -1,0 +1,38 @@
+.todos-page { max-width: 1000px; margin: 0 auto; display: grid; gap: 20px; }
+.todos-intro { display: flex; align-items: center; justify-content: space-between; gap: 24px; background: linear-gradient(115deg, #f1ebfa, #f7fbf8); }
+.todos-intro h2 { font-size: 1.65rem; margin: 6px 0; }
+.todos-intro p { max-width: 56ch; margin: 0 0 20px; }
+.todos-intro img { width: min(28vw, 180px); height: auto; object-fit: contain; }
+.todos-list-card { padding-top: 26px; }
+.todos-list-heading { display: flex; align-items: end; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
+.todos-list-heading h2 { margin: 0; }
+.todos-list-heading > span { color: var(--muted); font-size: .85rem; }
+.todos-filters, .todo-actions, .todos-pagination { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.todos-filters { margin-bottom: 18px; }
+.todos-list { list-style: none; padding: 0; margin: 0; }
+.todos-list li { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 18px 0; border-top: 1px solid var(--border); }
+.todo-main { min-width: 0; display: grid; gap: 4px; }
+.todo-main a { font-weight: 700; overflow-wrap: anywhere; }
+.todo-main span { color: var(--muted); font-size: .85rem; }
+.todos-list li.is-done .todo-main a { color: var(--muted); }
+.todo-actions { flex-shrink: 0; }
+.todo-actions button { min-height: 44px; }
+.todos-pagination { justify-content: space-between; margin-top: 18px; }
+.todos-pagination span { color: var(--muted); font-size: .9rem; }
+.todos-editor { max-width: 760px; margin: 0 auto; }
+.todos-editor > .button-link { margin-bottom: 28px; }
+.todos-form, .todos-form fieldset { display: grid; gap: 16px; }
+.todos-form fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+.todos-form label { display: grid; gap: 6px; font-weight: 650; }
+.todos-form input, .todos-form textarea { width: 100%; min-width: 0; border: 1px solid var(--input-border); border-radius: 8px; padding: 11px 12px; font: inherit; color: var(--text); background: var(--surface); }
+.todos-form input { min-height: 44px; }
+.todos-form textarea { resize: vertical; }
+.todos-help { margin: -4px 0 4px; font-size: .85rem; }
+.todo-detail h3 { font-size: 1.5rem; overflow-wrap: anywhere; }
+.todo-detail-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; color: var(--muted); }
+.todo-description { white-space: pre-wrap; overflow-wrap: anywhere; margin: 24px 0; }
+.todo-detail > .todo-actions { margin-top: 28px; }
+.todo-delete { padding: 18px; margin-top: 18px; border: 1px solid #e7b8c1; border-radius: 10px; background: var(--error-soft); }
+.todo-delete p { margin-top: 0; }
+@media (max-width: 650px) { .todos-intro { align-items: flex-start; } .todos-intro img { width: 96px; } .todos-list li { align-items: flex-start; flex-direction: column; } .todo-actions { flex-shrink: 1; } }
+@media (max-width: 370px) { .todos-intro img { display: none; } .todos-pagination { justify-content: center; } }

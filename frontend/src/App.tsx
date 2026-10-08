@@ -15,6 +15,7 @@ import { ApplicationsPage, ApplicationDetailPage } from './pages/applications/Ap
 import { MarketAnalyticsPage } from './pages/analytics/MarketAnalyticsPage';
 import { SkillGapPage } from './pages/analytics/SkillGapPage';
 import { DashboardPage } from './pages/dashboard/DashboardPage';
+import { TodosPage } from './pages/todos/TodosPage';
 import { CharacterPage } from './pages/CharacterPage';
 import { SettingsPage } from './pages/SettingsPage';
 
@@ -71,6 +72,7 @@ export function App() {
   const title = publicPath ? path === '/register' ? '회원가입' : '로그인'
     : path === '/' ? '대시보드' : path === '/profile' ? '내 프로필' : path === '/states' ? '공통 상태 확인'
       : path === '/projects' || path.startsWith('/projects/') ? '프로젝트 관리'
+      : path === '/todos' || path.startsWith('/todos/') ? '내 할 일'
       : path === '/jobs' ? '채용공고' : path === '/bookmarks' ? '관심 공고'
       : path.startsWith('/jobs/') ? '공고 상세'
       : path === '/applications' ? '지원 관리' : path.startsWith('/applications/') ? '지원 상세'
@@ -108,6 +110,7 @@ export function App() {
       <ProfilePage key={`profile-${user.id}`} email={user.email} onEmailChange={email => setUser(current => current ? { ...current, email } : current)} />
       <ProfileSkills key={`skills-${user.id}`} />
     </> : path === '/projects' || path.startsWith('/projects/') ? <ProjectsPage key={`${user.id}:${path}`} location={location} />
+      : path === '/todos' || path.startsWith('/todos/') ? <TodosPage key={`${user.id}:${path}`} location={location} />
       : path === '/states' ? <StatePreview /> : path === '/jobs' ? <JobsPage location={location} />
       : path === '/bookmarks' ? <BookmarksPage location={location} />
       : path.startsWith('/jobs/') ? <JobDetailPage location={location} />

@@ -58,7 +58,7 @@ export function DashboardPage({ user }: { user: CurrentUser }) {
       <a href="#/skill-gap"><span>03</span><strong>다음 기술 찾기</strong><small>목표 직무와 역량 비교</small><b aria-hidden="true">↗</b></a>
     </section>
     <div className="dashboard-content-grid">
-    <section className="card dashboard-panel"><div className="dashboard-section-heading"><div className="dashboard-heading-title"><img src={dashboardDesk} alt="" aria-hidden="true" width="64" height="64" /><div><span className="eyebrow">NEXT STEP</span><h2>다음 행동</h2></div></div><a href="#/applications">지원 관리 ↗</a></div>
+    <section className="card dashboard-panel"><div className="dashboard-section-heading"><div className="dashboard-heading-title"><img src={dashboardDesk} alt="" aria-hidden="true" width="64" height="64" /><div><span className="eyebrow">FROM APPLICATIONS</span><h2>지원에서 나온 다음 행동</h2></div></div><a href="#/applications">지원 관리 ↗</a></div>
       {data.nextActions.length ? <ul className="dashboard-list">{data.nextActions.map(action => <li key={action.applicationId}>
         <a href={`#/applications/${action.applicationId}`}>{actionText[action.status]} · {action.jobTitle}</a>
         {action.nextScheduleAt && <span>예정 {date(action.nextScheduleAt)}</span>}
@@ -70,6 +70,11 @@ export function DashboardPage({ user }: { user: CurrentUser }) {
       </li>)}</ul> : <EmptyState title="추천할 공고가 없습니다." message="기술을 등록하고 공고 분석이 완료되면 적합도에 맞는 공고를 볼 수 있습니다." />}
       <p className="dashboard-note">기술 적합도는 등록한 기술과 분석된 공고 기술의 일치 비율이며 합격 가능성을 뜻하지 않습니다.</p></section>
     </div>
+    <section className="card dashboard-panel dashboard-todo-panel"><div className="dashboard-section-heading"><div><span className="eyebrow">MY TO-DO</span><h2>내가 등록한 할 일</h2></div><a href="#/todos">할 일 관리 ↗</a></div>
+      {data.personalTodos.length ? <ul className="dashboard-list">{data.personalTodos.map(todo => <li key={todo.id}>
+        <a href={`#/todos/${todo.id}`}>{todo.title}</a>
+        <span>{todo.dueAt && todo.dueTimeZone ? `기한 ${new Intl.DateTimeFormat('ko-KR', { dateStyle: 'medium', timeStyle: 'short', timeZone: todo.dueTimeZone }).format(new Date(todo.dueAt))} · ${todo.dueTimeZone}` : '기한 없음'}</span>
+      </li>)}</ul> : <EmptyState title="미완료 할 일이 없습니다." message="할 일을 등록하면 여기에 표시됩니다." />}</section>
     <section className="card dashboard-panel dashboard-skill-panel"><div className="dashboard-section-heading"><div><span className="eyebrow">GROWTH NOTE</span><h2>부족한 기술 미리보기</h2></div><a href="#/skill-gap">역량 분석 ↗</a></div>
       {data.skillGapPreview.length ? <ul className="dashboard-skills">{data.skillGapPreview.map(skill => <li key={skill.id}>{skill.name}</li>)}</ul>
         : <EmptyState title="표시할 부족 기술이 없습니다." message="등록한 기술과 분석 완료 공고가 충분하면 여기에서 확인할 수 있습니다." />}</section>
