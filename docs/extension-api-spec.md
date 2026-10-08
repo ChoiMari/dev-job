@@ -1,10 +1,10 @@
 # DevJob 확장 REST API 명세 준비본
 
-상태: **B03 확정·구현, 다른 단계는 계약 초안** · 2026-10-08
+상태: **B01~B03·B05 확정·구현, B04 및 다른 단계는 계약 초안** · 2026-10-09
 
 ## 1. 사용 방법과 계약 상태
 
-이 문서는 [확장 요구사항](extension-requirements.md) EXT-01~08 **전체**를 Backend부터 순차 구현하기 위한 API 목록이다. 단계 순서는 [Backend 로드맵](extension-backend-roadmap.md)을 따른다. B03 이외의 경로는 **후보**이며 구현 완료 API로 간주하지 않는다. 각 단계 착수 전에 정책을 확정하고, 해당 표를 `확정` 상태의 필드·형식·오류·예시까지 갱신한 다음 코드를 작성한다. 정책이 결정되지 않은 필드는 추측해 DTO·DB에 추가하지 않는다.
+이 문서는 [확장 요구사항](extension-requirements.md) EXT-01~08 **전체**를 Backend부터 순차 구현하기 위한 API 목록이다. 단계 순서는 [Backend 로드맵](extension-backend-roadmap.md)을 따른다. `확정`으로 표시되지 않은 경로는 **후보**이며 구현 완료 API로 간주하지 않는다. 각 단계 착수 전에 정책을 확정하고, 해당 표를 `확정` 상태의 필드·형식·오류·예시까지 갱신한 다음 코드를 작성한다. 정책이 결정되지 않은 필드는 추측해 DTO·DB에 추가하지 않는다.
 
 기존 구현 API의 단일 기준은 [MVP API 명세](api-spec.md) 1~6절이다. 기존 경로와 응답 필드를 임의로 바꾸지 않는다. 확장에서 기존 응답에 필드를 더할 때도 기존 클라이언트 영향과 `null`/미입력/하위 호환을 명시한다. 새 API는 `/api`를 사용하며 인증 사용자 ID는 세션에서만 얻는다. JSON 본문, CSRF, 공통 오류 `{code,message}`, 날짜·시간대, 페이지 형식과 상태 코드는 기존 명세를 따른다. `POST`·`PUT`·`PATCH`·`DELETE`는 CSRF 보호 대상이다. 개인 리소스는 본인 소유권을 검증한다. 타인 리소스에 대한 `403`/`404` 구분은 기존 기능의 노출 정책과 맞춰 단계별로 확정한다.
 
@@ -35,7 +35,7 @@ B00은 새 엔드포인트를 확정하거나 구현하지 않는다. 아래 기
 
 ## 2. 단계별 API 후보와 확정할 계약
 
-후보 표의 `필수 응답`은 프론트 연결에 필요한 최소 정보이며, **아직 확정 DTO가 아니다**. B03의 확정 계약은 아래 별도 절을 따른다. 다른 단계는 확정 전 API 문서와 ERD를 함께 갱신한다. 기존 GET을 확장할 경우 현재 응답 필드를 제거하지 않는다.
+후보 표의 `필수 응답`은 프론트 연결에 필요한 최소 정보이며, **아직 확정 DTO가 아니다**. B01~B03·B05의 확정 계약은 아래 별도 절을 따른다. 다른 단계는 확정 전 API 문서와 ERD를 함께 갱신한다. 기존 GET을 확장할 경우 현재 응답 필드를 제거하지 않는다.
 
 ### B01 · 계정 비밀번호 — EXT-01-01 (확정)
 
@@ -86,16 +86,26 @@ B00은 새 엔드포인트를 확정하거나 구현하지 않는다. 아래 기
 
 동명 기업을 이름만으로 합치지 않는다. 기존 공용 `Company`와 사용자 기록을 같은 리소스로 취급할지 여부는 ERD 확정 시 결정한다.
 
-### B05 · 이력서 관리 — EXT-05-02
+### B05 · 이력서 관리 — EXT-05-02 (확정)
 
-| 후보 Method·URL | 요청·필수 응답 | 착수 전 결정 |
+모든 경로는 서버 세션 인증이 필요하다. `POST`·`PATCH`·`DELETE`는 CSRF 토큰이 필요하다. `{resumeId}`와 `{versionId}`는 양의 Long이다. 다른 사용자 소유의 활성 이력서는 `403`, 없거나 삭제된 이력서는 `404`다. 다른 이력서에 속한 버전 ID는 `404`다. 목록은 `page=0`, `size=20` 기본, `page≥0`, `1≤size≤100`, `page×size≤2147483647`이며 `updatedAt DESC, id DESC` 순서다. 범위 밖 페이지는 빈 `items`와 실제 총수를 반환한다.
+
+| Method·URL | 요청 | 성공 응답 |
 | --- | --- | --- |
-| `GET/POST /api/me/resumes` | 목록·생성 → 이력서 식별자/제목/최신 버전 | 텍스트·파일 입력 방식, 파일 제한 |
-| `GET/PATCH/DELETE /api/me/resumes/{resumeId}` | 상세·메타데이터 변경·삭제 | 삭제/보존 정책, 분석 결과 처리 |
-| `GET/POST /api/me/resumes/{resumeId}/versions` | 버전 목록·생성 → 버전 식별자/시각 | 새 버전 생성과 기존 버전 수정의 구분 |
-| `GET /api/me/resumes/{resumeId}/versions/{versionId}` | 없음 → 해당 버전의 허용된 내용 | 민감 내용 노출·다운로드 범위 |
+| `GET /api/me/resumes` | `page`, `size` 선택 | `{items: Resume[], page, size, totalElements}` · `200`; 본문 제외 |
+| `POST /api/me/resumes` | `{ "title": "백엔드 이력서", "content": "원문 텍스트" }` | `Resume` · `201`; 1번 버전 생성 |
+| `GET /api/me/resumes/{resumeId}` | 없음 | `Resume` · `200`; 본문 제외 |
+| `PATCH /api/me/resumes/{resumeId}` | `{ "title": "수정된 제목" }` | `Resume` · `200`; 본문 버전 불변 |
+| `DELETE /api/me/resumes/{resumeId}` | 없음 | 본문 없음 · `204`; 즉시 비노출 |
+| `GET /api/me/resumes/{resumeId}/versions` | 없음 | `ResumeVersion[]` · `200`; `versionNumber DESC`, 본문 제외 |
+| `POST /api/me/resumes/{resumeId}/versions` | `{ "content": "새 원문" }` | 새 `ResumeVersion` 메타데이터 · `201`; 본문 제외 |
+| `GET /api/me/resumes/{resumeId}/versions/{versionId}` | 없음 | `ResumeVersion`과 `content` · `200`; 본인만 원문 조회 |
 
-텍스트 방식이면 JSON 계약, 파일 방식이면 업로드·검증·보관·다운로드 계약을 별도로 확정한다. 둘을 동시에 허용할지 먼저 결정한다. 자기소개서가 독립 저장 리소스인지 B12 입력인지도 B05·B12 사이에 확정한다.
+`Resume`은 `{id, title, latestVersionId, latestVersionNumber, latestVersionCreatedAt, createdAt, updatedAt}`이다. `ResumeVersion` 메타데이터는 `{id, resumeId, versionNumber, createdAt}`이며 상세에만 `content`가 추가된다. 시각은 UTC 기준 ISO 8601 직렬화의 마이크로초 정밀도다. 버전의 ID·번호·생성 시각·본문은 변경되지 않는다. `POST versions`는 항상 번호를 하나 증가시키고 새 ID를 발급한다. B12는 `(resumeId, versionId)`와 해당 버전의 `createdAt`으로 원본을 식별하고, 삭제된 이력서는 분석하지 않는다. `Resume.updatedAt`은 제목 변경이나 버전 추가 시 바뀌므로 원문 식별자로 사용하지 않는다.
+
+제목은 공백 제거 후 1~200자, 본문은 공백 제거 후 1~100,000자 및 UTF-8 최대 262,144바이트다. 줄바꿈·탭 외 제어 문자는 거절한다. 필수 필드 누락·`null`·잘못된 타입·빈 문자열·알 수 없는 필드·빈 PATCH는 `400 INVALID_INPUT`이다. 공통 `401`·`403`·`404` 오류를 사용하며 본문·암호문·키를 오류 메시지에 넣지 않는다. 파일 업로드/다운로드와 기존 버전 본문 PATCH/DELETE, 복구 API는 제공하지 않는다.
+
+원문은 AES-256-GCM으로 버전별 난수 nonce와 `resumeId`·`versionNumber` AAD를 사용해 암호화한 뒤 PostgreSQL에 저장한다. Base64 인코딩된 32바이트 `RESUME_ENCRYPTION_KEY` 환경변수가 없거나 유효하지 않으면 원문 읽기·쓰기만 `503 SERVICE_UNAVAILABLE`이며 기존 CRM은 계속 사용 가능하다. 키를 잃거나 교체하면 기존 암호문을 읽을 수 없으므로 운영 중 키를 안전하게 보존해야 한다. 삭제는 `deletedAt`을 기록하고 즉시 전체 조회에서 제외한다. 매일 03:00 UTC 정리 작업이 삭제 30일 이상 지난 이력서와 모든 버전을 영구 삭제한다. 따라서 실제 DB 제거는 30일 시점 이후 다음 정리 실행 때 이뤄진다. 백업 보존 정책은 아직 미정이며 DB 정리만으로 백업에서의 삭제를 보증하지 않는다. 자기소개서의 저장 모델과 B12 분석 결과 처리 계약은 B12에서 결정한다.
 
 ### B06 · 면접 일정 — EXT-05-03
 

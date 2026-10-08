@@ -180,3 +180,9 @@ DB_HOST·DB_PORT·DB_USERNAME·DB_PASSWORD를 격리 DB에 맞춰 주입한 뒤 
 2026-10-07 초기 호출은 `resultCode=5`였지만 이후 실제 목록·상세는 HTTP 200·`resultCode=200`으로 성공했다. 명세의 정상 코드 0과 실제 200을 모두 처리하고 실제 `YYYYMMDD` 날짜를 정규화한다. 첫 페이지 20건 중 유효한 원문 URL이 없는 2건은 제외하고 18건의 목록·상세·메타정보를 분리 DB와 브라우저에서 확인했다. 운영 전 제공기관의 저장·재표시·AI 활용
 조건과 호출 한도를 확인한다. DB 회귀는 `DB_NAME=devjob_alio_test`인 격리된 일회용 DB에서만
 실행되며 테스트가 공고·사용자 데이터를 비우므로 개발 DB 이름을 바꾸어 실행하지 않는다.
+
+## B05 · 이력서 Backend
+
+이력서 원문은 JSON 텍스트로만 받으며 PostgreSQL에는 AES-256-GCM 암호문과 버전별 nonce를 저장한다. 서버 프로세스에 `RESUME_ENCRYPTION_KEY`를 Base64로 인코딩한 32바이트 키로 주입해야 원문 생성·조회가 가능하다. 예를 들어 운영 비밀 저장소에서 주입하고 코드·환경 파일·로그에 키를 기록하지 않는다. 키가 없거나 형식이 잘못되면 B05 원문 읽기·쓰기만 `503`이 되며 기존 CRM API는 동작한다. 키 교체·분실 시 기존 버전을 읽을 수 없으므로 키 보존과 교체 절차는 운영에서 별도로 정해야 한다.
+
+Flyway `V16__resumes.sql`은 `resume`·`resume_version`을 추가한다. 삭제는 즉시 일반 조회에서 숨기고 매일 03:00 UTC에 30일 이상 지난 이력서와 버전을 DB에서 영구 삭제한다. DB 백업의 30일 보존·삭제 정책은 아직 정해지지 않았다. 실제 DB 검증은 새 일회용 `devjob_b05_test`에서 `dbTest --tests com.devjob.resume.ResumeDatabaseTest`로 실행한다.
