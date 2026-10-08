@@ -76,6 +76,10 @@ EXT-IMG-06E·06F·06G는 각각 민트·복숭아·기본 의상만 보여 주�
 
 기본 캐릭터·의상·헤어·안경은 각 완성 이미지에서 함께 그려져 머리 앞뒤, 눈의 안경 위치, 옷과 머리의 겹침이 조합별로 정리된다. `CLASSIC`은 짧은 기본 머리, `BOB`은 귀 길이 단발, `PONY`는 묶은 머리이며 모두 두 눈이 보인다. `ROUND`는 검정, `SQUARE`는 레드이고 `MINT` 후드의 목선은 열려 목이 보인다. 목록용 헤어·안경 이미지는 완성 이미지에서 따로 잘라 만든 256×256 `thumb-hair-{classic|bob|pony}.png`, `thumb-glasses-{none|round|square}.png`이고 의상 목록용 파일은 EXT-IMG-06E·06F·06G다. [`prepare-character-complete.cjs`](../frontend/scripts/prepare-character-complete.cjs)가 원본의 옅은 배경 알파를 제거하고 화면용 PNG와 목록 이미지를 내보낸다. 내장 imagegen으로 각 조합을 개별 생성했으며 작업용 `sharp`만 사용해 앱 런타임 의존성은 늘지 않았다.
 
+토끼탈 `BUNNY`는 별도 전체 착용 이미지 `character-bunny.png`(자산 ID `B09-COMPLETE-BUNNY`) 하나를 사용한다. 헤어·안경이 보이지 않으므로 두 슬롯과의 조합 이미지를 추가하지 않는다. 목록용 `thumb-outfit-bunny.png`(자산 ID `B09-THUMB-OUTFIT-BUNNY`)는 머리 부분을 잘라 만든 256×256 PNG다. 원본 `docs/assets/b09-complete-source/character-bunny.png`를 기본 캐릭터의 정면 비율·픽셀 그림체 참조로 내장 imagegen에서 제작했고, 위 내보내기 스크립트로 1024×1536 투명 화면 파일을 만들었다.
+
+보상 전체 의상 5종 `BEAR`(곰인형탈), `HOMEBODY`(츄리닝·안경·헝클어진 묶음머리), `INTERVIEW`(면접 정장), `RAINCOAT`(우비), `ASTRONAUT`(우주복)도 각각 `character-{item}.png` 1024×1536 완성 이미지와 `thumb-outfit-{item}.png` 256×256 목록 이미지를 가진다. 자산 ID는 `B09-COMPLETE-{ITEM}`·`B09-THUMB-OUTFIT-{ITEM}`이며 생성 원본은 `docs/assets/b09-complete-source/`에 있다. 기존 캐릭터를 그림체·정면 비율 참조로 내장 imagegen으로 각각 생성했고 [`prepare-character-complete.cjs`](../frontend/scripts/prepare-character-complete.cjs)로 투명 화면 PNG와 목록 이미지를 내보냈다. 승인된 시안이지만 B10 지급 조건 전에는 카탈로그에서 `FUTURE_REWARD` 잠금이며 장착할 수 없다.
+
 ### B09 분리 레이어 좌표·자산 (이전 화면 호환)
 
 착용 레이어는 모두 원래 그림체를 참조한 투명 **1024×1536 PNG**다. 눈 중심은 대략 `(430, 410)`·`(595, 410)`, 의상 목·어깨 시작은 `y≈545`다. 원형 안경은 검정, 사각 뿔테는 레드다. DOM 및 API `layerAssetIds` 순서는 **헤어 뒤(0) → 얼굴·몸(1) → 의상(2) → 헤어 앞(3) → 안경(4, 미착용 시 생략)**이다. 내보낸 모든 레이어가 같은 크기·좌표이므로 CSS 위치 오프셋은 없다. 헤어·안경 선택 목록은 착용 레이어와 별개의 256×256 PNG이고, 의상 선택 목록은 기존 EXT-IMG-06E·06F·06G PNG를 Frontend 번들에 복사해 사용한다.

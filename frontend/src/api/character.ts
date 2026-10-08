@@ -13,17 +13,22 @@ export type CharacterState = {
   equipment: CharacterEquipment; layerAssetIds: string[];
 };
 
+export const completeOutfitIds = ['BUNNY', 'BEAR', 'HOMEBODY', 'INTERVIEW', 'RAINCOAT', 'ASTRONAUT'] as const;
+export const isCompleteOutfit = (id: string): boolean => completeOutfitIds.some(value => value === id);
+
 const ids: Record<CharacterSlot, readonly string[]> = {
-  OUTFIT: ['BASE', 'MINT', 'PEACH'], HAIR: ['CLASSIC', 'BOB', 'PONY'], GLASSES: ['NONE', 'ROUND', 'SQUARE'],
+  OUTFIT: ['BASE', 'MINT', 'PEACH', ...completeOutfitIds], HAIR: ['CLASSIC', 'BOB', 'PONY'], GLASSES: ['NONE', 'ROUND', 'SQUARE'],
 };
 const slots: CharacterSlot[] = ['OUTFIT', 'HAIR', 'GLASSES'];
 const knownLayers = new Set([
   'B09-LAYER-BODY', ...ids.OUTFIT.map(id => `B09-LAYER-OUTFIT-${id}`),
   ...ids.HAIR.flatMap(id => [`B09-LAYER-HAIR-${id}-BACK`, `B09-LAYER-HAIR-${id}-FRONT`]),
   'B09-LAYER-GLASSES-ROUND', 'B09-LAYER-GLASSES-SQUARE',
+  ...completeOutfitIds.map(id => `B09-COMPLETE-${id}`),
 ]);
 const knownThumbnails = new Set([
   'EXT-IMG-06G', 'EXT-IMG-06E', 'EXT-IMG-06F',
+  ...completeOutfitIds.map(id => `B09-THUMB-OUTFIT-${id}`),
   ...ids.HAIR.map(id => `B09-THUMB-HAIR-${id}`),
   ...ids.GLASSES.map(id => `B09-THUMB-GLASSES-${id}`),
 ]);
@@ -32,6 +37,7 @@ const slot = (value: unknown): value is CharacterSlot => slots.includes(value as
 const validEquipment = (value: unknown): value is CharacterEquipment => object(value)
   && slots.every(key => typeof value[key] === 'string' && ids[key].includes(value[key] as string));
 export function layersFor(equipment: CharacterEquipment): string[] {
+  if (isCompleteOutfit(equipment.OUTFIT)) return [`B09-COMPLETE-${equipment.OUTFIT}`];
   const hair = equipment.HAIR, glasses = equipment.GLASSES;
   return [`B09-LAYER-HAIR-${hair}-BACK`, 'B09-LAYER-BODY', `B09-LAYER-OUTFIT-${equipment.OUTFIT}`,
     `B09-LAYER-HAIR-${hair}-FRONT`, ...(glasses === 'NONE' ? [] : [`B09-LAYER-GLASSES-${glasses}`])];
@@ -44,7 +50,8 @@ export function isCharacterState(value: unknown): value is CharacterState {
   const expected = layersFor(value.equipment);
   return value.baseAssetId === 'EXT-IMG-06A' && value.slot === 'OUTFIT'
     && value.equippedItemId === value.equipment.OUTFIT
-    && value.equippedAssetId === ({ BASE: 'EXT-IMG-06A', MINT: 'EXT-IMG-06C', PEACH: 'EXT-IMG-06D' } as Record<string, string>)[value.equipment.OUTFIT]
+    && value.equippedAssetId === ({ BASE: 'EXT-IMG-06A', MINT: 'EXT-IMG-06C', PEACH: 'EXT-IMG-06D',
+      ...Object.fromEntries(completeOutfitIds.map(id => [id, `B09-COMPLETE-${id}`])) } as Record<string, string>)[value.equipment.OUTFIT]
     && expected.length === actual.length
     && expected.every((id, index) => id === actual[index]);
 }

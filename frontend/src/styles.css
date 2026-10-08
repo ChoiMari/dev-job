@@ -272,7 +272,8 @@ input, select, textarea { accent-color: var(--primary); }
 .character-item { min-width: 0; min-height: 150px; display: grid; justify-items: center; align-content: center; gap: 5px; padding: 9px; border: 2px solid #ddd1e9; background: #fff; color: var(--text); cursor: pointer; }
 .character-item img { width: 76px; height: 76px; object-fit: contain; }
 .character-item span { font-weight: 700; text-align: center; }
-.character-item small { color: var(--muted); text-align: center; }
+  .character-item small { color: var(--muted); text-align: center; }
+  .character-slot-note { margin: 0 0 10px; color: var(--muted); font-size: .88rem; }
 .character-item.is-selected, .character-item.is-selected:hover { border-color: var(--primary); background: #f4eefb; color: var(--text); }
 .character-item:disabled { cursor: not-allowed; opacity: .72; }
 .character-item:focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; }

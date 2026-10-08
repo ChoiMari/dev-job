@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { apiRequest } from '../api';
-import { createCharacterApi } from '../api/character';
+import { createCharacterApi, isCompleteOutfit } from '../api/character';
 import type { CharacterEquipment, CharacterItem, CharacterSlot, CharacterState } from '../api/character';
 import { CharacterAppearance, characterAssetUrl } from '../components/CharacterLayers';
 import { PixelIcon } from '../components/PixelArt';
@@ -38,7 +38,8 @@ export function CharacterPage() {
   }, [retry]);
 
   async function select(item: CharacterItem) {
-    if (!item.available || !state || !draft || inFlight.current || draft[item.slot] === item.id) return;
+    if (!item.available || !state || !draft || inFlight.current || draft[item.slot] === item.id
+      || (isCompleteOutfit(draft.OUTFIT) && item.slot !== 'OUTFIT')) return;
     inFlight.current = true; setSaving(true); setActionError(''); setSavedMessage('');
     setDraft({ ...draft, [item.slot]: item.id });
     try {
@@ -54,12 +55,12 @@ export function CharacterPage() {
     }
   }
 
-  const previewLabel = draft ? `캐릭터 미리보기: ${slots.map(slot =>
+  const previewLabel = draft && isCompleteOutfit(draft.OUTFIT) ? `캐릭터 미리보기: ${items.find(item => item.slot === 'OUTFIT' && item.id === draft.OUTFIT)?.name ?? draft.OUTFIT}` : draft ? `캐릭터 미리보기: ${slots.map(slot =>
     items.find(item => item.slot === slot.key && item.id === draft[slot.key])?.name ?? draft[slot.key]).join(', ')}` : '';
   return <div className="character-page">
     <section className="card character-welcome">
       <div><span className="eyebrow">YOUR LITTLE COMPANION</span><h2>함께 준비하는 나의 캐릭터</h2>
-        <p>의상, 헤어, 안경을 골라 나만의 캐릭터를 꾸며 보세요. 선택하면 미리보기에 바로 적용되고 계정에 저장됩니다.</p>
+        <p>의상, 헤어, 안경을 골라 나만의 캐릭터를 꾸며 보세요. 전체 의상은 착용 중 헤어·안경 선택을 잠급니다.</p>
         <div className="character-actions"><a className="button-link button-primary" href="#/profile">내 프로필 보기</a><a className="button-link" href="#/projects">프로젝트 기록하기</a></div>
       </div>
       <div className="character-welcome-symbol" aria-hidden="true"><PixelIcon name="spark" /></div>
@@ -78,16 +79,19 @@ export function CharacterPage() {
       {!loading && !error && draft && <div className="character-catalog">
         {slots.map(slot => <section key={slot.key} className="character-slot" aria-labelledby={`character-slot-${slot.key}`}>
           <h3 id={`character-slot-${slot.key}`}>{slot.title}</h3>
+          {isCompleteOutfit(draft.OUTFIT) && slot.key !== 'OUTFIT' &&
+            <p className="character-slot-note">전체 의상을 벗으면 기존 {slot.title}가 다시 적용됩니다.</p>}
           <div className="character-item-grid">
             {items.filter(item => item.slot === slot.key).map(item => {
               const thumbnail = characterAssetUrl(item.thumbnailAssetId);
               const selected = draft[item.slot] === item.id;
               return <button key={item.id} type="button" className={`character-item${selected ? ' is-selected' : ''}`}
-                aria-pressed={selected} disabled={!item.available || saving || !thumbnail}
+                aria-pressed={selected} disabled={!item.available || saving || !thumbnail || (isCompleteOutfit(draft.OUTFIT) && slot.key !== 'OUTFIT')}
                 onClick={() => void select(item)}>
                 {thumbnail && <img src={thumbnail} alt="" width="88" height="88" />}
                 <span>{item.name}</span>
-                <small>{item.available ? selected ? '선택됨' : '선택 가능'
+                <small>{isCompleteOutfit(draft.OUTFIT) && slot.key !== 'OUTFIT' ? selected ? '벗으면 다시 적용' : '전체 의상 착용 중 잠김'
+                  : item.available ? selected ? '선택됨' : '선택 가능'
                   : item.availabilityCondition === 'FUTURE_REWARD' ? '보상 기능 준비 중' : '아직 사용 불가'}</small>
               </button>;
             })}

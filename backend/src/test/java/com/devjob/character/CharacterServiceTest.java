@@ -30,14 +30,22 @@ class CharacterServiceTest {
                 .containsExactly("EXT-IMG-06A", "EXT-IMG-06C", "EXT-IMG-06D");
         assertThat(service.items().subList(0, 3)).extracting("thumbnailAssetId")
                 .containsExactly("EXT-IMG-06G", "EXT-IMG-06E", "EXT-IMG-06F");
-        assertThat(service.items()).hasSize(9);
+        assertThat(service.items()).hasSize(15);
         assertThat(service.items().get(2).available()).isFalse();
         assertThat(service.items().get(2).availabilityCondition()).isEqualTo("FUTURE_REWARD");
+        assertThat(service.items().subList(4, 9)).allSatisfy(item -> {
+            assertThat(item.available()).isFalse();
+            assertThat(item.availabilityCondition()).isEqualTo("FUTURE_REWARD");
+            assertThat(item.layerAssetIds()).containsExactly(item.assetId());
+        });
     }
 
     @Test void rejectsLockedUnknownAndWrongSlotBeforeAnyWrite() {
         assertThatThrownBy(() -> service.equip(1L, "OUTFIT", new EquipItemRequest("PEACH")))
                 .isInstanceOf(ResponseStatusException.class).hasMessageContaining("409");
+        for (String id : java.util.List.of("BEAR", "HOMEBODY", "INTERVIEW", "RAINCOAT", "ASTRONAUT"))
+            assertThatThrownBy(() -> service.equip(1L, "OUTFIT", new EquipItemRequest(id)))
+                    .isInstanceOf(ResponseStatusException.class).hasMessageContaining("409");
         assertThatThrownBy(() -> service.equip(1L, "OUTFIT", new EquipItemRequest("UNKNOWN")))
                 .isInstanceOf(ResponseStatusException.class).hasMessageContaining("400");
         assertThatThrownBy(() -> service.equip(1L, "HAT", new EquipItemRequest("MINT")))
@@ -70,5 +78,22 @@ class CharacterServiceTest {
                 "B09-LAYER-HAIR-PONY-FRONT", "B09-LAYER-GLASSES-ROUND");
         assertThat(service.equip(1L, "GLASSES", new EquipItemRequest(null)).equipment())
                 .containsEntry("GLASSES", "NONE");
+    }
+    @Test void bunnyHidesButPreservesHairAndGlassesUntilRemoved() {
+        when(users.findByIdForUpdate(1L)).thenReturn(Optional.of(mock(User.class)));
+        var row = new CharacterEquipment(1L, "MINT");
+        row.equip("HAIR", "PONY");
+        row.equip("GLASSES", "SQUARE");
+        when(equipment.findById(1L)).thenReturn(Optional.of(row));
+        var bunny = service.equip(1L, "OUTFIT", new EquipItemRequest("BUNNY"));
+        assertThat(bunny.equippedAssetId()).isEqualTo("B09-COMPLETE-BUNNY");
+        assertThat(bunny.layerAssetIds()).containsExactly("B09-COMPLETE-BUNNY");
+        assertThat(bunny.equipment()).containsEntry("HAIR", "PONY").containsEntry("GLASSES", "SQUARE");
+        assertThatThrownBy(() -> service.equip(1L, "HAIR", new EquipItemRequest("BOB")))
+                .isInstanceOf(ResponseStatusException.class).hasMessageContaining("409");
+        assertThatThrownBy(() -> service.equip(1L, "GLASSES", new EquipItemRequest("ROUND")))
+                .isInstanceOf(ResponseStatusException.class).hasMessageContaining("409");
+        assertThat(service.equip(1L, "OUTFIT", new EquipItemRequest(null)).equipment())
+                .containsEntry("OUTFIT", "BASE").containsEntry("HAIR", "PONY").containsEntry("GLASSES", "SQUARE");
     }
 }

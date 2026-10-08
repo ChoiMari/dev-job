@@ -12,6 +12,9 @@ const ids = [
   ['OUTFIT', 'BASE', 'EXT-IMG-06G', 'EXT-IMG-06A', ['B09-LAYER-OUTFIT-BASE']],
   ['OUTFIT', 'MINT', 'EXT-IMG-06E', 'EXT-IMG-06C', ['B09-LAYER-OUTFIT-MINT']],
   ['OUTFIT', 'PEACH', 'EXT-IMG-06F', 'EXT-IMG-06D', ['B09-LAYER-OUTFIT-PEACH']],
+  ['OUTFIT', 'BUNNY', 'B09-THUMB-OUTFIT-BUNNY', 'B09-COMPLETE-BUNNY', ['B09-COMPLETE-BUNNY']],
+  ...['BEAR', 'HOMEBODY', 'INTERVIEW', 'RAINCOAT', 'ASTRONAUT'].map(id =>
+    ['OUTFIT', id, `B09-THUMB-OUTFIT-${id}`, `B09-COMPLETE-${id}`, [`B09-COMPLETE-${id}`]]),
   ...['CLASSIC', 'BOB', 'PONY'].map(id => ['HAIR', id, `B09-THUMB-HAIR-${id}`, `B09-LAYER-HAIR-${id}-FRONT`,
     [`B09-LAYER-HAIR-${id}-BACK`, `B09-LAYER-HAIR-${id}-FRONT`]]),
   ['GLASSES', 'NONE', 'B09-THUMB-GLASSES-NONE', null, []],
@@ -20,7 +23,8 @@ const ids = [
 ];
 const items = ids.map(([slot, id, thumbnailAssetId, assetId, layerAssetIds]) => ({
   slot, id, name: id, thumbnailAssetId, assetId, layerAssetIds,
-  available: id !== 'PEACH', availabilityCondition: id === 'PEACH' ? 'FUTURE_REWARD' : 'ALWAYS',
+  available: !['PEACH', 'BEAR', 'HOMEBODY', 'INTERVIEW', 'RAINCOAT', 'ASTRONAUT'].includes(id),
+  availabilityCondition: ['PEACH', 'BEAR', 'HOMEBODY', 'INTERVIEW', 'RAINCOAT', 'ASTRONAUT'].includes(id) ? 'FUTURE_REWARD' : 'ALWAYS',
 }));
 const json = body => new Response(JSON.stringify(body), { status: 200, headers: { 'Content-Type': 'application/json' } });
 
@@ -30,6 +34,8 @@ test('layer order puts back hair behind body, outfit below front hair and glasse
     'B09-LAYER-HAIR-BOB-FRONT', 'B09-LAYER-GLASSES-ROUND',
   ]);
   assert.equal(layersFor({ ...equipment, GLASSES: 'NONE' }).length, 4);
+  assert.deepEqual(layersFor({ ...equipment, OUTFIT: 'BUNNY' }), ['B09-COMPLETE-BUNNY']);
+  assert.deepEqual(layersFor({ ...equipment, OUTFIT: 'BEAR' }), ['B09-COMPLETE-BEAR']);
 });
 
 test('catalog, state and slot PUT use session and fresh CSRF', async () => {
@@ -45,7 +51,7 @@ test('catalog, state and slot PUT use session and fresh CSRF', async () => {
     const changed = { ...equipment, HAIR: 'PONY' };
     return json({ ...state, equipment: changed, layerAssetIds: layersFor(changed) });
   }));
-  assert.equal((await api.items()).length, 9);
+  assert.equal((await api.items()).length, 15);
   assert.deepEqual((await api.state()).equipment, equipment);
   assert.equal((await api.equip('HAIR', 'PONY')).equipment.HAIR, 'PONY');
 });

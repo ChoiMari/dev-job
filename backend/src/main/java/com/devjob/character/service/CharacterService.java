@@ -17,6 +17,7 @@ public class CharacterService {
     public static final String HAIR = "HAIR";
     public static final String GLASSES = "GLASSES";
     private static final String BODY = "B09-LAYER-BODY";
+    private static final List<String> COMPLETE_OUTFITS = List.of("BUNNY", "BEAR", "HOMEBODY", "INTERVIEW", "RAINCOAT", "ASTRONAUT");
     private static final List<CharacterItem> ITEMS = List.of(
             new CharacterItem("BASE", OUTFIT, "기본 의상", "EXT-IMG-06G", "EXT-IMG-06A",
                     List.of("B09-LAYER-OUTFIT-BASE"), true, "ALWAYS"),
@@ -24,6 +25,18 @@ public class CharacterService {
                     List.of("B09-LAYER-OUTFIT-MINT"), true, "ALWAYS"),
             new CharacterItem("PEACH", OUTFIT, "복숭아 재킷", "EXT-IMG-06F", "EXT-IMG-06D",
                     List.of("B09-LAYER-OUTFIT-PEACH"), false, "FUTURE_REWARD"),
+            new CharacterItem("BUNNY", OUTFIT, "토끼탈", "B09-THUMB-OUTFIT-BUNNY", "B09-COMPLETE-BUNNY",
+                    List.of("B09-COMPLETE-BUNNY"), true, "ALWAYS"),
+            new CharacterItem("BEAR", OUTFIT, "곰인형탈", "B09-THUMB-OUTFIT-BEAR", "B09-COMPLETE-BEAR",
+                    List.of("B09-COMPLETE-BEAR"), false, "FUTURE_REWARD"),
+            new CharacterItem("HOMEBODY", OUTFIT, "집콕 세트", "B09-THUMB-OUTFIT-HOMEBODY", "B09-COMPLETE-HOMEBODY",
+                    List.of("B09-COMPLETE-HOMEBODY"), false, "FUTURE_REWARD"),
+            new CharacterItem("INTERVIEW", OUTFIT, "면접 정장", "B09-THUMB-OUTFIT-INTERVIEW", "B09-COMPLETE-INTERVIEW",
+                    List.of("B09-COMPLETE-INTERVIEW"), false, "FUTURE_REWARD"),
+            new CharacterItem("RAINCOAT", OUTFIT, "비 오는 날", "B09-THUMB-OUTFIT-RAINCOAT", "B09-COMPLETE-RAINCOAT",
+                    List.of("B09-COMPLETE-RAINCOAT"), false, "FUTURE_REWARD"),
+            new CharacterItem("ASTRONAUT", OUTFIT, "우주 탐험", "B09-THUMB-OUTFIT-ASTRONAUT", "B09-COMPLETE-ASTRONAUT",
+                    List.of("B09-COMPLETE-ASTRONAUT"), false, "FUTURE_REWARD"),
             new CharacterItem("CLASSIC", HAIR, "기본 머리", "B09-THUMB-HAIR-CLASSIC", "B09-LAYER-HAIR-CLASSIC-FRONT",
                     List.of("B09-LAYER-HAIR-CLASSIC-BACK", "B09-LAYER-HAIR-CLASSIC-FRONT"), true, "ALWAYS"),
             new CharacterItem("BOB", HAIR, "단발 머리", "B09-THUMB-HAIR-BOB", "B09-LAYER-HAIR-BOB-FRONT",
@@ -66,6 +79,8 @@ public class CharacterService {
         // Locking the owner serializes both the first insert and changes to different slots.
         users.findByIdForUpdate(userId).orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
         CharacterEquipment row = equipment.findById(userId).orElse(null);
+        if (row != null && COMPLETE_OUTFITS.contains(row.getOutfitItemId()) && !slot.equals(OUTFIT))
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "전체 의상 착용 중에는 헤어와 안경을 변경할 수 없습니다.");
         if (row == null) {
             row = new CharacterEquipment(userId, "BASE");
             row.equip(slot, itemId);
@@ -95,6 +110,9 @@ public class CharacterService {
         CharacterItem outfit = find(OUTFIT, outfitId);
         CharacterItem hair = find(HAIR, hairId);
         CharacterItem glasses = find(GLASSES, glassesId);
+        if (COMPLETE_OUTFITS.contains(outfitId))
+            return new CharacterState("EXT-IMG-06A", OUTFIT, outfit.id(), outfit.assetId(),
+                    Map.of(OUTFIT, outfit.id(), HAIR, hair.id(), GLASSES, glasses.id()), outfit.layerAssetIds());
         List<String> layers = new java.util.ArrayList<>();
         layers.add(hair.layerAssetIds().get(0));
         layers.add(BODY);

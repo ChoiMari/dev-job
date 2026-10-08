@@ -1,3 +1,4 @@
+import { completeOutfitIds, isCompleteOutfit } from '../api/character';
 import type { CharacterEquipment } from '../api/character';
 
 const files = import.meta.glob('../assets/character/{character-*,thumb-*,ext-img-*}.png',
@@ -8,6 +9,9 @@ const assetNames: Record<string, string> = {
   'EXT-IMG-06E': 'ext-img-06e-outfit-mint.png',
   'EXT-IMG-06F': 'ext-img-06f-outfit-peach.png',
 };
+for (const id of completeOutfitIds) {
+  assetNames[`B09-THUMB-OUTFIT-${id}`] = `thumb-outfit-${id.toLowerCase()}.png`;
+}
 for (const hair of ['CLASSIC', 'BOB', 'PONY']) {
   assetNames[`B09-THUMB-HAIR-${hair}`] = `thumb-hair-${hair.toLowerCase()}.png`;
 }
@@ -22,7 +26,8 @@ export function characterAssetUrl(id: string): string | undefined {
 }
 
 export function characterAppearanceUrl(equipment: CharacterEquipment): string | undefined {
-  const name = `character-${equipment.OUTFIT.toLowerCase()}-${equipment.HAIR.toLowerCase()}-${equipment.GLASSES.toLowerCase()}.png`;
+  const name = isCompleteOutfit(equipment.OUTFIT) ? `character-${equipment.OUTFIT.toLowerCase()}.png`
+    : `character-${equipment.OUTFIT.toLowerCase()}-${equipment.HAIR.toLowerCase()}-${equipment.GLASSES.toLowerCase()}.png`;
   return files[`../assets/character/${name}`];
 }
 

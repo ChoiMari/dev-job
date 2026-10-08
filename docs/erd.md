@@ -147,4 +147,8 @@ V15__create_interested_companies.sql은 interested_company만 추가한다. id B
 
 `V17__character_layer_slots.sql`은 기존 V16 이력을 변경하지 않고 같은 행에 필수 `hair_item_id`·`glasses_item_id`(`VARCHAR(40)`)를 추가한다. 기존 행에는 `CLASSIC`·`NONE` 기본값을 적용한다. DB CHECK는 헤어 `CLASSIC`·`BOB`·`PONY`, 안경 `NONE`·`ROUND`·`SQUARE`만 허용한다. 행이 없는 사용자는 `BASE`·`CLASSIC`·`NONE`으로 조회된다. 하나의 사용자 행 잠금으로 서로 다른 슬롯의 동시 변경도 직렬화해 덮어쓰기를 방지한다. 카탈로그와 이미지 자산은 DB에 저장하지 않는다. 화면은 저장된 세 슬롯의 조합으로 완성 PNG 파일을 선택하므로 추가 DB 변경은 없다.
 
+`V18__character_bunny_costume.sql`은 의상 CHECK에 `BUNNY`를 추가한다. 토끼탈 착용 중에도 기존 `hair_item_id`와 `glasses_item_id`를 그대로 저장한다. 화면은 토끼탈 단일 이미지를 선택하고, 서비스는 헤어·안경 변경을 거부한다. 토끼탈 해제 후 두 값이 다시 표시된다.
+
+보상 세트 `BEAR`·`HOMEBODY`·`INTERVIEW`·`RAINCOAT`·`ASTRONAUT`는 이미지와 잠금 카탈로그만 추가한다. B10 해금 조건이 없으므로 V18 의상 CHECK에는 넣지 않고 서버도 장착을 `409`로 거부한다. 이 단계에서 보상 소유권·EXP 테이블은 만들지 않는다.
+
 공식 채용 출처 추가, 의미 기반 매칭·추천, 이력서 분석, 복잡한 게이미피케이션, 알림, 독립적인 면접 일정 관리는 아직 현재 테이블에 포함하지 않는다. 향후 요구사항과 아키텍처가 확정되면 별도 설계한다. 현재의 `JobSource`, 공통 `Skill`, 사용자·공고·프로젝트 관계는 확장 시 재사용할 수 있다.

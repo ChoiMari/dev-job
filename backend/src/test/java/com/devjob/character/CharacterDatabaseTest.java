@@ -59,12 +59,17 @@ class CharacterDatabaseTest {
             assertThat(json.readTree(request("GET", "/api/me/character", first.cookie(), null, null).body())
                     .get("equippedItemId").asText()).isEqualTo("BASE");
             var items = json.readTree(request("GET", "/api/character/items", first.cookie(), null, null).body());
-            assertThat(items.size()).isEqualTo(9);
+            assertThat(items.size()).isEqualTo(15);
             assertThat(items.get(1).get("assetId").asText()).isEqualTo("EXT-IMG-06C");
             assertThat(items.get(1).get("thumbnailAssetId").asText()).isEqualTo("EXT-IMG-06E");
             assertThat(items.get(2).get("available").asBoolean()).isFalse();
-            assertThat(items.get(5).get("slot").asText()).isEqualTo("HAIR");
-            assertThat(items.get(8).get("slot").asText()).isEqualTo("GLASSES");
+            assertThat(items.get(3).get("id").asText()).isEqualTo("BUNNY");
+            for (int i = 4; i < 9; i++) {
+                assertThat(items.get(i).get("available").asBoolean()).isFalse();
+                assertThat(items.get(i).get("availabilityCondition").asText()).isEqualTo("FUTURE_REWARD");
+            }
+            assertThat(items.get(9).get("slot").asText()).isEqualTo("HAIR");
+            assertThat(items.get(14).get("slot").asText()).isEqualTo("GLASSES");
             var firstPool = Executors.newFixedThreadPool(2);
             var firstStart = new CountDownLatch(1);
             try {
@@ -77,6 +82,9 @@ class CharacterDatabaseTest {
             } finally { firstPool.shutdownNow(); }
             assertThat(request("PUT", "/api/me/character/equipment/OUTFIT", first.cookie(), first.csrf(),
                     "{\"itemId\":\"PEACH\"}").statusCode()).isEqualTo(409);
+            for (String id : java.util.List.of("BEAR", "HOMEBODY", "INTERVIEW", "RAINCOAT", "ASTRONAUT"))
+                assertThat(request("PUT", "/api/me/character/equipment/OUTFIT", first.cookie(), first.csrf(),
+                        "{\"itemId\":\"" + id + "\"}").statusCode()).isEqualTo(409);
             assertThat(request("PUT", "/api/me/character/equipment/GLASSES", first.cookie(), first.csrf(),
                     "{\"itemId\":\"BOB\"}").statusCode()).isEqualTo(400);
             assertThat(request("PUT", "/api/me/character/equipment/HAT", first.cookie(), first.csrf(),
@@ -100,6 +108,20 @@ class CharacterDatabaseTest {
             var restored = json.readTree(request("GET", "/api/me/character", again.cookie(), null, null).body());
             assertThat(restored.get("equipment").get("HAIR").asText()).isEqualTo("BOB");
             assertThat(restored.get("equipment").get("GLASSES").asText()).isEqualTo("SQUARE");
+            assertThat(request("PUT", "/api/me/character/equipment/OUTFIT", again.cookie(), again.csrf(),
+                    "{\"itemId\":\"BUNNY\"}").statusCode()).isEqualTo(200);
+            var bunny = json.readTree(request("GET", "/api/me/character", again.cookie(), null, null).body());
+            assertThat(bunny.get("equippedAssetId").asText()).isEqualTo("B09-COMPLETE-BUNNY");
+            assertThat(bunny.get("equipment").get("HAIR").asText()).isEqualTo("BOB");
+            assertThat(bunny.get("equipment").get("GLASSES").asText()).isEqualTo("SQUARE");
+            assertThat(request("PUT", "/api/me/character/equipment/HAIR", again.cookie(), again.csrf(),
+                    "{\"itemId\":\"PONY\"}").statusCode()).isEqualTo(409);
+            assertThat(request("PUT", "/api/me/character/equipment/GLASSES", again.cookie(), again.csrf(),
+                    "{\"itemId\":\"ROUND\"}").statusCode()).isEqualTo(409);
+            assertThat(request("PUT", "/api/me/character/equipment/OUTFIT", again.cookie(), again.csrf(),
+                    "{\"itemId\":null}").statusCode()).isEqualTo(200);
+            assertThat(characters.state(owner.getId()).equipment())
+                    .containsEntry("OUTFIT", "BASE").containsEntry("HAIR", "BOB").containsEntry("GLASSES", "SQUARE");
 
             var pool = Executors.newFixedThreadPool(2);
             var start = new CountDownLatch(1);
@@ -111,7 +133,7 @@ class CharacterDatabaseTest {
                 b.get(10, TimeUnit.SECONDS);
                 assertThat(equipment.count()).isEqualTo(1);
                 assertThat(characters.state(owner.getId()).equipment())
-                        .containsEntry("OUTFIT", "MINT").containsEntry("HAIR", "PONY").containsEntry("GLASSES", "ROUND");
+                        .containsEntry("OUTFIT", "BASE").containsEntry("HAIR", "PONY").containsEntry("GLASSES", "ROUND");
                 assertThat(characters.state(other.getId()).equippedItemId()).isEqualTo("BASE");
             } finally { pool.shutdownNow(); }
         } finally {
