@@ -1,10 +1,10 @@
 # DevJob 확장 REST API 명세 준비본
 
-상태: **B03 확정·구현, 다른 단계는 계약 초안** · 2026-10-08
+상태: **B03·B06 확정·구현, 다른 단계는 계약 초안** · 2026-10-08
 
 ## 1. 사용 방법과 계약 상태
 
-이 문서는 [확장 요구사항](extension-requirements.md) EXT-01~08 **전체**를 Backend부터 순차 구현하기 위한 API 목록이다. 단계 순서는 [Backend 로드맵](extension-backend-roadmap.md)을 따른다. B03 이외의 경로는 **후보**이며 구현 완료 API로 간주하지 않는다. 각 단계 착수 전에 정책을 확정하고, 해당 표를 `확정` 상태의 필드·형식·오류·예시까지 갱신한 다음 코드를 작성한다. 정책이 결정되지 않은 필드는 추측해 DTO·DB에 추가하지 않는다.
+이 문서는 [확장 요구사항](extension-requirements.md) EXT-01~08 **전체**를 Backend부터 순차 구현하기 위한 API 목록이다. 단계 순서는 [Backend 로드맵](extension-backend-roadmap.md)을 따른다. B03·B06 이외의 경로는 **후보**이며 구현 완료 API로 간주하지 않는다. 각 단계 착수 전에 정책을 확정하고, 해당 표를 `확정` 상태의 필드·형식·오류·예시까지 갱신한 다음 코드를 작성한다. 정책이 결정되지 않은 필드는 추측해 DTO·DB에 추가하지 않는다.
 
 기존 구현 API의 단일 기준은 [MVP API 명세](api-spec.md) 1~6절이다. 기존 경로와 응답 필드를 임의로 바꾸지 않는다. 확장에서 기존 응답에 필드를 더할 때도 기존 클라이언트 영향과 `null`/미입력/하위 호환을 명시한다. 새 API는 `/api`를 사용하며 인증 사용자 ID는 세션에서만 얻는다. JSON 본문, CSRF, 공통 오류 `{code,message}`, 날짜·시간대, 페이지 형식과 상태 코드는 기존 명세를 따른다. `POST`·`PUT`·`PATCH`·`DELETE`는 CSRF 보호 대상이다. 개인 리소스는 본인 소유권을 검증한다. 타인 리소스에 대한 `403`/`404` 구분은 기존 기능의 노출 정책과 맞춰 단계별로 확정한다.
 
@@ -97,15 +97,20 @@ B00은 새 엔드포인트를 확정하거나 구현하지 않는다. 아래 기
 
 텍스트 방식이면 JSON 계약, 파일 방식이면 업로드·검증·보관·다운로드 계약을 별도로 확정한다. 둘을 동시에 허용할지 먼저 결정한다. 자기소개서가 독립 저장 리소스인지 B12 입력인지도 B05·B12 사이에 확정한다.
 
-### B06 · 면접 일정 — EXT-05-03
+### B06 · 면접 일정 — EXT-05-03 (확정)
 
-| 후보 Method·URL | 요청·필수 응답 | 착수 전 결정 |
-| --- | --- | --- |
-| `GET/POST /api/me/interviews` | 목록·생성 → 일정 ID, 시간대 포함 시작 시각, 상태, 지원 연결 | 지원 ID 필수 여부, 일정 충돌 기준 |
-| `GET/PATCH /api/me/interviews/{interviewId}` | 상세·일정 변경 → 최신 일정 | 시간/상태 수정 범위 |
-| `POST /api/me/interviews/{interviewId}/cancel` | 취소 의도 → 취소 상태 | 취소 후 재활성화 여부, 중복 취소 결과 |
+모든 경로는 로그인 세션이 필요하며 POST·PATCH는 CSRF 토큰이 필요하다. 목록은 본인 일정만 시작 시각 오름차순·ID 내림차순으로 반환한다. 같은 시각의 활성 면접도 등록할 수 있다.
 
-기존 `Application.nextScheduleAt`과 독립 일정의 동기화 여부를 정하기 전에는 두 값을 자동 복제하지 않는다. 연결된 지원 건은 본인 소유여야 한다.
+| Method·URL | 요청 | 성공 응답 | 주요 오류 |
+| --- | --- | --- | --- |
+| `GET /api/me/interviews?page=0&size=20` | `page` 0 이상, `size` 1~100 | `{items: Interview[], page, size, totalElements}` · `200` | 페이지 오류 `400` |
+| `POST /api/me/interviews` | `{applicationId?: number|null, title: string, startsAt: string, timeZone: string}` | `Interview` · `201` | 입력·시간대 오류 `400`, 연결 지원 없음 `404`, 타인 지원 `403` |
+| `GET /api/me/interviews/{interviewId}` | 없음 | `Interview` · `200` | 없음 `404`, 타인 일정 `403` |
+| `PATCH /api/me/interviews/{interviewId}` | 위 필드 중 하나 이상. 시간 변경 시 `startsAt`과 `timeZone`을 함께 제공. `applicationId: null`로 연결 해제 | `Interview` · `200` | 입력 오류 `400`, 없음 `404`, 타인 일정·지원 `403` |
+| `POST /api/me/interviews/{interviewId}/cancel` | 없음 | 취소된 `Interview` · `200` | 없음 `404`, 타인 일정 `403` |
+| `POST /api/me/interviews/{interviewId}/reactivate` | 없음 | 활성 `Interview` · `200` | 없음 `404`, 타인 일정 `403` |
+
+`Interview`: `{id, applicationId: number|null, title, startsAt, timeZone, status: "SCHEDULED"|"CANCELLED", cancelledAt: string|null, createdAt, updatedAt}`. `title`은 공백 제외 1~200자다. `startsAt`은 오프셋을 포함한 ISO 8601 날짜·시각, `timeZone`은 IANA 시간대 ID(최대 100자)이며 요청 오프셋이 해당 시각의 시간대 오프셋과 같아야 한다. 응답은 입력 시간대의 오프셋으로 시작 시각을 표시한다. 취소·재활성화는 기록을 보존하며 중복 요청은 같은 상태를 `200`으로 반환한다. 취소된 일정도 목록·상세에서 조회하고 변경할 수 있다. 지원 연결은 선택이며 연결된 지원은 본인 소유여야 한다. 면접 일정과 `Application.nextScheduleAt`은 서로 자동 동기화하지 않고, 지원 상태·이력도 변경하지 않는다.
 
 ### B07 · 학습 목표 — EXT-05-04
 
