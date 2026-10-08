@@ -10,6 +10,7 @@ import com.devjob.dashboard.service.DashboardService;
 import com.devjob.job.repository.JobMatchQueryRepository;
 import com.devjob.job.repository.JobPostingRepository;
 import com.devjob.savedjob.repository.PersonalSavedJobRepository;
+import com.devjob.todo.repository.PersonalTodoRepository;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
@@ -26,13 +27,15 @@ class DashboardServiceTest {
     private final JobPostingRepository jobs = mock(JobPostingRepository.class);
     private final JobMatchQueryRepository matches = mock(JobMatchQueryRepository.class);
     private final SkillGapService gaps = mock(SkillGapService.class);
-    private final DashboardService service = new DashboardService(applications, bookmarks, personalJobs, jobs, matches, gaps);
+    private final PersonalTodoRepository todos = mock(PersonalTodoRepository.class);
+    private final DashboardService service = new DashboardService(applications, bookmarks, personalJobs, jobs, matches, gaps, todos);
 
     @Test void emptyDashboardHasZeroCountsAndNoExternalCalls() {
         when(applications.countByStatus(7L)).thenReturn(List.of());
         when(applications.findNextActions(eq(7L), anyCollection(), any(Pageable.class))).thenReturn(List.of());
         when(matches.recommendedJobIds(eq(7L), any(LocalDate.class), eq(3))).thenReturn(List.of());
         when(gaps.find(7L, null)).thenReturn(SkillGap.unavailable(null, 0, "USER_SKILLS_EMPTY"));
+        when(todos.dashboard(eq(7L), any(Pageable.class))).thenReturn(List.of());
 
         var result = service.get(7L);
         assertThat(result.applicationCounts()).hasSize(ApplicationStatus.values().length).containsEntry(ApplicationStatus.PLANNED, 0L);
@@ -40,6 +43,7 @@ class DashboardServiceTest {
         assertThat(result.nextActions()).isEmpty();
         assertThat(result.recommendedJobs()).isEmpty();
         assertThat(result.skillGapPreview()).isEmpty();
+        assertThat(result.personalTodos()).isEmpty();
         verifyNoInteractions(jobs);
     }
 
@@ -57,6 +61,7 @@ class DashboardServiceTest {
         when(bookmarks.countByUserId(7L)).thenReturn(4L);
         when(matches.recommendedJobIds(eq(7L), any(LocalDate.class), eq(3))).thenReturn(List.of());
         when(gaps.find(7L, null)).thenReturn(SkillGap.unavailable(null, 0, "INSUFFICIENT_SAMPLE"));
+        when(todos.dashboard(eq(7L), any(Pageable.class))).thenReturn(List.of());
 
         var result = service.get(7L);
         assertThat(result.applicationCounts()).containsEntry(ApplicationStatus.INTERVIEW, 2L)

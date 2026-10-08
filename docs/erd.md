@@ -22,7 +22,7 @@ S11 단독 worktree는 당시 V1~V4 뒤에 V5 지원 migration을 적용해 검�
 | AI 분석 | 공고당 현재 분석 결과 하나만 저장한다. 상태와 검증된 결과는 `AIAnalysis`, 정규화된 기술 관계는 `JobSkill`에 둔다. 실패한 원시 LLM 응답은 정상 결과로 저장하지 않는다. 재시도는 같은 분석 행을 갱신한다. |
 | 관심 공고와 지원 | `Bookmark`와 `Application`은 독립적이다. `INTERESTED` 지원 상태가 있어도 북마크를 강제 생성하지 않는다. 사용자·공고당 각각 최대 한 건으로 단순화한다. |
 | 지원 이력 | 요구사항의 “상태가 변경될 때마다”를 기준으로 최초 상태 등록과 이후 변경을 `ApplicationStatusHistory`에 기록한다. 아키텍처의 “필요한 경우”보다 구체적인 요구사항을 따른다. |
-| 파생 데이터 | 적합도·Skill Gap·기본 학습 우선순위·시장 수요·대시보드 집계는 기존 데이터에서 계산한다. 별도 결과 테이블과 자유 입력 할 일 테이블은 만들지 않는다. |
+| 파생 데이터 | 적합도·Skill Gap·기본 학습 우선순위·시장 수요·기존 대시보드 `nextActions`는 기존 데이터에서 계산한다. B03의 개인 할 일은 별도 `personal_todo`에 저장한다. |
 
 `ui-spec.md`의 이력서·알림·확장형 캐릭터 화면은 현재 MVP 기능 범위를 넓히는 DB 근거로 사용하지 않는다. 학습 우선순위는 `user-flow.md`와 `development-plan.md`의 **기본 규칙 기반 계산**까지만 MVP에 포함한다.
 
@@ -45,6 +45,7 @@ erDiagram
     User ||--o{ Bookmark : saves
     JobPosting ||--o{ Bookmark : saved_as
     User ||--o{ PersonalSavedJob : saves_directly
+    User ||--o{ PersonalTodo : manages
     User ||--o{ Application : submits
     JobPosting ||--o{ Application : applied_to
     PersonalSavedJob ||--o{ Application : applied_to
@@ -129,4 +130,8 @@ S11 물리 매핑: `V7__create_applications.sql`은 기존 데이터를 변경�
 
 ## 5. MVP 이후 확장 영역
 
-공식 채용 출처 추가, 의미 기반 매칭·추천, 이력서 분석, 복잡한 게이미피케이션, 알림, 독립적인 할 일·일정 관리는 현재 테이블에 포함하지 않는다. 향후 요구사항과 아키텍처가 확정되면 별도 설계한다. 현재의 `JobSource`, 공통 `Skill`, 사용자·공고·프로젝트 관계는 확장 시 재사용할 수 있다.
+### B03 개인 할 일
+
+`V14__personal_todos.sql`은 `personal_todo`를 추가한다. `id` BIGINT identity PK, `user_id` 필수 users FK, `title` 필수 VARCHAR(200)·공백 검사, `description` VARCHAR(2000), `due_at` TIMESTAMPTZ와 `due_time_zone` VARCHAR(100)은 둘 다 있거나 둘 다 없다. `completed_at`·`deleted_at`은 nullable TIMESTAMPTZ, `created_at`·`updated_at`은 필수 TIMESTAMPTZ다. 활성 목록 조회용 `(user_id, due_at ASC NULLS LAST, id DESC)` 부분 인덱스를 둔다. 서버는 `due_time_zone`의 IANA ID와 `due_at`의 요청 오프셋 일치를 검증한다. 완료 취소 시 `completed_at`을 비우고, 삭제 시 `deleted_at`을 채워 일반 조회에서 제외한다. 지원 기록·`nextActions`와 관계를 만들지 않는다. B10 보상과의 관계는 미정이다.
+
+공식 채용 출처 추가, 의미 기반 매칭·추천, 이력서 분석, 복잡한 게이미피케이션, 알림, 독립적인 면접 일정 관리는 아직 현재 테이블에 포함하지 않는다. 향후 요구사항과 아키텍처가 확정되면 별도 설계한다. 현재의 `JobSource`, 공통 `Skill`, 사용자·공고·프로젝트 관계는 확장 시 재사용할 수 있다.

@@ -1,10 +1,10 @@
 # DevJob 확장 REST API 명세 준비본
 
-상태: **구현 전 계약 초안** · 2026-10-08
+상태: **B03 확정·구현, 다른 단계는 계약 초안** · 2026-10-08
 
 ## 1. 사용 방법과 계약 상태
 
-이 문서는 [확장 요구사항](extension-requirements.md) EXT-01~08 **전체**를 Backend부터 순차 구현하기 위한 API 목록이다. 단계 순서는 [Backend 로드맵](extension-backend-roadmap.md)을 따른다. 현재 아래 경로는 **후보**이며 구현 완료 API로 간주하지 않는다. 각 단계 착수 전에 정책을 확정하고, 해당 표를 `확정` 상태의 필드·형식·오류·예시까지 갱신한 다음 코드를 작성한다. 정책이 결정되지 않은 필드는 추측해 DTO·DB에 추가하지 않는다.
+이 문서는 [확장 요구사항](extension-requirements.md) EXT-01~08 **전체**를 Backend부터 순차 구현하기 위한 API 목록이다. 단계 순서는 [Backend 로드맵](extension-backend-roadmap.md)을 따른다. B03 이외의 경로는 **후보**이며 구현 완료 API로 간주하지 않는다. 각 단계 착수 전에 정책을 확정하고, 해당 표를 `확정` 상태의 필드·형식·오류·예시까지 갱신한 다음 코드를 작성한다. 정책이 결정되지 않은 필드는 추측해 DTO·DB에 추가하지 않는다.
 
 기존 구현 API의 단일 기준은 [MVP API 명세](api-spec.md) 1~6절이다. 기존 경로와 응답 필드를 임의로 바꾸지 않는다. 확장에서 기존 응답에 필드를 더할 때도 기존 클라이언트 영향과 `null`/미입력/하위 호환을 명시한다. 새 API는 `/api`를 사용하며 인증 사용자 ID는 세션에서만 얻는다. JSON 본문, CSRF, 공통 오류 `{code,message}`, 날짜·시간대, 페이지 형식과 상태 코드는 기존 명세를 따른다. `POST`·`PUT`·`PATCH`·`DELETE`는 CSRF 보호 대상이다. 개인 리소스는 본인 소유권을 검증한다. 타인 리소스에 대한 `403`/`404` 구분은 기존 기능의 노출 정책과 맞춰 단계별로 확정한다.
 
@@ -35,7 +35,7 @@ B00은 새 엔드포인트를 확정하거나 구현하지 않는다. 아래 기
 
 ## 2. 단계별 API 후보와 확정할 계약
 
-표의 `필수 응답`은 프론트 연결에 필요한 최소 정보이며, **아직 확정 DTO가 아니다**. 확정 전에는 API 문서와 ERD를 함께 갱신한다. 기존 GET을 확장할 경우 현재 응답 필드를 제거하지 않는다.
+후보 표의 `필수 응답`은 프론트 연결에 필요한 최소 정보이며, **아직 확정 DTO가 아니다**. B03의 확정 계약은 아래 별도 절을 따른다. 다른 단계는 확정 전 API 문서와 ERD를 함께 갱신한다. 기존 GET을 확장할 경우 현재 응답 필드를 제거하지 않는다.
 
 ### B01 · 계정 비밀번호 — EXT-01-01 (확정)
 
@@ -58,18 +58,24 @@ B00은 새 엔드포인트를 확정하거나 구현하지 않는다. 아래 기
 
 기존 `POST /api/me/skills`의 선택 입력 `{ "skillId": 1 }` 또는 `{ "name": "Java" }`와 `201` `Skill` 응답은 유지한다. 새 보유 관계의 두 값은 `null`이다. 기존 `DELETE /api/me/skills/{skillId}`는 해당 사용자 관계와 두 값을 함께 제거하고 `204`를 반환한다. 삭제 후 재등록하면 이전 값은 복원하지 않는다. `GET /api/skills`와 다른 API의 `Skill` `{id, name}` 형식은 유지한다. 프로젝트 기술은 자동으로 보유 기술이 되지 않으며 기존 공고 적합도·Skill Gap 계산도 바뀌지 않는다.
 
-### B03 · 개인 할 일 — EXT-03
+### B03 · 개인 할 일 — EXT-03 (확정)
 
-| 후보 Method·URL | 요청·필수 응답 | 착수 전 결정 |
+모든 경로는 세션 인증이 필요하고 변경 요청은 CSRF 토큰이 필요하다. 식별자는 양의 정수다. 타인 소유의 활성 할 일은 `403 FORBIDDEN`, 없는 ID와 삭제된 ID는 `404 NOT_FOUND`다. 오류 본문은 공통 `{code,message}`다. 목록은 `page=0`, `size=20`이 기본이고 `page≥0`, `1≤size≤100`을 허용한다. 페이지 오프셋 오버플로·잘못된 필터·ID·JSON은 `400 INVALID_INPUT`이다.
+
+| Method·URL | 요청 | 성공 |
 | --- | --- | --- |
-| `GET /api/me/todos` | 필터·페이지 → 본인 할 일 목록, 완료 여부 | 기한/완료 정렬, 완료 항목 포함 기준 |
-| `POST /api/me/todos` | 제목과 확정된 선택 필드 → 생성된 할 일 | 필수 필드·길이·시간대 |
-| `GET /api/me/todos/{todoId}` | 없음 → 상세 | 상세 필요 여부 |
-| `PATCH /api/me/todos/{todoId}` | 변경 필드 → 변경된 할 일 | 부분 수정·`null` 의미 |
-| `PATCH /api/me/todos/{todoId}/completion` | 완료/취소 의도 → 완료 상태와 변경 시각 | 취소 가능 여부, 중복 요청 결과 |
-| `DELETE /api/me/todos/{todoId}` | 없음 → 본문 없음 | 보존/삭제 정책, 보상 연결 시 처리 |
+| `GET /api/me/todos` | 선택 `completed=true|false`, `page`, `size`; 필터 생략 시 완료·미완료 모두 | `200` `{items:[Todo],page,size,totalElements}`. 활성 항목만, 기한 빠른 순·기한 없음 마지막·ID 내림차순. 범위 초과 페이지는 빈 `items`와 실제 총수 |
+| `POST /api/me/todos` | `{ "title":"지원서 검토", "description":"오탈자 확인", "dueAt":"2026-10-15T18:00:00+09:00", "dueTimeZone":"Asia/Seoul" }` | `201` 생성된 `Todo` |
+| `GET /api/me/todos/{todoId}` | 없음 | `200` `Todo` |
+| `PATCH /api/me/todos/{todoId}` | 변경할 필드만 담은 비어 있지 않은 JSON 객체 | `200` 변경된 `Todo` |
+| `PATCH /api/me/todos/{todoId}/completion` | `{ "completed": true }` 또는 `false` | `200` `Todo`; 같은 상태의 재요청은 `completedAt`·`updatedAt`을 유지 |
+| `DELETE /api/me/todos/{todoId}` | 없음 | `204` 본문 없음; `deletedAt`을 저장하고 일반 조회에서 숨김. 반복 삭제는 `404` |
 
-기존 `GET /api/dashboard`의 읽기 전용 `nextActions`와 개인 할 일을 별도로 표현할지, 응답에 추가할지 B03에서 확정한다. 기존 항목을 개인 할 일로 변환하지 않는다.
+`Todo`는 `{id,title,description,dueAt,dueTimeZone,completed,completedAt,createdAt,updatedAt}`이다. 제목은 trim 후 1~200자 필수, 설명은 trim 후 최대 2000자이며 생략·`null`·공백은 `null`로 저장한다. 기한은 `dueAt` ISO 8601 오프셋 날짜·시각과 IANA `dueTimeZone`을 둘 다 보내거나 둘 다 생략/`null`로 보낸다. 입력 오프셋이 해당 시간대의 실제 오프셋과 다르면 `400`이다. 응답 `dueAt`은 저장된 시점을 지정 시간대의 오프셋으로 돌려준다. 생성 시 `completed=false`, `completedAt=null`이다. `PATCH`에서 제목 `null`·공백은 `400`, 설명 `null`은 제거, 기한은 두 필드를 `null`로 보내 제거한다. 알 수 없는 수정 필드와 빈 객체는 `400`이다. 완료 취소는 `completedAt=null`로 돌린다. 텍스트의 제어문자는 허용하지 않는다.
+
+시각은 DB의 마이크로초 정밀도에 맞춰 저장·응답한다. 따라서 더 세밀한 소수 초가 들어오면 마이크로초로 내림한 값이 첫 응답과 재조회에 동일하게 나타난다.
+
+`GET /api/dashboard`는 기존 필드와 함께 별도 `personalTodos: [Todo]`를 반환한다. 삭제되지 않은 미완료 할 일 중 위 기한 순 상위 5건이다. `nextActions`는 계속 지원 기록에서 계산하며 두 목록을 합치거나 서로 변환하지 않는다. 대시보드 조회는 외부 API를 호출하지 않는다. B10 EXP/보상 연동은 이 계약의 범위 밖이며 후속 정책 결정이 필요하다.
 
 ### B04 · 기업 관리 — EXT-05-01
 

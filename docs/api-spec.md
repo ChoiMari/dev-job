@@ -169,7 +169,7 @@ S13 구현: 비교 API는 완료된 분석이 없으면 `409 CONFLICT`를 반환
 | 시장 기술 수요 `GET /api/analytics/skills` | 예 | Query: `dateFrom`, `dateTo`, `desiredRole`, `page`, `size` | 없음 | 아래 `SkillDemand` 목록 · `200` | 기간 오류 `400` |
 | 내 기본 Skill Gap·학습 우선순위 `GET /api/me/skill-gap` | 예 | Query: `desiredRole`(선택) | 없음 | 아래 `SkillGap` · `200` | 인증 없음 `401`, 필터 오류 `400` |
 
-`Dashboard`: `{ "applicationCounts": { "PLANNED": 1, "APPLIED": 2, "INTERVIEW": 0 }, "bookmarkCount": 3, "nextActions": [{ "applicationId": 1, "jobId": 10, "status": "PLANNED", "nextScheduleAt": null }], "recommendedJobs": [JobSummary], "skillGapPreview": [Skill] }`. `nextActions`는 지원 상태·일정에서 도출하는 표시용 항목이며 별도 자유 입력·완료 체크 기능을 뜻하지 않는다. 추천 공고는 기본 규칙 기반 적합도만 사용하며 합격 확률을 의미하지 않는다. 데이터가 없거나 분석이 미완료면 해당 배열은 비어 있다.
+`Dashboard`: `{ "applicationCounts": { "PLANNED": 1, "APPLIED": 2, "INTERVIEW": 0 }, "bookmarkCount": 3, "nextActions": [{ "applicationId": 1, "jobId": 10, "status": "PLANNED", "nextScheduleAt": null }], "recommendedJobs": [JobSummary], "skillGapPreview": [Skill], "personalTodos": [Todo] }`. `nextActions`는 지원 상태·일정에서 도출하는 표시용 항목이며 개인 할 일과 별개다. `personalTodos`는 활성 미완료 개인 할 일 중 기한 순 상위 5건이며 상세 계약은 [확장 API B03](extension-api-spec.md#b03--개인-할-일--ext-03-확정)을 따른다. 추천 공고는 기본 규칙 기반 적합도만 사용하며 합격 확률을 의미하지 않는다. 데이터가 없거나 분석이 미완료면 해당 배열은 비어 있다.
 
 `SkillDemand`: `{ "skill": Skill, "jobCount": 136, "analyzedJobCount": 200, "ratio": 0.68 }`. 완료 분석 공고를 모수로 집계하고 표본 수를 함께 반환한다. S14 응답은 `{ "items": [SkillDemand], "page": 0, "size": 20, "totalElements": 12, "analyzedJobCount": 200 }`이며 기술 건수 내림차순, 기술명·ID 오름차순으로 정렬한다. `dateFrom`·`dateTo`는 공고 게시일의 양 끝을 포함하고, `desiredRole`은 공고 제목의 대소문자 무시 부분 일치 필터다. 날짜가 없는 공고는 기간 필터가 있을 때 제외한다. 필터는 선택 사항이며 `page`는 0부터, `size`는 기본 20·최대 100이다. 기간 역전·잘못된 날짜·페이지 값·200자를 넘는 직무명은 `400`이다. 조건에 맞는 분석이 없으면 `items: []`, `totalElements: 0`, `analyzedJobCount: 0`을 반환한다.
 
@@ -181,4 +181,4 @@ S16 대시보드 선정 기준: `applicationCounts`에는 모든 지원 상태�
 
 ## 7. MVP 이후
 
-이력서·자기소개서 분석, 알림, 별도 할 일 관리, 캐릭터 성장, 의미 기반 추천, 추가 채용 출처 등은 이 명세의 **구현 완료 MVP 엔드포인트**에 포함하지 않는다. EXT-01~08 전체의 Backend 구현 순서는 [확장 Backend 로드맵](extension-backend-roadmap.md), 후보 API와 단계별 계약 확정 항목은 [확장 API 명세 준비본](extension-api-spec.md)을 따른다. 후보 경로는 아직 구현된 계약이 아니며, 각 단계의 정책·ERD·요청/응답/오류를 확정한 뒤 이 문서와 코드에 함께 반영한다. 관리자 API는 현 확장 요구사항에도 없다. S03 인증 전달·로그아웃 계약은 2절에 반영했다.
+이력서·자기소개서 분석, 알림, 캐릭터 성장, 의미 기반 추천, 추가 채용 출처 등은 이 명세의 **구현 완료 MVP 엔드포인트**에 포함하지 않는다. 개인 할 일 B03의 확정 계약은 [확장 API 명세](extension-api-spec.md#b03--개인-할-일--ext-03-확정)를 따른다. EXT-01~08 전체의 Backend 구현 순서는 [확장 Backend 로드맵](extension-backend-roadmap.md), 후보 API와 단계별 계약 확정 항목은 [확장 API 명세 준비본](extension-api-spec.md)을 따른다. 다른 후보 경로는 아직 구현된 계약이 아니며, 각 단계의 정책·ERD·요청/응답/오류를 확정한 뒤 이 문서와 코드에 함께 반영한다. 관리자 API는 현 확장 요구사항에도 없다. S03 인증 전달·로그아웃 계약은 2절에 반영했다.
