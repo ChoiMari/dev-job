@@ -56,6 +56,8 @@ B01~B15를 모두 개발 범위에 포함한다. B10~B14는 제품/외부 조건
 
 EXT-03 정책을 사용자 선택에 따라 확정했다. 제목 필수·설명 선택, 오프셋 날짜·시각과 IANA 시간대의 쌍, 완료 취소 및 중복 요청의 상태 유지, 삭제 시각 보존, 대시보드 별도 `personalTodos`를 적용했다. [확장 API B03](extension-api-spec.md#b03--개인-할-일--ext-03-확정)과 [ERD B03](erd.md#b03-개인-할-일)에 계약을 기록하고 Backend V14·API·테스트를 구현했다. B10 EXP/보상 정책은 해당 단계에서 결정한다.
 
+main 통합에서는 B03의 독립 브랜치 V12를 기존 B01 V12·B02 V13 다음의 V14로 조정했다. 통합본 Backend 빌드·일반 테스트와 별도 임시 PostgreSQL 17의 Flyway V1~V14·JPA `validate`·B03/B01 DB 테스트가 통과했다. Frontend 빌드와 전체 테스트 66건도 통과했다.
+
 권장 모델은 **구현 작업을 수행하는 Codex 모델**이며 DevJob 서비스가 호출하는 AI 모델이 아니다. [OpenAI 공식 모델 선택 가이드](https://developers.openai.com/api/docs/guides/model-selection)는 GPT-6.1 Sol을 복잡한 기술 작업의 균형형, Astra를 까다로운 분석·고난도 작업에 권장한다. 보안·외부 연동·AI 결과 검증·삭제처럼 설계 경계가 많은 단계에 Astra 또는 `high`를, 범위가 명확한 CRUD에는 Sol `medium`을 배정한 것은 이 프로젝트의 작업 난도에 따른 권장안이다. 모델 사용 가능 여부와 비용은 계정·제품 설정에 따라 다를 수 있다. [GPT-6.1 Sol 모델 설명](https://developers.openai.com/api/docs/models/gpt-6.1-sol)에 `medium`·`high` 지원이 명시되어 있다.
 
 ## 병렬 작업과 합류 지점
