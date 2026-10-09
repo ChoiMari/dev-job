@@ -3,6 +3,7 @@ package com.devjob.resume.service;
 import com.devjob.resume.dto.*;
 import com.devjob.resume.entity.*;
 import com.devjob.resume.repository.*;
+import com.devjob.documentanalysis.repository.DocumentAnalysisRepository;
 import com.devjob.user.repository.UserRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.nio.charset.StandardCharsets;
@@ -20,9 +21,11 @@ public class ResumeService {
     private final ResumeVersionRepository versions;
     private final UserRepository users;
     private final ResumeCipher cipher;
+    private final DocumentAnalysisRepository analyses;
 
-    public ResumeService(ResumeRepository resumes, ResumeVersionRepository versions, UserRepository users, ResumeCipher cipher) {
-        this.resumes = resumes; this.versions = versions; this.users = users; this.cipher = cipher;
+    public ResumeService(ResumeRepository resumes, ResumeVersionRepository versions, UserRepository users, ResumeCipher cipher,
+            DocumentAnalysisRepository analyses) {
+        this.resumes = resumes; this.versions = versions; this.users = users; this.cipher = cipher; this.analyses = analyses;
     }
 
     @Transactional(readOnly = true)
@@ -59,6 +62,7 @@ public class ResumeService {
     @Transactional
     public void delete(Long userId, Long id) {
         var resume = owned(userId, id, true);
+        analyses.deleteForResume(id);
         resume.delete();
         resumes.flush();
     }

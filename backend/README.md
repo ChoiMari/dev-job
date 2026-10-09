@@ -188,3 +188,9 @@ B11 관리자 수동 배치는 `ALIO_BATCH_ADMIN_EMAILS`에 관리자 계정 이
 이력서 원문은 JSON 텍스트로만 받으며 PostgreSQL에는 AES-256-GCM 암호문과 버전별 nonce를 저장한다. 서버 프로세스에 `RESUME_ENCRYPTION_KEY`를 Base64로 인코딩한 32바이트 키로 주입해야 원문 생성·조회가 가능하다. 예를 들어 운영 비밀 저장소에서 주입하고 코드·환경 파일·로그에 키를 기록하지 않는다. 키가 없거나 형식이 잘못되면 B05 원문 읽기·쓰기만 `503`이 되며 기존 CRM API는 동작한다. 키 교체·분실 시 기존 버전을 읽을 수 없으므로 키 보존과 교체 절차는 운영에서 별도로 정해야 한다.
 
 Flyway `V16__resumes.sql`은 `resume`·`resume_version`을 추가한다. 삭제는 즉시 일반 조회에서 숨기고 매일 03:00 UTC에 30일 이상 지난 이력서와 버전을 DB에서 영구 삭제한다. DB 백업의 30일 보존·삭제 정책은 아직 정해지지 않았다. 실제 DB 검증은 새 일회용 `devjob_b05_test`에서 `dbTest --tests com.devjob.resume.ResumeDatabaseTest`로 실행한다.
+
+## B12 · 문서 AI 분석 Backend
+
+자기소개서는 `/api/me/cover-letters`에서 B05와 같은 텍스트 JSON·불변 버전 방식으로 관리한다. 같은 `RESUME_ENCRYPTION_KEY`를 쓰며 AAD 영역을 분리한다. 분석은 이력서 또는 자기소개서의 지정 버전에 `{"consentToExternalAnalysis":true}`를 POST했을 때만 실행한다. 서버는 정형 개인정보를 마스킹하고 최대 12,000자를 기존 OpenAI 호환 API로 보낸다. 완료 결과는 재사용하고 실패·5분 이상 멈춘 요청만 명시적으로 재시도한다. GET은 저장된 상태·결과만 읽으며 외부 호출이 없다. 문서 또는 분석 삭제 시 결과를 즉시 지운다. 자유 형식 개인정보는 완전히 탐지할 수 없으므로 분석 전 사용자가 원문을 확인해야 한다. 외부 제공자·DB 백업 보존 조건은 별도 운영 확인이 필요하다.
+
+Flyway `V22__document_analysis.sql`은 자기소개서·분석 테이블을 추가한다. 격리 DB 이름 `devjob_b12_test`에서 `dbTest --tests com.devjob.documentanalysis.DocumentAnalysisDatabaseTest`를 실행한다. 실제 외부 호출은 테스트에서 모의 처리한다.
