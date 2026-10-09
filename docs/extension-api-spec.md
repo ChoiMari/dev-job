@@ -165,6 +165,20 @@ B00은 새 엔드포인트를 확정하거나 구현하지 않는다. 아래 기
 
 활동 보상은 클라이언트가 임의 EXP를 보내는 API로 만들지 않는다. 서버가 검증한 활동 이벤트를 기준으로 한 번만 반영한다. B09에서 기본 상태·장착을, B10에서 성장·보상·퀘스트를 확정한다.
 
+#### B09 · 슬롯별 꾸미기 — EXT-06-01~02 확정
+
+슬롯은 `OUTFIT`(기본 `BASE`, 사용 가능 `MINT`·`BUNNY`, 잠금 `PEACH`·`BEAR`·`HOMEBODY`·`INTERVIEW`·`RAINCOAT`·`ASTRONAUT`), `HAIR`(기본 `CLASSIC`, `BOB`, `PONY`), `GLASSES`(기본 `NONE`, `ROUND`, `SQUARE`)다. 잠금 의상 6개는 `FUTURE_REWARD`, 나머지는 `ALWAYS`다. B10 보상·해금 구현 전에는 이 항목의 장착을 `409`로 거부한다. `itemId: null`은 해당 슬롯 기본값으로 해제한다. 같은 항목의 반복 장착은 성공하며, 다른 슬롯 값은 유지한다. 미저장 계정의 기본 상태는 `BASE`·`CLASSIC`·`NONE`이다. 각 항목의 `thumbnailAssetId`는 선택 목록용이다. 기존 의상 세 항목의 `assetId`와 모든 항목의 `layerAssetIds`는 기존 B09 소비자를 위해 반환한다. 현재 화면은 응답의 `equipment` 세 값으로 완성 이미지 하나를 선택한다.
+
+일반 의상의 완성 이미지는 원래 그림체의 투명 1024×1536 PNG 27개이며 `character-{outfit}-{hair}-{glasses}.png` 규칙으로 선택한다. 전체 의상 `BUNNY`와 보상 세트 5종은 각각 `character-{item}.png` 한 장이다. 전체 의상 착용 중에는 저장된 헤어·안경 값을 유지하되 표시하지 않고, 두 슬롯의 PUT을 `409`로 거부한다. 다른 의상으로 바꾸거나 기본 의상으로 해제하면 이전 헤어·안경이 다시 표시된다. 전체 의상의 `assetId`와 `layerAssetIds`는 `B09-COMPLETE-{ITEM}`이다. 원형 안경은 검정, 사각 뿔테는 레드이고 민트 후드의 목과 두 눈이 보이도록 조합마다 제작했다. 파일 대응은 [이미지 목록](redesign-image-manifest.md)을 따른다. 기존 EXT-IMG-06A·06C·06D와 분리 레이어 자산은 호환용으로 보존한다. EXT-IMG-06B는 성장 장면이므로 카탈로그에 포함하지 않는다.
+
+| Method·URL | Request | 성공 응답 | 오류 |
+| --- | --- | --- | --- |
+| `GET /api/me/character` | 없음 | 기존 `baseAssetId`, `slot`, `equippedItemId`, `equippedAssetId`와 `equipment: { "OUTFIT": "BASE", "HAIR": "CLASSIC", "GLASSES": "NONE" }`, 표시 순서대로 정렬된 `layerAssetIds` · `200` | 인증 없음 `401` |
+| `GET /api/character/items` | 없음 | `{ id, slot, name, thumbnailAssetId, assetId, layerAssetIds, available, availabilityCondition }[]` · `200` | 인증 없음 `401` |
+| `PUT /api/me/character/equipment/{slot}` | `{ "itemId": "BOB" }`; 해제는 `{ "itemId": null }` | 전체 슬롯의 최신 상태 · `200` | 값·슬롯 불일치 `400`, 보상 잠금 항목·전체 의상 착용 중 헤어/안경 변경 `409`, 인증 없음 `401`, CSRF 실패 `403` |
+
+카탈로그 순서는 의상 9개, 헤어 3개, 안경 3개다. 사용자별 장착 행 하나에 세 슬롯을 저장하고 변경 요청은 사용자 행 잠금으로 직렬화한다. 경로에 사용자 ID를 받지 않고 인증 주체의 상태만 조회·변경한다. 장착은 재로그인 후에도 유지된다. 이 응답에는 레벨·EXP·보상 상태를 넣지 않는다. B10 전에는 `activity`, `quests`, `claim` API를 제공하지 않는다.
+
 ### B11 · 채용 출처 확장 — EXT-07
 
 | Method·URL | 요청·응답 | 권한·동작 |

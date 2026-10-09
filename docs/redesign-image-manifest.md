@@ -2,7 +2,7 @@
 
 상태: 이미지 제작 완료, 화면 연결 전 · 2026-10-08
 
-제작 기준은 [이미지 제작 가이드](image-generation-brief.md), 스타일 참고는 [참고 이미지](assets/frontend-redesign-reference.png)다. 모든 이미지는 내장 `image_gen`으로 새로 생성해 [`frontend/src/assets/redesign/`](../frontend/src/assets/redesign/)에 저장했다. 참고 이미지의 문구·수치·가상 UI는 생성 이미지에 사용하지 않았다. 기존 `frontend/src/assets/illustrations/` 파일은 수정하지 않았다.
+제작 기준은 [이미지 제작 가이드](image-generation-brief.md), 스타일 참고는 [참고 이미지](assets/frontend-redesign-reference.png)다. 기존 이미지들은 내장 `image_gen`으로 새로 생성해 [`frontend/src/assets/redesign/`](../frontend/src/assets/redesign/)에 저장했다. B09 의상 이미지 다섯 개는 `docs/assets/`에 추가했다. 참고 이미지의 문구·수치·가상 UI는 생성 이미지에 사용하지 않았다. 기존 `frontend/src/assets/illustrations/` 파일은 수정하지 않았다.
 
 ## 공통 제작 프롬프트
 
@@ -56,13 +56,48 @@ CUR-11~14는 기준 시트만으로 현재 화면에 배치할 이미지와 설�
 | EXT-IMG-05D | `ext-img-05d-learning.png` | 1254×1254 | 학습 관리 |
 | EXT-IMG-06A | `ext-img-06a-character-base.png` | 1024×1536 | 캐릭터 꾸미기 기본 포즈 미리보기 |
 | EXT-IMG-06B | `ext-img-06b-growth-celebration.png` | 1024×1536 | 실제 성장·보상 결과 장면 |
+| EXT-IMG-06C | `docs/assets/ext-img-06c-character-mint.png` | 1024×1536 | B09 선택 가능 민트 의상 전체 이미지 |
+| EXT-IMG-06D | `docs/assets/ext-img-06d-character-peach.png` | 1024×1536 | B09 카탈로그의 잠금 의상 전체 이미지; B10 전 장착 불가 |
+| EXT-IMG-06E | `docs/assets/ext-img-06e-outfit-mint.png` | 1254×1254 | B09 민트 의상 선택 목록 이미지 |
+| EXT-IMG-06F | `docs/assets/ext-img-06f-outfit-peach.png` | 1254×1254 | B09 복숭아 의상 선택 목록 이미지 |
+| EXT-IMG-06G | `docs/assets/ext-img-06g-outfit-base.png` | 1254×1254 | B09 기본 의상 선택 목록 이미지 |
 | EXT-IMG-07 | `ext-img-07-source-exploration.png` | 1254×1254 | 채용 출처 확장 |
 | EXT-IMG-08 | `ext-img-08-ai-analysis.png` | 1254×1254 | AI 문서 분석 대기·안내 |
 
-확장용 12개 파일은 모두 투명 배경이다. EXT-IMG-06A는 **기본 포즈 미리보기**다. 의상·소품의 분리 레이어 및 동일 좌표 규격은 아직 정해지지 않았으므로 이 이미지에 임의 레이어를 합성하지 않는다. EXT-IMG-06B는 실제 성장/보상 상태가 구현됐을 때만 사용한다.
+기존 확장용 PNG 17개 파일은 모두 투명 배경이다. EXT-IMG-06A는 **기본 포즈 미리보기**다. 이 완성 PNG에는 분리 레이어 좌표가 없으므로 새 착용 PNG 레이어를 위에 합성하지 않는다. EXT-IMG-06B는 실제 성장/보상 상태가 구현됐을 때만 사용한다.
+
+B09에서 추가한 EXT-IMG-06C·06D는 EXT-IMG-06A를 참조해 만든 투명 배경의 **완성 캐릭터 변형**이다. 이전 B09 `assetId` 응답과 참조용으로 보존한다. 현재 화면은 아래의 조합별 완성 이미지를 표시한다. 이 두 이미지의 입력 프롬프트는 기본 캐릭터의 얼굴·머리·정면 포즈·픽셀 스타일을 유지하면서 각각 민트 후드·크림 바지·민트 신발, 복숭아 재킷·보라 치마·복숭아 신발로 의상만 바꾸고 투명 배경·글자 없음으로 만든 것이다. 내장 imagegen을 사용했다.
+
+EXT-IMG-06E·06F·06G는 각각 민트·복숭아·기본 의상만 보여 주는 선택 목록 이미지다. 착용 이미지(06C·06D·06A)를 참조해 같은 옷 디자인·픽셀 스타일을 유지하고 사람·마네킹·문자 없이 투명 배경으로 생성했다. 카탈로그의 `thumbnailAssetId`가 이 목록 이미지를 가리킨다. `assetId`는 이전 완성 PNG ID로 유지한다. 세 파일도 `docs/assets/`에 두었고 내장 imagegen을 사용했다.
+
+### B09 조합별 완성 이미지 (현재 화면)
+
+의상 `BASE`·`MINT`·`PEACH`, 헤어 `CLASSIC`·`BOB`·`PONY`, 안경 `NONE`·`ROUND`·`SQUARE`의 27개 조합마다 착용 결과 PNG가 하나씩 있다. 파일명은 `character-{outfit}-{hair}-{glasses}.png`(소문자), 생성 원본은 `docs/assets/b09-complete-source/`, 화면용 파일은 `frontend/src/assets/character/`에 있다. 모두 공통 **1024×1536 투명 캔버스**다. 화면은 API `equipment` 세 값으로 파일을 고르며 이미지 여러 장을 합성하지 않는다. `PEACH` 조합 이미지도 준비됐지만 B10 전에는 서버가 장착을 거부한다.
+
+기본 캐릭터·의상·헤어·안경은 각 완성 이미지에서 함께 그려져 머리 앞뒤, 눈의 안경 위치, 옷과 머리의 겹침이 조합별로 정리된다. `CLASSIC`은 짧은 기본 머리, `BOB`은 귀 길이 단발, `PONY`는 묶은 머리이며 모두 두 눈이 보인다. `ROUND`는 검정, `SQUARE`는 레드이고 `MINT` 후드의 목선은 열려 목이 보인다. 목록용 헤어·안경 이미지는 완성 이미지에서 따로 잘라 만든 256×256 `thumb-hair-{classic|bob|pony}.png`, `thumb-glasses-{none|round|square}.png`이고 의상 목록용 파일은 EXT-IMG-06E·06F·06G다. [`prepare-character-complete.cjs`](../frontend/scripts/prepare-character-complete.cjs)가 원본의 옅은 배경 알파를 제거하고 화면용 PNG와 목록 이미지를 내보낸다. 내장 imagegen으로 각 조합을 개별 생성했으며 작업용 `sharp`만 사용해 앱 런타임 의존성은 늘지 않았다.
+
+토끼탈 `BUNNY`는 별도 전체 착용 이미지 `character-bunny.png`(자산 ID `B09-COMPLETE-BUNNY`) 하나를 사용한다. 헤어·안경이 보이지 않으므로 두 슬롯과의 조합 이미지를 추가하지 않는다. 목록용 `thumb-outfit-bunny.png`(자산 ID `B09-THUMB-OUTFIT-BUNNY`)는 머리 부분을 잘라 만든 256×256 PNG다. 원본 `docs/assets/b09-complete-source/character-bunny.png`를 기본 캐릭터의 정면 비율·픽셀 그림체 참조로 내장 imagegen에서 제작했고, 위 내보내기 스크립트로 1024×1536 투명 화면 파일을 만들었다.
+
+보상 전체 의상 5종 `BEAR`(곰인형탈), `HOMEBODY`(츄리닝·안경·헝클어진 묶음머리), `INTERVIEW`(면접 정장), `RAINCOAT`(우비), `ASTRONAUT`(우주복)도 각각 `character-{item}.png` 1024×1536 완성 이미지와 `thumb-outfit-{item}.png` 256×256 목록 이미지를 가진다. 자산 ID는 `B09-COMPLETE-{ITEM}`·`B09-THUMB-OUTFIT-{ITEM}`이며 생성 원본은 `docs/assets/b09-complete-source/`에 있다. 기존 캐릭터를 그림체·정면 비율 참조로 내장 imagegen으로 각각 생성했고 [`prepare-character-complete.cjs`](../frontend/scripts/prepare-character-complete.cjs)로 투명 화면 PNG와 목록 이미지를 내보냈다. 승인된 시안이지만 B10 지급 조건 전에는 카탈로그에서 `FUTURE_REWARD` 잠금이며 장착할 수 없다.
+
+### B09 분리 레이어 좌표·자산 (이전 화면 호환)
+
+착용 레이어는 모두 원래 그림체를 참조한 투명 **1024×1536 PNG**다. 눈 중심은 대략 `(430, 410)`·`(595, 410)`, 의상 목·어깨 시작은 `y≈545`다. 원형 안경은 검정, 사각 뿔테는 레드다. DOM 및 API `layerAssetIds` 순서는 **헤어 뒤(0) → 얼굴·몸(1) → 의상(2) → 헤어 앞(3) → 안경(4, 미착용 시 생략)**이다. 내보낸 모든 레이어가 같은 크기·좌표이므로 CSS 위치 오프셋은 없다. 헤어·안경 선택 목록은 착용 레이어와 별개의 256×256 PNG이고, 의상 선택 목록은 기존 EXT-IMG-06E·06F·06G PNG를 Frontend 번들에 복사해 사용한다.
+
+| 용도 | 자산 ID | `frontend/src/assets/character/` 파일 |
+| --- | --- | --- |
+| 공통 얼굴·몸 | `B09-LAYER-BODY` | `layer-body.png` |
+| 의상 기본·민트·복숭아 | `B09-LAYER-OUTFIT-BASE/MINT/PEACH` | `layer-outfit-base/mint/peach.png` |
+| 헤어 기본·단발·묶음 뒤 | `B09-LAYER-HAIR-CLASSIC/BOB/PONY-BACK` | `layer-hair-classic/bob/pony-back.png` |
+| 헤어 기본·단발·묶음 앞 | `B09-LAYER-HAIR-CLASSIC/BOB/PONY-FRONT` | `layer-hair-classic/bob/pony-front.png` |
+| 안경 검정 원형·레드 사각 뿔테 | `B09-LAYER-GLASSES-ROUND/SQUARE` | `layer-glasses-round/square.png` |
+| 헤어 목록 기본·단발·묶음 | `B09-THUMB-HAIR-CLASSIC/BOB/PONY` | `thumb-hair-classic/bob/pony.png` |
+| 안경 목록 미착용·동그란·네모 | `B09-THUMB-GLASSES-NONE/ROUND/SQUARE` | `thumb-glasses-none/round/square.png` |
+
+원래 캐릭터 PNG를 참조해 내장 imagegen으로 각 투명 레이어를 제작했다. 생성 원본은 `docs/assets/b09-layer-source/`에 보존하고 [`prepare-character-png.cjs`](../frontend/scripts/prepare-character-png.cjs)에서 희미한 배경 알파를 제거하고 공통 좌표로 등록해 Frontend PNG와 별도 목록 이미지를 내보낸다. 이 내보내기와 조합 검증 스크립트는 작업용 `sharp`를 사용하며 앱 런타임에는 의존성을 추가하지 않는다. 기존 완성 PNG·의상 `assetId`와 API `layerAssetIds`는 삭제하거나 덮어쓰지 않는다. 현재 화면은 `thumbnailAssetId`로 선택 목록을 표시하고 `equipment`로 위의 완성 이미지를 선택한다. `PEACH` 자산은 준비돼 있지만 B10 보상 조건 전에는 서버에서 장착을 거부한다.
 
 ## 적용·검증 기록
 
 - 생성 이미지 28개를 파일별로 저장했다. 파일 존재, 해상도, PNG 좌상단 픽셀의 알파 채널을 확인했다. 장면 3개는 불투명, 투명 이미지 25개는 좌상단 알파 0~1이었다.
 - 이미지 안의 장식적 빈 서식·추상 도형은 실제 사용자 데이터, 완료 상태, 통계로 해석하지 않는다. 실제 텍스트·상태·차트는 프론트 코드와 API 데이터로 표시한다.
-- 아직 프론트 컴포넌트에 연결하거나 화면별 Desktop·Tablet·Mobile 배치를 검증하지 않았다. 연결 작업 시 장식 이미지의 `alt=""`, 반응형 자르기, 텍스트 대비, 작은 크기에서의 실루엣을 확인한다.
+- B09 PNG 분리 레이어는 이전 화면에서 27개 합성판으로 검증했다. 품질 피드백 후 화면을 27개 개별 완성 PNG 선택으로 변경하고 [`render-character-complete-qa.cjs`](../frontend/scripts/render-character-complete-qa.cjs)로 실제 27개 완성 이미지의 조합판을 확인했다. 눈 위치와 앞·뒤 머리, 검정·레드 안경, 민트 후드 목선, 의상 겹침을 확인했다. Edge의 모의 API 화면에서 1280px·390px 선택·저장·새로고침·오류 복원, 이미지 로드와 가로 넘침도 확인했다. 다른 장식 이미지의 화면별 배치는 이 기록의 검증 범위 밖이다.

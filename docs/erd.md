@@ -155,4 +155,14 @@ V15__create_interested_companies.sql은 interested_company만 추가한다. id B
 
 `V17__interview_schedules.sql`은 `interview_schedule`을 추가한다. `id` BIGINT identity PK, `user_id` 필수 users FK, `application_id` 선택 application FK, `title` 필수 VARCHAR(200)·공백 검사, `starts_at` 필수 TIMESTAMPTZ, `time_zone` 필수 VARCHAR(100), `cancelled_at` nullable TIMESTAMPTZ, `created_at`·`updated_at` 필수 TIMESTAMPTZ다. 사용자·시각·ID 조회 인덱스와 지원 FK 인덱스를 둔다. 서버는 연결된 지원 건의 소유권과 IANA 시간대·요청 오프셋의 일치를 검증한다. 동일 시작 시각의 일정도 허용한다. 취소는 `cancelled_at`을 기록하고 재활성화는 이를 비운다. `Application.current_status`·상태 이력·`next_schedule_at`은 면접 일정에 의해 자동 변경되지 않는다.
 
-공식 채용 출처 추가, 의미 기반 매칭·추천, 이력서 분석, 복잡한 게이미피케이션, 알림은 아직 현재 테이블에 포함하지 않는다. 향후 요구사항과 아키텍처가 확정되면 별도 설계한다. 현재의 `JobSource`, 공통 `Skill`, 사용자·공고·프로젝트 관계는 확장 시 재사용할 수 있다.
+### B09 캐릭터 기본 상태·장착 확장
+
+`V19__character_equipment.sql`은 `character_equipment`만 추가한다. `user_id`는 `users.id`를 참조하는 PK이므로 사용자당 장착 행은 최대 한 건이다. `outfit_item_id`는 필수 `VARCHAR(40)`이며 V19 시점 저장 가능한 값은 `BASE`, `MINT`다. `updated_at`은 필수 `TIMESTAMPTZ`다. 신규·기존 사용자는 장착 행이 없을 때 `BASE` 상태로 조회되며 최초 장착 시 행을 만든다. 사용자 행 잠금 뒤 삽입·변경하므로 같은 사용자의 동시 장착이 직렬화된다. `PEACH`는 B10 보상 조건이 없어 카탈로그에 잠금 상태로만 나타나고 DB 저장을 허용하지 않는다. 카탈로그와 이미지 ID는 애플리케이션의 고정 값으로 관리하며 이 단계에서 보상·EXP·퀘스트 테이블을 추가하지 않는다.
+
+`V20__character_layer_slots.sql`은 기존 V19 이력을 변경하지 않고 같은 행에 필수 `hair_item_id`·`glasses_item_id`(`VARCHAR(40)`)를 추가한다. 기존 행에는 `CLASSIC`·`NONE` 기본값을 적용한다. DB CHECK는 헤어 `CLASSIC`·`BOB`·`PONY`, 안경 `NONE`·`ROUND`·`SQUARE`만 허용한다. 행이 없는 사용자는 `BASE`·`CLASSIC`·`NONE`으로 조회된다. 하나의 사용자 행 잠금으로 서로 다른 슬롯의 동시 변경도 직렬화해 덮어쓰기를 방지한다. 카탈로그와 이미지 자산은 DB에 저장하지 않는다. 화면은 저장된 세 슬롯의 조합으로 완성 PNG 파일을 선택하므로 추가 DB 변경은 없다.
+
+`V21__character_bunny_costume.sql`은 의상 CHECK에 `BUNNY`를 추가한다. 토끼탈 착용 중에도 기존 `hair_item_id`와 `glasses_item_id`를 그대로 저장한다. 화면은 토끼탈 단일 이미지를 선택하고, 서비스는 헤어·안경 변경을 거부한다. 토끼탈 해제 후 두 값이 다시 표시된다.
+
+보상 세트 `BEAR`·`HOMEBODY`·`INTERVIEW`·`RAINCOAT`·`ASTRONAUT`는 이미지와 잠금 카탈로그만 추가한다. B10 해금 조건이 없으므로 V21 의상 CHECK에는 넣지 않고 서버도 장착을 `409`로 거부한다. 이 단계에서 보상 소유권·EXP 테이블은 만들지 않는다.
+
+의미 기반 매칭·추천, 이력서 분석, 성장·보상 지급, 알림은 아직 현재 테이블에 포함하지 않는다. 향후 요구사항과 아키텍처가 확정되면 별도 설계한다. 현재의 `JobSource`, 공통 `Skill`, 사용자·공고·프로젝트 관계는 확장 시 재사용할 수 있다.
