@@ -15,6 +15,7 @@ public class PersonalTodo {
     @Column(name = "due_time_zone", length = 100) private String dueTimeZone;
     @Column(name = "completed_at") private Instant completedAt;
     @Column(name = "deleted_at") private Instant deletedAt;
+    @Column(name = "reward_eligible", nullable = false) private boolean rewardEligible = true;
     @Column(name = "created_at", nullable = false, updatable = false) private Instant createdAt;
     @Column(name = "updated_at", nullable = false) private Instant updatedAt;
 
@@ -44,6 +45,7 @@ public class PersonalTodo {
     public String getDueTimeZone() { return dueTimeZone; }
     public Instant getCompletedAt() { return completedAt; }
     public Instant getDeletedAt() { return deletedAt; }
+    public boolean isRewardEligible() { return rewardEligible; }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
 }

@@ -75,11 +75,11 @@ B00은 새 엔드포인트를 확정하거나 구현하지 않는다. 아래 기
 
 시각은 DB의 마이크로초 정밀도에 맞춰 저장·응답한다. 따라서 더 세밀한 소수 초가 들어오면 마이크로초로 내림한 값이 첫 응답과 재조회에 동일하게 나타난다.
 
-`GET /api/dashboard`는 기존 필드와 함께 별도 `personalTodos: [Todo]`를 반환한다. 삭제되지 않은 미완료 할 일 중 위 기한 순 상위 5건이다. `nextActions`는 계속 지원 기록에서 계산하며 두 목록을 합치거나 서로 변환하지 않는다. 대시보드 조회는 외부 API를 호출하지 않는다. B10 EXP/보상 연동은 이 계약의 범위 밖이며 후속 정책 결정이 필요하다.
+`GET /api/dashboard`는 기존 필드와 함께 별도 `personalTodos: [Todo]`를 반환한다. 삭제되지 않은 미완료 할 일 중 위 기한 순 상위 5건이다. `nextActions`는 계속 지원 기록에서 계산하며 두 목록을 합치거나 서로 변환하지 않는다. 대시보드 조회는 외부 API를 호출하지 않는다. B10에서 완료 전환만 EXP 지급에 사용하며 이 대시보드 계약은 바꾸지 않는다.
 
 ### B04 · 기업 관리 — EXT-05-01
 
-| 후보 Method·URL | 요청·필수 응답 | 착수 전 결정 |
+| Method·URL | 요청·필수 응답 | 확정 단계 |
 | --- | --- | --- |
 | `GET/POST /api/me/companies` | 목록·생성 → 사용자별 기업 기록, 메모·상태 | 식별·중복 규칙, 공고 회사와 연결 기준 |
 | `GET/PATCH/DELETE /api/me/companies/{companyId}` | 상세·수정·삭제 → 본인 기록 | 삭제와 연결 공고의 처리, 필드 제한 |
@@ -165,12 +165,12 @@ B00은 새 엔드포인트를 확정하거나 구현하지 않는다. 아래 기
 
 | 후보 Method·URL | 요청·필수 응답 | 착수 전 결정 |
 | --- | --- | --- |
-| `GET /api/me/character` | 없음 → 기본 외형, 장착 항목, 성장 상태 | 초기 상태, 레벨·EXP 규칙 |
-| `GET /api/character/items` | 없음 → 항목 카탈로그와 사용 가능 조건 | 항목 분류·자산 ID·잠금 조건 |
-| `PUT /api/me/character/equipment/{slot}` | 항목 ID → 최신 장착 상태 | 슬롯·중복 장착·해제 규칙 |
-| `GET /api/me/character/activity` | 페이지 → EXP 변동 근거 | 지급 대상 활동·소급 여부 |
-| `GET /api/me/character/quests` | 없음 → 목표·진행·보상 조건 | 퀘스트 주기·완료 판정 |
-| `POST /api/me/character/quests/{questId}/claim` | 수령 의도 → 지급 결과/최신 상태 | 중복 수령·취소/삭제·동시 요청 |
+| `GET /api/me/character` | 없음 → 기존 외형·장착 필드와 성장 상태 | B09 외형, B10 성장 |
+| `GET /api/character/items` | 없음 → 항목 카탈로그와 사용자별 사용 가능 상태 | B09 카탈로그, B10 해금 |
+| `PUT /api/me/character/equipment/{slot}` | 항목 ID → 최신 장착 상태 | B09 슬롯, B10 보상 의상 |
+| `GET /api/me/character/activity` | 페이지 → EXP 변동 근거 | B10 |
+| `GET /api/me/character/quests` | 없음 → 목표·진행·보상 조건 | B10 |
+| `POST /api/me/character/quests/{questId}/claim` | 수령 의도 → 지급 결과 | B10 |
 
 활동 보상은 클라이언트가 임의 EXP를 보내는 API로 만들지 않는다. 서버가 검증한 활동 이벤트를 기준으로 한 번만 반영한다. B09에서 기본 상태·장착을, B10에서 성장·보상·퀘스트를 확정한다.
 
@@ -186,7 +186,24 @@ B00은 새 엔드포인트를 확정하거나 구현하지 않는다. 아래 기
 | `GET /api/character/items` | 없음 | `{ id, slot, name, thumbnailAssetId, assetId, layerAssetIds, available, availabilityCondition }[]` · `200` | 인증 없음 `401` |
 | `PUT /api/me/character/equipment/{slot}` | `{ "itemId": "BOB" }`; 해제는 `{ "itemId": null }` | 전체 슬롯의 최신 상태 · `200` | 값·슬롯 불일치 `400`, 보상 잠금 항목·전체 의상 착용 중 헤어/안경 변경 `409`, 인증 없음 `401`, CSRF 실패 `403` |
 
-카탈로그 순서는 의상 9개, 헤어 3개, 안경 3개다. 사용자별 장착 행 하나에 세 슬롯을 저장하고 변경 요청은 사용자 행 잠금으로 직렬화한다. 경로에 사용자 ID를 받지 않고 인증 주체의 상태만 조회·변경한다. 장착은 재로그인 후에도 유지된다. 이 응답에는 레벨·EXP·보상 상태를 넣지 않는다. B10 전에는 `activity`, `quests`, `claim` API를 제공하지 않는다.
+카탈로그 순서는 의상 9개, 헤어 3개, 안경 3개다. 사용자별 장착 행 하나에 세 슬롯을 저장하고 변경 요청은 사용자 행 잠금으로 직렬화한다. 경로에 사용자 ID를 받지 않고 인증 주체의 상태만 조회·변경한다. 장착은 재로그인 후에도 유지된다. B10에서는 기존 외형 필드를 유지하고 `progress` 필드를 추가하며 카탈로그의 `available`은 해당 사용자의 보상 수령 기록을 반영한다. `availabilityCondition`은 해금 후에도 카탈로그의 고정 조건 `FUTURE_REWARD`를 유지한다.
+
+#### B10 · 경험치·레벨·퀘스트·보상 — EXT-06-03~04 확정
+
+| Method·URL | Request | 성공 응답 | 오류 |
+| --- | --- | --- | --- |
+| `GET /api/me/character` | 없음 | 기존 B09 필드와 `progress: {level,totalExp,levelExp,nextLevelExp}` · `200` | 인증 없음 `401` |
+| `GET /api/character/items` | 없음 | 기존 순서·자산 필드 유지, 사용자별 `available` · `200` | 인증 없음 `401` |
+| `GET /api/me/character/activity` | `page` 기본 0, `size` 기본 20·최대 100 | `{items:[{id,activityType,activityId,expAmount,earnedAt}],page,size,totalElements}` · `200` | 잘못된 페이지 `400`, 인증 없음 `401` |
+| `GET /api/me/character/quests` | 없음 | `[{id,activityType,targetCount,progressCount,rewardItemId,completed,claimed,claimedAt}]` · `200` | 인증 없음 `401` |
+| `POST /api/me/character/quests/{questId}/claim` | 본문 없음, 세션 CSRF 필요 | `{questId,itemId,claimedAt,progress}` · `200`; 재수령은 기존 `claimedAt`과 아이템을 반환 | 없는 퀘스트 `404`, 조건 미달 `409`, 인증 없음 `401`, CSRF 실패 `403` |
+| 기존 `PUT /api/me/character/equipment/{slot}` | B09와 동일 | 수령한 잠금 의상도 장착 가능, 최신 `progress` 포함 · `200` | 미수령 의상 `409`, 다른 B09 오류 유지 |
+
+서버가 소유권을 확인한 개인 Todo의 **미완료→완료 첫 전환**에서 `TODO_COMPLETED` 활동으로 10 EXP를 지급한다. 생성·수정·반복 완료·취소·재완료·삭제는 지급하지 않는다. `(user_id, activity_type, activity_id)` 고유 제약과 Todo 행 잠금으로 재시도·동시 완료의 중복 지급을 막는다. 누적 EXP는 활동 원장의 합계이며 수치는 클라이언트가 제출할 수 없다. 최초 레벨은 1, 누적 100·250·450·700… EXP 도달 시 레벨이 오른다. `levelExp`는 현재 레벨 안에서 획득한 EXP, `nextLevelExp`는 다음 레벨까지 해당 레벨에서 필요한 총 EXP(1레벨 100, 2레벨 150, 3레벨 200…)다. 활동은 최신 지급 시각·ID 내림차순 페이지로 반환한다.
+
+퀘스트는 반복 주기가 없는 일회성이다. 최초 완료 기록 수 1·3·5·10·20·30건에 각각 `TODO_1`→`PEACH`, `TODO_3`→`BEAR`, `TODO_5`→`HOMEBODY`, `TODO_10`→`INTERVIEW`, `TODO_20`→`RAINCOAT`, `TODO_30`→`ASTRONAUT`가 달성된다. `progressCount`는 목표에서 상한 처리한다. 달성만으로 아이템이 지급되지는 않으며 명시적 claim 뒤 사용자별 카탈로그에서 `available: true`가 되고 장착할 수 있다. 사용자 행 잠금과 퀘스트·아이템별 사용자 고유 제약으로 동시 claim을 한 번만 저장한다. 재수령은 새 보상을 만들지 않는다.
+
+완료 취소·Todo 삭제 후에도 이미 지급한 EXP·퀘스트 실적·수령 아이템은 유지된다. B10 migration 시점에 이미 완료된 Todo는 `reward_eligible=false`로 표시해 소급하지 않으며 이후 취소·재완료도 지급하지 않는다. 그때 미완료였던 Todo는 이후 최초 완료 시 지급 대상이다. 다른 CRM 활동은 이번 지급 대상이 아니며 기존 CRM 조회는 B10 활동 API나 외부 서비스 호출에 의존하지 않는다.
 
 ### B11 · 채용 출처 확장 — EXT-07
 
