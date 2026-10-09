@@ -152,6 +152,8 @@ B04 기업과 B11 출처를 동시에 진행할 때는 기업 식별/연결 정�
 
 `docs/extension-ui-spec.md`와 `docs/frontend-redesign-proposal.md`는 **Frontend 인계 시** 기본 참조 문서다. Backend 단계에서 특정 응답 필드가 화면 행동을 바꿀 때만 그 부분을 확인한다. 이미지 산출물 문서는 B09의 자산 ID 확인처럼 필요한 경우에만 읽는다.
 
+B14 정책은 `docs/extension-requirements.md`의 EXT-08-03과 `docs/extension-api-spec.md` B14에 확정했다. 명시적 동의 POST에서 지정한 최대 20개 공용·개인 공고의 원문을 비교하고, 저장 결과 GET은 외부 AI를 호출하지 않는다. 기존 기술 일치도와 대시보드 추천은 유지한다.
+
 ## 단계별 Codex 작업 요청 틀
 
 ```text

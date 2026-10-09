@@ -249,12 +249,23 @@ POST는 정확한 동의 본문을 매번 요구하고 지정 버전만 비동�
 
 ### B14 · 의미 기반 비교·추천 — EXT-08-03
 
-| 후보 Method·URL | 요청·필수 응답 | 착수 전 결정 |
+| Method·URL | 요청 | 응답·오류 |
 | --- | --- | --- |
-| `GET /api/me/recommendations/jobs` | 필터·페이지 → 추천 공고·근거·한계 | 평가 기준·재계산/캐시·후보 모수 |
-| 문서/공고 비교 경로는 대상 확정 후 결정 | 비교 대상·근거·분석 상태 | 기존 규칙 기반 `matchRate`와 관계 |
+| `POST /api/me/recommendations/jobs` | `{ "resumeVersionId": 3, "coverLetterVersionId": null, "candidates": [{"kind":"COLLECTED","id":10},{"kind":"MANUAL","id":7}], "consentToExternalComparison": true }` | 신규·진행 중 `202`, 동일 완료 입력 재사용 `200`와 아래 `RecommendationPage`. 후보는 0~20개, 중복·미지 필드·동의 누락은 `400`, 없는/타인 문서·공고는 `404`, AI 또는 암호화 키 미설정은 비교 실행 시 `503`. 미인증 `401`, CSRF 실패 `403`. |
+| `GET /api/me/recommendations/jobs?requestId={id}&page=0&size=20` | 저장 결과 ID와 페이지 | `RecommendationPage` · `200`; 다른 사용자/없는 결과 `404`, 잘못된 페이지·ID `400`, 미인증 `401` |
+| `GET /api/me/recommendations/jobs/{id}` | 위 GET의 단일 경로 별칭, 같은 page/size | 같은 응답·오류 |
 
-기존 `GET /api/jobs/{jobId}/match`의 기술 일치도와 새 추천을 혼합하거나 합격 확률로 표현하지 않는다. 외부 AI 의존 시 장애 중에도 기존 비교·CRM 조회를 유지한다.
+`RecommendationPage`는 `{ "id": 1, "status": "COMPLETED", "stale": false, "failureReason": null, "consentedAt": "...", "analyzedAt": "...", "policyVersion": "B14_V1", "modelName": "gpt-5.4-mini", "resumeVersionId": 3, "coverLetterVersionId": null, "candidateCount": 2, "items": [{ "kind": "COLLECTED", "id": 10, "title": "백엔드 개발자", "status": "COMPLETED", "reason": null, "rank": 1, "evidence": [{ "documentQuote": "Java 서버 운영", "jobQuote": "Java 서비스 개발", "explanation": "관련 경험" }], "limitations": ["경력 연수 확인 불가"] }], "page": 0, "size": 20, "totalElements": 2, "limitation": "..." }` 형태다. `status`는 요청 단위 `PENDING|COMPLETED|FAILED`, 항목별 `PENDING|COMPLETED|FAILED|INSUFFICIENT_INPUT|EXCLUDED`이다. 본문 없는 공고는 `INSUFFICIENT_INPUT`, 이미 지원한 공고는 `EXCLUDED/ALREADY_APPLIED`, 마감 공고는 `EXCLUDED/EXPIRED`이다. 후보 0건이면 완료 후 빈 `items`가 나온다. 실패 사유는 일반 문구만 반환하고 원문·AI 응답은 노출하지 않는다. GET은 외부 호출을 하지 않는다.
+
+본인 이력서·자기소개서의 불변 버전 중 하나 이상과 공용 수집 공고 `COLLECTED` 또는 본인 개인 저장 공고 `MANUAL`를 비교한다. B12 문서 분석과 공고 기술 분석 완료는 필수가 아니다. 사용자가 지정한 공고만 평가하며 외부 URL을 읽지 않는다. 모델은 기술·경험의 관련성과 강점의 근거를 바탕으로 비교 가능 후보에 1부터 연속 순위를 부여한다. 서버는 모든 후보·순위·인용의 원문 포함 여부와 출력 구조를 검증하고, 결과를 AES-256-GCM으로 저장한다. 점수·`matchRate`·합격 확률은 새 응답에 없다. 문서 버전당 마스킹 후 12,000자, 공고 본문당 마스킹 후 4,000자까지 전송한다. AI 출력은 추측할 수 있으며 잘린 입력과 공고 원문 결측이 한계다.
+
+동일 사용자·문서 버전·공고 집합·입력 내용의 완료 결과를 재사용한다. 실패 또는 5분 이상 멈춘 요청은 다음 명시적 동의 POST에서 재시도한다. 결과는 문서 새 버전, 공고 내용 갱신, 마감·지원 상태 변화에 `stale: true`가 된다. 문서나 개인 공고 삭제 시 결과를 즉시 삭제한다. 기존 `GET /api/jobs/{jobId}/match`의 규칙 기반 기술 일치도와 대시보드 기본 추천은 그대로 유지되며 새 순위와 섞지 않는다. AI 장애가 공고 비교·CRM 조회를 막지 않는다.
+
+`RecommendationPage`는 원본 버전과 평가 조건을 추적하도록 `policyVersion: "B14_V1"`, `modelName: "gpt-5.4-mini"`, `resumeVersionId`, `coverLetterVersionId` 필드를 추가로 반환한다. 입력 해시는 모델·정책 버전까지 포함해 계산하며 서버의 중복 판단에만 사용한다.
+
+마감일의 경과 여부는 `Asia/Seoul` 날짜를 기준으로 판단한다.
+
+진행 중인 외부 요청은 문서·개인 공고 삭제 시 이미 전송된 내용을 회수할 수 없다. 삭제는 DB 결과를 즉시 제거하며 공급자 측 보존·삭제는 별도 확인이 필요하다.
 
 ### B15 · 계정 삭제 — EXT-01-02~03
 

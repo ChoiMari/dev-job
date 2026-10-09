@@ -92,7 +92,13 @@ public class PersonalSavedJobService {
         catch (DataIntegrityViolationException exception) { throw new ResponseStatusException(HttpStatus.CONFLICT); }
     }
     @Transactional
-    public void delete(Long userId, long id) { owned(userId, id).delete(); }
+    public void delete(Long userId, long id) {
+        owned(userId, id).delete();
+        jdbc.getJdbcTemplate().update("delete from semantic_recommendation where id in "
+                + "(select r.id from semantic_recommendation r "
+                + "where r.user_id=? and r.candidates @> cast(? as jsonb))", userId,
+                "[{\"kind\":\"MANUAL\",\"id\":" + id + "}]");
+    }
     private PersonalSavedJob owned(Long userId, long id) {
         if (id < 1) fail(HttpStatus.BAD_REQUEST);
         return manual.findByIdAndUserIdAndDeletedAtIsNull(id, userId)

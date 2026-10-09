@@ -142,6 +142,8 @@ InterestedCompany 응답은 id, name, websiteUrl, note, status, createdAt, updat
 
 웹사이트 URL의 scheme·host 소문자화, 기본 포트와 루트 경로의 끝 / 제거 후 (user_id, website_url)이 같으면 이름이 달라도 409다. 같은 URL은 한 사용자 안에서만 중복이며 다른 사용자는 독립적으로 등록할 수 있다. URL이 없으면 같은 이름의 기록도 별도 ID로 보존한다. 삭제는 본인 기록만 물리 삭제하고 공용 Company·공고·북마크·지원 기록은 변경하지 않는다. 모든 경로는 세션 인증, 변경 경로는 CSRF를 요구한다. 목록은 생성 시각·ID 내림차순이며 공통 페이지 범위, 빈 목록, 초과 페이지 계약을 따른다.
 
+B14의 원문 기반 상대 추천은 별도 [확장 API B14](extension-api-spec.md#b14--의미-기반-비교추천--ext-08-03)에서 제공한다. 이 절의 `matchRate`와 `GET /api/jobs/{jobId}/match` 응답·오류·계산식은 변경하지 않는다.
+
 ## 5. 북마크와 지원 관리
 
 ### S10 구현 계약
@@ -203,10 +205,12 @@ S16 대시보드 선정 기준: `applicationCounts`에는 모든 지원 상태�
 
 `nextActions`의 각 항목에는 표시용 `jobTitle`도 포함한다.
 
+B14 새 추천은 위 `Dashboard.recommendedJobs`에 자동 혼합하지 않는다. 명시적으로 지정한 문서·후보의 평가 결과는 [확장 API B14](extension-api-spec.md#b14--의미-기반-비교추천--ext-08-03)에서 별도로 조회한다.
+
 ## 7. MVP 이후
 
 B07 학습 목표의 생성·목록·상세·수정·삭제·완료 상태 API는 [확장 API 명세 B07](extension-api-spec.md#b07--학습-목표--ext-05-04-확정)을 따른다. 저장 목표는 이 문서 6절의 읽기 전용 Skill Gap 결과와 분리되며 목표 완료가 UserSkill 숙련도·경험이나 Skill Gap 계산을 자동 변경하지 않는다.
 
 B09 캐릭터 카탈로그·슬롯별 장착 API와 B10 성장·EXP·퀘스트·보상 수령 API의 구현 계약은 [확장 API 명세 B09~B10](extension-api-spec.md#b09--슬롯별-꾸미기--ext-06-0102-확정)을 따른다. `GET /api/me/character`는 기존 외형 필드를 유지하고 `progress`를 추가한다. `GET /api/character/items`는 로그인 사용자의 획득 여부로 `available`을 계산한다. 개인 Todo 완료 API는 서버 검증된 최초 완료에만 B10 EXP 기록을 남기며 요청 본문에 EXP 수치를 받지 않는다.
 
-이력서·자기소개서 분석, 의미 기반 추천 등은 이 명세의 **구현 완료 MVP 엔드포인트**에 포함하지 않는다. B13 앱 내 알림 설정·목록·읽음 API는 [확장 API 명세 B13](extension-api-spec.md#b13--앱-내-알림--ext-01-04-확정)을 따른다. 개인 할 일 B03, 면접 일정 B06, 학습 목표 B07의 확정 계약은 [확장 API 명세](extension-api-spec.md)를 따른다. EXT-01~08 전체의 Backend 구현 순서는 [확장 Backend 로드맵](extension-backend-roadmap.md), 후보 API와 단계별 계약 확정 항목은 [확장 API 명세 준비본](extension-api-spec.md)을 따른다. 다른 후보 경로는 아직 구현된 계약이 아니며, 각 단계의 정책·ERD·요청/응답/오류를 확정한 뒤 이 문서와 코드에 함께 반영한다. 관리자 API는 현 확장 요구사항에도 없다. S03 인증 전달·로그아웃 계약은 2절에 반영했다.
+이력서·자기소개서 분석과 의미 기반 추천은 이 명세의 **MVP 엔드포인트**와 별도 확장 기능이다. B14 원문 기반 비교·추천 POST·GET의 요청/응답/오류는 [확장 API 명세 B14](extension-api-spec.md#b14--의미-기반-비교추천--ext-08-03)를 따른다. B14는 기존 4절 `matchRate`와 `GET /api/jobs/{jobId}/match`, 6절의 규칙 기반 대시보드 추천을 변경하지 않는다. B13 앱 내 알림 설정·목록·읽음 API는 [확장 API 명세 B13](extension-api-spec.md#b13--앱-내-알림--ext-01-04-확정)을 따른다. 개인 할 일 B03, 면접 일정 B06, 학습 목표 B07의 확정 계약은 [확장 API 명세](extension-api-spec.md)를 따른다. EXT-01~08 전체의 Backend 구현 순서는 [확장 Backend 로드맵](extension-backend-roadmap.md)을 따른다. 관리자 API는 B11 수동 배치 계약을 따른다. S03 인증 전달·로그아웃 계약은 2절에 반영했다.

@@ -4,6 +4,7 @@ import com.devjob.resume.dto.*;
 import com.devjob.resume.entity.*;
 import com.devjob.resume.repository.*;
 import com.devjob.documentanalysis.repository.DocumentAnalysisRepository;
+import org.springframework.jdbc.core.JdbcTemplate;
 import com.devjob.user.repository.UserRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.nio.charset.StandardCharsets;
@@ -22,10 +23,12 @@ public class ResumeService {
     private final UserRepository users;
     private final ResumeCipher cipher;
     private final DocumentAnalysisRepository analyses;
+    private final JdbcTemplate jdbc;
 
     public ResumeService(ResumeRepository resumes, ResumeVersionRepository versions, UserRepository users, ResumeCipher cipher,
-            DocumentAnalysisRepository analyses) {
+            DocumentAnalysisRepository analyses, JdbcTemplate jdbc) {
         this.resumes = resumes; this.versions = versions; this.users = users; this.cipher = cipher; this.analyses = analyses;
+        this.jdbc = jdbc;
     }
 
     @Transactional(readOnly = true)
@@ -62,6 +65,8 @@ public class ResumeService {
     @Transactional
     public void delete(Long userId, Long id) {
         var resume = owned(userId, id, true);
+        jdbc.update("delete from semantic_recommendation where resume_version_id in "
+                + "(select id from resume_version where resume_id=?)", id);
         analyses.deleteForResume(id);
         resume.delete();
         resumes.flush();

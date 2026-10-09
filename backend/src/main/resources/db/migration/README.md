@@ -15,7 +15,7 @@ B03 개인 할 일 `V14__personal_todos.sql`, B04 관심 기업 `V15__create_int
 B05 이력서 버전 `V16__resumes.sql`, B06 면접 일정 `V17__interview_schedules.sql`,
 B11 ALIO 수동 배치 `V18__alio_collection_run.sql`, B09 캐릭터 장착 `V19__character_equipment.sql`·
 헤어/안경 확장 `V20__character_layer_slots.sql`·토끼탈 의상 허용 `V21__character_bunny_costume.sql`,
-B07 학습 목표 `V22__learning_goals.sql`, B10 캐릭터 성장 `V23__character_progress.sql`, B12 자기소개서·문서 분석 `V24__document_analysis.sql`, B13 앱 내 알림 `V25__notifications.sql`이다. 독립 작업 트리의 migration 번호는 main 통합 순서에 맞춰 배치했다.
+B07 학습 목표 `V22__learning_goals.sql`, B10 캐릭터 성장 `V23__character_progress.sql`, B12 자기소개서·문서 분석 `V24__document_analysis.sql`, B13 앱 내 알림 `V25__notifications.sql`, B14 의미 기반 비교·추천 `V26__semantic_recommendations.sql`이다. 독립 작업 트리의 migration 번호는 main 통합 순서에 맞춰 배치했다.
 S05 격리 DB `devjob_s05_test`에는 기술 migration이 이미 V3으로 적용되어 있으므로
 통합본을 해당 DB에 직접 실행하지 않는다. 각 DB의 `flyway_schema_history`를 확인하고
 이미 적용한 파일의 이름·checksum을 임의로 바꾸거나 `repair`·`clean`으로 해결하지 않는다.

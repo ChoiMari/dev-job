@@ -189,4 +189,8 @@ V15__create_interested_companies.sql은 interested_company만 추가한다. id B
 
 `V25__notifications.sql`은 `notification_preference`와 `notification`을 추가한다. 전자는 `(user_id, type)` PK와 필수 `enabled`를 갖고, 행이 없으면 기본값 `true`로 읽는다. 후자는 BIGINT identity `id`, 필수 `user_id` FK, `type`·`source_id`·`scheduled_at`·`subject`·`created_at`, 선택 `read_at`을 갖는다. 종류는 `INTERVIEW_REMINDER`와 `TODO_REMINDER`만 허용한다. `(user_id, type, source_id, scheduled_at)` UNIQUE가 일정 시각별 중복을 막는다. `source_id`는 종류에 따라 `interview_schedule.id` 또는 `personal_todo.id`이며 두 테이블을 가리키므로 FK로 강제하지 않는다. 사용자·생성 시각·ID 목록 인덱스와 활성 일정 스캔용 부분 인덱스를 둔다. 기존 면접·할 일 행과 V1~V21은 변경하지 않는다.
 
-의미 기반 매칭·추천은 아직 현재 테이블에 포함하지 않는다. 향후 요구사항과 아키텍처가 확정되면 별도 설계한다.
+### B14 의미 기반 비교·추천
+
+평가의 재현을 위해 `policy_version`과 `model_name`을 필수로 저장한다. 입력 해시에는 이 값들도 포함한다.
+
+`V26__semantic_recommendations.sql`의 `semantic_recommendation`은 BIGINT identity `id`, `user_id` FK, 선택적 `resume_version_id`·`cover_letter_version_id` FK, 64자리 `input_hash`, `PENDING|COMPLETED|FAILED` 상태, 후보 식별자·기준 시각의 `candidates` JSONB, 결과 `result_ciphertext`·12바이트 `result_nonce`, 일반 실패 사유, 동의·분석·갱신 시각을 가진다. 문서 버전 FK 중 적어도 하나가 필요하다. `(user_id, input_hash)` UNIQUE는 동일 입력 중복 계산을 막는다. 사용자·갱신 시각·ID 인덱스를 둔다. 암호화 AAD는 B12 문서 분석과 다른 B14 전용 값·결과 ID를 사용한다. 후보 JSON에는 문서 원문과 공고 본문을 저장하지 않으며, 근거·한계를 포함한 결과 전체를 암호화한다. 문서 버전 물리 삭제 시 FK cascade로 결과를 제거한다. 문서 소프트 삭제 또는 개인 공고 삭제 때는 서비스가 관련 행을 즉시 삭제한다. 공용 공고 갱신·새 문서 버전은 저장 행을 보존하고 조회 시 `stale`을 계산한다. 개인 공고 ID는 후보 JSON에서 식별하며 FK로 참조하지 않는다.

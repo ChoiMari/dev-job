@@ -3410,3 +3410,7 @@ B05 이력서 Backend는 `ResumeController → ResumeService → ResumeRepositor
 ## B13 앱 내 알림 경계
 
 면접·개인 할 일 서비스의 원래 쓰기 트랜잭션에는 알림 저장을 연결하지 않는다. 기존 예약 실행 기능에서 1분마다 미래 24시간 이내의 활성 일정을 조회하고, 각 일정의 최신 상태·수신 설정을 별도 트랜잭션에서 확인해 앱 내 알림을 저장한다. DB 유일 제약으로 중복을 막고 한 건의 실패는 로그로 남긴 뒤 다음 스캔에서 재시도한다. 외부 전달 Adapter나 이메일·카카오 연동은 없다.
+
+## B14 의미 기반 비교·추천 경계
+
+`RecommendationController → RecommendationService → RecommendationRunner → RecommendationGateway`로 명시적 비교 요청을 처리한다. POST의 사용자 소유 문서 버전과 공용/개인 공고 후보를 확인해 DB에 `PENDING`을 먼저 저장하고 커밋 후 기존 AI 실행기에 작업을 보낸다. GET과 기존 공고 비교·CRM 조회에는 AI 호출을 연결하지 않는다. AI 공급자는 B12와 같은 Spring AI OpenAI 호환 `ChatModel`이며 B14에만 출력 한도를 별도로 적용한다. 문서 내용은 AES-GCM으로 저장된 버전을 읽어 정형 개인정보를 마스킹하고, 공고 본문도 마스킹한 뒤 상한 길이만 전송한다. 후보·순위·근거 인용을 검증해 결과 전체를 별도 AAD의 AES-GCM으로 저장하고 원문·AI 응답을 로그/오류에 남기지 않는다. 실패는 B14 결과만 `FAILED`로 전환한다. 사용자·입력 해시 UNIQUE와 시도 시각 조건으로 중복 요청 및 늦게 도착한 이전 응답의 덮어쓰기를 제한한다. 원본 삭제는 서비스에서 결과를 제거하고 버전 물리 삭제는 FK cascade로 정리한다.

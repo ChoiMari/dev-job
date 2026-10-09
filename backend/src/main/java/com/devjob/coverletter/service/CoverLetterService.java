@@ -4,6 +4,7 @@ import com.devjob.coverletter.dto.*;
 import com.devjob.coverletter.entity.*;
 import com.devjob.coverletter.repository.*;
 import com.devjob.documentanalysis.repository.DocumentAnalysisRepository;
+import org.springframework.jdbc.core.JdbcTemplate;
 import com.devjob.user.repository.UserRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.nio.charset.StandardCharsets;
@@ -22,10 +23,12 @@ public class CoverLetterService {
     private final UserRepository users;
     private final CoverLetterCipher cipher;
     private final DocumentAnalysisRepository analyses;
+    private final JdbcTemplate jdbc;
 
     public CoverLetterService(CoverLetterRepository coverLetters, CoverLetterVersionRepository versions, UserRepository users,
-            CoverLetterCipher cipher, DocumentAnalysisRepository analyses) {
+            CoverLetterCipher cipher, DocumentAnalysisRepository analyses, JdbcTemplate jdbc) {
         this.coverLetters = coverLetters; this.versions = versions; this.users = users; this.cipher = cipher; this.analyses = analyses;
+        this.jdbc = jdbc;
     }
 
     @Transactional(readOnly = true)
@@ -62,6 +65,8 @@ public class CoverLetterService {
     @Transactional
     public void delete(Long userId, Long id) {
         var coverLetter = owned(userId, id, true);
+        jdbc.update("delete from semantic_recommendation where cover_letter_version_id in "
+                + "(select id from cover_letter_version where cover_letter_id=?)", id);
         analyses.deleteForCoverLetter(id);
         coverLetter.delete();
         coverLetters.flush();
