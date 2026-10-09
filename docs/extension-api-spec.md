@@ -1,6 +1,6 @@
 # DevJob 확장 REST API 명세 준비본
 
-상태: **B01~B03·B05·B06·B08 확정·구현, B04 및 다른 단계는 계약 초안** · 2026-10-09
+상태: **B01~B03·B05·B06~B08 확정·구현, B04 및 다른 단계는 계약 초안** · 2026-10-09
 
 ## 1. 사용 방법과 계약 상태
 
@@ -35,7 +35,7 @@ B00은 새 엔드포인트를 확정하거나 구현하지 않는다. 아래 기
 
 ## 2. 단계별 API 후보와 확정할 계약
 
-후보 표의 `필수 응답`은 프론트 연결에 필요한 최소 정보이며, **아직 확정 DTO가 아니다**. B01~B03·B05·B06·B08의 확정 계약은 아래 별도 절을 따른다. 다른 단계는 확정 전 API 문서와 ERD를 함께 갱신한다. 기존 GET을 확장할 경우 현재 응답 필드를 제거하지 않는다.
+후보 표의 `필수 응답`은 프론트 연결에 필요한 최소 정보이며, **아직 확정 DTO가 아니다**. B01~B03·B05·B06~B08의 확정 계약은 아래 별도 절을 따른다. 다른 단계는 확정 전 API 문서와 ERD를 함께 갱신한다. 기존 GET을 확장할 경우 현재 응답 필드를 제거하지 않는다.
 
 ### B01 · 계정 비밀번호 — EXT-01-01 (확정)
 
@@ -122,15 +122,24 @@ B00은 새 엔드포인트를 확정하거나 구현하지 않는다. 아래 기
 
 `Interview`: `{id, applicationId: number|null, title, startsAt, timeZone, status: "SCHEDULED"|"CANCELLED", cancelledAt: string|null, createdAt, updatedAt}`. `title`은 공백 제외 1~200자다. `startsAt`은 오프셋을 포함한 ISO 8601 날짜·시각, `timeZone`은 IANA 시간대 ID(최대 100자)이며 요청 오프셋이 해당 시각의 시간대 오프셋과 같아야 한다. 응답은 입력 시간대의 오프셋으로 시작 시각을 표시한다. 취소·재활성화는 기록을 보존하며 중복 요청은 같은 상태를 `200`으로 반환한다. 취소된 일정도 목록·상세에서 조회하고 변경할 수 있다. 지원 연결은 선택이며 연결된 지원은 본인 소유여야 한다. 면접 일정과 `Application.nextScheduleAt`은 서로 자동 동기화하지 않고, 지원 상태·이력도 변경하지 않는다.
 
-### B07 · 학습 목표 — EXT-05-04
+### B07 · 학습 목표 — EXT-05-04 (확정)
 
-| 후보 Method·URL | 요청·필수 응답 | 착수 전 결정 |
+모든 경로는 세션 인증이 필요하며 POST·PATCH·DELETE는 CSRF 토큰이 필요하다. 경로 ID와 `skillId`는 양의 JSON 정수(Long 범위)다. 목록은 기본 `page=0`, `size=20`이며 `page≥0`, `1≤size≤100`, `page × size≤2147483647`을 허용한다. `completed=true|false` 필터는 선택이다. 활성 목표를 `updatedAt` 내림차순·ID 내림차순으로 정렬한다. 초과 페이지는 빈 `items`와 실제 `totalElements`를 반환한다.
+
+| Method·URL | 요청 | 성공 |
 | --- | --- | --- |
-| `GET/POST /api/me/learning-goals` | 목록·생성 → 목표, 연결 기술, 진행 상태 | 기술 연결 필수 여부, 진행 표현 |
-| `GET/PATCH/DELETE /api/me/learning-goals/{goalId}` | 상세·수정·삭제 → 본인 목표 | 완료 취소·삭제/보존 정책 |
-| `PATCH /api/me/learning-goals/{goalId}/completion` | 완료/취소 의도 → 최신 상태 | 완료와 보유 기술 자동 반영 여부 |
+| `GET /api/me/learning-goals` | 선택 `completed`, `page`, `size` | `200` `{items:[LearningGoal],page,size,totalElements}` |
+| `POST /api/me/learning-goals` | `{ "title":"Java 심화", "description":"동시성 학습", "skillId":1, "progressPercent":0 }` | `201` 생성된 `LearningGoal` |
+| `GET /api/me/learning-goals/{goalId}` | 없음 | `200` `LearningGoal` |
+| `PATCH /api/me/learning-goals/{goalId}` | `title`, `description`, `skillId`, `progressPercent` 중 한 개 이상 | `200` 변경된 `LearningGoal` |
+| `PATCH /api/me/learning-goals/{goalId}/completion` | `{ "completed": true }` 또는 `false` | `200` 최신 `LearningGoal` |
+| `DELETE /api/me/learning-goals/{goalId}` | 없음 | `204` 본문 없음 |
 
-기존 `GET /api/me/skill-gap`의 읽기 전용 분석 결과와 사용자 학습 기록을 구분한다.
+`LearningGoal`은 `{id,title,description,skill:{id,name}|null,progressPercent,completed,completedAt,createdAt,updatedAt}`이다. 제목은 Unicode 공백을 한 칸으로 축약하고 앞뒤 공백을 제거한 1~200자 필수 문자열이다. 설명은 trim 후 최대 2000자이며 생략·`null`·공백은 `null`로 저장한다. 텍스트의 제어문자는 허용하지 않는다. `skillId`는 공용 Skill의 ID 또는 `null`이며 보유한 UserSkill일 필요가 없다. 없는 Skill은 `404`다. 생성 진행률은 생략 시 0, 제공하면 0~100 정수여야 한다. 생성 시 `completed=false`, `completedAt=null`이다. PATCH에서 누락 필드는 유지하고 `skillId:null`은 연결 해제, `description:null`은 제거한다. 제목 `null`·공백, 진행률 `null`, 빈 객체, 알 수 없는 필드, 잘못된 JSON 타입은 `400`이다.
+
+완료 요청은 진행률이 이미 100이어야 하며 그렇지 않으면 `409 CONFLICT`다. 완료 중 진행률을 100 미만으로 낮추려면 먼저 완료를 취소해야 한다. 완료 취소는 `completedAt=null`로 만들고 진행률 100은 유지한다. 같은 완료 상태 재요청은 `completedAt`·`updatedAt`을 유지한다. 삭제는 `deletedAt`을 저장해 일반 조회에서 숨기며 반복 삭제와 삭제된 목표의 조회·변경은 `404`다. 활성인 타인 목표의 상세·변경·삭제는 `403`이다.
+
+같은 사용자의 활성 목표에서 `(skillId 또는 null, 정리된 title)` 조합은 유일하다. 중복 생성·수정과 동시 충돌은 `409`이며 삭제된 목표와 같은 조합은 다시 만들 수 있다. 서로 다른 기술 또는 제목은 별도 목표다. 보유 기술을 삭제해도 공용 Skill과 목표 연결은 유지한다. 목표는 읽기 전용 `GET /api/me/skill-gap`의 분석 결과와 별도 저장되며, Skill Gap 결과가 바뀌어도 유지된다. 목표 완료·취소·삭제는 UserSkill 숙련도·경험, 프로젝트 기술, 기존 Skill Gap 계산을 자동 변경하지 않는다. 오류 본문은 공통 `{code,message}`다.
 
 ### B08 · 채용시장 확장 분석 — EXT-04 확정
 
