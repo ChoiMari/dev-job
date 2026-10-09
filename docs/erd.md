@@ -165,4 +165,8 @@ V15__create_interested_companies.sql은 interested_company만 추가한다. id B
 
 보상 세트 `BEAR`·`HOMEBODY`·`INTERVIEW`·`RAINCOAT`·`ASTRONAUT`는 이미지와 잠금 카탈로그만 추가한다. B10 해금 조건이 없으므로 V21 의상 CHECK에는 넣지 않고 서버도 장착을 `409`로 거부한다. 이 단계에서 보상 소유권·EXP 테이블은 만들지 않는다.
 
-의미 기반 매칭·추천, 이력서 분석, 성장·보상 지급, 알림은 아직 현재 테이블에 포함하지 않는다. 향후 요구사항과 아키텍처가 확정되면 별도 설계한다. 현재의 `JobSource`, 공통 `Skill`, 사용자·공고·프로젝트 관계는 확장 시 재사용할 수 있다.
+### B13 앱 내 알림
+
+`V22__notifications.sql`은 `notification_preference`와 `notification`을 추가한다. 전자는 `(user_id, type)` PK와 필수 `enabled`를 갖고, 행이 없으면 기본값 `true`로 읽는다. 후자는 BIGINT identity `id`, 필수 `user_id` FK, `type`·`source_id`·`scheduled_at`·`subject`·`created_at`, 선택 `read_at`을 갖는다. 종류는 `INTERVIEW_REMINDER`와 `TODO_REMINDER`만 허용한다. `(user_id, type, source_id, scheduled_at)` UNIQUE가 일정 시각별 중복을 막는다. `source_id`는 종류에 따라 `interview_schedule.id` 또는 `personal_todo.id`이며 두 테이블을 가리키므로 FK로 강제하지 않는다. 사용자·생성 시각·ID 목록 인덱스와 활성 일정 스캔용 부분 인덱스를 둔다. 기존 면접·할 일 행과 V1~V21은 변경하지 않는다.
+
+의미 기반 매칭·추천, 이력서 분석, 성장·보상 지급은 아직 현재 테이블에 포함하지 않는다. 향후 요구사항과 아키텍처가 확정되면 별도 설계한다. 현재의 `JobSource`, 공통 `Skill`, 사용자·공고·프로젝트 관계는 확장 시 재사용할 수 있다.
