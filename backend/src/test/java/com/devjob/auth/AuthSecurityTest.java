@@ -4,6 +4,7 @@ import com.devjob.auth.config.SecurityConfig;
 import com.devjob.auth.controller.AuthController;
 import com.devjob.auth.dto.CurrentUser;
 import com.devjob.auth.service.AuthService;
+import com.devjob.auth.service.AccountDeletionService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -21,10 +22,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class AuthSecurityTest {
     @Autowired MockMvc mvc;
     @MockitoBean AuthService auth;
+    @MockitoBean AccountDeletionService deletion;
 
     @Test
     void anonymousProtectedRoutesReturnJson401() throws Exception {
-        for (String path : new String[]{"/api/auth/me", "/api/me/profile", "/api/me/skills", "/api/projects"}) {
+        for (String path : new String[]{"/api/auth/me", "/api/auth/me/deletion-impact",
+                "/api/me/profile", "/api/me/skills", "/api/projects"}) {
             mvc.perform(get(path)).andExpect(status().isUnauthorized())
                     .andExpect(jsonPath("$.code").value("UNAUTHORIZED"));
         }

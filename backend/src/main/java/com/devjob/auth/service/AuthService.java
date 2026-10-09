@@ -35,14 +35,14 @@ public class AuthService {
         }
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public CurrentUser authenticate(Credentials credentials) {
         return authenticateSession(credentials).user();
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public SessionLogin authenticateSession(Credentials credentials) {
-        var user = users.findByEmail(credentials.email());
+        var user = users.findByEmailForUpdate(credentials.email());
         boolean matches = passwords.matches(credentials.password(), user.map(User::getPasswordHash).orElse(dummyHash));
         if (user.isEmpty() || !matches) throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
         return new SessionLogin(new CurrentUser(user.get().getId(), user.get().getEmail()),

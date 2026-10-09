@@ -131,7 +131,7 @@ S11 물리 매핑: `V7__create_applications.sql`은 기존 데이터를 변경�
 
 - 모든 FK는 존재하는 부모를 참조해야 한다. 사용자 소유 데이터는 인증된 사용자 ID를 기준으로 조회·수정 권한을 검사한다. 공고·기술·회사·출처는 사용자별로 복제하지 않는 공통 데이터다.
 - 이메일·기술명·별칭은 입력 표기의 대소문자 차이 때문에 중복되지 않도록 정규화 비교를 적용한다. 구체적인 인덱스·마이그레이션 표현은 구현 단계에서 PostgreSQL에 맞춰 정한다.
-- 사용자 또는 공고의 삭제 정책은 현재 문서에서 확정되지 않았다. MVP 설계는 연관 기록을 암묵적으로 대량 삭제하지 않으며, 삭제 기능을 구현할 때 관련 이력의 보존 정책을 먼저 결정한다.
+- 공용 공고 자체의 삭제 정책은 여전히 미정이다. B15 계정 삭제는 아래 사용자 소유 행의 정책을 확정했다. 개별 리소스 삭제의 기존 소프트 삭제·보존 정책은 계정 삭제 전까지 그대로 적용한다.
 - 검색 필터는 `JobPosting` 기본 필드와 `Company`, `JobSkill` 조인으로 구성한다. MVP의 직무 필터는 별도 직무 테이블 없이 공고 제목으로 좁힌다. 시장 기술 수요는 완료된 공고의 `JobSkill` 집계, 역량 비교는 `UserSkill`·`ProjectSkill`과 `JobSkill`의 비교로 계산한다.
 - B08 경력·지역 분포는 공용 `JobPosting`의 기본 필드를, 기술 추이는 `AIAnalysis`가 `COMPLETED`인 공고의 `JobSkill` 관계를 읽기 전용으로 집계한다. `(job_source_id, external_id)`가 저장 공고 식별 단위이고 출처 간 동일 내용은 별개다. 집계 결과 테이블이나 migration은 추가하지 않는다. 새 공식 출처도 같은 공용 관계에 저장되면 집계에 포함한다.
 
@@ -194,3 +194,9 @@ V15__create_interested_companies.sql은 interested_company만 추가한다. id B
 평가의 재현을 위해 `policy_version`과 `model_name`을 필수로 저장한다. 입력 해시에는 이 값들도 포함한다.
 
 `V26__semantic_recommendations.sql`의 `semantic_recommendation`은 BIGINT identity `id`, `user_id` FK, 선택적 `resume_version_id`·`cover_letter_version_id` FK, 64자리 `input_hash`, `PENDING|COMPLETED|FAILED` 상태, 후보 식별자·기준 시각의 `candidates` JSONB, 결과 `result_ciphertext`·12바이트 `result_nonce`, 일반 실패 사유, 동의·분석·갱신 시각을 가진다. 문서 버전 FK 중 적어도 하나가 필요하다. `(user_id, input_hash)` UNIQUE는 동일 입력 중복 계산을 막는다. 사용자·갱신 시각·ID 인덱스를 둔다. 암호화 AAD는 B12 문서 분석과 다른 B14 전용 값·결과 ID를 사용한다. 후보 JSON에는 문서 원문과 공고 본문을 저장하지 않으며, 근거·한계를 포함한 결과 전체를 암호화한다. 문서 버전 물리 삭제 시 FK cascade로 결과를 제거한다. 문서 소프트 삭제 또는 개인 공고 삭제 때는 서비스가 관련 행을 즉시 삭제한다. 공용 공고 갱신·새 문서 버전은 저장 행을 보존하고 조회 시 `stale`을 계산한다. 개인 공고 ID는 후보 JSON에서 식별하며 FK로 참조하지 않는다.
+
+### B15 계정 삭제
+
+새 테이블·migration·FK cascade 없이 애플리케이션 서비스가 사용자 행을 잠그고 FK 자식부터 삭제한다. 직접 `user_id`를 가진 `semantic_recommendation`, `notification`, `notification_preference`, `interview_schedule`, `application`, `resume`, `cover_letter`, `personal_saved_job`, `project`, `bookmark`, `user_skill`, `profiles`, `personal_todo`, `interested_company`, `learning_goal`, `character_activity`, `character_reward`, `character_equipment` 및 최종 `users` 행을 제거한다. 간접 소유인 `document_analysis`, `resume_version`, `cover_letter_version`, `application_status_history`, `personal_saved_job_analysis`, `project_skill`도 부모를 통해 소유자를 한정해 먼저 제거한다. 총 25개 테이블이며 `deleted_at`이 있는 행도 제외하지 않는다. 영향 안내의 리소스 코드와 건수 조회는 이 삭제 대상 목록을 공유한다.
+
+모든 SQL은 하나의 DB 트랜잭션에서 실행되므로 중간 FK·DB 실패 시 전체 롤백한다. 삭제 성공 후 현재 세션은 종료하고, 다른 세션은 인증 필터가 `users` 행 부재를 확인해 무효화한다. 로그인은 사용자 행 잠금으로 삭제와 직렬화한다. 공용 `job_posting`·`company`·`job_source`·`job_collection_run`, `ai_analysis`·`job_skill`·공고 전형/첨부 메타데이터, `skill`·`skill_alias` 및 다른 사용자 행은 삭제하지 않는다. 운영 DB의 개인 기록은 즉시 제거하고 앱 내 복원 기능은 없다. DB 백업과 이미 전송된 AI 제공자 사본은 별도 보존 정책에 따르며 이 트랜잭션의 대상이 아니다.

@@ -1,8 +1,11 @@
 package com.devjob.auth.controller;
 
 import com.devjob.auth.dto.Credentials;
+import com.devjob.auth.dto.AccountDeletionRequest;
 import com.devjob.auth.dto.CurrentUser;
+import com.devjob.auth.dto.DeletionImpactResponse;
 import com.devjob.auth.dto.PasswordChangeRequest;
+import com.devjob.auth.service.AccountDeletionService;
 import com.devjob.auth.service.AuthService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -25,12 +28,15 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/auth")
 public class AuthController {
     private final AuthService auth;
+    private final AccountDeletionService deletion;
     private final HttpSessionSecurityContextRepository contexts;
     private final HttpSessionCsrfTokenRepository csrf;
 
-    public AuthController(AuthService auth, HttpSessionSecurityContextRepository contexts,
+    public AuthController(AuthService auth, AccountDeletionService deletion,
+            HttpSessionSecurityContextRepository contexts,
             HttpSessionCsrfTokenRepository csrf) {
         this.auth = auth;
+        this.deletion = deletion;
         this.contexts = contexts;
         this.csrf = csrf;
     }
@@ -61,6 +67,20 @@ public class AuthController {
 
     @GetMapping("/me")
     public CurrentUser me(@AuthenticationPrincipal CurrentUser user) { return auth.current(user.id()); }
+
+    @GetMapping("/me/deletion-impact")
+    public DeletionImpactResponse deletionImpact(@AuthenticationPrincipal CurrentUser user) {
+        return deletion.impact(user.id());
+    }
+
+    @DeleteMapping("/me")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteAccount(@AuthenticationPrincipal CurrentUser user,
+            @Valid @RequestBody AccountDeletionRequest body,
+            HttpServletRequest request, HttpServletResponse response) {
+        deletion.delete(user.id(), body);
+        logout(request, response);
+    }
 
     @PatchMapping("/password")
     @ResponseStatus(HttpStatus.NO_CONTENT)

@@ -51,9 +51,9 @@ class AuthServiceTest {
 
     @Test
     void unknownEmailAndWrongPasswordHaveSame401() {
-        when(users.findByEmail("known@example.com"))
+        when(users.findByEmailForUpdate("known@example.com"))
                 .thenReturn(Optional.of(new User("known@example.com", passwords.encode("password123"))));
-        when(users.findByEmail("unknown@example.com")).thenReturn(Optional.empty());
+        when(users.findByEmailForUpdate("unknown@example.com")).thenReturn(Optional.empty());
         for (String email : new String[]{"known@example.com", "unknown@example.com"}) {
             assertThatThrownBy(() -> auth.authenticate(new Credentials(email, "incorrect123")))
                     .isInstanceOfSatisfying(ResponseStatusException.class,

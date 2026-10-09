@@ -35,7 +35,7 @@ B00은 새 엔드포인트를 확정하거나 구현하지 않는다. 아래 기
 
 ## 2. 단계별 API 후보와 확정할 계약
 
-후보 표의 `필수 응답`은 프론트 연결에 필요한 최소 정보이며, **아직 확정 DTO가 아니다**. B01~B03·B05~B10·B12~B13의 확정 계약은 아래 별도 절을 따른다. 나머지 단계는 확정 전 API 문서와 ERD를 함께 갱신한다. 기존 GET을 확장할 경우 현재 응답 필드를 제거하지 않는다.
+후보 표의 `필수 응답`은 프론트 연결에 필요한 최소 정보이며, **아직 확정 DTO가 아니다**. 확정된 단계의 계약은 아래 별도 절을 따른다. 나머지 단계는 확정 전 API 문서와 ERD를 함께 갱신한다. 기존 GET을 확장할 경우 현재 응답 필드를 제거하지 않는다.
 
 ### B01 · 계정 비밀번호 — EXT-01-01 (확정)
 
@@ -267,14 +267,30 @@ POST는 정확한 동의 본문을 매번 요구하고 지정 버전만 비동�
 
 진행 중인 외부 요청은 문서·개인 공고 삭제 시 이미 전송된 내용을 회수할 수 없다. 삭제는 DB 결과를 즉시 제거하며 공급자 측 보존·삭제는 별도 확인이 필요하다.
 
-### B15 · 계정 삭제 — EXT-01-02~03
+### B15 · 계정 삭제 — EXT-01-02~03 (확정)
 
-| 후보 Method·URL | 요청·필수 응답 | 착수 전 결정 |
-| --- | --- | --- |
-| `GET /api/auth/me/deletion-impact` | 없음 → 삭제/보존 대상과 복구 가능 여부 | 새 개인 리소스별 삭제·보존 범위 |
-| `DELETE /api/auth/me` | 재인증/확인값 → 삭제 완료 및 세션 무효화 | 재인증 수단, 트랜잭션/비동기 여부, 외부 보관 |
+| Method·URL | 인증·요청 | 성공 | 오류 |
+| --- | --- | --- | --- |
+| `GET /api/auth/me/deletion-impact` | 로그인 세션, 본문 없음 | `200 DeletionImpact` | 미인증 `401 UNAUTHORIZED` |
+| `DELETE /api/auth/me` | 로그인 세션과 같은 세션의 `X-CSRF-TOKEN`; `{ "currentPassword": "password123", "confirmation": "계정 삭제" }` | `204 No Content`, 본문 없음, 현재 세션 종료·쿠키 삭제 | 누락·형식·확인 문구 불일치 `400 INVALID_INPUT`; 미인증·현재 비밀번호 불일치 `401 UNAUTHORIZED`; CSRF 없음·불일치 `403 FORBIDDEN`; 처리 실패 `500 INTERNAL_SERVER_ERROR`(전체 롤백) |
 
-영향 안내와 실제 처리 범위가 일치해야 한다. 성공 뒤 이전 세션으로 보호 API를 사용할 수 없어야 한다. 다른 사용자의 공용 기술·공고·출처 데이터에 영향이 없어야 한다.
+`DeletionImpact`의 필드·배열 항목 발췌: `{ "deletedResources": [{ "code": "resume_version", "name": "이력서 암호화 버전", "count": 2 }], "preservedSharedResources": ["공용 채용공고·회사·출처·수집 실행 정보", "공용 공고 AI 분석·기술·전형·첨부 메타데이터", "공용 표준 기술·별칭"], "confirmationText": "계정 삭제", "recoverableInApp": false, "processing": "동기 처리·운영 DB 즉시 삭제", "externalDataNotice": "운영 DB의 개인 기록은 즉시 삭제되며 앱에서 복구할 수 없습니다. DB 백업과 이미 전송된 AI 제공자 사본은 이 요청으로 삭제를 보장하지 않으며 별도 보존 정책에 따릅니다." }`. 실제 `deletedResources`에는 아래 25개 코드가 모두 나오며 `count`는 조회 시점의 본인 행 수(숨김·소프트 삭제된 행 포함)다. 조회와 삭제 사이에 새 기록이 생기면 DELETE는 실행 시점의 전체 행을 삭제한다.
+
+| 삭제 코드 | 처리 대상 |
+| --- | --- |
+| `users`, `profiles`, `user_skill` | 계정·비밀번호 해시, 프로필, 보유 기술의 숙련도·경험 |
+| `project`, `project_skill`, `bookmark` | 프로젝트·기술 연결, 공용 공고 북마크 |
+| `application`, `application_status_history`, `interview_schedule` | 공용·개인 공고 지원 기록과 상태 이력, 면접 일정 |
+| `personal_saved_job`, `personal_saved_job_analysis`, `interested_company` | 숨긴 개인 공고와 분석 결과, 관심 기업 |
+| `personal_todo`, `learning_goal` | 삭제 표시한 기록을 포함한 할 일·학습 목표 |
+| `resume`, `resume_version`, `cover_letter`, `cover_letter_version` | 삭제 표시한 부모를 포함한 문서와 암호화된 모든 버전 |
+| `document_analysis`, `semantic_recommendation` | 암호화된 문서 분석·의미 기반 추천 결과와 요청 메타데이터 |
+| `notification`, `notification_preference` | 앱 내 알림과 수신 설정 |
+| `character_equipment`, `character_activity`, `character_reward` | 장착·EXP 활동 원장·보상 소유권 |
+
+현재 비밀번호는 BCrypt 해시와 비교하며 UTF-8 최대 72바이트다. 확인 문구는 공백을 포함한 `계정 삭제`와 정확히 일치해야 한다. 삭제는 사용자 행 잠금 뒤 FK 자식부터 부모까지 하나의 DB 트랜잭션으로 처리한다. 실패하면 기록과 세션을 유지한다. 성공 후 현재 세션은 무효화하고 다른 기존 세션은 다음 보호 API 요청에서 계정 부재로 `401`이 된다. 같은 사용자의 동시 삭제는 한 요청만 성공하고 후속 요청은 `401`이며, 삭제 뒤 기존 이메일·비밀번호로 로그인할 수 없다. 같은 이메일의 새 가입은 새 계정으로 허용한다.
+
+사용자 소유 기록의 비식별 사본은 만들지 않는다. 공용 `JobPosting`·`Company`·`JobSource`·수집 실행 정보, 공용 공고 분석·기술·전형·첨부 메타데이터, `Skill`·`SkillAlias`, 다른 사용자의 개인 기록은 유지한다. 앱은 삭제된 기록을 복구하지 않는다. 이 계약은 운영 DB의 즉시 삭제만 보장한다. DB 백업과 이미 전송된 AI 제공자 사본은 별도 보존 정책에 따르며 이 요청에서 원격 삭제를 실행하지 않는다.
 
 ## 3. Backend 완료 후 Frontend 인계 조건
 
