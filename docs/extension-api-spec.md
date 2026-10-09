@@ -191,15 +191,22 @@ B00은 새 엔드포인트를 확정하거나 구현하지 않는다. 아래 기
 
 새 제공기관의 공식 접근 조건·호출 제한을 먼저 확인한다. 수집 실패는 기존 저장 공고·북마크·지원 조회에 영향을 주지 않는다. 외부 서비스의 공식 로고나 제휴 표식을 임의 노출하지 않는다.
 
-### B12 · 이력서·자기소개서 AI 분석 — EXT-08-01~02
+### B12 · 이력서·자기소개서 AI 분석 — EXT-08-01~02 (Backend 확정)
 
-| 후보 Method·URL | 요청·필수 응답 | 착수 전 결정 |
+자기소개서는 `/api/me/cover-letters`에서 B05 이력서와 동일한 메서드·페이지·본문 제한·오류 계약으로 관리한다. `GET/POST /api/me/cover-letters`, `GET/PATCH/DELETE /api/me/cover-letters/{coverLetterId}`, `GET/POST /api/me/cover-letters/{coverLetterId}/versions`, `GET /api/me/cover-letters/{coverLetterId}/versions/{versionId}`를 제공한다. 생성은 `{title, content}`, 제목 변경은 `{title}`, 새 버전은 `{content}`다. 응답은 B05의 `Resume`·`ResumeVersion`과 같은 필드를 쓰되 버전 메타데이터의 `resumeId` 대신 `coverLetterId`를 반환한다. 모든 변경에는 세션·CSRF가 필요하다. 원문은 같은 `RESUME_ENCRYPTION_KEY`로 AES-256-GCM 암호화하되 이력서와 구분된 AAD를 쓴다. 버전은 불변이며 삭제는 즉시 비노출, DB 원본·버전은 30일 이후 매일 03:00 UTC 정리된다.
+
+| Method·URL | 요청 | 성공 응답 |
 | --- | --- | --- |
-| `POST /api/me/resumes/{resumeId}/versions/{versionId}/analysis` | 명시적 요청 → 요청 ID/상태 | 분석 목적·동의·비용·재사용/재분석 |
-| `GET /api/me/resumes/{resumeId}/versions/{versionId}/analysis` | 없음 → 상태·검증된 결과·분석 원본 버전 | 결과 스키마·보관·삭제 |
-| 자기소개서 분석 경로는 저장 모델 확정 후 결정 | 원본 버전·상태·결과 | 독립 리소스인지 일회성 입력인지 |
+| `POST /api/me/resumes/{resumeId}/versions/{versionId}/analysis` | `{ "consentToExternalAnalysis": true }` | 새 요청·진행 중 `DocumentAnalysis` · `202`, 완료 결과 재사용 `200` |
+| `GET /api/me/resumes/{resumeId}/versions/{versionId}/analysis` | 없음 | `DocumentAnalysis` · `200` |
+| `DELETE /api/me/resumes/{resumeId}/versions/{versionId}/analysis` | 없음 | `204` |
+| `POST/GET/DELETE /api/me/cover-letters/{coverLetterId}/versions/{versionId}/analysis` | 이력서 분석과 동일 | 동일 |
 
-기존 공고 AI 분석처럼 출력 검증·정규화 후 저장하고 `PENDING`/`COMPLETED`/`FAILED`를 구별한다. 원본 변경 후 오래된 결과를 최신으로 응답하지 않는다. AI 실패는 문서·CRM 기본 조회를 막지 않는다.
+`DocumentAnalysis`는 `{id, status, source: {documentType: "RESUME"|"COVER_LETTER", documentId, versionId, versionNumber, createdAt}, stale, result, failureReason, consentedAt, analyzedAt, updatedAt}`이다. `result`는 완료 때만 `{skills: string[], strengths: string[], improvements: string[]}`이고 그 외에는 `null`이다. `failureReason`은 실패 때만 일반 문구, `analyzedAt`은 완료 때만 시각이며 나머지는 `null`이다. 기술은 최대 20개·각 100자, 강점과 개선 제안은 각각 최대 5개·각 200자다. 결과에 점수·합격 가능성은 없다. 출력은 구조·길이·제어문자·정형 개인정보를 검증하고 기술명을 정규화·중복 제거한 후 암호화해 저장한다. 내용의 사실성은 AI가 보장하지 않으며 사용자가 원문과 대조해야 한다.
+
+POST는 정확한 동의 본문을 매번 요구하고 지정 버전만 비동기로 분석한다. 서버는 전송 전에 이름·주소 등 라벨 행, 이메일·휴대전화·주민등록번호 형식, URL을 제거하고 최대 12,000자를 기존 설정의 OpenAI 호환 API에 보낸다. 자유 형식 개인정보를 모두 감지할 수는 없으므로 사용자는 분석 전 원문에 민감정보를 넣지 않아야 한다. 외부 제공자의 보존·삭제 조건은 아직 확인되지 않았으며 DB 삭제가 제공자 측 삭제를 뜻하지 않는다. 새 유료 공급자나 자동 분석은 없다.
+
+같은 버전의 `COMPLETED`는 재사용하고, 5분 미만 `PENDING`은 중복 실행 없이 같은 상태를 돌려준다. `FAILED` 또는 5분 이상 멈춘 `PENDING`만 다음 명시적 POST에서 재시도한다. 자동 재시도·완료 결과 강제 재분석은 없다. 분석 DELETE는 즉시 결과를 제거하며 재분석은 다시 동의한 POST로 시작한다. 제목 변경은 `stale`을 바꾸지 않고, 새 버전 추가 후 이전 버전 결과의 `stale`은 `true`다. 원본 식별은 이력서/자기소개서 ID·버전 ID·버전 생성 시각이다. 문서 삭제 시 모든 분석 행을 즉시 삭제하고, 삭제된 문서의 분석 경로는 `404`다. 본인 소유가 아니면 `403`, 버전이 해당 문서에 없거나 분석 행이 없으면 `404`, 동의·경로 입력 오류는 `400`, AI 키 부재는 새 실행 시 `503`이다. AI 실패·잘못된 출력은 `FAILED`로 저장하며 문서·CRM 조회에는 영향을 주지 않는다.
 
 ### B13 · 알림 설정 — EXT-01-04
 

@@ -165,4 +165,10 @@ V15__create_interested_companies.sql은 interested_company만 추가한다. id B
 
 보상 세트 `BEAR`·`HOMEBODY`·`INTERVIEW`·`RAINCOAT`·`ASTRONAUT`는 이미지와 잠금 카탈로그만 추가한다. B10 해금 조건이 없으므로 V21 의상 CHECK에는 넣지 않고 서버도 장착을 `409`로 거부한다. 이 단계에서 보상 소유권·EXP 테이블은 만들지 않는다.
 
-의미 기반 매칭·추천, 이력서 분석, 성장·보상 지급, 알림은 아직 현재 테이블에 포함하지 않는다. 향후 요구사항과 아키텍처가 확정되면 별도 설계한다. 현재의 `JobSource`, 공통 `Skill`, 사용자·공고·프로젝트 관계는 확장 시 재사용할 수 있다.
+### B12 자기소개서·문서 분석
+
+`V22__document_analysis.sql`은 `cover_letter`, `cover_letter_version`, `document_analysis`를 추가한다. 자기소개서 부모·버전은 B05 이력서와 같은 사용자 FK, 제목·시각, 불변 버전 번호·암호문·12바이트 nonce, 활성 목록·만료 정리 인덱스를 가진다. 버전 번호는 부모별 UNIQUE이고 부모 행 잠금으로 순차 생성한다. `CoverLetterCipher`는 기존 `RESUME_ENCRYPTION_KEY`를 사용하되 이력서 원문과 다른 AAD 영역을 사용한다. 자기소개서 삭제는 `deleted_at`을 기록하고 즉시 비노출하며, 30일 이후 매일 03:00 UTC에 원본·버전을 DB에서 삭제한다.
+
+`document_analysis`는 BIGINT identity PK, 선택 `resume_version_id` 또는 `cover_letter_version_id` 중 **정확히 하나**를 갖는 CHECK, 각 버전 FK의 UNIQUE, `PENDING|COMPLETED|FAILED` 상태 CHECK를 둔다. `result_ciphertext`·12바이트 `result_nonce`는 함께 null이거나 함께 값이 있어야 한다. 실패 사유·동의 시각·분석 시각·갱신 시각을 보존한다. 결과 JSON은 저장 전에 검증·정규화하고 기존 암호화 키와 분석 ID 전용 AAD로 AES-256-GCM 암호화한다. 분석 행은 부모 문서 삭제 시 즉시 제거하고, 버전 물리 삭제에도 FK `ON DELETE CASCADE`로 제거된다. 결과 조회의 `stale`은 저장 필드가 아니라 해당 문서의 최신 버전 ID와 분석 원본 버전 ID를 비교해 계산한다. DB 백업과 외부 AI 제공자의 보존·삭제 정책은 아직 미정이다.
+
+의미 기반 매칭·추천, 성장·보상 지급, 알림은 아직 현재 테이블에 포함하지 않는다. 향후 요구사항과 아키텍처가 확정되면 별도 설계한다. 현재의 `JobSource`, 공통 `Skill`, 사용자·공고·프로젝트 관계는 확장 시 재사용할 수 있다.

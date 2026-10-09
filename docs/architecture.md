@@ -3400,3 +3400,9 @@ DevJob의 핵심 아키텍처는 다음과 같이 요약한다.
 ## B05 이력서·버전 데이터 경계
 
 B05 이력서 Backend는 `ResumeController → ResumeService → ResumeRepository/ResumeVersionRepository → PostgreSQL` 계층을 사용한다. 이력서 메타데이터와 버전 원문을 분리하고, 원문은 `ResumeCipher`가 JDK AES-256-GCM으로 암호화·복호화한다. 32바이트 Base64 `RESUME_ENCRYPTION_KEY`는 환경변수에서만 읽고 원문·키·암호문을 로그·오류 본문에 포함하지 않는다. 키가 없거나 유효하지 않으면 B05 원문 읽기·쓰기만 `503`으로 거절하며 다른 CRM 경로는 기동·조회할 수 있다. 버전별 난수 nonce와 이력서 ID·버전 번호 AAD를 사용한다. 활성 소유권은 Service에서 확인하고 버전 원문은 본인 상세 API에서만 반환한다. 버전 ID·번호·생성 시각·본문은 불변이며 B12가 이 조합으로 원본을 참조한다. 이력서 행 잠금으로 버전 번호를 직렬화한다. 삭제는 즉시 비노출하며 `ResumeRetention`이 매일 03:00 UTC에 삭제 30일 이상 된 원본·버전을 DB에서 정리한다. 백업 보존·삭제 정책은 별도 운영 결정이 필요하다.
+
+## B12 문서 분석 경계
+
+자기소개서는 B05와 같은 Controller → Service → Repository 구조로 별도 `cover_letter`·불변 버전을 관리한다. `CoverLetterCipher`는 같은 서버 키를 쓰되 이력서 원문과 다른 AAD를 사용한다. 분석은 `DocumentAnalysisController → DocumentAnalysisService → DocumentAnalysisRepository`에서 문서 소유권과 해당 버전을 확인하고 부모 행 잠금·버전별 UNIQUE로 중복 요청을 직렬화한다. 명시 동의를 받은 POST에서만 원문을 복호화·정형 개인정보 마스킹하고, 트랜잭션 커밋 뒤 기존 Spring AI `ChatModel`의 OpenAI 호환 공급자로 최대 12,000자를 보낸다. GET·문서/CRM 조회는 외부 호출을 하지 않는다.
+
+`DocumentAnalysisRunner`는 외부 호출과 출력 파싱을 맡고, `DocumentOutputValidator`는 세 배열의 구조·개수·문자·정형 개인정보를 검증하고 기술명을 정규화한다. `DocumentAnalysisWriter`는 현재 시도의 상태·시각을 확인해 유효한 결과만 `DocumentResultCipher`로 암호화한 뒤 저장한다. 오류는 일반 `FAILED`로 전환하고 외부 응답·원문·키를 로그나 API에 담지 않는다. 완료 결과는 재사용하고 실패 또는 5분 이상 멈춘 시도는 명시적 POST에서만 다시 접수한다. 분석 삭제·문서 삭제는 결과 행을 즉시 제거하고, 버전 물리 삭제는 FK cascade로 남은 행을 정리한다. 문서·CRM 기본 조회는 AI 키나 공급자 장애와 독립적이다.
