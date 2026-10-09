@@ -3406,3 +3406,7 @@ B05 이력서 Backend는 `ResumeController → ResumeService → ResumeRepositor
 자기소개서는 B05와 같은 Controller → Service → Repository 구조로 별도 `cover_letter`·불변 버전을 관리한다. `CoverLetterCipher`는 같은 서버 키를 쓰되 이력서 원문과 다른 AAD를 사용한다. 분석은 `DocumentAnalysisController → DocumentAnalysisService → DocumentAnalysisRepository`에서 문서 소유권과 해당 버전을 확인하고 부모 행 잠금·버전별 UNIQUE로 중복 요청을 직렬화한다. 명시 동의를 받은 POST에서만 원문을 복호화·정형 개인정보 마스킹하고, 트랜잭션 커밋 뒤 기존 Spring AI `ChatModel`의 OpenAI 호환 공급자로 최대 12,000자를 보낸다. GET·문서/CRM 조회는 외부 호출을 하지 않는다.
 
 `DocumentAnalysisRunner`는 외부 호출과 출력 파싱을 맡고, `DocumentOutputValidator`는 세 배열의 구조·개수·문자·정형 개인정보를 검증하고 기술명을 정규화한다. `DocumentAnalysisWriter`는 현재 시도의 상태·시각을 확인해 유효한 결과만 `DocumentResultCipher`로 암호화한 뒤 저장한다. 오류는 일반 `FAILED`로 전환하고 외부 응답·원문·키를 로그나 API에 담지 않는다. 완료 결과는 재사용하고 실패 또는 5분 이상 멈춘 시도는 명시적 POST에서만 다시 접수한다. 분석 삭제·문서 삭제는 결과 행을 즉시 제거하고, 버전 물리 삭제는 FK cascade로 남은 행을 정리한다. 문서·CRM 기본 조회는 AI 키나 공급자 장애와 독립적이다.
+
+## B13 앱 내 알림 경계
+
+면접·개인 할 일 서비스의 원래 쓰기 트랜잭션에는 알림 저장을 연결하지 않는다. 기존 예약 실행 기능에서 1분마다 미래 24시간 이내의 활성 일정을 조회하고, 각 일정의 최신 상태·수신 설정을 별도 트랜잭션에서 확인해 앱 내 알림을 저장한다. DB 유일 제약으로 중복을 막고 한 건의 실패는 로그로 남긴 뒤 다음 스캔에서 재시도한다. 외부 전달 Adapter나 이메일·카카오 연동은 없다.

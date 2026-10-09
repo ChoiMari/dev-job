@@ -177,7 +177,7 @@ V15__create_interested_companies.sql은 interested_company만 추가한다. id B
 
 `character_activity`는 `id` BIGINT identity PK, 필수 `user_id` users FK, `activity_type` VARCHAR(40), `activity_id` BIGINT, 양수 `exp_amount` INTEGER, `earned_at` TIMESTAMPTZ를 가진다. `(user_id, activity_type, activity_id)` UNIQUE로 같은 Todo의 중복 EXP를 차단한다. 현재 활동 타입은 `TODO_COMPLETED` 한 가지다. 사용자별 최신순 조회 인덱스를 둔다. 누적 EXP·레벨·퀘스트 실적은 이 원장에서 계산하며 별도 가변 합계 행을 두지 않는다. Todo 삭제가 소프트 삭제이므로 활동 참조 ID와 기록은 유지된다.
 
-`character_reward`는 `id` BIGINT identity PK, 필수 `user_id` users FK, `quest_id`·`item_id` VARCHAR(40), `claimed_at` TIMESTAMPTZ를 가진다. `(user_id, quest_id)`와 `(user_id, item_id)`를 각각 UNIQUE로 두고 사용자 조회 인덱스를 둔다. 퀘스트 정의·목표·아이템 대응은 고정 애플리케이션 정책이다. claim과 장착은 같은 사용자 행 잠금을 사용한다. V23는 `character_equipment.outfit_item_id` CHECK에 6개 보상 의상을 추가하되, 서버는 수령 기록이 없으면 저장을 거부한다.
+`character_reward`는 `id` BIGINT identity PK, 필수 `user_id` users FK, `quest_id`·`item_id` VARCHAR(40), `claimed_at` TIMESTAMPTZ를 가진다. `(user_id, quest_id)`와 `(user_id, item_id)`를 각각 UNIQUE로 두고 사용자 조회 인덱스를 둔다. 퀘스트 정의·목표·아이템 대응은 고정 애플리케이션 정책이다. claim과 장착은 같은 사용자 행 잠금을 사용한다. V23은 `character_equipment.outfit_item_id` CHECK에 6개 보상 의상을 추가하되, 서버는 수령 기록이 없으면 저장을 거부한다.
 
 ### B12 자기소개서·문서 분석
 
@@ -185,4 +185,8 @@ V15__create_interested_companies.sql은 interested_company만 추가한다. id B
 
 `document_analysis`는 BIGINT identity PK, 선택 `resume_version_id` 또는 `cover_letter_version_id` 중 **정확히 하나**를 갖는 CHECK, 각 버전 FK의 UNIQUE, `PENDING|COMPLETED|FAILED` 상태 CHECK를 둔다. `result_ciphertext`·12바이트 `result_nonce`는 함께 null이거나 함께 값이 있어야 한다. 실패 사유·동의 시각·분석 시각·갱신 시각을 보존한다. 결과 JSON은 저장 전에 검증·정규화하고 기존 암호화 키와 분석 ID 전용 AAD로 AES-256-GCM 암호화한다. 분석 행은 부모 문서 삭제 시 즉시 제거하고, 버전 물리 삭제에도 FK `ON DELETE CASCADE`로 제거된다. 결과 조회의 `stale`은 저장 필드가 아니라 해당 문서의 최신 버전 ID와 분석 원본 버전 ID를 비교해 계산한다. DB 백업과 외부 AI 제공자의 보존·삭제 정책은 아직 미정이다.
 
-의미 기반 매칭·추천과 알림은 아직 현재 테이블에 포함하지 않는다. 향후 요구사항과 아키텍처가 확정되면 별도 설계한다.
+### B13 앱 내 알림
+
+`V25__notifications.sql`은 `notification_preference`와 `notification`을 추가한다. 전자는 `(user_id, type)` PK와 필수 `enabled`를 갖고, 행이 없으면 기본값 `true`로 읽는다. 후자는 BIGINT identity `id`, 필수 `user_id` FK, `type`·`source_id`·`scheduled_at`·`subject`·`created_at`, 선택 `read_at`을 갖는다. 종류는 `INTERVIEW_REMINDER`와 `TODO_REMINDER`만 허용한다. `(user_id, type, source_id, scheduled_at)` UNIQUE가 일정 시각별 중복을 막는다. `source_id`는 종류에 따라 `interview_schedule.id` 또는 `personal_todo.id`이며 두 테이블을 가리키므로 FK로 강제하지 않는다. 사용자·생성 시각·ID 목록 인덱스와 활성 일정 스캔용 부분 인덱스를 둔다. 기존 면접·할 일 행과 V1~V21은 변경하지 않는다.
+
+의미 기반 매칭·추천은 아직 현재 테이블에 포함하지 않는다. 향후 요구사항과 아키텍처가 확정되면 별도 설계한다.
