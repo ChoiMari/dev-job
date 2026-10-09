@@ -14,7 +14,8 @@ B01 인증 버전 `V12__add_user_credential_version.sql`, B02 기술 숙련도·
 B03 개인 할 일 `V14__personal_todos.sql`, B04 관심 기업 `V15__create_interested_companies.sql`,
 B05 이력서 버전 `V16__resumes.sql`, B06 면접 일정 `V17__interview_schedules.sql`,
 B11 ALIO 수동 배치 `V18__alio_collection_run.sql`, B09 캐릭터 장착 `V19__character_equipment.sql`·
-헤어/안경 확장 `V20__character_layer_slots.sql`·토끼탈 의상 허용 `V21__character_bunny_costume.sql`이다.
+헤어/안경 확장 `V20__character_layer_slots.sql`·토끼탈 의상 허용 `V21__character_bunny_costume.sql`,
+B07 학습 목표 `V24__learning_goals.sql`이다. 다른 독립 작업 트리의 B10·B12도 V22를 사용하므로 B07은 V24로 분리했고, 최종 통합 순서는 합류 시 다시 확인한다.
 S05 격리 DB `devjob_s05_test`에는 기술 migration이 이미 V3으로 적용되어 있으므로
 통합본을 해당 DB에 직접 실행하지 않는다. 각 DB의 `flyway_schema_history`를 확인하고
 이미 적용한 파일의 이름·checksum을 임의로 바꾸거나 `repair`·`clean`으로 해결하지 않는다.
