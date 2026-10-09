@@ -47,6 +47,8 @@ erDiagram
     JobPosting ||--o{ Bookmark : saved_as
     User ||--o{ PersonalSavedJob : saves_directly
     User ||--o{ PersonalTodo : manages
+    User ||--o{ CharacterActivity : earns
+    User ||--o{ CharacterReward : claims
     User ||--o{ Resume : owns
     Resume ||--|{ ResumeVersion : has
     User ||--o{ Application : submits
@@ -137,7 +139,7 @@ S11 물리 매핑: `V7__create_applications.sql`은 기존 데이터를 변경�
 
 ### B03 개인 할 일
 
-`V14__personal_todos.sql`은 `personal_todo`를 추가한다. `id` BIGINT identity PK, `user_id` 필수 users FK, `title` 필수 VARCHAR(200)·공백 검사, `description` VARCHAR(2000), `due_at` TIMESTAMPTZ와 `due_time_zone` VARCHAR(100)은 둘 다 있거나 둘 다 없다. `completed_at`·`deleted_at`은 nullable TIMESTAMPTZ, `created_at`·`updated_at`은 필수 TIMESTAMPTZ다. 활성 목록 조회용 `(user_id, due_at ASC NULLS LAST, id DESC)` 부분 인덱스를 둔다. 서버는 `due_time_zone`의 IANA ID와 `due_at`의 요청 오프셋 일치를 검증한다. 완료 취소 시 `completed_at`을 비우고, 삭제 시 `deleted_at`을 채워 일반 조회에서 제외한다. 지원 기록·`nextActions`와 관계를 만들지 않는다. B10 보상과의 관계는 미정이다.
+`V14__personal_todos.sql`은 `personal_todo`를 추가한다. `id` BIGINT identity PK, `user_id` 필수 users FK, `title` 필수 VARCHAR(200)·공백 검사, `description` VARCHAR(2000), `due_at` TIMESTAMPTZ와 `due_time_zone` VARCHAR(100)은 둘 다 있거나 둘 다 없다. `completed_at`·`deleted_at`은 nullable TIMESTAMPTZ, `created_at`·`updated_at`은 필수 TIMESTAMPTZ다. 활성 목록 조회용 `(user_id, due_at ASC NULLS LAST, id DESC)` 부분 인덱스를 둔다. 서버는 `due_time_zone`의 IANA ID와 `due_at`의 요청 오프셋 일치를 검증한다. 완료 취소 시 `completed_at`을 비우고, 삭제 시 `deleted_at`을 채워 일반 조회에서 제외한다. 지원 기록·`nextActions`와 관계를 만들지 않는다. B10 `V22`는 기존 완료 Todo의 소급 차단용 `reward_eligible`을 추가한다.
 
 ### B04 관심 기업의 별도 소유 모델
 
@@ -165,4 +167,12 @@ V15__create_interested_companies.sql은 interested_company만 추가한다. id B
 
 보상 세트 `BEAR`·`HOMEBODY`·`INTERVIEW`·`RAINCOAT`·`ASTRONAUT`는 이미지와 잠금 카탈로그만 추가한다. B10 해금 조건이 없으므로 V21 의상 CHECK에는 넣지 않고 서버도 장착을 `409`로 거부한다. 이 단계에서 보상 소유권·EXP 테이블은 만들지 않는다.
 
-의미 기반 매칭·추천, 이력서 분석, 성장·보상 지급, 알림은 아직 현재 테이블에 포함하지 않는다. 향후 요구사항과 아키텍처가 확정되면 별도 설계한다. 현재의 `JobSource`, 공통 `Skill`, 사용자·공고·프로젝트 관계는 확장 시 재사용할 수 있다.
+### B10 성장·활동 원장·보상 소유권
+
+`V22__character_progress.sql`은 `personal_todo.reward_eligible BOOLEAN NOT NULL DEFAULT TRUE`를 추가하고 migration 이전에 완료된 행만 `FALSE`로 표시한다. 미완료 기존 행과 신규 행은 이후 최초 완료 시 지급 가능하다. 완료 취소나 삭제는 이 값을 되돌리지 않는다.
+
+`character_activity`는 `id` BIGINT identity PK, 필수 `user_id` users FK, `activity_type` VARCHAR(40), `activity_id` BIGINT, 양수 `exp_amount` INTEGER, `earned_at` TIMESTAMPTZ를 가진다. `(user_id, activity_type, activity_id)` UNIQUE로 같은 Todo의 중복 EXP를 차단한다. 현재 활동 타입은 `TODO_COMPLETED` 한 가지다. 사용자별 최신순 조회 인덱스를 둔다. 누적 EXP·레벨·퀘스트 실적은 이 원장에서 계산하며 별도 가변 합계 행을 두지 않는다. Todo 삭제가 소프트 삭제이므로 활동 참조 ID와 기록은 유지된다.
+
+`character_reward`는 `id` BIGINT identity PK, 필수 `user_id` users FK, `quest_id`·`item_id` VARCHAR(40), `claimed_at` TIMESTAMPTZ를 가진다. `(user_id, quest_id)`와 `(user_id, item_id)`를 각각 UNIQUE로 두고 사용자 조회 인덱스를 둔다. 퀘스트 정의·목표·아이템 대응은 고정 애플리케이션 정책이다. claim과 장착은 같은 사용자 행 잠금을 사용한다. V22는 `character_equipment.outfit_item_id` CHECK에 6개 보상 의상을 추가하되, 서버는 수령 기록이 없으면 저장을 거부한다.
+
+의미 기반 매칭·추천, 이력서 분석, 알림은 아직 현재 테이블에 포함하지 않는다. 향후 요구사항과 아키텍처가 확정되면 별도 설계한다. 현재의 `JobSource`, 공통 `Skill`, 사용자·공고·프로젝트 관계는 확장 시 재사용할 수 있다.

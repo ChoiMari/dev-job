@@ -3,6 +3,7 @@ package com.devjob.character.service;
 import com.devjob.character.dto.*;
 import com.devjob.character.entity.CharacterEquipment;
 import com.devjob.character.repository.CharacterEquipmentRepository;
+import com.devjob.character.repository.CharacterRewardRepository;
 import com.devjob.user.repository.UserRepository;
 import java.util.List;
 import java.util.Map;
@@ -53,9 +54,14 @@ public class CharacterService {
 
     private final CharacterEquipmentRepository equipment;
     private final UserRepository users;
-    public CharacterService(CharacterEquipmentRepository equipment, UserRepository users) {
+    private final CharacterRewardRepository rewards;
+    private final CharacterGrowthService growth;
+    public CharacterService(CharacterEquipmentRepository equipment, UserRepository users,
+            CharacterRewardRepository rewards, CharacterGrowthService growth) {
         this.equipment = equipment;
         this.users = users;
+        this.rewards = rewards;
+        this.growth = growth;
     }
 
     @Transactional(readOnly = true)
@@ -63,10 +69,18 @@ public class CharacterService {
         CharacterEquipment row = equipment.findById(userId).orElse(null);
         return stateFor(row == null ? "BASE" : row.getOutfitItemId(),
                 row == null ? "CLASSIC" : row.getHairItemId(),
-                row == null ? "NONE" : row.getGlassesItemId());
+                row == null ? "NONE" : row.getGlassesItemId(), growth.progress(userId));
     }
 
     public List<CharacterItem> items() { return ITEMS; }
+    @Transactional(readOnly = true)
+    public List<CharacterItem> items(Long userId) {
+        var owned = rewards.findByUserId(userId).stream().map(reward -> reward.getItemId())
+                .collect(java.util.stream.Collectors.toSet());
+        return ITEMS.stream().map(item -> owned.contains(item.id())
+                ? new CharacterItem(item.id(), item.slot(), item.name(), item.thumbnailAssetId(), item.assetId(),
+                        item.layerAssetIds(), true, item.availabilityCondition()) : item).toList();
+    }
 
     @Transactional
     public CharacterState equip(Long userId, String slot, EquipItemRequest request) {
@@ -74,10 +88,10 @@ public class CharacterService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
         String itemId = request.itemId() == null ? defaultFor(slot) : request.itemId();
         CharacterItem item = find(slot, itemId);
-        if (!item.available()) throw new ResponseStatusException(HttpStatus.CONFLICT);
-
         // Locking the owner serializes both the first insert and changes to different slots.
         users.findByIdForUpdate(userId).orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+        if (!item.available() && !rewards.existsByUserIdAndItemId(userId, itemId))
+            throw new ResponseStatusException(HttpStatus.CONFLICT);
         CharacterEquipment row = equipment.findById(userId).orElse(null);
         if (row != null && COMPLETE_OUTFITS.contains(row.getOutfitItemId()) && !slot.equals(OUTFIT))
             throw new ResponseStatusException(HttpStatus.CONFLICT, "전체 의상 착용 중에는 헤어와 안경을 변경할 수 없습니다.");
@@ -89,7 +103,7 @@ public class CharacterService {
             row.equip(slot, itemId);
             equipment.flush();
         }
-        return stateFor(row.getOutfitItemId(), row.getHairItemId(), row.getGlassesItemId());
+        return stateFor(row.getOutfitItemId(), row.getHairItemId(), row.getGlassesItemId(), growth.progress(userId));
     }
 
     private static String defaultFor(String slot) {
@@ -106,13 +120,13 @@ public class CharacterService {
                 .findFirst().orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST));
     }
 
-    private static CharacterState stateFor(String outfitId, String hairId, String glassesId) {
+    private static CharacterState stateFor(String outfitId, String hairId, String glassesId, CharacterProgress progress) {
         CharacterItem outfit = find(OUTFIT, outfitId);
         CharacterItem hair = find(HAIR, hairId);
         CharacterItem glasses = find(GLASSES, glassesId);
         if (COMPLETE_OUTFITS.contains(outfitId))
             return new CharacterState("EXT-IMG-06A", OUTFIT, outfit.id(), outfit.assetId(),
-                    Map.of(OUTFIT, outfit.id(), HAIR, hair.id(), GLASSES, glasses.id()), outfit.layerAssetIds());
+                    Map.of(OUTFIT, outfit.id(), HAIR, hair.id(), GLASSES, glasses.id()), outfit.layerAssetIds(), progress);
         List<String> layers = new java.util.ArrayList<>();
         layers.add(hair.layerAssetIds().get(0));
         layers.add(BODY);
@@ -120,6 +134,6 @@ public class CharacterService {
         layers.add(hair.layerAssetIds().get(1));
         layers.addAll(glasses.layerAssetIds());
         return new CharacterState("EXT-IMG-06A", OUTFIT, outfit.id(), outfit.assetId(),
-                Map.of(OUTFIT, outfit.id(), HAIR, hair.id(), GLASSES, glasses.id()), List.copyOf(layers));
+                Map.of(OUTFIT, outfit.id(), HAIR, hair.id(), GLASSES, glasses.id()), List.copyOf(layers), progress);
     }
 }

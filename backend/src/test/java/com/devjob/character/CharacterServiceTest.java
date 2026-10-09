@@ -1,12 +1,16 @@
 package com.devjob.character;
 
 import com.devjob.character.dto.EquipItemRequest;
+import com.devjob.character.entity.CharacterReward;
 import com.devjob.character.entity.CharacterEquipment;
 import com.devjob.character.repository.CharacterEquipmentRepository;
+import com.devjob.character.repository.CharacterRewardRepository;
 import com.devjob.character.service.CharacterService;
+import com.devjob.character.service.CharacterGrowthService;
 import com.devjob.user.entity.User;
 import com.devjob.user.repository.UserRepository;
 import java.util.Optional;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.web.server.ResponseStatusException;
 import static org.assertj.core.api.Assertions.*;
@@ -16,7 +20,9 @@ import static org.mockito.Mockito.*;
 class CharacterServiceTest {
     private final CharacterEquipmentRepository equipment = mock(CharacterEquipmentRepository.class);
     private final UserRepository users = mock(UserRepository.class);
-    private final CharacterService service = new CharacterService(equipment, users);
+    private final CharacterRewardRepository rewards = mock(CharacterRewardRepository.class);
+    private final CharacterGrowthService growth = mock(CharacterGrowthService.class);
+    private final CharacterService service = new CharacterService(equipment, users, rewards, growth);
 
     @Test void initialStateAndCatalogUseRealAssetIds() {
         when(equipment.findById(1L)).thenReturn(Optional.empty());
@@ -41,6 +47,7 @@ class CharacterServiceTest {
     }
 
     @Test void rejectsLockedUnknownAndWrongSlotBeforeAnyWrite() {
+        when(users.findByIdForUpdate(1L)).thenReturn(Optional.of(mock(User.class)));
         assertThatThrownBy(() -> service.equip(1L, "OUTFIT", new EquipItemRequest("PEACH")))
                 .isInstanceOf(ResponseStatusException.class).hasMessageContaining("409");
         for (String id : java.util.List.of("BEAR", "HOMEBODY", "INTERVIEW", "RAINCOAT", "ASTRONAUT"))
@@ -50,7 +57,6 @@ class CharacterServiceTest {
                 .isInstanceOf(ResponseStatusException.class).hasMessageContaining("400");
         assertThatThrownBy(() -> service.equip(1L, "HAT", new EquipItemRequest("MINT")))
                 .isInstanceOf(ResponseStatusException.class).hasMessageContaining("400");
-        verifyNoInteractions(users);
         verify(equipment, never()).saveAndFlush(any());
     }
 
@@ -64,6 +70,23 @@ class CharacterServiceTest {
         assertThat(row.getOutfitItemId()).isEqualTo("BASE");
         verify(equipment, never()).saveAndFlush(any());
         verify(users, times(2)).findByIdForUpdate(1L);
+    }
+    @Test void claimedRewardIsAvailableAndEquippableForOwnerOnly() {
+        var owner = mock(User.class);
+        var claimed = mock(CharacterReward.class);
+        when(claimed.getItemId()).thenReturn("BEAR");
+        when(rewards.findByUserId(1L)).thenReturn(List.of(claimed));
+        when(rewards.findByUserId(2L)).thenReturn(List.of());
+        when(rewards.existsByUserIdAndItemId(1L, "BEAR")).thenReturn(true);
+        when(users.findByIdForUpdate(1L)).thenReturn(Optional.of(owner));
+        when(equipment.findById(1L)).thenReturn(Optional.empty());
+        assertThat(service.items(1L).stream().filter(item -> item.id().equals("BEAR")).findFirst().orElseThrow().available())
+                .isTrue();
+        assertThat(service.items(2L).stream().filter(item -> item.id().equals("BEAR")).findFirst().orElseThrow().available())
+                .isFalse();
+        assertThat(service.equip(1L, "OUTFIT", new EquipItemRequest("BEAR")).equippedAssetId())
+                .isEqualTo("B09-COMPLETE-BEAR");
+        verify(equipment).saveAndFlush(any());
     }
     @Test void changingHairOrGlassesKeepsOtherSlotsAndLayerOrder() {
         var owner = mock(User.class);

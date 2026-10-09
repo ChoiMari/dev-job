@@ -3,6 +3,7 @@ package com.devjob.todo.service;
 import com.devjob.todo.dto.*;
 import com.devjob.todo.entity.PersonalTodo;
 import com.devjob.todo.repository.PersonalTodoRepository;
+import com.devjob.character.service.CharacterGrowthService;
 import com.devjob.user.repository.UserRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.time.*;
@@ -18,7 +19,10 @@ public class TodoService {
     private static final Set<String> PATCH_FIELDS = Set.of("title", "description", "dueAt", "dueTimeZone");
     private final PersonalTodoRepository todos;
     private final UserRepository users;
-    public TodoService(PersonalTodoRepository todos, UserRepository users) { this.todos = todos; this.users = users; }
+    private final CharacterGrowthService growth;
+    public TodoService(PersonalTodoRepository todos, UserRepository users, CharacterGrowthService growth) {
+        this.todos = todos; this.users = users; this.growth = growth;
+    }
 
     @Transactional(readOnly = true)
     public Page<TodoResponse> list(Long userId, Boolean completed, int page, int size) {
@@ -53,8 +57,10 @@ public class TodoService {
     @Transactional
     public TodoResponse complete(Long userId, Long id, boolean completed) {
         var todo = owned(userId, id, true);
+        boolean firstCompletion = completed && todo.getCompletedAt() == null;
         todo.setCompleted(completed);
         todos.flush();
+        if (firstCompletion) growth.awardTodoCompletion(todo);
         return TodoResponse.from(todo);
     }
     @Transactional

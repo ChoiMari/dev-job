@@ -204,6 +204,6 @@ S16 대시보드 선정 기준: `applicationCounts`에는 모든 지원 상태�
 
 ## 7. MVP 이후
 
-B09 캐릭터 카탈로그·슬롯별 장착 API의 구현 계약은 [확장 API 명세 B09](extension-api-spec.md#b09--슬롯별-꾸미기--ext-06-0102-확정)을 따른다. 성장·EXP·보상 API는 B10 범위다.
+B09 캐릭터 카탈로그·슬롯별 장착 API와 B10 성장·EXP·퀘스트·보상 수령 API의 구현 계약은 [확장 API 명세 B09~B10](extension-api-spec.md#b09--슬롯별-꾸미기--ext-06-0102-확정)을 따른다. `GET /api/me/character`는 기존 외형 필드를 유지하고 `progress`를 추가한다. `GET /api/character/items`는 로그인 사용자의 획득 여부로 `available`을 계산한다. 개인 Todo 완료 API는 서버 검증된 최초 완료에만 B10 EXP 기록을 남기며 요청 본문에 EXP 수치를 받지 않는다.
 
 이력서·자기소개서 분석, 알림, 캐릭터 성장, 의미 기반 추천 등은 이 명세의 **구현 완료 MVP 엔드포인트**에 포함하지 않는다. 개인 할 일 B03과 면접 일정 B06의 확정 계약은 [확장 API 명세](extension-api-spec.md)를 따른다. EXT-01~08 전체의 Backend 구현 순서는 [확장 Backend 로드맵](extension-backend-roadmap.md), 후보 API와 단계별 계약 확정 항목은 [확장 API 명세 준비본](extension-api-spec.md)을 따른다. 다른 후보 경로는 아직 구현된 계약이 아니며, 각 단계의 정책·ERD·요청/응답/오류를 확정한 뒤 이 문서와 코드에 함께 반영한다. 관리자 API는 현 확장 요구사항에도 없다. S03 인증 전달·로그아웃 계약은 2절에 반영했다.
