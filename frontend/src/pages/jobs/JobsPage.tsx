@@ -14,8 +14,8 @@ import { JobMatch } from '../../components/JobMatch';
 import { createSkillsApi } from '../../api/skills';
 import type { SkillPage } from '../../api/skills';
 import './jobs.css';
-import jobSearchArt from '../../assets/illustrations/job-search.png';
-import jobDetailArt from '../../assets/illustrations/job-detail.png';
+import jobSearchArt from '../../assets/redesign/cur-04-job-search.png';
+import jobDetailArt from '../../assets/redesign/ext-img-07-source-exploration.png';
 
 const jobs = createJobsApi(apiRequest);
 const skills = createSkillsApi(apiRequest);
@@ -71,11 +71,12 @@ export function JobsPage({ location }: { location: string }) {
   const source = params.get('source') || '';
   const role = params.get('role') || '';
   const itOnly = params.get('itOnly') !== 'false';
-  const invalid = !Number.isSafeInteger(page) || page < 0 || !Number.isSafeInteger(size) || size < 1 || size > 100 || !['latest', 'deadline', 'matchRate'].includes(sort)
+  const invalid = !Number.isSafeInteger(page) || page < 0 || !Number.isSafeInteger(size) || size < 1 || size > 100 || page * size > 2147483647 || !['latest', 'deadline', 'matchRate'].includes(sort)
     || (skillId !== null && (!/^[1-9]\d*$/.test(skillId) || !Number.isSafeInteger(Number(skillId))))
     || (minMatchRate !== null && (!/^\d{1,3}$/.test(minMatchRate) || Number(minMatchRate) > 100))
     || (applicationStatus !== null && !isApplicationStatus(applicationStatus))
-    || (role !== '' && !(role in roleLabels));
+    || (role !== '' && !Object.hasOwn(roleLabels, role))
+    || (source !== '' && !/^[A-Z0-9_]{1,100}$/.test(source));
   const [data, setData] = useState<JobPage>();
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
@@ -103,7 +104,7 @@ export function JobsPage({ location }: { location: string }) {
       for (const [key, value] of values) if (String(value).trim()) query.set(key, String(value).trim());
       query.set('page', '0'); window.location.hash = `/jobs?${query}`;
     }}>
-      <div className="job-search-heading"><div><h2>채용공고 탐색</h2><p>저장된 개발 직무 공고를 검색하세요.</p></div><img src={jobSearchArt} alt="" aria-hidden="true" width="96" height="96" /></div>
+      <div className="job-search-heading job-hero"><div><p className="job-eyebrow">JOB EXPLORER</p><h2>채용공고 탐색</h2><p>저장된 공고에서 조건에 맞는 기회를 찾으세요. 검색은 외부 수집을 실행하지 않습니다.</p></div><img src={jobSearchArt} alt="" aria-hidden="true" /></div>
       <div className="job-filter-grid">{fields.map((field, i) => <label key={field}>{labels[i]}
         <input name={field} defaultValue={params.get(field) || ''} type={field === 'deadlineBefore' ? 'date' : 'text'} maxLength={200}
           placeholder={field === 'careerLevel' ? '예: 신입 (정확히 일치)' : field === 'employmentType' ? '예: 정규직 (정확히 일치)' : undefined} />
@@ -126,10 +127,10 @@ export function JobsPage({ location }: { location: string }) {
     </form>
     <section className="card" aria-label="공고 검색 결과" aria-busy={loading}>
       {loading ? <LoadingState message="저장된 공고를 검색하고 있습니다." /> : error ? <ErrorState message={error} onRetry={() => setRetry(v => v + 1)} /> : data && <>
-        <p role="status">총 {data.totalElements}건 · {data.page + 1}페이지</p>
+        <p className="job-result-summary" role="status">총 <strong>{data.totalElements}</strong>건 · {data.page + 1}페이지 · {itOnly ? 'IT 직무' : '전체 저장 공고'}</p>
         {data.items.length === 0 ? <><EmptyState title="검색 결과가 없습니다." message="조건을 바꾸거나 다른 페이지를 확인해 주세요." />
           {page > 0 && <button onClick={() => navigatePage(0)}>첫 페이지로</button>}</> : <ul className="job-list">{data.items.map(job => <li key={job.id} className="job-card">
-          <Badge icon="grid">{sourceLabel(job.source)}</Badge>{job.applicationStatus && <ApplicationStatusBadge status={job.applicationStatus} />}<p>{job.company.name}</p>
+          <div className="job-card-top"><Badge icon="grid">{sourceLabel(job.source)}</Badge>{job.applicationStatus && <ApplicationStatusBadge status={job.applicationStatus} />}</div><p className="job-company">{job.company.name}</p>
           <p>{job.matchRate === null ? '기술 일치도 계산 전' : `기술 일치도 ${job.matchRate}%`}</p>
           <h2><a href={`#/jobs/${job.id}?${new URLSearchParams({ from: search })}`}>{job.title}</a></h2><Metadata job={job} />
           <BookmarkButton jobId={job.id} saved={job.bookmarked} onChange={saved => setData(current => current && ({
@@ -174,9 +175,9 @@ export function JobDetailPage({ location }: { location: string }) {
     <section className="card" aria-busy={loading}>{loading ? <LoadingState message="공고 상세를 불러오고 있습니다." />
       : missing ? <EmptyState title="공고를 찾을 수 없습니다." message="삭제되었거나 존재하지 않는 공고입니다. 목록에서 다시 선택해 주세요." />
       : error ? <ErrorState message={error} onRetry={() => setRetry(v => v + 1)} /> : data && <>
-        <div className="job-detail-intro"><div><Badge icon="grid">{sourceLabel(data.source)}</Badge><p>{data.company.name}</p><h2>{data.title}</h2></div><img src={jobDetailArt} alt="" aria-hidden="true" width="96" height="96" /></div>
+        <div className="job-detail-intro job-hero"><div><p className="job-eyebrow">COLLECTED JOB</p><Badge icon="grid">{sourceLabel(data.source)}</Badge><p className="job-company">{data.company.name}</p><h2>{data.title}</h2></div><img src={jobDetailArt} alt="" aria-hidden="true" /></div>
         <Metadata job={data} /><p>게시일: {shown(data.postedDate)}</p>
-        <a className="button-link button-primary" href={data.sourceUrl} target="_blank" rel="noopener noreferrer">{data.source === 'ALIO_RECRUITMENT' ? '제공된 출처 사이트 열기 (새 창)' : '외부 원문 보기 (새 창)'}</a>
+        <div className="job-source-actions"><a className="button-link button-primary" href={data.sourceUrl} target="_blank" rel="noopener noreferrer">외부 원문 열기 (새 창)</a><p>외부 사이트에서 지원하는 행동과 이 앱에 지원 이력을 기록하는 행동은 별개입니다.</p></div>
         <BookmarkButton key={`${data.id}-bookmark`} jobId={data.id} saved={data.bookmarked}
           onChange={saved => setData(current => current?.id === id ? { ...current, bookmarked: saved } : current)} />
         <ApplicationRegistration key={`${data.id}-application`} jobId={data.id} status={data.applicationStatus}

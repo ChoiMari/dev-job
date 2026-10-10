@@ -8,8 +8,8 @@ import type { ApplicationStatus } from '../../api/application-status';
 import { ApplicationStatusBadge } from '../../components/ApplicationStatusBadge';
 import { EmptyState, ErrorState, LoadingState, SuccessState } from '../../components/States';
 import './applications.css';
-import applicationCardsArt from '../../assets/illustrations/application-cards.png';
-import applicationDetailArt from '../../assets/illustrations/application-detail.png';
+import applicationCardsArt from '../../assets/redesign/cur-06-applications.png';
+import applicationDetailArt from '../../assets/redesign/cur-06-applications.png';
 
 const api = createApplicationsApi(apiRequest);
 const dateTime = (value: string | null) => value ? new Date(value).toLocaleString() : '일정 없음';
@@ -41,7 +41,7 @@ export function ApplicationsPage({ location }: { location: string }) {
   const backQuery = new URLSearchParams({ from: search });
   return <div className="applications-page">
     <section className="card">
-      <div className="application-intro"><div><h2>지원 진행 현황</h2><p>각 지원 건의 상세에서 다음 단계, 메모와 일정을 관리하세요.</p></div><img src={applicationCardsArt} alt="" aria-hidden="true" width="96" height="96" /></div>
+      <div className="application-intro application-hero"><div><p className="application-eyebrow">APPLICATION TRACKER</p><h2>지원 진행 현황</h2><p>외부에서 진행한 지원과 앱에 기록한 준비 상태를 관리하세요.</p></div><img src={applicationCardsArt} alt="" aria-hidden="true" /></div>
       <div className="application-actions"><label>지원 상태 필터<select value={filter || ''} onChange={event => {
         const query = new URLSearchParams(); if (event.target.value) query.set('status', event.target.value);
         query.set('page', '0'); window.location.hash = `/applications?${query}`;
@@ -56,7 +56,7 @@ export function ApplicationsPage({ location }: { location: string }) {
           {(filter ? [filter as ApplicationStatus] : applicationStatuses).map(status => <section className="application-column" key={status} aria-label={statusLabels[status]}>
             <h2><ApplicationStatusBadge status={status} /></h2>
             <ul>{data.items.filter(item => item.currentStatus === status).map(item => <li className="application-card" key={item.id}>
-              <p>{item.job?.company.name ?? item.personalSavedJob?.companyName}</p><h3><a href={`#/applications/${item.id}?${backQuery}`}>{item.job?.title ?? item.personalSavedJob?.title}</a></h3>
+              <p className="application-kind">{item.job ? '수집 공고' : '직접 등록 공고'}</p><p>{item.job?.company.name ?? item.personalSavedJob?.companyName}</p><h3><a href={`#/applications/${item.id}?${backQuery}`}>{item.job?.title ?? item.personalSavedJob?.title}</a></h3>
               <dl><div><dt>지원일</dt><dd>{item.appliedDate || '지원 전'}</dd></div>
                 <div><dt>다음 일정</dt><dd>{dateTime(item.nextScheduleAt)}</dd></div>
                 <div><dt>메모</dt><dd className="application-note">{item.note || '메모 없음'}</dd></div></dl>
@@ -120,9 +120,10 @@ export function ApplicationDetailPage({ location }: { location: string }) {
     <section className="card" aria-busy={loading}>
       {loading ? <LoadingState message="지원 상세를 불러오고 있습니다." /> : missing ? <EmptyState title="지원 기록을 찾을 수 없습니다." message="목록에서 지원 기록을 다시 선택해 주세요." />
         : error ? <ErrorState message={error} onRetry={() => setRetry(value => value + 1)} /> : data && <>
-          <div className="application-detail-intro"><div><p>{data.job?.company.name ?? data.personalSavedJob?.companyName}</p><h2>{data.job?.title ?? data.personalSavedJob?.title}</h2></div><img src={applicationDetailArt} alt="" aria-hidden="true" width="96" height="96" /></div><ApplicationStatusBadge status={data.currentStatus} />
+          <div className="application-detail-intro application-hero"><div><p className="application-eyebrow">{data.job ? 'COLLECTED JOB' : 'MANUAL JOB'}</p><p>{data.job?.company.name ?? data.personalSavedJob?.companyName}</p><h2>{data.job?.title ?? data.personalSavedJob?.title}</h2></div><img src={applicationDetailArt} alt="" aria-hidden="true" /></div><ApplicationStatusBadge status={data.currentStatus} />
           <p>지원일: {data.appliedDate || '지원 전'}</p>{data.job ? <a className="button-link" href={`#/jobs/${data.job.id}`}>공고 상세 보기</a>
-            : data.personalSavedJob && <a className="button-link" href={data.personalSavedJob.url} target="_blank" rel="noopener noreferrer">원문 보기 (새 창)</a>}
+            : data.personalSavedJob && <a className="button-link" href={data.personalSavedJob.url} target="_blank" rel="noopener noreferrer">외부 원문 열기 (새 창)</a>}
+          <p className="application-boundary">상태·메모·다음 일정은 앱 내 기록입니다. 외부 지원 상태와 자동으로 동기화되지 않습니다.</p>
           {success && <SuccessState message={success} compact />}
           {saveError && <><ErrorState message={saveError} /><button type="button" disabled={busy} onClick={() => {
             setRetry(value => value + 1); setSaveError(''); setSuccess('');

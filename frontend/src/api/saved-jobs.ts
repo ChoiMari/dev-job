@@ -9,10 +9,19 @@ export type ManualSavedJobInput = {
   description: string | null;
 };
 export type ManualSavedJob = ManualSavedJobInput & { id: number; createdAt: string; updatedAt: string };
+/** B14 candidate IDs belong to separate public and personal ID spaces. */
+export type JobCandidate = { kind: 'COLLECTED' | 'MANUAL'; id: number };
 export type SavedJob = Omit<ManualSavedJob, 'updatedAt'> & {
   kind: 'COLLECTED' | 'MANUAL'; jobId: number | null; source: string; applicationStatus: ApplicationStatus | null;
   analysisStatus: 'PENDING' | 'COMPLETED' | 'FAILED' | null;
 };
+export function recommendationCandidate(job: SavedJob): JobCandidate {
+  if (job.kind === 'COLLECTED') {
+    if (!job.jobId) throw new ApiError('수집 공고 ID가 없습니다.', 200, 'INVALID_RESPONSE');
+    return { kind: 'COLLECTED', id: job.jobId };
+  }
+  return { kind: 'MANUAL', id: job.id };
+}
 export type SavedJobsPage = { items: SavedJob[]; page: number; size: number; totalElements: number };
 const obj = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null;
 const id = (v: unknown) => typeof v === 'number' && Number.isSafeInteger(v) && v > 0;
@@ -34,7 +43,7 @@ export function createSavedJobsApi(request: ReturnType<typeof createApiClient>) 
       if (!obj(v) || !Array.isArray(v.items) || !Number.isSafeInteger(v.page) || !Number.isSafeInteger(v.size)
         || !Number.isSafeInteger(v.totalElements) || !v.items.every(item => obj(item) && id(item.id)
           && (item.kind === 'COLLECTED' || item.kind === 'MANUAL')
-          && (item.jobId === null || id(item.jobId)) && typeof item.title === 'string'
+          && (item.kind === 'COLLECTED' ? id(item.jobId) : item.jobId === null) && typeof item.title === 'string'
           && typeof item.companyName === 'string' && typeof item.url === 'string'
           && (item.description === null || typeof item.description === 'string')
           && (item.analysisStatus === null || ['PENDING', 'COMPLETED', 'FAILED'].includes(String(item.analysisStatus)))

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createSavedJobsApi } from '../src/api/saved-jobs.ts';
+import { createSavedJobsApi, recommendationCandidate } from '../src/api/saved-jobs.ts';
 import { ApiError } from '../src/api/client.ts';
 
 const manual = { id: 2, url: 'https://example.com/jobs/2', companyName: '테스트 회사', title: '백엔드 개발자',
@@ -46,4 +46,12 @@ test('malformed unified list and CSRF response are rejected', async () => {
   const error = new ApiError('duplicate', 409, 'CONFLICT');
   await assert.rejects(createSavedJobsApi(async path => path === '/auth/csrf'
     ? { headerName: 'X-CSRF-TOKEN', token: 'fresh' } : Promise.reject(error)).create(input), failure => failure === error);
+});
+test('recommendation candidates use the collected job ID or personal saved job ID', async () => {
+  assert.deepEqual(recommendationCandidate({ kind: 'COLLECTED', id: 88, jobId: 10 }), { kind: 'COLLECTED', id: 10 });
+  assert.deepEqual(recommendationCandidate({ kind: 'MANUAL', id: 7, jobId: null }), { kind: 'MANUAL', id: 7 });
+  assert.throws(() => recommendationCandidate({ kind: 'COLLECTED', id: 88, jobId: null }), { code: 'INVALID_RESPONSE' });
+  const api = createSavedJobsApi(async () => ({ items: [{ ...manual, kind: 'COLLECTED', jobId: null,
+    source: 'ALIO_RECRUITMENT', applicationStatus: null, analysisStatus: null }], page: 0, size: 20, totalElements: 1 }));
+  await assert.rejects(api.list(), { code: 'INVALID_RESPONSE' });
 });
