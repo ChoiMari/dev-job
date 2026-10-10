@@ -1,0 +1,20 @@
+.f02-settings .f02-settings-intro { display: flex; align-items: center; justify-content: space-between; gap: 18px; background: linear-gradient(110deg, #f4edfc, #fff8f3); }
+.f02-settings .f02-settings-intro p { margin-bottom: 0; }
+.f02-settings .f02-settings-intro img { width: 120px; height: 120px; object-fit: contain; image-rendering: pixelated; flex: 0 0 auto; }
+.f02-settings .f02-preferences-form, .f02-settings .f02-deletion-form fieldset { display: grid; gap: 14px; max-width: 520px; }
+.f02-settings .f02-preferences-form label { display: flex; align-items: center; gap: 12px; min-height: 44px; }
+.f02-settings .f02-preferences-form input { width: 22px; height: 22px; flex: 0 0 auto; }
+.f02-settings .f02-preferences-form button, .f02-settings .f02-deletion-form button { justify-self: start; }
+.f02-settings .f02-danger { border-color: #dcafb7; }
+.f02-settings .f02-impact { margin: 20px 0; padding: 20px; background: #fff7f7; border-radius: 12px; }
+.f02-settings .f02-impact ul { padding-left: 22px; }
+.f02-settings .f02-impact li { padding: 4px 0; overflow-wrap: anywhere; }
+.f02-settings .f02-impact li:has(strong) { display: flex; justify-content: space-between; gap: 10px; }
+.f02-settings .f02-impact strong { white-space: nowrap; }
+.f02-settings .f02-deletion-form fieldset { border: 0; padding: 0; }
+.f02-settings .f02-deletion-form legend { font-weight: 700; padding: 0 0 12px; }
+.f02-settings .f02-deletion-form label { font-weight: 650; }
+.f02-settings .f02-deletion-form input { width: 100%; min-width: 0; min-height: 44px; padding: 10px 12px; font: inherit; border: 1px solid var(--input-border); border-radius: 8px; }
+.f02-settings .f02-delete-button { color: white; background: #a93247; border-color: #a93247; }
+.f02-settings .f02-delete-button:disabled { opacity: .55; }
+@media (max-width: 390px) { .f02-settings .f02-settings-intro img { width: 74px; height: 74px; } .f02-settings .f02-impact { padding: 14px; } }

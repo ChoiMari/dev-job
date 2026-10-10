@@ -47,8 +47,8 @@ export function DashboardPage({ user }: { user: CurrentUser }) {
     <section className="dashboard-metrics" aria-label="취업 준비 현황">
       {([
         ['지원 예정', data.applicationCounts.PLANNED, '#/applications?status=PLANNED'],
-        ['지원 완료', data.applicationCounts.APPLIED, '#/applications?status=APPLIED'],
-        ['면접 예정', data.applicationCounts.INTERVIEW, '#/applications?status=INTERVIEW'],
+        ['지원 완료 단계', data.applicationCounts.APPLIED, '#/applications?status=APPLIED'],
+        ['면접 단계', data.applicationCounts.INTERVIEW, '#/applications?status=INTERVIEW'],
         ['관심 공고', data.bookmarkCount, '#/bookmarks'],
       ] as const).map(([label, value, href]) => <a className="card dashboard-metric" href={href} key={label}><span>{label}</span><strong>{value}</strong></a>)}
     </section>
@@ -63,7 +63,7 @@ export function DashboardPage({ user }: { user: CurrentUser }) {
         <a href={`#/applications/${action.applicationId}`}>{actionText[action.status]} · {action.jobTitle}</a>
         {action.nextScheduleAt && <span>예정 {date(action.nextScheduleAt)}</span>}
       </li>)}</ul> : <EmptyState title="예정된 다음 행동이 없습니다." message="지원 건을 등록하면 진행 상태에 따른 행동이 여기에 표시됩니다." />}</section>
-    <section className="card dashboard-panel"><div className="dashboard-section-heading"><div><span className="eyebrow">FOR YOU</span><h2>추천 채용공고</h2></div><a href="#/jobs">모든 공고 ↗</a></div>
+    <section className="card dashboard-panel"><div className="dashboard-section-heading"><div><span className="eyebrow">RULE BASED</span><h2>기본 추천 채용공고</h2></div><a href="#/jobs">모든 공고 ↗</a></div>
       {data.recommendedJobs.length ? <ul className="dashboard-list">{data.recommendedJobs.map(job => <li key={job.id}>
         <a href={`#/jobs/${job.id}`}><strong>{job.title}</strong><span>{job.company.name}</span></a>
         <span>기술 적합도 {job.matchRate}%{job.deadlineDate ? ` · 마감 ${job.deadlineDate}` : ''}</span>

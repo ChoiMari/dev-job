@@ -3,9 +3,10 @@ import type { FormEvent } from 'react';
 import { authApi } from '../api';
 import { ApiError } from '../api/client';
 import type { CurrentUser } from '../api/auth';
-import { PixelCharacter, PixelIcon } from '../components/PixelArt';
+import { PixelIcon } from '../components/PixelArt';
 import { SuccessState } from '../components/States';
-import authWelcomeArt from '../assets/illustrations/auth-welcome.png';
+import authScene from '../assets/redesign/cur-01-login-scene.png';
+import './auth.css';
 
 export function AuthPage({ register, registered, passwordChanged, sessionExpired, onLogin }: {
   register: boolean; registered: boolean; passwordChanged: boolean; sessionExpired: boolean;
@@ -43,14 +44,15 @@ export function AuthPage({ register, registered, passwordChanged, sessionExpired
     } finally { setPending(false); }
   }
 
-  return <main id="main-content" tabIndex={-1} className="auth-page">
+  return <main id="main-content" tabIndex={-1} className="auth-page f02-auth-page">
+    <aside className="f02-auth-art" aria-hidden="true"><img src={authScene} alt="" width="1024" height="1536" /></aside>
     <section className="card auth-card">
-      <a className="brand" href="#/login"><PixelIcon name="home" />DEVJOB</a>
-      <div className="auth-visuals"><span className="character-stage auth-character"><PixelCharacter /></span><img src={authWelcomeArt} alt="" aria-hidden="true" width="48" height="48" /></div>
+      <a className="brand" href="#/">DEVJOB</a>
       <h1>{register ? '회원가입' : '로그인'}</h1>
       <p className="auth-intro">{register ? '취업 준비를 함께할 공간을 만들어 보세요.' : '나의 다음 기회를 준비하는 공간'}</p>
       {!register && registered && <SuccessState compact title="가입이 완료되었습니다." message="로그인해 주세요." />}
       {!register && passwordChanged && <SuccessState compact title="비밀번호가 변경되었습니다." message="새 비밀번호로 다시 로그인해 주세요." />}
+      {!register && window.location.hash.includes('accountDeleted=1') && <SuccessState compact title="계정이 삭제되었습니다." message="개인 기록은 삭제되었으며 이전 계정으로 로그인할 수 없습니다." />}
       {!register && sessionExpired && <p className="form-error" role="alert">로그인이 만료되었습니다. 다시 로그인해 주세요.</p>}
       <form onSubmit={submit} aria-busy={pending}>
         <label htmlFor="email">이메일</label>
@@ -68,6 +70,7 @@ export function AuthPage({ register, registered, passwordChanged, sessionExpired
         <button type="submit" disabled={pending}>{pending ? '처리 중…' : register ? '가입하기' : '로그인'}</button>
       </form>
       <a href={register ? '#/login' : '#/register'}>{register ? '로그인으로 돌아가기' : '회원가입'}</a>
+      <a className="f02-auth-home-link" href="#/">공개 홈으로 돌아가기</a>
     </section>
   </main>;
 }
