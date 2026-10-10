@@ -1,0 +1,17 @@
+.notifications-page { max-width: 940px; margin: 0 auto; display: grid; gap: 20px; }
+.notifications-hero { display: flex; justify-content: space-between; align-items: center; gap: 20px; background: linear-gradient(115deg, #f2ecfa, #f7fbf8); }
+.notifications-hero h2 { margin: 6px 0; }
+.notifications-hero p { max-width: 55ch; }
+.notifications-hero img { width: min(25vw, 132px); height: auto; object-fit: contain; }
+.notifications-list { list-style: none; padding: 0; display: grid; gap: 12px; }
+.notifications-list li { display: flex; justify-content: space-between; align-items: flex-start; gap: 18px; padding: 18px; border: 1px solid var(--border); border-radius: 10px; min-width: 0; }
+.notifications-list li.is-unread { border-color: #aa9ed6; background: #f8f5ff; }
+.notifications-item-main { min-width: 0; }
+.notifications-item-main h3 { margin: 8px 0; overflow-wrap: anywhere; }
+.notifications-item-main p { margin: 4px 0; color: var(--muted); }
+.notifications-kind, .notifications-read { display: inline-block; margin-right: 8px; font-size: .8rem; font-weight: 700; }
+.notifications-actions { display: flex; flex: 0 0 auto; flex-wrap: wrap; align-items: center; gap: 10px; }
+.notifications-actions a, .notifications-actions button { min-height: 44px; display: inline-flex; align-items: center; }
+.notifications-pagination { display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 12px; margin-top: 20px; }
+@media (max-width: 700px) { .notifications-list li { flex-direction: column; } }
+@media (max-width: 370px) { .notifications-hero img { display: none; } .notifications-actions { width: 100%; } }
