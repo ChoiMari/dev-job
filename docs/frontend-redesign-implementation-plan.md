@@ -1,12 +1,12 @@
 # DevJob 프론트 전면 개편 실행 계획
 
-상태: F00 조사 완료, F01 이후 실행 대기 · 기준: 2026-10-10, B00~B15 Backend 완료. F00 결과는 [계약·기준선 기록](frontend-redesign-f00-audit.md)에 있다.
+상태: F00 조사 완료, F01 공통 프레임 구현(빌드·화면 검증 대기) · 기준: 2026-10-10, B00~B15 Backend 완료. F00 결과는 [계약·기준선 기록](frontend-redesign-f00-audit.md)에 있다.
 
 ## 1. 목표·범위·현재 상태
 
 목표는 [프론트 요구사항](frontend-redesign-requirements.md)의 P00~P20을 [시각 개편안](frontend-redesign-proposal.md)에 맞춰 구현하고 A01~A22 전체 API 묶음을 실제 UI에 연결하는 것이다. 비로그인 첫 접속의 `#/`은 공개 홈, 로그인 후 `#/`은 기존 대시보드로 분기한다. Backend·DB·REST 계약을 바꾸지 않고, 현재 세션/CSRF 클라이언트와 해시 라우트를 확장한다. 관리자 배치는 허용 계정에만 독립 화면으로 제공한다. 새 라이브러리, 외부 서비스, 자동 수집, 이메일/푸시 알림, 파일 업로드는 범위에 없다.
 
-- `frontend/src/App.tsx`에는 인증·대시보드·공고·북마크·지원·프로필·프로젝트·할 일·관심 기업·시장/역량 분석·캐릭터·설정 라우트가 있다. 현재 미인증 첫 접속은 `#/login`으로 이동하며 공개 홈은 없다. `Layout.tsx` 메뉴도 기존 보호 화면 범위에 맞춰져 있다.
+- `frontend/src/App.tsx`에는 인증·대시보드·공고·북마크·지원·프로필·프로젝트·할 일·관심 기업·시장/역량 분석·캐릭터·설정 라우트가 있다. F01에서 미인증 첫 `#/`의 공개 홈 분기를 추가했다. `Layout.tsx` 메뉴는 현재 구현된 보호 화면 범위에 맞춰져 있다.
 - 기존 API 모듈은 주로 MVP와 B01~B04, B09 일부를 연결한다. 이력서·자기소개서·문서 분석·추천·면접·학습·알림·성장/퀘스트·계정 삭제·관리자 배치의 프론트 연결은 아직 계획 대상이다. 각 단계 착수 전에 실제 사용 여부를 `frontend/src/api`, 화면, 테스트로 다시 확인한다.
 - Backend Controller와 [API 명세](api-spec.md), [확장 API 명세](extension-api-spec.md)를 대조해 A01~A22를 만들었다. 과거 디자인/확장 UI 문서의 “미구현” 표현은 Backend 완료 이전의 스냅샷이며 현재 구현 근거로 쓰지 않는다.
 - 시작 시 `git status --short`는 깨끗했다. 작업 중 사용자의 새 변경이 생기면 해당 파일의 소유권을 다시 조정한다.
@@ -44,9 +44,11 @@
 
 같은 단계의 패키지를 병렬 담당할 수 있지만 **각 담당자는 자기 폴더의 API·페이지·테스트와 해당 패키지 전용 새 이미지 파일만 수정**한다. `App.tsx`, `Layout.tsx`, `styles.css`, `frontend/src/api/index.ts`, 공통 컴포넌트, 공용 문서는 F01/F09 통합 담당이 소유한다. 병렬 담당은 이 파일과 공용 [이미지 산출물 목록](redesign-image-manifest.md)의 갱신 내용을 자신의 작업 요약에 남기고 F09에서 한 번에 반영한다. 동일 CSS 선택자와 이미지 자산 파일도 공동 편집하지 않는다.
 
+F01 공통 경계: `App.tsx`가 해시 경로와 `GET /api/auth/me` 결과를 판별하고 기존 페이지를 보호한다. `session.ts`는 401과 일시 오류, 공개/인증/보호 경로의 순수 분기만 정의한다. `Layout.tsx`는 **구현된** 보호 화면의 제목·활성 메뉴·계정/로그아웃을 표시하며 `States.tsx`는 페이지가 제공한 문구와 재시도·빈 상태 행동을 렌더링한다. 각 패키지는 자기 페이지와 전용 CSS/API 모듈에서 상태를 관리하고, 새 경로의 App 분기·제목·메뉴 추가 요청을 통합 담당에게 전달한다. `api/index.ts`의 공통 세션/CSRF 진입점은 그대로 재사용한다. F02는 `PublicHome.tsx`의 콘텐츠·CUR-15를 완성한다. F03은 A07 수동 수집의 실제 제공 범위를 다시 확인하고, F06은 캐릭터 `progress` 타입을 보강한다.
+
 | 병렬 단위 | 독립 수정 범위 예시 | 함께 시작 가능한 시점 | 병합 전 확인 |
 | --- | --- | --- | --- |
-| F02 | F01의 `pages/LandingPage.tsx` 완성 및 전용 스타일, `pages/AuthPage.tsx`, `pages/dashboard/`, `pages/SettingsPage.tsx`, 인증/설정용 전용 API·테스트 | F01 완료 | 공개 홈 CTA와 계정 삭제 후 App 인증 상태 콜백 |
+| F02 | F01의 `pages/PublicHome.tsx` 완성 및 전용 스타일, `pages/AuthPage.tsx`, `pages/dashboard/`, `pages/SettingsPage.tsx`, 인증/설정용 전용 API·테스트 | F01 완료 | 공개 홈 CTA와 계정 삭제 후 App 인증 상태 콜백 |
 | F03 | `pages/jobs/`, `pages/applications/`, 공고·북마크·지원 전용 API·테스트 | F01 완료 | 추천 후보에 필요한 공고 종류/ID 공유 |
 | F04 | `pages/ProfilePage.tsx`, `pages/projects/`, `pages/todos/`, `pages/companies/`, 새 `pages/interviews/`, 전용 API·테스트 | F01 완료 | 면접 링크와 알림 연결, 공통 기술 검색 |
 | F05 | `pages/analytics/`, 새 `pages/learning-goals/`, 통계·학습 전용 API·테스트 | F01 완료 | 공통 Skill 타입과 필터 동작 |

@@ -35,7 +35,7 @@ export function Layout({ title, path, children, user, onLogout, loggingOut }: {
     }}>본문으로 이동</a>
     <header className="header">
       <a className="brand" href="#/"><span className="brand-mark"><PixelIcon name="spark" /></span><span>DevJob<small>CAREER STUDIO</small></span></a>
-      <span className="header-title">오늘도 한 걸음, 내 커리어를 향해</span>
+      <span className="header-title">{title}</span>
       <div className="account-controls">
         <span className="account-avatar"><PixelCharacter /></span>
         <span className="account-email">{user.email}</span>

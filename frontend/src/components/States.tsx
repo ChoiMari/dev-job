@@ -1,4 +1,5 @@
 import { Badge, PixelCharacter, PixelIcon } from './PixelArt';
+import type { ReactNode } from 'react';
 
 export function LoadingState({ message = '불러오는 중입니다.' }: { message?: string }) {
   return <div className="state" role="status" aria-live="polite">
@@ -8,19 +9,23 @@ export function LoadingState({ message = '불러오는 중입니다.' }: { messa
   </div>;
 }
 
-export function EmptyState({ title = '표시할 내용이 없습니다.', message }: { title?: string; message?: string }) {
+export function EmptyState({ title = '표시할 내용이 없습니다.', message, action }: {
+  title?: string; message?: string; action?: ReactNode;
+}) {
   return <div className="state" role="status">
     <span className="character-stage"><PixelCharacter /></span>
     <Badge icon="empty">빈 상태</Badge>
-    <h2>{title}</h2>{message && <p>{message}</p>}
+    <h2>{title}</h2>{message && <p>{message}</p>}{action && <div className="state-action">{action}</div>}
   </div>;
 }
 
-export function ErrorState({ message, onRetry }: { message: string; onRetry?: () => void }) {
+export function ErrorState({ title = '불러오지 못했습니다.', message, onRetry }: {
+  title?: string; message: string; onRetry?: () => void;
+}) {
   return <div className="state error-state" role="alert">
     <span className="state-symbol" aria-hidden="true"><PixelIcon name="error" /></span>
     <Badge tone="error" icon="error">오류</Badge>
-    <h2>불러오지 못했습니다.</h2><p>{message}</p>
+    <h2>{title}</h2><p>{message}</p>
     {onRetry && <button type="button" onClick={onRetry}>다시 시도</button>}
   </div>;
 }

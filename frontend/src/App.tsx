@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import { authApi } from './api';
 import { ApiError } from './api/client';
+import { anonymousRoute, sessionFailureKind } from './session';
 import type { CurrentUser } from './api/auth';
 import { Layout } from './components/Layout';
 import { EmptyState, ErrorState, LoadingState } from './components/States';
 import { AuthPage } from './pages/AuthPage';
+import { PublicHome } from './pages/PublicHome';
 import { StatePreview } from './pages/StatePreview';
 import { ProfilePage } from './pages/ProfilePage';
 import { ProfileSkills } from './components/ProfileSkills';
@@ -42,11 +44,12 @@ export function App() {
       controller?.abort();
       controller = new AbortController();
       const signal = controller.signal;
-      setError('');
-      authApi.me(signal).then(value => { if (!signal.aborted) setUser(value); })
+      // Keep the current view during a background focus check. Initial checks and
+      // explicit retries are gated by `checking` below.
+      authApi.me(signal).then(value => { if (!signal.aborted) { setUser(value); setError(''); } })
         .catch(failure => {
           if (signal.aborted) return;
-          if (failure instanceof ApiError && failure.status === 401) setUser(null);
+          if (sessionFailureKind(failure) === 'anonymous') { setUser(null); setError(''); }
           else setError(failure instanceof Error ? failure.message : '인증 상태를 확인하지 못했습니다.');
         }).finally(() => { if (!signal.aborted) setChecking(false); });
     }
@@ -66,12 +69,12 @@ export function App() {
   }, [retry]);
   useEffect(() => {
     if (checking || error) return;
-    if (!user && !publicPath) window.location.hash = '/login';
+    if (!user && anonymousRoute(path) === 'login') window.location.hash = '/login';
     if (user && publicPath) window.location.hash = '/';
-  }, [checking, error, user, publicPath]);
+  }, [checking, error, user, publicPath, path]);
 
   const title = publicPath ? path === '/register' ? '회원가입' : '로그인'
-    : path === '/' ? '대시보드' : path === '/profile' ? '내 프로필' : path === '/states' ? '공통 상태 확인'
+    : path === '/' ? user ? '대시보드' : '홈' : path === '/profile' ? '내 프로필' : path === '/states' ? '공통 상태 확인'
       : path === '/projects' || path.startsWith('/projects/') ? '프로젝트 관리'
       : path === '/todos' || path.startsWith('/todos/') ? '내 할 일'
       : path === '/companies' || path.startsWith('/companies/') ? '기업 관리'
@@ -99,16 +102,18 @@ export function App() {
   }
 
   if (checking) return <main id="main-content" className="auth-page"><LoadingState message="인증 상태를 확인하고 있습니다." /></main>;
-  if (error && !user) return <main id="main-content" className="auth-page">
+  if (error) return <main id="main-content" className="auth-page">
     <ErrorState message={error} onRetry={() => setRetry(value => value + 1)} />
   </main>;
+  if (user && publicPath) return <main id="main-content" className="auth-page"><LoadingState message="대시보드로 이동하고 있습니다." /></main>;
+  if (!user && anonymousRoute(path) === 'home') return <PublicHome />;
+  if (!user && anonymousRoute(path) === 'login') return <main id="main-content" className="auth-page"><LoadingState message="로그인 화면으로 이동하고 있습니다." /></main>;
   if (!user) return <AuthPage key={path} register={path === '/register'}
     registered={location === '/login?registered=1'} passwordChanged={location === '/login?passwordChanged=1'}
     sessionExpired={location === '/login?sessionExpired=1'}
     onLogin={value => { setUser(value); window.location.hash = '/'; }} />;
 
   return <Layout title={title} path={path} user={user} onLogout={logout} loggingOut={loggingOut}>
-    {error && <ErrorState message={error} onRetry={() => setRetry(value => value + 1)} />}
     {path === '/' ? <DashboardPage key={user.id} user={user} /> : path === '/profile' ? <>
       <ProfilePage key={`profile-${user.id}`} email={user.email} onEmailChange={email => setUser(current => current ? { ...current, email } : current)} />
       <ProfileSkills key={`skills-${user.id}`} />

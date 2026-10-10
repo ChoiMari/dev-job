@@ -9,12 +9,12 @@
 | 구간 | 실행 가능 작업 | 시작 조건 | 통합 조건 |
 | --- | --- | --- | --- |
 | 기준선 | F00 단독 | B00~B15 Backend 완료 상태 | Controller·DTO/API 차이와 기존 테스트 기준선 확인 |
-| 공통 기반 | F01 단독 | F00 결과 반영 | 인증 분기·공통 토큰·라우트 뼈대가 빌드됨 |
+| 공통 기반 | F01 단독 | F00 결과 반영 | 인증 분기·공통 토큰·라우트 뼈대가 반영됨; 빌드 제약은 기록 |
 | 1차 병렬 | **F02, F03, F04, F05, F06 동시 가능** | F01 결과가 공통 기준 브랜치에 반영됨 | 각 담당의 페이지·API·전용 CSS/이미지 범위만 통합 |
 | 2차 병렬 | **F07**은 F03+F06 뒤, **F08**은 F04 뒤 | 필요한 선행 코드와 타입이 같은 기준 브랜치에 반영됨 | F07과 F08은 서로 독립이며 F02·F05가 아직 진행 중이어도 시작 가능 |
 | 최종 통합 | F09 단독 → F10 단독 | F02~F08 전체 결과 반영 | 공용 파일 통합 후 전체 검증 |
 
-병렬 중 `frontend/src/App.tsx`, `frontend/src/components/Layout.tsx`, `frontend/src/styles.css`, `frontend/src/api/index.ts`, 공통 컴포넌트, `docs/redesign-image-manifest.md`는 F01/F09 통합 담당만 수정한다. 각 담당은 필요한 라우트·메뉴·공용 타입·자산 목록 변경을 완료 보고에 적는다. F04는 지원 상세 파일을, F08은 설정 파일을, F07은 공고·문서 원본 화면을 직접 수정하지 않는다. 별도 작업 트리의 결과를 F07/F08 선행 조건으로 사용할 때는 **해당 선행 변경이 실제로 통합됐는지** 확인한다.
+병렬 중 `frontend/src/App.tsx`, `frontend/src/session.ts`, `frontend/src/components/Layout.tsx`, `frontend/src/styles.css`, `frontend/src/api/index.ts`, 공통 컴포넌트, `docs/redesign-image-manifest.md`는 F01/F09 통합 담당만 수정한다. 각 담당은 필요한 라우트·메뉴·공용 타입·자산 목록 변경을 완료 보고에 적는다. F04는 지원 상세 파일을, F08은 설정 파일을, F07은 공고·문서 원본 화면을 직접 수정하지 않는다. 별도 작업 트리의 결과를 F07/F08 선행 조건으로 사용할 때는 **해당 선행 변경이 실제로 통합됐는지** 확인한다. F01의 `pnpm build`는 npm 레지스트리 `EACCES`로 실행되지 않았고 직접 Node 테스트 75건만 통과했다. 같은 제약이 지속되면 의존성 우회 변경 없이 실행한 검증과 빌드·화면 미검증 범위를 구분한다.
 
 ## F00 — 계약·기준선
 
@@ -27,7 +27,7 @@ DevJob 프론트 개편 F00만 수행해 줘. AGENTS.md, .agent/PLANS.md, docs/f
 ## F01 — 공통 프레임과 인증 분기
 
 ```text
-F00 결과가 반영된 상태에서 DevJob 프론트 개편 F01만 구현해 줘. docs/frontend-redesign-requirements.md의 FR-C01~C07·P00~P02, docs/frontend-redesign-proposal.md, docs/frontend-redesign-implementation-plan.md F01을 기준으로 frontend/src/App.tsx, components/Layout.tsx, components/States.tsx, styles.css와 최소 pages/LandingPage.tsx 뼈대만 담당해. 비로그인 첫 #/에는 공개 홈, 로그인 후 #/에는 기존 대시보드를 보여 주고, 다른 보호 경로의 비로그인 직접 진입은 로그인으로 보낸다. GET /api/auth/me 확인 중 화면 깜빡임을 막고 401 외 오류에는 재시도를 제공해. Sidebar·Header·토큰·카드·상태·반응형을 정리하되 기존 기능을 바꾸지 말고 새 기능 메뉴는 구현 전까지 활성화하지 마. F02가 공개 홈 컴포넌트를 완성할 수 있게 분리해. 1440/768/390/320px, 키보드 포커스·44px·pnpm build·관련 인증 테스트를 확인하고 결과를 보고해. 새 라이브러리와 Backend 계약 변경, 커밋·푸시는 하지 마.
+F00 결과가 반영된 상태에서 DevJob 프론트 개편 F01만 구현해 줘. docs/frontend-redesign-requirements.md의 FR-C01~C07·P00~P02, docs/frontend-redesign-proposal.md, docs/frontend-redesign-implementation-plan.md F01을 기준으로 frontend/src/App.tsx, components/Layout.tsx, components/States.tsx, styles.css와 최소 pages/PublicHome.tsx 뼈대만 담당해. 비로그인 첫 #/에는 공개 홈, 로그인 후 #/에는 기존 대시보드를 보여 주고, 다른 보호 경로의 비로그인 직접 진입은 로그인으로 보낸다. GET /api/auth/me 확인 중 화면 깜빡임을 막고 401 외 오류에는 재시도를 제공해. Sidebar·Header·토큰·카드·상태·반응형을 정리하되 기존 기능을 바꾸지 말고 새 기능 메뉴는 구현 전까지 활성화하지 마. F02가 공개 홈 컴포넌트를 완성할 수 있게 분리해. 1440/768/390/320px, 키보드 포커스·44px·pnpm build·관련 인증 테스트를 확인하고 결과를 보고해. 새 라이브러리와 Backend 계약 변경, 커밋·푸시는 하지 마.
 ```
 
 완료 신호: 세션별 첫 화면과 공통 스타일이 동작하고 F02~F06이 충돌 없이 각 화면을 작업할 수 있다.
@@ -35,7 +35,7 @@ F00 결과가 반영된 상태에서 DevJob 프론트 개편 F01만 구현해 �
 ## F02 — 공개 홈·인증·대시보드·설정
 
 ```text
-F01이 반영된 상태에서 DevJob 프론트 개편 F02만 구현해 줘. 요구사항 P00·P01·P02·P19와 A01·A02·A19의 설정 API·A21, 디자인 개편안 5.0~5.2·5.7을 확인해. F01의 pages/LandingPage.tsx를 완성하고 AuthPage, pages/dashboard, SettingsPage 및 이 화면 전용 API·CSS·테스트만 수정해. 공개 홈의 실제 기능 소개와 로그인/가입 CTA, 가입 후 로그인 안내, 대시보드의 서버 KPI·지원 다음 행동·개인 Todo·기본 추천 구분을 구현해. 비밀번호 변경·알림 수신 설정·계정 삭제 영향 확인과 재인증을 각 계약대로 연결하고 204 뒤 인증 상태를 처리해. 공개 홈 전용 CUR-15는 docs/image-generation-brief.md를 읽고 imagegen 스킬의 내장 image_gen으로 생성해 frontend/src/assets/redesign/에 고유 이름으로 저장·적용해. 기존 장식도 실제 배치에 맞는지 검토하고 가짜 수치·텍스트를 이미지에 넣지 마. App.tsx·Layout.tsx·styles.css·api/index.ts·공용 자산 목록은 직접 수정하지 말고 통합 담당에게 필요한 변경을 보고해. 관련 테스트·pnpm build와 4개 폭의 CTA·이미지 잘림·오류 상태를 검증해. 커밋·푸시는 하지 마.
+F01이 반영된 main을 기준으로 별도 작업 트리에서 DevJob 프론트 개편 F02만 구현해 줘. 작업 전 Git 상태·AGENTS.md·F00 감사와 F01 공통 경계를 확인해. 요구사항 P00·P01·P02·P19와 A01·A02·A19의 설정 API·A21, 디자인 개편안 5.0~5.2·5.7을 확인해. F01의 pages/PublicHome.tsx를 완성하고 AuthPage, pages/dashboard, SettingsPage 및 이 화면 전용 API·CSS·테스트만 수정해. 공개 홈의 실제 기능 소개와 로그인/가입 CTA, 가입 후 로그인 안내, 대시보드의 서버 KPI·지원 다음 행동·개인 Todo·기본 추천 구분을 구현해. 비밀번호 변경·알림 수신 설정·계정 삭제 영향 확인과 재인증을 각 계약대로 연결하고 204 뒤 인증 상태를 처리해. 공개 홈 전용 CUR-15는 docs/image-generation-brief.md를 읽고 imagegen 스킬의 내장 image_gen으로 생성해 frontend/src/assets/redesign/에 고유 이름으로 저장·적용해. 기존 장식도 실제 배치에 맞는지 검토하고 가짜 수치·텍스트를 이미지에 넣지 마. App.tsx·Layout.tsx·styles.css·api/index.ts·공용 자산 목록은 직접 수정하지 말고 통합 담당에게 필요한 변경을 보고해. 관련 테스트·pnpm build와 4개 폭의 CTA·이미지 잘림·오류 상태를 검증해. 커밋·푸시는 하지 마.
 ```
 
 완료 신호: P00/P01/P02/P19의 기능과 시각 상태가 검증되고 CUR-15의 최종 파일·프롬프트·사용처가 보고됐다. App의 추가 배선이 필요하면 F09 요청으로 남긴다.
@@ -43,7 +43,7 @@ F01이 반영된 상태에서 DevJob 프론트 개편 F02만 구현해 줘. 요�
 ## F03 — 공고·관심 공고·지원 관리
 
 ```text
-F01이 반영된 상태에서 DevJob 프론트 개편 F03만 구현해 줘. 요구사항 P03~P05와 API A04~A09, docs/api-spec.md의 공고·분석·북마크·개인 저장 공고·지원 계약을 확인해. pages/jobs, pages/applications, 관련 전용 API·컴포넌트·CSS·테스트만 담당해. 검색·출처·정렬·페이지, 공고 상세/원문, 북마크 후 공용 분석, 개인 등록 공고의 본문 분석, 지원 8개 상태·허용 전이·이력·메모·일정을 유지하며 개편 디자인으로 정리해. 수집 공고와 직접 등록 공고, 외부 원문 열기와 앱 내 지원 기록, 기술 일치도와 AI 분석 상태를 구분해. 기존 CUR-04~06·EXT-IMG-07을 먼저 배치 검토하고 부족한 장식만 imagegen 스킬로 생성·적용해. 새 이미지는 redesign 폴더에 저장하고 실제 공고·회사 로고·수치를 그리지 마. App·Layout·전역 CSS·api/index·공용 자산 목록은 수정하지 말고 F07에 전달할 후보 kind/id 타입과 F09에 필요한 라우트·메뉴 변경을 보고해. 관련 테스트·pnpm build와 4개 폭의 로딩/빈/오류/긴 제목을 확인해. 커밋·푸시는 하지 마.
+F01이 반영된 main을 기준으로 별도 작업 트리에서 DevJob 프론트 개편 F03만 구현해 줘. 작업 전 Git 상태·AGENTS.md·F00 감사와 F01 공통 경계를 확인해. F00에서 A07 사용자 수동 수집 버튼은 현재 없다고 확인됐으니 기존 기능으로 가정하거나 바로 추가하지 말고 제공 범위·권한을 Controller와 문서에서 재검토해. 요구사항 P03~P05와 API A04~A09, docs/api-spec.md의 공고·분석·북마크·개인 저장 공고·지원 계약을 확인해. pages/jobs, pages/applications, 관련 전용 API·컴포넌트·CSS·테스트만 담당해. 검색·출처·정렬·페이지, 공고 상세/원문, 북마크 후 공용 분석, 개인 등록 공고의 본문 분석, 지원 8개 상태·허용 전이·이력·메모·일정을 유지하며 개편 디자인으로 정리해. 수집 공고와 직접 등록 공고, 외부 원문 열기와 앱 내 지원 기록, 기술 일치도와 AI 분석 상태를 구분해. 기존 CUR-04~06·EXT-IMG-07을 먼저 배치 검토하고 부족한 장식만 imagegen 스킬로 생성·적용해. 새 이미지는 redesign 폴더에 저장하고 실제 공고·회사 로고·수치를 그리지 마. App·Layout·전역 CSS·api/index·공용 자산 목록은 수정하지 말고 F07에 전달할 후보 kind/id 타입과 F09에 필요한 라우트·메뉴 변경을 보고해. 관련 테스트·pnpm build와 4개 폭의 로딩/빈/오류/긴 제목을 확인해. 커밋·푸시는 하지 마.
 ```
 
 완료 신호: A04~A09 행동과 실패 상태가 검증되고 F07이 공고 후보를 선택할 계약이 확정됐다.
@@ -51,7 +51,7 @@ F01이 반영된 상태에서 DevJob 프론트 개편 F03만 구현해 줘. 요�
 ## F04 — 프로필·프로젝트·할 일·기업·면접
 
 ```text
-F01이 반영된 상태에서 DevJob 프론트 개편 F04만 구현해 줘. 요구사항 P06~P09·P15와 API A03·A11·A12·A17, docs/extension-api-spec.md B06을 확인해. ProfilePage, pages/projects·todos·companies, 새 pages/interviews와 각 전용 API·CSS·테스트만 담당해. 기술의 null 숙련도/경험, 프로젝트 기술 연결, Todo의 시간대·완료/취소, 관심 기업과 공용 회사의 분리, 독립 면접 일정의 취소/재활성화를 계약대로 연결해. 지원 nextScheduleAt과 면접 일정은 자동으로 같다고 표시하지 마. P06~P09·P15의 기존 CUR/EXT 이미지를 먼저 확인하고 새 이미지가 필요하면 imagegen 스킬로 생성·적용해. App·Layout·전역 CSS·api/index·공용 자산 목록과 pages/applications는 수정하지 말고 지원 상세에서 면접으로 이동하는 링크 요구를 F09에 전달해. 관련 테스트·pnpm build, 소유권/404/409·시간대·4개 폭을 검증해. 커밋·푸시는 하지 마.
+F01이 반영된 main을 기준으로 별도 작업 트리에서 DevJob 프론트 개편 F04만 구현해 줘. 작업 전 Git 상태·AGENTS.md·F00 감사와 F01 공통 경계를 확인해. 요구사항 P06~P09·P15와 API A03·A11·A12·A17, docs/extension-api-spec.md B06을 확인해. ProfilePage, pages/projects·todos·companies, 새 pages/interviews와 각 전용 API·CSS·테스트만 담당해. 기술의 null 숙련도/경험, 프로젝트 기술 연결, Todo의 시간대·완료/취소, 관심 기업과 공용 회사의 분리, 독립 면접 일정의 취소/재활성화를 계약대로 연결해. 지원 nextScheduleAt과 면접 일정은 자동으로 같다고 표시하지 마. P06~P09·P15의 기존 CUR/EXT 이미지를 먼저 확인하고 새 이미지가 필요하면 imagegen 스킬로 생성·적용해. App·Layout·전역 CSS·api/index·공용 자산 목록과 pages/applications는 수정하지 말고 지원 상세에서 면접으로 이동하는 링크 요구를 F09에 전달해. 관련 테스트·pnpm build, 소유권/404/409·시간대·4개 폭을 검증해. 커밋·푸시는 하지 마.
 ```
 
 완료 신호: A03/A11/A12/A17의 CRUD와 면접 상태가 검증되고 F08이 알림 출처를 연결할 수 있다.
@@ -59,7 +59,7 @@ F01이 반영된 상태에서 DevJob 프론트 개편 F04만 구현해 줘. 요�
 ## F05 — 역량·시장 분석·학습 목표
 
 ```text
-F01이 반영된 상태에서 DevJob 프론트 개편 F05만 구현해 줘. 요구사항 P10·P11·P16와 API A10·A18, 확장 API 명세 B08·B07을 확인해. pages/analytics와 새 pages/learning-goals, 해당 전용 API·CSS·테스트만 담당해. 기술 수요·경력 분포·지역 분포·기술 추이의 서로 다른 표본·필터·미상값을 정확히 표시하고, 차트와 동등한 텍스트/표를 제공해. Skill Gap의 계산 불가와 개인 학습 목표를 구분하고 진행률 100 완료 조건을 지켜. CUR-09·EXT-IMG-04·05D를 먼저 검토한 뒤 부족한 장식만 imagegen 스킬로 생성·적용해. 실제 차트·숫자는 이미지로 만들지 마. App·Layout·전역 CSS·api/index·공용 자산 목록은 수정하지 말고 통합 변경을 F09에 전달해. 관련 테스트·pnpm build, 기간/표본/빈 결과·4개 폭을 검증해. 커밋·푸시는 하지 마.
+F01이 반영된 main을 기준으로 별도 작업 트리에서 DevJob 프론트 개편 F05만 구현해 줘. 작업 전 Git 상태·AGENTS.md·F00 감사와 F01 공통 경계를 확인해. 요구사항 P10·P11·P16와 API A10·A18, 확장 API 명세 B08·B07을 확인해. pages/analytics와 새 pages/learning-goals, 해당 전용 API·CSS·테스트만 담당해. 기술 수요·경력 분포·지역 분포·기술 추이의 서로 다른 표본·필터·미상값을 정확히 표시하고, 차트와 동등한 텍스트/표를 제공해. Skill Gap의 계산 불가와 개인 학습 목표를 구분하고 진행률 100 완료 조건을 지켜. CUR-09·EXT-IMG-04·05D를 먼저 검토한 뒤 부족한 장식만 imagegen 스킬로 생성·적용해. 실제 차트·숫자는 이미지로 만들지 마. App·Layout·전역 CSS·api/index·공용 자산 목록은 수정하지 말고 통합 변경을 F09에 전달해. 관련 테스트·pnpm build, 기간/표본/빈 결과·4개 폭을 검증해. 커밋·푸시는 하지 마.
 ```
 
 완료 신호: A10/A18의 표시값과 필터·오류 상태가 검증되고 데이터 시각화의 텍스트 동등성이 확보됐다.
@@ -67,7 +67,7 @@ F01이 반영된 상태에서 DevJob 프론트 개편 F05만 구현해 줘. 요�
 ## F06 — 캐릭터·이력서·자기소개서·문서 분석
 
 ```text
-F01이 반영된 상태에서 DevJob 프론트 개편 F06만 구현해 줘. 요구사항 P12~P14와 API A13~A16, docs/extension-api-spec.md B09·B10·B12 및 docs/redesign-image-manifest.md의 캐릭터 자산 ID를 확인해. CharacterPage와 새 pages/resumes·cover-letters, 해당 전용 API·CSS·테스트만 담당해. 서버 equipment/available/EXP/퀘스트·보상과 완성 PNG를 맞추고 잠금·전체 의상 슬롯 제약을 지켜. 이력서·자기소개서의 불변 버전·원문 조회, 명시적 동의 분석, PENDING/COMPLETED/FAILED/stale, 결과 삭제를 구현해. 기존 캐릭터 완성 이미지·CUR-13·EXT-IMG-05B/06B/08을 우선 사용하고 부족한 장식만 imagegen 스킬로 생성·적용해. 새 캐릭터 변형은 기준 시트·자산 ID·동일 비율을 유지해. App·Layout·전역 CSS·api/index·공용 자산 목록은 수정하지 말고 F07에 문서 버전 선택 타입과 F09에 라우트 변경을 전달해. 관련 테스트·pnpm build, 재조회/동의/오래됨/잠금·4개 폭을 검증해. 커밋·푸시는 하지 마.
+F01이 반영된 main을 기준으로 별도 작업 트리에서 DevJob 프론트 개편 F06만 구현해 줘. 작업 전 Git 상태·AGENTS.md·F00 감사와 F01 공통 경계를 확인해. F00에서 확인한 CharacterState.progress 타입 누락을 실제 Backend DTO에 맞춰 보강해. 요구사항 P12~P14와 API A13~A16, docs/extension-api-spec.md B09·B10·B12 및 docs/redesign-image-manifest.md의 캐릭터 자산 ID를 확인해. CharacterPage와 새 pages/resumes·cover-letters, 해당 전용 API·CSS·테스트만 담당해. 서버 equipment/available/EXP/퀘스트·보상과 완성 PNG를 맞추고 잠금·전체 의상 슬롯 제약을 지켜. 이력서·자기소개서의 불변 버전·원문 조회, 명시적 동의 분석, PENDING/COMPLETED/FAILED/stale, 결과 삭제를 구현해. 기존 캐릭터 완성 이미지·CUR-13·EXT-IMG-05B/06B/08을 우선 사용하고 부족한 장식만 imagegen 스킬로 생성·적용해. 새 캐릭터 변형은 기준 시트·자산 ID·동일 비율을 유지해. App·Layout·전역 CSS·api/index·공용 자산 목록은 수정하지 말고 F07에 문서 버전 선택 타입과 F09에 라우트 변경을 전달해. 관련 테스트·pnpm build, 재조회/동의/오래됨/잠금·4개 폭을 검증해. 커밋·푸시는 하지 마.
 ```
 
 완료 신호: A13~A16의 서버 상태와 자산 표시가 일치하고 F07이 문서 버전을 선택할 수 있다.
