@@ -6,7 +6,7 @@ import { createCharacterApi, layersFor } from '../src/api/character.ts';
 const equipment = { OUTFIT: 'MINT', HAIR: 'BOB', GLASSES: 'ROUND' };
 const state = {
   baseAssetId: 'EXT-IMG-06A', slot: 'OUTFIT', equippedItemId: 'MINT', equippedAssetId: 'EXT-IMG-06C',
-  equipment, layerAssetIds: layersFor(equipment),
+  equipment, layerAssetIds: layersFor(equipment), progress: { level: 2, totalExp: 110, levelExp: 10, nextLevelExp: 150 },
 };
 const ids = [
   ['OUTFIT', 'BASE', 'EXT-IMG-06G', 'EXT-IMG-06A', ['B09-LAYER-OUTFIT-BASE']],
@@ -62,4 +62,20 @@ test('rejects malformed or mismatched layer states and wrong item slots', async 
   await assert.rejects(api.equip('GLASSES', 'BOB'), TypeError);
   const wrongCatalog = createCharacterApi(async () => [{ ...items[0], thumbnailAssetId: 'UNKNOWN' }]);
   await assert.rejects(wrongCatalog.items(), { code: 'INVALID_RESPONSE' });
+});
+
+test('quest claim and activity follow server progress and do not submit EXP', async () => {
+  const calls = [];
+  const api = createCharacterApi(createApiClient('/api', async (url, options) => {
+    calls.push({ url, options });
+    if (url === '/api/auth/csrf') return json({ headerName: 'X-CSRF-TOKEN', token: 'fresh' });
+    if (url.includes('/activity')) return json({ items: [{ id: 1, activityType: 'TODO_COMPLETED', activityId: 3, expAmount: 10, earnedAt: '2026-10-09T10:00:00Z' }], page: 0, size: 20, totalElements: 1 });
+    if (url.includes('/quests/TODO_1/claim')) return json({ questId: 'TODO_1', itemId: 'PEACH', claimedAt: '2026-10-09T10:00:00Z', progress: state.progress });
+    return json([{ id: 'TODO_1', activityType: 'TODO_COMPLETED', targetCount: 1, progressCount: 1, rewardItemId: 'PEACH', completed: true, claimed: false, claimedAt: null }]);
+  }));
+  assert.equal((await api.activity()).items[0].expAmount, 10);
+  assert.equal((await api.quests())[0].completed, true);
+  assert.equal((await api.claim('TODO_1')).itemId, 'PEACH');
+  assert.equal(calls.at(-1).options.body, undefined);
+  assert.equal(calls.at(-1).options.headers['X-CSRF-TOKEN'], 'fresh');
 });

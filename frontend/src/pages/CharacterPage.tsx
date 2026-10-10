@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { apiRequest } from '../api';
 import { createCharacterApi, isCompleteOutfit } from '../api/character';
-import type { CharacterEquipment, CharacterItem, CharacterSlot, CharacterState } from '../api/character';
+import type { CharacterActivityPage, CharacterEquipment, CharacterItem, CharacterQuest, CharacterSlot, CharacterState } from '../api/character';
 import { CharacterAppearance, characterAssetUrl } from '../components/CharacterLayers';
-import { PixelIcon } from '../components/PixelArt';
 import { EmptyState, ErrorState, LoadingState } from '../components/States';
+import backdrop from '../assets/redesign/cur-13-character-backdrop.png';
+import celebration from '../assets/redesign/ext-img-06b-growth-celebration.png';
+import './character.css';
 
 const characters = createCharacterApi(apiRequest);
 const slots: { key: CharacterSlot; title: string }[] = [
@@ -16,6 +18,12 @@ export function CharacterPage() {
   const [state, setState] = useState<CharacterState>();
   const [draft, setDraft] = useState<CharacterEquipment>();
   const [items, setItems] = useState<CharacterItem[]>([]);
+  const [quests, setQuests] = useState<CharacterQuest[]>([]);
+  const [activity, setActivity] = useState<CharacterActivityPage>();
+  const [activityPage, setActivityPage] = useState(0);
+  const [extraError, setExtraError] = useState('');
+  const [claiming, setClaiming] = useState('');
+  const [claimed, setClaimed] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [actionError, setActionError] = useState('');
@@ -36,6 +44,26 @@ export function CharacterPage() {
       .finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
   }, [retry]);
+  useEffect(() => {
+    const controller = new AbortController(); setExtraError('');
+    Promise.all([characters.quests(controller.signal), characters.activity(activityPage, controller.signal)])
+      .then(([q, a]) => { if (!controller.signal.aborted) { setQuests(q); setActivity(a); } })
+      .catch(failure => { if (!controller.signal.aborted) setExtraError(errorMessage(failure)); });
+    return () => controller.abort();
+  }, [retry, activityPage]);
+
+  async function claim(questId: string) {
+    if (claiming || saving) return;
+    setClaiming(questId); setActionError(''); setClaimed('');
+    try {
+      const result = await characters.claim(questId);
+      const [current, catalog, newQuests] = await Promise.all([characters.state(), characters.items(), characters.quests()]);
+      if (!mounted.current) return;
+      setState(current); setDraft(current.equipment); setItems(catalog); setQuests(newQuests);
+      setClaimed(`${catalog.find(item => item.id === result.itemId)?.name ?? result.itemId} 보상을 받았습니다.`);
+    } catch (failure) { if (mounted.current) setActionError(errorMessage(failure)); }
+    finally { if (mounted.current) setClaiming(''); }
+  }
 
   async function select(item: CharacterItem) {
     if (!item.available || !state || !draft || inFlight.current || draft[item.slot] === item.id
@@ -61,9 +89,9 @@ export function CharacterPage() {
     <section className="card character-welcome">
       <div><span className="eyebrow">YOUR LITTLE COMPANION</span><h2>함께 준비하는 나의 캐릭터</h2>
         <p>의상, 헤어, 안경을 골라 나만의 캐릭터를 꾸며 보세요. 전체 의상은 착용 중 헤어·안경 선택을 잠급니다.</p>
-        <div className="character-actions"><a className="button-link button-primary" href="#/profile">내 프로필 보기</a><a className="button-link" href="#/projects">프로젝트 기록하기</a></div>
+        <div className="character-actions"><button type="button" disabled={saving || !!claiming} onClick={() => setRetry(v => v + 1)}>서버 상태 다시 조회</button><a className="button-link button-primary" href="#/todos">할 일 보기</a></div>
       </div>
-      <div className="character-welcome-symbol" aria-hidden="true"><PixelIcon name="spark" /></div>
+      <img className="character-backdrop" src={backdrop} alt="" />
     </section>
 
     <section className="card character-customize" aria-labelledby="character-customize-title">
@@ -73,6 +101,9 @@ export function CharacterPage() {
           : draft && state ? <>
             <CharacterAppearance equipment={draft} label={previewLabel} />
             <p className="character-preview-status" role="status">{saving ? '저장 중…' : savedMessage || '현재 선택한 모습'}</p>
+            <div className="character-progress"><strong>레벨 {state.progress.level}</strong><span>누적 {state.progress.totalExp} EXP</span>
+              <progress value={state.progress.levelExp} max={state.progress.nextLevelExp} aria-label="다음 레벨까지의 경험치" />
+              <small>{state.progress.levelExp} / {state.progress.nextLevelExp} EXP</small></div>
             {actionError && <p className="form-error" role="alert">{actionError}</p>}
           </> : <EmptyState title="캐릭터 상태가 없습니다." />}
       </div>
@@ -92,7 +123,7 @@ export function CharacterPage() {
                 <span>{item.name}</span>
                 <small>{isCompleteOutfit(draft.OUTFIT) && slot.key !== 'OUTFIT' ? selected ? '벗으면 다시 적용' : '전체 의상 착용 중 잠김'
                   : item.available ? selected ? '선택됨' : '선택 가능'
-                  : item.availabilityCondition === 'FUTURE_REWARD' ? '보상 기능 준비 중' : '아직 사용 불가'}</small>
+                  : item.availabilityCondition === 'FUTURE_REWARD' ? '퀘스트 보상으로 잠김' : '아직 사용 불가'}</small>
               </button>;
             })}
           </div>
@@ -100,14 +131,15 @@ export function CharacterPage() {
       </div>}
     </section>
 
-    <section className="character-guide">
-      <h2>다음 한 걸음</h2>
-      <div className="character-guide-grid">
-        <a className="card" href="#/jobs"><PixelIcon name="jobs" /><strong>기회 찾기</strong><span>지금 열려 있는 채용공고를 살펴보세요.</span></a>
-        <a className="card" href="#/applications"><PixelIcon name="calendar" /><strong>진행 살피기</strong><span>지원 상태와 다음 일정을 확인하세요.</span></a>
-        <a className="card" href="#/skill-gap"><PixelIcon name="spark" /><strong>역량 키우기</strong><span>목표 직무에 필요한 기술을 찾아보세요.</span></a>
-      </div>
-      <p className="character-notice">성장·EXP·보상 기능은 아직 제공되지 않습니다.</p>
+    <section className="card character-rewards"><div><h2>퀘스트와 보상</h2><p>개인 할 일의 첫 완료만 10 EXP를 지급합니다. 달성 후 보상을 직접 받아야 의상을 사용할 수 있습니다.</p></div>
+      {claimed && <div className="character-celebration" role="status"><img src={celebration} alt="" /><span>{claimed}</span></div>}
+      {extraError && <ErrorState message={extraError} onRetry={() => setRetry(v => v + 1)} />}
+      {actionError && <p className="form-error" role="alert">{actionError}</p>}
+      <div className="character-quest-grid">{quests.map(quest => <div className="character-quest" key={quest.id}><strong>{items.find(item => item.id === quest.rewardItemId)?.name ?? quest.rewardItemId}</strong>
+        <span>할 일 완료 {quest.progressCount} / {quest.targetCount}</span>
+        <button disabled={!quest.completed || quest.claimed || !!claiming || saving} onClick={() => void claim(quest.id)}>{quest.claimed ? '수령 완료' : claiming === quest.id ? '수령 중…' : quest.completed ? '보상 받기' : '진행 중'}</button></div>)}</div>
     </section>
+    <section className="card character-activity"><h2>EXP 활동 내역</h2>{activity?.items.length ? <ul>{activity.items.map(row => <li key={row.id}>개인 할 일 첫 완료 · +{row.expAmount} EXP <time dateTime={row.earnedAt}>{new Date(row.earnedAt).toLocaleString('ko-KR')}</time></li>)}</ul> : <EmptyState title="아직 EXP 활동이 없습니다." />}
+      <div className="character-activity-pages"><button disabled={activityPage === 0} onClick={() => setActivityPage(p => p - 1)}>이전</button><span>{activityPage + 1}페이지</span><button disabled={!activity || (activityPage + 1) * activity.size >= activity.totalElements} onClick={() => setActivityPage(p => p + 1)}>다음</button></div></section>
   </div>;
 }

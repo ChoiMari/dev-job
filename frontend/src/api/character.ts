@@ -10,8 +10,13 @@ export type CharacterItem = {
 };
 export type CharacterState = {
   baseAssetId: string; slot: 'OUTFIT'; equippedItemId: string; equippedAssetId: string;
-  equipment: CharacterEquipment; layerAssetIds: string[];
+  equipment: CharacterEquipment; layerAssetIds: string[]; progress: CharacterProgress;
 };
+export type CharacterProgress = { level: number; totalExp: number; levelExp: number; nextLevelExp: number };
+export type CharacterActivity = { id: number; activityType: string; activityId: number; expAmount: number; earnedAt: string };
+export type CharacterActivityPage = { items: CharacterActivity[]; page: number; size: number; totalElements: number };
+export type CharacterQuest = { id: string; activityType: string; targetCount: number; progressCount: number; rewardItemId: string; completed: boolean; claimed: boolean; claimedAt: string | null };
+export type CharacterClaim = { questId: string; itemId: string; claimedAt: string; progress: CharacterProgress };
 
 export const completeOutfitIds = ['BUNNY', 'BEAR', 'HOMEBODY', 'INTERVIEW', 'RAINCOAT', 'ASTRONAUT'] as const;
 export const isCompleteOutfit = (id: string): boolean => completeOutfitIds.some(value => value === id);
@@ -43,8 +48,13 @@ export function layersFor(equipment: CharacterEquipment): string[] {
     `B09-LAYER-HAIR-${hair}-FRONT`, ...(glasses === 'NONE' ? [] : [`B09-LAYER-GLASSES-${glasses}`])];
 }
 const invalid = (): never => { throw new ApiError('캐릭터 응답을 확인할 수 없습니다.', 200, 'INVALID_RESPONSE'); };
+const nonnegative = (value: unknown): value is number => typeof value === 'number' && Number.isSafeInteger(value) && value >= 0;
+export const isCharacterProgress = (value: unknown): value is CharacterProgress => object(value)
+  && nonnegative(value.level) && value.level >= 1 && nonnegative(value.totalExp)
+  && nonnegative(value.levelExp) && nonnegative(value.nextLevelExp) && value.nextLevelExp > 0
+  && value.levelExp < value.nextLevelExp;
 export function isCharacterState(value: unknown): value is CharacterState {
-  if (!object(value) || !validEquipment(value.equipment) || !Array.isArray(value.layerAssetIds)
+  if (!object(value) || !validEquipment(value.equipment) || !isCharacterProgress(value.progress) || !Array.isArray(value.layerAssetIds)
     || !value.layerAssetIds.every(id => typeof id === 'string' && knownLayers.has(id))) return false;
   const actual = value.layerAssetIds as string[];
   const expected = layersFor(value.equipment);
@@ -66,6 +76,11 @@ export function isCharacterItem(value: unknown): value is CharacterItem {
   return value.assetId === null || typeof value.assetId === 'string';
 }
 export function createCharacterApi(request: ReturnType<typeof createApiClient>) {
+  const csrf = async (): Promise<string> => {
+    const value = await request('/auth/csrf');
+    if (!object(value) || value.headerName !== 'X-CSRF-TOKEN' || typeof value.token !== 'string' || !value.token) return invalid();
+    return value.token;
+  };
   return {
     state: async (signal?: AbortSignal): Promise<CharacterState> => {
       const value = await request('/me/character', { signal });
@@ -80,11 +95,33 @@ export function createCharacterApi(request: ReturnType<typeof createApiClient>) 
     },
     equip: async (slotValue: CharacterSlot, itemId: string | null): Promise<CharacterState> => {
       if (!slot(slotValue) || (itemId !== null && !ids[slotValue].includes(itemId))) throw new TypeError('캐릭터 항목을 확인해 주세요.');
-      const csrf = await request('/auth/csrf');
-      if (!object(csrf) || csrf.headerName !== 'X-CSRF-TOKEN' || typeof csrf.token !== 'string' || !csrf.token) return invalid();
       const value = await request(`/me/character/equipment/${slotValue}`,
-        { method: 'PUT', body: { itemId }, csrfToken: csrf.token });
+        { method: 'PUT', body: { itemId }, csrfToken: await csrf() });
       return isCharacterState(value) ? value : invalid();
+    },
+    activity: async (page = 0, signal?: AbortSignal): Promise<CharacterActivityPage> => {
+      const value = await request('/me/character/activity', { query: { page, size: 20 }, signal });
+      if (!object(value) || !Array.isArray(value.items) || !nonnegative(value.page) || !nonnegative(value.size)
+        || !nonnegative(value.totalElements) || !value.items.every((item: unknown) => object(item)
+          && nonnegative(item.id) && typeof item.activityType === 'string' && nonnegative(item.activityId)
+          && nonnegative(item.expAmount) && typeof item.earnedAt === 'string')) return invalid();
+      return value as CharacterActivityPage;
+    },
+    quests: async (signal?: AbortSignal): Promise<CharacterQuest[]> => {
+      const value = await request('/me/character/quests', { signal });
+      if (!Array.isArray(value) || !value.every((quest: unknown) => object(quest)
+        && typeof quest.id === 'string' && typeof quest.activityType === 'string'
+        && nonnegative(quest.targetCount) && nonnegative(quest.progressCount)
+        && typeof quest.rewardItemId === 'string' && typeof quest.completed === 'boolean'
+        && typeof quest.claimed === 'boolean' && (quest.claimedAt === null || typeof quest.claimedAt === 'string'))) return invalid();
+      return value;
+    },
+    claim: async (questId: string): Promise<CharacterClaim> => {
+      if (!/^TODO_(1|3|5|10|20|30)$/.test(questId)) throw new TypeError('퀘스트를 확인해 주세요.');
+      const value = await request(`/me/character/quests/${questId}/claim`, { method: 'POST', csrfToken: await csrf() });
+      if (!object(value) || value.questId !== questId || typeof value.itemId !== 'string'
+        || typeof value.claimedAt !== 'string' || !isCharacterProgress(value.progress)) return invalid();
+      return value as CharacterClaim;
     },
   };
 }

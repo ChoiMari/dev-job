@@ -1,0 +1,26 @@
+.documents-page { max-width: 1120px; margin: auto; display: grid; gap: 18px; min-width: 0; }
+.documents-page .card { min-width: 0; padding: clamp(18px, 3vw, 30px); }
+.documents-page h3 { margin: 0 0 16px; }
+.documents-hero { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+.documents-hero img { width: clamp(80px, 18vw, 180px); height: 150px; object-fit: contain; }
+.documents-form form, .documents-form label { display: grid; gap: 8px; }
+.documents-form form { gap: 14px; }
+.documents-form textarea, .documents-form input { width: 100%; min-width: 0; }
+.documents-form button, .documents-actions button, .documents-pagination button { min-height: 44px; }
+.documents-danger { margin-top: 16px; }
+.documents-list { list-style: none; padding: 0; display: grid; gap: 12px; }
+.documents-list li { display: flex; flex-wrap: wrap; gap: 8px 20px; justify-content: space-between; border-bottom: 1px solid var(--border); padding: 10px 0; overflow-wrap: anywhere; }
+.documents-list small, .documents-versions small { color: var(--muted); }
+.documents-pagination, .documents-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+.documents-versions { display: flex; flex-wrap: wrap; gap: 10px; }
+.documents-versions button { display: grid; gap: 4px; min-height: 44px; }
+.documents-versions button[aria-pressed="true"] { outline: 2px solid var(--primary); }
+.documents-source { margin-top: 20px; }
+.documents-source pre { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 560px; overflow: auto; background: #f8f7fa; padding: 16px; border-radius: 8px; }
+.documents-analysis { display: flex; gap: 24px; }
+.documents-analysis > img { width: 120px; height: 120px; object-fit: contain; flex: 0 0 auto; }
+.documents-analysis > div { min-width: 0; }
+.documents-consent { display: flex; align-items: flex-start; gap: 8px; margin: 16px 0; }
+.documents-consent input { flex: 0 0 auto; }
+@media (max-width: 650px) { .documents-analysis { flex-direction: column; } .documents-hero img { width: 90px; height: 90px; } }
+@media (max-width: 360px) { .documents-hero img { display: none; } }

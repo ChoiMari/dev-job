@@ -1,0 +1,13 @@
+.character-backdrop { width: clamp(90px, 20vw, 190px); max-height: 235px; object-fit: contain; flex: 0 0 auto; }
+.character-progress { display: grid; gap: 6px; width: 100%; text-align: center; }
+.character-progress progress { width: 100%; accent-color: var(--primary); }
+.character-rewards, .character-activity { min-width: 0; }
+.character-quest-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.character-quest { min-width: 0; border: 1px solid var(--border); border-radius: 10px; padding: 16px; display: grid; gap: 8px; }
+.character-quest button, .character-activity-pages button { min-height: 44px; }
+.character-celebration { display: flex; align-items: center; gap: 10px; }
+.character-celebration img { height: 90px; width: 60px; object-fit: contain; }
+.character-activity li { display: flex; gap: 12px; flex-wrap: wrap; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.character-activity-pages { display: flex; align-items: center; gap: 10px; }
+@media (max-width: 768px) { .character-quest-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 390px) { .character-quest-grid { grid-template-columns: 1fr; } .character-backdrop { max-height: 125px; } }
