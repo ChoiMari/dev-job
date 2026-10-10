@@ -1,6 +1,6 @@
 # DevJob 확장 기능 프론트 UI 구현 명세
 
-상태: B01~B03 화면 구현, 다른 확장은 설계 초안 · 기준: [확장 기능 요구사항](extension-requirements.md) (2026-10-08)
+상태: 2026-10-08 시점의 화면 설계·구현 기록. B00~B15 Backend 완료 후 프론트 전면 개편 범위·라우트·API 연결은 [프론트 요구사항](frontend-redesign-requirements.md)과 [실행 계획](frontend-redesign-implementation-plan.md)을 따른다.
 
 ## 1. 목적과 적용 범위
 

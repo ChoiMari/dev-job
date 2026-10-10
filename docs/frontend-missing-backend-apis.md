@@ -1,6 +1,8 @@
 # UI·사용자 흐름 대비 미구현 Backend API
 
-2026-10-07 MVP 기준 `docs/ui-spec.md`, `docs/user-flow.md`의 후속 구상과 `backend/src/main/java`의 Controller, `docs/api-spec.md`를 대조했다. B03 개인 할 일은 2026-10-08 Backend·Frontend에 구현되어 아래 미구현 목록에서 제외했다. 나머지 항목은 현재 화면에 실제 호출을 추가하지 않는다. 경로·메서드·요청/응답 계약은 확정되지 않았으므로 임의로 정하지 않았다.
+이 문서는 2026-10-07 MVP의 **과거 차이 기록**이다. B00~B15 Backend 완료 뒤의 현행 API/화면 연결 기준으로 사용하지 않는다. 현재 프론트 요구사항과 API 전수표는 [프론트 전면 개편 요구사항](frontend-redesign-requirements.md), 실행 순서는 [프론트 실행 계획](frontend-redesign-implementation-plan.md)을 따른다.
+
+당시에는 `docs/ui-spec.md`, `docs/user-flow.md`의 후속 구상과 `backend/src/main/java`의 Controller, `docs/api-spec.md`를 대조했다. B03 개인 할 일은 2026-10-08 Backend·Frontend에 구현되어 아래 미구현 목록에서 제외했다. 아래 표의 나머지 상태도 작성 당시의 스냅샷이다.
 
 | 문서 근거 | 화면·흐름에서 언급된 기능 | 현재 Backend API 상태 | 프론트 처리 |
 | --- | --- | --- | --- |
