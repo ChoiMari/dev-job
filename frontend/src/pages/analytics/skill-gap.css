@@ -12,3 +12,7 @@
 .skill-gap-list li strong { overflow-wrap: anywhere; }
 .skill-gap-rank { font-weight: 800; color: var(--primary); }
 @media (max-width: 700px) { .skill-gap-list li { grid-template-columns: 48px minmax(0, 1fr); } .skill-gap-intro img { width: 64px; height: 64px; } }
+.skill-gap-list li { min-width: 0; }
+.skill-gap-list li span { overflow-wrap: anywhere; }
+.skill-gap-bar { display: block; width: min(100%, 160px); height: 8px; margin-top: 5px; overflow: hidden; border-radius: 4px; background: var(--accent); }
+.skill-gap-bar span { display: block; height: 100%; background: var(--primary); }

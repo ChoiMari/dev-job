@@ -1,0 +1,14 @@
+.learning-page { max-width: 960px; margin: 0 auto; display: grid; gap: 20px; min-width: 0; }
+.learning-hero { display: flex; justify-content: space-between; align-items: center; gap: 20px; }
+.learning-hero img { width: 112px; height: 112px; object-fit: contain; image-rendering: pixelated; flex: none; }
+.learning-note { color: var(--muted); line-height: 1.6; }
+.learning-list { list-style: none; padding: 0; display: grid; gap: 12px; }
+.learning-list li { display: grid; gap: 8px; padding: 14px; border: 1px solid var(--border); border-radius: 10px; min-width: 0; }
+.learning-list li a, .learning-list li span { overflow-wrap: anywhere; }
+.learning-list progress { width: 100%; accent-color: var(--primary); }
+.learning-pagination, .learning-actions, .learning-matches { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.learning-form { display: grid; gap: 14px; }
+.learning-form label { display: grid; gap: 6px; }
+.learning-form input, .learning-form textarea, .learning-page select { width: 100%; min-width: 0; min-height: 44px; padding: 10px; border: 1px solid var(--input-border); border-radius: 8px; font: inherit; }
+.learning-form textarea { min-height: 110px; resize: vertical; }
+@media (max-width: 600px) { .learning-hero img { width: 72px; height: 72px; } .learning-actions button { flex: 1 1 120px; } }

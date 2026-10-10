@@ -4,7 +4,7 @@ import { createSkillGapApi } from '../../api/skill-gap';
 import type { SkillGap } from '../../api/skill-gap';
 import { EmptyState, ErrorState, LoadingState } from '../../components/States';
 import './skill-gap.css';
-import skillPuzzleArt from '../../assets/illustrations/skill-puzzle.png';
+import skillPuzzleArt from '../../assets/redesign/cur-09-analysis.png';
 
 const api = createSkillGapApi(apiRequest);
 const reasons: Record<string, { title: string; message: string }> = {
@@ -50,7 +50,7 @@ export function SkillGapPage({ location }: { location: string }) {
         <button type="submit">순위 보기</button>
       </form>
       {formError && <p className="form-error" role="alert">{formError}</p>}
-      <p className="skill-gap-note">직무명은 공고 제목에서 찾습니다. 희망 직무도 없으면 전체 분석 완료 공고를 비교합니다.</p>
+      <p className="skill-gap-note">직무명은 공고 제목에서 찾습니다. 희망 직무도 없으면 전체 분석 완료 공고를 비교합니다. 이 순위는 개인 기술과 공고를 비교한 읽기 전용 결과이며 공고별 기술 일치도와 다릅니다.</p>
     </section>
     <section className="card" aria-label="부족한 기술 순위" aria-busy={loading}>
       {loading ? <LoadingState message="부족한 기술을 분석하고 있습니다." /> : error ? <ErrorState message={error} onRetry={() => setRetry(value => value + 1)} /> : data && <>
@@ -64,12 +64,14 @@ export function SkillGapPage({ location }: { location: string }) {
             : <ol className="skill-gap-list">{data.items.map((item, index) => <li key={item.skill.id}>
               <span className="skill-gap-rank">{index + 1}위</span>
               <strong>{item.skill.name}</strong>
-              <span>등장률 {Math.round(item.demandRatio * 100)}%</span>
-              <span>필수 {item.requiredJobCount}건 / 우대 {item.preferredJobCount}건</span>
+              <span>등장률 {(item.demandRatio * 100).toFixed(1)}%<span className="skill-gap-bar" aria-hidden="true"><span style={{ width: `${item.demandRatio * 100}%` }} /></span></span>
+              <span>우선순위 점수 {item.priorityScore.toFixed(1)} · 필수 {item.requiredJobCount}건 / 우대 {item.preferredJobCount}건</span>
             </li>)}</ol>}
         {data.available && data.totalMissingSkills > 5 && <p className="skill-gap-note">전체 부족 기술 {data.totalMissingSkills}개 중 상위 5개를 표시합니다.</p>}
-        <p className="skill-gap-note">등장률은 선택한 조건의 분석 완료 공고 표본을 기준으로 합니다. 전체 채용시장의 비율은 아닙니다.</p>
+        <p className="skill-gap-note">등장률은 선택한 조건의 분석 완료 공고 표본을 기준으로 합니다. 우선순위 점수는 필수 기술 공고에 더 높은 가중치를 둡니다. 전체 채용시장의 비율은 아닙니다.</p>
         <a href="#/analytics/skills">시장 기술 수요 자세히 보기</a>
+        <p className="skill-gap-note">개인 학습 목표는 별도로 저장됩니다. 순위를 계산할 수 없어도 목표를 만들 수 있으며 목표 완료가 보유 기술·숙련도나 이 분석을 자동 변경하지 않습니다.</p>
+        <a href="#/learning-goals">내 학습 목표 관리하기</a>
       </>}
     </section>
   </div>;
