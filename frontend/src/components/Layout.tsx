@@ -7,19 +7,25 @@ const groups = [
   { label: '시작하기', links: [
     { href: '#/', label: '대시보드', icon: 'home', active: (path: string) => path === '/' },
     { href: '#/jobs', label: '채용공고', icon: 'jobs', active: (path: string) => path === '/jobs' || path.startsWith('/jobs/') },
-    { href: '#/bookmarks', label: '관심 공고', icon: 'bookmark', active: (path: string) => path === '/bookmarks' },
+    { href: '#/bookmarks', label: '관심 공고', icon: 'bookmark', active: (path: string) => path.startsWith('/bookmarks') },
+    { href: '#/recommendations', label: '의미 기반 추천', icon: 'spark', active: (path: string) => path.startsWith('/recommendations') },
   ] },
   { label: '나의 취업 준비', links: [
     { href: '#/applications', label: '지원 관리', icon: 'calendar', active: (path: string) => path.startsWith('/applications') },
+    { href: '#/interviews', label: '면접 일정', icon: 'calendar', active: (path: string) => path.startsWith('/interviews') },
     { href: '#/todos', label: '내 할 일', icon: 'check', active: (path: string) => path.startsWith('/todos') },
     { href: '#/companies', label: '기업 관리', icon: 'grid', active: (path: string) => path.startsWith('/companies') },
     { href: '#/profile', label: '내 프로필', icon: 'profile', active: (path: string) => path === '/profile' },
     { href: '#/projects', label: '프로젝트 관리', icon: 'folder', active: (path: string) => path.startsWith('/projects') },
+    { href: '#/resumes', label: '이력서', icon: 'folder', active: (path: string) => path.startsWith('/resumes') },
+    { href: '#/cover-letters', label: '자기소개서', icon: 'folder', active: (path: string) => path.startsWith('/cover-letters') },
   ] },
   { label: '인사이트', links: [
     { href: '#/skill-gap', label: '역량 분석', icon: 'spark', active: (path: string) => path === '/skill-gap' },
     { href: '#/analytics/skills', label: '채용시장 분석', icon: 'chart', active: (path: string) => path === '/analytics/skills' },
+    { href: '#/learning-goals', label: '학습 목표', icon: 'check', active: (path: string) => path.startsWith('/learning-goals') },
     { href: '#/character', label: '내 캐릭터', icon: 'grid', active: (path: string) => path === '/character' },
+    { href: '#/notifications', label: '알림', icon: 'calendar', active: (path: string) => path === '/notifications' },
     { href: '#/settings', label: '설정', icon: 'profile', active: (path: string) => path === '/settings' },
   ] },
 ] as const;

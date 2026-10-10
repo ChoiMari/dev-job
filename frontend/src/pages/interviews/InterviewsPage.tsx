@@ -14,7 +14,11 @@ const statusLabel = (item: Interview) => item.status === 'CANCELLED' ? '취소' 
 export function InterviewsPage({ location }: { location: string }) {
   const path = location.split('?')[0];
   if (path === '/interviews') return <InterviewList />;
-  if (path === '/interviews/new') return <InterviewEditor />;
+  if (path === '/interviews/new') {
+    const requestedId = new URLSearchParams(location.split('?')[1] || '').get('applicationId');
+    const applicationId = requestedId && /^[1-9]\d*$/.test(requestedId) && Number.isSafeInteger(Number(requestedId)) ? requestedId : '';
+    return <InterviewEditor initialApplicationId={applicationId} />;
+  }
   const match = /^\/interviews\/([1-9]\d*)$/.exec(path);
   const id = match ? Number(match[1]) : 0;
   return Number.isSafeInteger(id) && id > 0 ? <InterviewEditor id={id} /> : <section className="card">
@@ -56,11 +60,11 @@ function InterviewList() {
     </section></div>;
 }
 
-function InterviewEditor({ id }: { id?: number }) {
+function InterviewEditor({ id, initialApplicationId = '' }: { id?: number; initialApplicationId?: string }) {
   const [item, setItem] = useState<Interview>();
   const [title, setTitle] = useState('');
   const [localTime, setLocalTime] = useState('');
-  const [applicationId, setApplicationId] = useState('');
+  const [applicationId, setApplicationId] = useState(initialApplicationId);
   const [editing, setEditing] = useState(!id);
   const [loading, setLoading] = useState(!!id);
   const [loadError, setLoadError] = useState('');

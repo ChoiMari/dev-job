@@ -21,6 +21,14 @@ import { DashboardPage } from './pages/dashboard/DashboardPage';
 import { TodosPage } from './pages/todos/TodosPage';
 import { CharacterPage } from './pages/CharacterPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { ManualJobDetailPage } from './pages/jobs/ManualJobDetailPage';
+import { InterviewsPage } from './pages/interviews/InterviewsPage';
+import { LearningGoalsPage } from './pages/learning-goals/LearningGoalsPage';
+import { ResumesPage } from './pages/resumes/ResumesPage';
+import { CoverLettersPage } from './pages/cover-letters/CoverLettersPage';
+import { NotificationsPage } from './pages/notifications/NotificationsPage';
+import { RecommendationsPage } from './pages/recommendations/RecommendationsPage';
+import { AlioBatchPage } from './pages/admin/AlioBatchPage';
 
 const getPath = () => window.location.hash.slice(1) || '/';
 
@@ -53,7 +61,12 @@ export function App() {
           else setError(failure instanceof Error ? failure.message : '인증 상태를 확인하지 못했습니다.');
         }).finally(() => { if (!signal.aborted) setChecking(false); });
     }
-    const expired = () => { setUser(null); };
+    const expired = () => {
+      setUser(null);
+      const currentPath = getPath().split('?')[0];
+      if (currentPath !== '/login' && currentPath !== '/register')
+        window.location.hash = '/login?sessionExpired=1';
+    };
     const visible = () => { if (document.visibilityState === 'visible') check(); };
     setChecking(true);
     check();
@@ -79,11 +92,18 @@ export function App() {
       : path === '/todos' || path.startsWith('/todos/') ? '내 할 일'
       : path === '/companies' || path.startsWith('/companies/') ? '기업 관리'
 
-      : path === '/jobs' ? '채용공고' : path === '/bookmarks' ? '관심 공고'
+      : path === '/jobs' ? '채용공고' : path === '/bookmarks' || path.startsWith('/bookmarks/') ? '관심 공고'
       : path.startsWith('/jobs/') ? '공고 상세'
       : path === '/applications' ? '지원 관리' : path.startsWith('/applications/') ? '지원 상세'
       : path === '/analytics/skills' ? '채용시장 분석' : path === '/skill-gap' ? '역량 분석'
-      : path === '/character' ? '내 캐릭터' : path === '/settings' ? '설정' : '화면을 찾을 수 없습니다';
+      : path === '/character' ? '내 캐릭터' : path === '/settings' ? '설정'
+      : path === '/interviews' || path.startsWith('/interviews/') ? '면접 일정'
+      : path === '/learning-goals' || path.startsWith('/learning-goals/') ? '학습 목표'
+      : path === '/resumes' || path.startsWith('/resumes/') ? '이력서'
+      : path === '/cover-letters' || path.startsWith('/cover-letters/') ? '자기소개서'
+      : path === '/notifications' ? '알림'
+      : path === '/recommendations' || path.startsWith('/recommendations/') ? '의미 기반 추천'
+      : path === '/admin/alio' ? 'ALIO 배치' : '화면을 찾을 수 없습니다';
   useEffect(() => {
     document.title = `${title} · DevJob`;
     window.scrollTo(0, 0);
@@ -123,10 +143,18 @@ export function App() {
 
       : path === '/states' ? <StatePreview /> : path === '/jobs' ? <JobsPage location={location} />
       : path === '/bookmarks' ? <BookmarksPage location={location} />
+      : path.startsWith('/bookmarks/') ? <ManualJobDetailPage key={path} location={location} />
       : path.startsWith('/jobs/') ? <JobDetailPage location={location} />
       : path === '/applications' ? <ApplicationsPage location={location} />
       : path === '/analytics/skills' ? <MarketAnalyticsPage location={location} />
       : path === '/skill-gap' ? <SkillGapPage location={location} />
+      : path === '/learning-goals' || path.startsWith('/learning-goals/') ? <LearningGoalsPage key={path} location={location} />
+      : path === '/interviews' || path.startsWith('/interviews/') ? <InterviewsPage key={path} location={location} />
+      : path === '/resumes' || path.startsWith('/resumes/') ? <ResumesPage key={path} location={location} />
+      : path === '/cover-letters' || path.startsWith('/cover-letters/') ? <CoverLettersPage key={path} location={location} />
+      : path === '/notifications' ? <NotificationsPage />
+      : path === '/recommendations' || path.startsWith('/recommendations/') ? <RecommendationsPage key={path} location={location} />
+      : path === '/admin/alio' ? <AlioBatchPage />
       : path === '/character' ? <CharacterPage />
       : path === '/settings' ? <SettingsPage user={user} onLogout={logout} loggingOut={loggingOut}
         onPasswordChanged={() => { setUser(null); window.location.hash = '/login?passwordChanged=1'; }}

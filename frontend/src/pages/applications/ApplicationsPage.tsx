@@ -124,6 +124,7 @@ export function ApplicationDetailPage({ location }: { location: string }) {
           <p>지원일: {data.appliedDate || '지원 전'}</p>{data.job ? <a className="button-link" href={`#/jobs/${data.job.id}`}>공고 상세 보기</a>
             : data.personalSavedJob && <a className="button-link" href={data.personalSavedJob.url} target="_blank" rel="noopener noreferrer">외부 원문 열기 (새 창)</a>}
           <p className="application-boundary">상태·메모·다음 일정은 앱 내 기록입니다. 외부 지원 상태와 자동으로 동기화되지 않습니다.</p>
+          <div className="job-actions"><a className="button-link" href={`#/interviews/new?applicationId=${data.id}`}>이 지원에 면접 일정 등록</a><a className="button-link" href="#/interviews">면접 일정 보기</a></div>
           {success && <SuccessState message={success} compact />}
           {saveError && <><ErrorState message={saveError} /><button type="button" disabled={busy} onClick={() => {
             setRetry(value => value + 1); setSaveError(''); setSuccess('');

@@ -84,5 +84,10 @@ export function createRecommendationsApi(request: ReturnType<typeof createApiCli
       const value = await request('/me/recommendations/jobs', { query: { requestId: id, page, size }, signal });
       return isRecommendationPage(value) && value.id === id && value.page === page ? value : invalid();
     },
+    async getById(id: number, page = 0, size = 20, signal?: AbortSignal): Promise<RecommendationPage> {
+      if (!positive(id) || !nonnegative(page) || !positive(size) || size > 20) throw new TypeError('추천 결과 주소를 확인해 주세요.');
+      const value = await request(`/me/recommendations/jobs/${id}`, { query: { page, size }, signal });
+      return isRecommendationPage(value) && value.id === id && value.page === page ? value : invalid();
+    },
   };
 }

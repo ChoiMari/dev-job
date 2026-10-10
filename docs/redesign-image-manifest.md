@@ -1,6 +1,6 @@
 # 프론트 개편 이미지 산출물 목록
 
-상태: 이미지 제작 완료, 화면 연결 전 · 2026-10-08
+상태: F09 화면 사용처 대조 · 2026-10-11
 
 제작 기준은 [이미지 제작 가이드](image-generation-brief.md), 스타일 참고는 [참고 이미지](assets/frontend-redesign-reference.png)다. 기존 이미지들은 내장 `image_gen`으로 새로 생성해 [`frontend/src/assets/redesign/`](../frontend/src/assets/redesign/)에 저장했다. B09 의상 이미지 다섯 개는 `docs/assets/`에 추가했다. 참고 이미지의 문구·수치·가상 UI는 생성 이미지에 사용하지 않았다. 기존 `frontend/src/assets/illustrations/` 파일은 수정하지 않았다.
 
@@ -42,7 +42,7 @@ CUR-11~14는 기준 시트만으로 현재 화면에 배치할 이미지와 설�
 
 ## 확장 기능용
 
-기능 구현 전에는 아래 이미지를 화면에 노출하지 않는다. 각 이미지의 의미는 [확장 요구사항](extension-requirements.md)과 [확장 UI 명세](extension-ui-spec.md)를 따른다.
+아래 이미지는 기능별 화면에서 실제 사용 여부를 확인한다. 각 이미지의 의미는 [확장 요구사항](extension-requirements.md)과 [확장 UI 명세](extension-ui-spec.md)를 따른다.
 
 | ID | 파일 | 크기 | 사용 후보 |
 | --- | --- | --- | --- |
@@ -97,6 +97,30 @@ EXT-IMG-06E·06F·06G는 각각 민트·복숭아·기본 의상만 보여 주�
 원래 캐릭터 PNG를 참조해 내장 imagegen으로 각 투명 레이어를 제작했다. 생성 원본은 `docs/assets/b09-layer-source/`에 보존하고 [`prepare-character-png.cjs`](../frontend/scripts/prepare-character-png.cjs)에서 희미한 배경 알파를 제거하고 공통 좌표로 등록해 Frontend PNG와 별도 목록 이미지를 내보낸다. 이 내보내기와 조합 검증 스크립트는 작업용 `sharp`를 사용하며 앱 런타임에는 의존성을 추가하지 않는다. 기존 완성 PNG·의상 `assetId`와 API `layerAssetIds`는 삭제하거나 덮어쓰지 않는다. 현재 화면은 `thumbnailAssetId`로 선택 목록을 표시하고 `equipment`로 위의 완성 이미지를 선택한다. `PEACH` 자산은 준비돼 있지만 B10 보상 조건 전에는 서버에서 장착을 거부한다.
 
 ## 적용·검증 기록
+
+### F09 실제 화면 사용 대조 (2026-10-11)
+
+아래 경로는 모두 `frontend/src/assets/` 기준이다. 표의 크기는 원본 해상도가 아니라 CSS의 실제 표시 상한 또는 모바일 규칙이다. 장식 이미지는 빈 `alt`와 `aria-hidden`으로 처리하고 인접한 텍스트가 기능·상태를 전달한다. F09는 코드/CSS 대조이며 실제 브라우저의 픽셀 표시·실패 대체 화면은 확인하지 못했다.
+
+| 사용 파일 | 화면·용도 | 표시 크기·접근성 |
+| --- | --- | --- |
+| `redesign/brand-devjob-wordmark-dark.png` | 공개 홈 브랜드 | 150×최대 44px, `alt="DevJob"` |
+| `redesign/cur-15-public-home-scene.png` | 공개 홈 장면 | 가용 너비 100%, 767px 이하 높이 최대 360px, 장식 |
+| `redesign/cur-01-login-scene.png` | 로그인·가입 장면 | 최대 530×700px 패널, 1023px 이하 숨김, 장식 |
+| `illustrations/dashboard-hero.webp`, `illustrations/dashboard-desk.png` | 대시보드 히어로·다음 행동 제목 | 히어로 최대 460px(모바일 225/190px), 제목 52px, 장식. 준비된 `CUR-02/03` 대신 이 파일을 실제 사용 |
+| `redesign/cur-04-job-search.png`, `redesign/ext-img-07-source-exploration.png` | 공고 목록·수집 공고 상세 | 너비 112~210×150px, 모바일 72px, 장식. EXT-IMG-07은 관리자 배치에서도 최대 132px |
+| `redesign/cur-05-saved-jobs.png` | 관심 공고 목록·개인 상세 | 너비 112~210×150px, 모바일 72px, 장식 |
+| `redesign/cur-06-applications.png` | 지원 목록·상세 | 너비 112~200×150px, 모바일 64px, 장식 |
+| `redesign/cur-07-profile.png`, `redesign/ext-img-02-skill-levels.png` | 프로필·기술 | 각각 최대 150px, 96px(모바일 64px), 장식 |
+| `redesign/cur-08-projects.png`, `redesign/ext-img-03-personal-todos.png`, `redesign/ext-img-05a-companies.png` | 프로젝트·할 일·기업 | 각각 96px(모바일 64px), 최대 180px(모바일 96px), 최대 140px(370px 이하 숨김), 장식 |
+| `redesign/cur-09-analysis.png`, `redesign/ext-img-04-expanded-analytics.png`, `redesign/ext-img-05d-learning.png` | Skill Gap·시장 분석·학습 목표 | 각각 96→64px, 112→72px, 112→72px, 장식. 수치는 HTML 텍스트/표 |
+| `redesign/cur-13-character-backdrop.png`, `redesign/ext-img-06b-growth-celebration.png` | 캐릭터 배경·보상 수령 | 각각 너비 최대 190px/높이 최대 235px(모바일 125px), 60×90px, 장식 |
+| `character/character-*.png`, `character/thumb-*.png`, `character/ext-img-06{e,f,g}-outfit-*.png` | 장착 결과·카탈로그 | 완성 모습 최대 280px 너비·2:3, 썸네일 76px(모바일 64px). 완성 모습의 `role="img"`에 장착 상태 라벨, 내부 이미지 빈 `alt`; 목록 버튼에 품목명·잠금 상태 텍스트 |
+| `redesign/ext-img-05b-resumes.png`, `redesign/ext-img-08-ai-analysis.png` | 이력서·자기소개서 헤더/분석·추천 | 문서 헤더 너비 최대 180×150px(모바일 90px), 분석 120px, 추천 헤더 최대 180×150px, 장식 |
+| `redesign/cur-12-character-thoughtful.png` | 추천 동의 안내 | 최대 160px, 560px 이하 숨김, 장식 |
+| `redesign/ext-img-05c-interviews.png`, `redesign/ext-img-01-account-settings.png`, `redesign/cur-14-settings.png` | 면접·알림·설정 | 각각 최대 180px(모바일 90px), 최대 132px, 120px(390px 이하 74px), 장식 |
+
+`CUR-10`은 제작 참조 시트이고 `BRAND-01`, `CUR-02/03/11`, `EXT-IMG-06A/06C/06D` 등은 이 화면 코드에서 직접 불러오지 않는다. `CharacterLayers.tsx`가 실제 장착 PNG와 썸네일을 서버 자산 ID/장착값으로 선택한다.
 
 - 생성 이미지 28개를 파일별로 저장했다. 파일 존재, 해상도, PNG 좌상단 픽셀의 알파 채널을 확인했다. 장면 3개는 불투명, 투명 이미지 25개는 좌상단 알파 0~1이었다.
 - 이미지 안의 장식적 빈 서식·추상 도형은 실제 사용자 데이터, 완료 상태, 통계로 해석하지 않는다. 실제 텍스트·상태·차트는 프론트 코드와 API 데이터로 표시한다.

@@ -40,7 +40,7 @@ export function RecommendationsPage({ location }: { location: string }) {
     if (!Number.isSafeInteger(resultId) || resultId < 1) { setError('추천 결과 주소를 확인해 주세요.'); return; }
     const controller = new AbortController();
     setResultLoading(true); setError('');
-    recommendations.get(resultId, 0, 20, controller.signal).then(value => {
+    recommendations.getById(resultId, 0, 20, controller.signal).then(value => {
       if (!controller.signal.aborted) setResult(value);
     }).catch(failure => { if (!controller.signal.aborted) setError(failure instanceof ApiError && failure.status === 404
       ? '추천 결과가 없거나 접근할 수 없습니다.' : message(failure)); })

@@ -32,7 +32,7 @@
 | FR-P00 비로그인 `#/` | 첫 방문 공개 홈. DevJob의 목적과 실제 제공 기능인 공고 탐색·지원 기록·역량 관리의 짧은 소개, 로그인·회원가입 CTA. 장식은 개편안의 색·브랜드·일러스트를 따르되 사용자별 수치·가짜 공고·임의 추천은 표시하지 않는다. 로그인 사용자가 `#/`에 오면 P02로 분기한다. | A01의 `GET /api/auth/me`만 진입 시 사용; 공개 홈 자체의 데이터 API는 없음 | 첫 접속·새로고침·로그인/가입 이동, 세션 유무에 따른 분기, 인증 조회 실패 재시도, 모바일 CTA 노출 |
 | FR-P01 `#/login`, `#/register` | 새 브랜드/일러스트와 인증 폼. 로그인, 가입 전환, 세션 만료·비밀번호 변경 안내. | A01 | 자격 오류와 세션 확인, 입력 보존, 모바일 폼 우선 배치 |
 | FR-P02 로그인 후 `#/` | 실제 KPI, 지원에서 나온 다음 행동, 개인 미완료 할 일, 규칙 기반 추천, Skill Gap 미리보기. 각 출처를 제목으로 구분한다. | A02, A10 | 0건·분석 불가·대시보드 부분 오류, 링크 목적지 |
-| FR-P03 `#/jobs`, `#/jobs/{jobId}` | 검색·필터·정렬·페이지, 출처·마감·전형 정보, 외부 원문, 북마크, 공용 AI 분석, 기술 일치도, 지원 기록. ALIO 사용자 수동 수집은 현행 버튼 범위만 유지한다. | A04, A05, A06, A07 | 북마크 없는 분석 POST 금지, `409` 분석 미완료, 외부 지원과 앱 내 기록 구분 |
+| FR-P03 `#/jobs`, `#/jobs/{jobId}` | 검색·필터·정렬·페이지, 출처·마감·전형 정보, 외부 원문, 북마크, 공용 AI 분석, 기술 일치도, 지원 기록. 사용자 ALIO 수집 버튼은 현재 화면에 없다. | A04, A05, A06; A07은 운영용 미연결 | 북마크 없는 분석 POST 금지, `409` 분석 미완료, 외부 지원과 앱 내 기록 구분 |
 | FR-P04 `#/bookmarks`, `#/bookmarks/{manualId}` | 공용 북마크와 직접 등록 공고의 통합 목록, 직접 등록·수정·삭제, 개인 본문 분석, 지원 연결. | A06, A08 | `COLLECTED`/`MANUAL` 필드 차이, 분석 입력 변경 시 오래된 결과 제거 |
 | FR-P05 `#/applications`, `#/applications/{id}` | 8개 상태의 필터/목록과 상세·상태 변경·이력·메모·다음 일정. 별도 면접 일정과 혼동하지 않는다. | A09 | 허용 전이·409, 타인 기록 403, 시각 오프셋과 상태 이력 |
 | FR-P06 `#/profile` | 기본 프로필과 기술 검색·추가·삭제, 숙련도 1~5의 의미 있는 라벨과 경험 개월 입력. | A03 | 프로필 404는 미설정, 기술 `null`은 미입력, 저장 후 재조회 |
@@ -94,8 +94,8 @@
 | A03 프로필·기술·프로젝트 | `GET /api/me/profile`; `PUT /api/me/profile`; `GET /api/skills`; `GET /api/me/skills`; `POST /api/me/skills`; `PATCH /api/me/skills/{skillId}/experience`; `DELETE /api/me/skills/{skillId}`; `GET /api/me/projects`; `POST /api/me/projects`; `GET /api/me/projects/{projectId}`; `PUT /api/me/projects/{projectId}`; `DELETE /api/me/projects/{projectId}` | P06, P07, P16 / 프로필·기술 선택·프로젝트 |
 | A04 공고 탐색 | `GET /api/jobs`; `GET /api/jobs/{jobId}` | P03, P18 / 저장된 공고 조회·후보 선택 |
 | A05 공고 AI·일치도 | `POST /api/jobs/{jobId}/analysis`; `GET /api/jobs/{jobId}/analysis`; `GET /api/jobs/{jobId}/match` | P03 / 공용 공고 분석·기술 일치도 |
-| A06 공용 관심 공고 | `GET /api/bookmarks`; `POST /api/bookmarks`; `DELETE /api/bookmarks/{jobId}` | P03, P04 / 북마크 |
-| A07 사용자 ALIO 수집 | `POST /api/jobs/collections/alio` | P03 / 현재 사용자 수동 수집 행동과 결과 안내. 관리자 전체 배치와 범위가 다름 |
+| A06 공용 관심 공고 | `GET /api/bookmarks`; `POST /api/bookmarks`; `DELETE /api/bookmarks/{jobId}` | P03, P04 / 북마크. GET은 현재 P04의 A08 통합 목록으로 대체돼 UI 미호출 |
+| A07 사용자 ALIO 수집 | `POST /api/jobs/collections/alio` | 현재 UI 미연결. Controller가 내부 수집용으로 표시하며 P03에 사용자 버튼이 없다. 관리자 전체 배치 A22와 범위가 다름 |
 | A08 개인 저장 공고 | `GET /api/me/saved-jobs`; `POST /api/me/saved-jobs`; `GET /api/me/saved-jobs/{id}`; `PUT /api/me/saved-jobs/{id}`; `DELETE /api/me/saved-jobs/{id}`; `POST /api/me/saved-jobs/{id}/analysis`; `GET /api/me/saved-jobs/{id}/analysis` | P04, P18 / 통합 목록·직접 등록 공고·개인 분석 |
 | A09 지원 | `GET /api/applications`; `POST /api/applications`; `GET /api/applications/{applicationId}`; `PATCH /api/applications/{applicationId}`; `PATCH /api/applications/{applicationId}/status`; `GET /api/applications/{applicationId}/history` | P05, P03, P04, P15 / 지원 기록·상태·이력 |
 | A10 시장·역량 | `GET /api/analytics/skills`; `GET /api/analytics/career-levels`; `GET /api/analytics/locations`; `GET /api/analytics/skills/trends`; `GET /api/me/skill-gap` | P10, P11, P02 / 통계와 개인 부족 기술 |

@@ -40,6 +40,16 @@ test('POST sends exact kind and ID, selected version IDs and consent, then GET r
   assert.equal(calls[2].options.method, 'GET');
 });
 
+test('result detail route reads the by-id GET without creating a new comparison', async () => {
+  const urls = [];
+  const api = createRecommendationsApi(createApiClient('/api', async url => {
+    urls.push(url);
+    return json(result);
+  }));
+  assert.deepEqual(await api.getById(4), result);
+  assert.deepEqual(urls, ['/api/me/recommendations/jobs/4?page=0&size=20']);
+});
+
 test('empty and maximum-size selections reach POST unchanged', async () => {
   const sent = [];
   const api = createRecommendationsApi(createApiClient('/api', async (url, options) => {

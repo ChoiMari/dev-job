@@ -145,6 +145,7 @@ export function SettingsPage({ user, onLogout, loggingOut, onPasswordChanged, on
       </fieldset></form>
     </section>
     <section className="card"><span className="eyebrow">IN APP</span><h2>알림 수신 설정</h2><p>면접 시작과 개인 할 일 기한 알림을 앱 내 목록에서 받을지 선택합니다.</p>
+      <a className="button-link" href="#/notifications">알림 목록 보기</a>
       {preferencesLoading ? <LoadingState message="알림 설정을 불러오고 있습니다." /> : preferences && <form className="f02-preferences-form" onSubmit={savePreferences} aria-busy={savingPreferences}>
         <label><input type="checkbox" checked={preferences.interviewReminder} disabled={savingPreferences} onChange={event => { setPreferences({ ...preferences, interviewReminder: event.target.checked }); setPreferencesMessage(''); }} /> 면접 시작 알림</label>
         <label><input type="checkbox" checked={preferences.todoReminder} disabled={savingPreferences} onChange={event => { setPreferences({ ...preferences, todoReminder: event.target.checked }); setPreferencesMessage(''); }} /> 개인 할 일 기한 알림</label>

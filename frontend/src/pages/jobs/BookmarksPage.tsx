@@ -11,7 +11,6 @@ import { ApplicationStatusBadge } from '../../components/ApplicationStatusBadge'
 import { EmptyState, ErrorState, LoadingState } from '../../components/States';
 import './jobs.css';
 import savedJobsArt from '../../assets/redesign/cur-05-saved-jobs.png';
-import { ManualJobDetailPage } from './ManualJobDetailPage';
 
 const savedJobs = createSavedJobsApi(apiRequest);
 const bookmarks = createBookmarksApi(apiRequest);
@@ -38,7 +37,6 @@ export function BookmarksPage({ location }: { location: string }) {
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState('');
   const [actionError, setActionError] = useState('');
-  const [selectedManual, setSelectedManual] = useState<SavedJob | null>(null);
   const navigatePage = (next: number) => { window.location.hash = `/bookmarks?page=${next}`; };
   useEffect(() => {
     const controller = new AbortController(); setLoading(true); setError(''); setData(undefined);
@@ -50,12 +48,10 @@ export function BookmarksPage({ location }: { location: string }) {
       .finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
   }, [page, retry]);
-  if (selectedManual) return <ManualJobDetailPage location={`/bookmarks/${selectedManual.id}`}
-    initialApplicationStatus={selectedManual.applicationStatus} onBack={() => setSelectedManual(null)} />;
   return <div className="jobs-page"><a className="button-link" href="#/jobs">채용공고 찾아보기</a>
     <section className="card" aria-label="관심 공고 목록" aria-busy={loading}>
       <div className="job-search-heading job-hero"><div><p className="job-eyebrow">MY SAVED JOBS</p><h2>내 관심공고</h2><p>수집 공고 북마크와 직접 등록한 개인 공고를 한곳에서 관리합니다.</p>
-        <button type="button" className="button-primary" onClick={() => { setEditing(null); setFormError(''); setShowForm(true); }}>+ 관심공고 직접 등록</button></div><img src={savedJobsArt} alt="" aria-hidden="true" /></div>
+        <button type="button" className="button-primary" onClick={() => { setEditing(null); setFormError(''); setShowForm(true); }}>+ 관심공고 직접 등록</button><a className="button-link" href="#/recommendations">관심 공고로 의미 기반 비교</a></div><img src={savedJobsArt} alt="" aria-hidden="true" /></div>
       {showForm && <form className="application-form" key={editing?.id || 'new'} onSubmit={async event => {
         event.preventDefault(); if (saving) return;
         const input = formInput(new FormData(event.currentTarget)); setSaving(true); setFormError('');
@@ -89,7 +85,7 @@ export function BookmarksPage({ location }: { location: string }) {
             <Badge icon="check" tone="success">{item.kind === 'MANUAL' ? '직접 등록' : item.source === 'ALIO_RECRUITMENT' ? '공공기관 수집' : '수집 공고'}</Badge>
             {item.applicationStatus && <ApplicationStatusBadge status={item.applicationStatus} />}
             <p className="job-company">{item.companyName}</p><h2>{item.kind === 'COLLECTED' && item.jobId
-              ? <a href={`#/jobs/${item.jobId}?origin=bookmarks`}>{item.title}</a> : <button className="job-title-button" type="button" onClick={() => setSelectedManual(item)}>{item.title}</button>}</h2>
+              ? <a href={`#/jobs/${item.jobId}?origin=bookmarks`}>{item.title}</a> : <a href={`#/bookmarks/${item.id}`}>{item.title}</a>}</h2>
             <p>직무: {item.role ? roleLabels[item.role] || item.role : '정보 없음'} · 경력: {item.careerLevel || '정보 없음'} · 지역: {item.location || '정보 없음'}</p>
             <p>고용형태: {item.employmentType || '정보 없음'} · 마감일: {item.deadlineDate || '정보 없음'}</p>
             <p>저장일: {new Date(item.createdAt).toLocaleDateString('ko-KR')}</p>

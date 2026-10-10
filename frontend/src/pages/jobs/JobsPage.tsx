@@ -104,7 +104,7 @@ export function JobsPage({ location }: { location: string }) {
       for (const [key, value] of values) if (String(value).trim()) query.set(key, String(value).trim());
       query.set('page', '0'); window.location.hash = `/jobs?${query}`;
     }}>
-      <div className="job-search-heading job-hero"><div><p className="job-eyebrow">JOB EXPLORER</p><h2>채용공고 탐색</h2><p>저장된 공고에서 조건에 맞는 기회를 찾으세요. 검색은 외부 수집을 실행하지 않습니다.</p></div><img src={jobSearchArt} alt="" aria-hidden="true" /></div>
+      <div className="job-search-heading job-hero"><div><p className="job-eyebrow">JOB EXPLORER</p><h2>채용공고 탐색</h2><p>저장된 공고에서 조건에 맞는 기회를 찾으세요. 검색은 외부 수집을 실행하지 않습니다.</p><a className="button-link" href="#/recommendations">문서 버전으로 의미 기반 비교</a></div><img src={jobSearchArt} alt="" aria-hidden="true" /></div>
       <div className="job-filter-grid">{fields.map((field, i) => <label key={field}>{labels[i]}
         <input name={field} defaultValue={params.get(field) || ''} type={field === 'deadlineBefore' ? 'date' : 'text'} maxLength={200}
           placeholder={field === 'careerLevel' ? '예: 신입 (정확히 일치)' : field === 'employmentType' ? '예: 정규직 (정확히 일치)' : undefined} />

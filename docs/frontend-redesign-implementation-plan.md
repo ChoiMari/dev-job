@@ -1,6 +1,6 @@
 # DevJob 프론트 전면 개편 실행 계획
 
-상태: F00 조사 완료, F01 공통 프레임 구현(빌드·화면 검증 대기) · 기준: 2026-10-10, B00~B15 Backend 완료. F00 결과는 [계약·기준선 기록](frontend-redesign-f00-audit.md)에 있다.
+상태: F02~F08 커밋 반영, F09 코드·문서 통합 완료(빌드·브라우저 검증 대기) · 기준: 2026-10-11, B00~B15 Backend 완료. F00 결과는 [계약·기준선 기록](frontend-redesign-f00-audit.md), 현재 통합 결과와 미연결·미실행 항목은 [F09 대조](frontend-redesign-f09-report.md)에 있다.
 
 ## 1. 목표·범위·현재 상태
 
