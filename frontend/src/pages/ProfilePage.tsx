@@ -3,7 +3,9 @@ import { profileApi } from '../api';
 import { ApiError } from '../api/client';
 import type { Profile, ProfileInput } from '../api/profile';
 import { EmptyState, ErrorState, LoadingState, SuccessState } from '../components/States';
-import profileCardArt from '../assets/illustrations/profile-card.png';
+import profileCardArt from '../assets/redesign/cur-07-profile.png';
+import skillArt from '../assets/redesign/ext-img-02-skill-levels.png';
+import './profile.css';
 
 const blank = (email: string): ProfileInput => ({ email, name: '', desiredRole: null, careerLevel: null,
   desiredLocation: null, introduction: null, education: null, certifications: null });
@@ -43,18 +45,27 @@ export function ProfilePage({ email, onEmailChange }: { email: string; onEmailCh
       education: optional(form.education ?? ''), certifications: optional(form.certifications ?? '') };
     try {
       const value = await profileApi.put(input);
-      setProfile(value); setForm(value); setSaved(true); onEmailChange(value.email);
+      setProfile(value); setForm(value); onEmailChange(value.email);
+      try {
+        const confirmed = await profileApi.get();
+        setProfile(confirmed); setForm(confirmed); setSaved(true);
+      } catch (failure) {
+        setSaveError(`프로필은 저장됐지만 재조회로 확인하지 못했습니다. ${failure instanceof Error ? failure.message : ''}`);
+      }
     } catch (error) {
       setSaveError(error instanceof Error ? error.message : '프로필을 저장하지 못했습니다.');
     } finally { setSaving(false); }
   }
 
   return <section className="card profile-card">
+    <div className="profile-hero"><div><span className="eyebrow">MY PROFILE</span><h2>나의 프로필</h2>
+      <p>기본 정보와 관심 직무를 기록하고 기술 경험을 관리하세요.</p></div>
+      <img src={profileCardArt} alt="" aria-hidden="true" width="150" height="150" /></div>
     {loading ? <LoadingState message="프로필을 불러오고 있습니다." /> : loadError
       ? <ErrorState message={loadError} onRetry={() => setRetry(value => value + 1)} />
       : <>
         {!profile && <EmptyState title="아직 프로필이 없습니다." message="기본 정보를 입력해 첫 프로필을 저장해 주세요." />}
-        <div className="profile-intro-art"><p className="profile-intro">{profile ? '저장된 취업 정보를 수정할 수 있습니다.' : '이름과 이메일을 입력하고 필요한 취업 정보를 추가하세요.'}</p><img src={profileCardArt} alt="" aria-hidden="true" width="96" height="96" /></div>
+        <div className="profile-intro-art"><p className="profile-intro">{profile ? '저장된 취업 정보를 수정할 수 있습니다.' : '이름과 이메일을 입력하고 필요한 취업 정보를 추가하세요.'}</p><img src={skillArt} alt="" aria-hidden="true" width="80" height="80" /></div>
         {saved && <SuccessState compact title="프로필을 저장했습니다." message="저장된 정보를 다시 불러와 확인할 수 있습니다." />}
         <form onSubmit={submit} className="profile-form">
           <div className="profile-grid">

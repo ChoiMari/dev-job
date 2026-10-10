@@ -1,4 +1,6 @@
 .companies-page { display: grid; gap: 20px; }
+.company-hero { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 16px; border-radius: 12px; background: linear-gradient(115deg, #f2ecfa, #f7fbf8); }
+.company-hero img { width: min(25vw, 140px); height: auto; object-fit: contain; }
 .companies-page h2, .companies-page p { margin: 0; }
 .company-actions, .company-list-heading { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .company-list-heading h2 { font-size: 1.125rem; overflow-wrap: anywhere; }
@@ -17,3 +19,4 @@
 .company-help { padding: 12px 16px; background: var(--accent); border-radius: 8px; }
 .company-delete { display: grid; gap: 12px; padding: 16px; border: 1px solid var(--input-border); border-radius: 8px; }
 @media (max-width: 599px) { .company-list > li { padding: 16px; } }
+@media (max-width: 370px) { .company-hero img { display: none; } }

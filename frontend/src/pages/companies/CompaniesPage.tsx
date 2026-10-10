@@ -5,6 +5,7 @@ import { companyLink, createCompaniesApi } from '../../api/companies';
 import type { CompanyInput, CompanyPage, CompanyStatus, InterestedCompany } from '../../api/companies';
 import { Badge } from '../../components/PixelArt';
 import { EmptyState, ErrorState, LoadingState, SuccessState } from '../../components/States';
+import companyArt from '../../assets/redesign/ext-img-05a-companies.png';
 import './companies.css';
 
 const companies = createCompaniesApi(apiRequest);
@@ -41,6 +42,8 @@ function CompanyList() {
     return () => controller.abort();
   }, [page, retry]);
   return <section className="card companies-page">
+    <div className="company-hero"><div><span className="eyebrow">COMPANY NOTES</span><h2>관심 기업</h2>
+      <p>나만의 기업 조사 기록을 관리하세요.</p></div><img src={companyArt} alt="" aria-hidden="true" width="140" height="140" /></div>
     <div className="company-actions"><Badge tone="primary" icon="grid">나의 기업 기록</Badge>
       <a className="button-link button-primary" href="#/companies/new">관심 기업 등록</a></div>
     <p>관심 기업을 따로 기록하고 메모와 관리 상태를 정리하세요. 채용공고의 회사와 자동으로 연결되지 않습니다.</p>

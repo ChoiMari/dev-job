@@ -1,0 +1,7 @@
+.profile-card { display: grid; gap: 20px; }
+.profile-hero { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 16px; border-radius: 12px; background: linear-gradient(115deg, #f1ebfa, #f7fbf8); }
+.profile-hero h2 { margin: 6px 0; font-size: 1.65rem; }
+.profile-hero p { margin: 0; }
+.profile-hero img { width: min(24vw, 150px); height: auto; object-fit: contain; }
+.profile-intro-art img { object-fit: contain; }
+@media (max-width: 370px) { .profile-hero img { display: none; } }

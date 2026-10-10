@@ -1,0 +1,27 @@
+.interviews-page { max-width: 1000px; margin: 0 auto; display: grid; gap: 20px; }
+.interviews-hero { display: flex; align-items: center; justify-content: space-between; gap: 24px; background: linear-gradient(115deg, #f2ecfa, #f7fbf8); }
+.interviews-hero h2 { margin: 6px 0; font-size: 1.65rem; }
+.interviews-hero p { max-width: 56ch; margin: 0 0 20px; }
+.interviews-hero img { width: min(28vw, 180px); height: auto; object-fit: contain; }
+.interviews-content h2 { margin-top: 0; }
+.interviews-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; }
+.interviews-list li { padding: 18px; border: 1px solid var(--border); border-radius: 10px; min-width: 0; }
+.interviews-list h3 { margin: 8px 0 4px; overflow-wrap: anywhere; }
+.interviews-list p { margin: 0 0 8px; color: var(--muted); }
+.interviews-status { display: inline-block; padding: 4px 10px; border-radius: 999px; background: #e8f5ee; color: #17563a; font-size: .8rem; font-weight: 700; }
+.interviews-status.is-cancelled { background: #f4e8eb; color: #883c50; }
+.interviews-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 18px; }
+.interviews-actions button { min-height: 44px; }
+.interviews-editor { max-width: 760px; margin: 0 auto; display: grid; gap: 18px; }
+.interviews-editor h2 { margin: 0; }
+.interviews-form, .interviews-form fieldset { display: grid; gap: 16px; }
+.interviews-form fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+.interviews-form label { display: grid; gap: 6px; font-weight: 650; }
+.interviews-form input { width: 100%; min-width: 0; min-height: 44px; padding: 10px 12px; border: 1px solid var(--input-border); border-radius: 8px; background: var(--surface); color: var(--text); font: inherit; }
+.interviews-help { margin: 0; font-size: .875rem; color: var(--muted); }
+.interviews-detail h3 { font-size: 1.4rem; overflow-wrap: anywhere; }
+.interviews-detail dl { display: grid; gap: 14px; }
+.interviews-detail dt { font-weight: 700; }
+.interviews-detail dd { margin: 4px 0 0; overflow-wrap: anywhere; }
+@media (max-width: 600px) { .interviews-hero { align-items: flex-start; } .interviews-hero img { width: 90px; } }
+@media (max-width: 370px) { .interviews-hero img { display: none; } }

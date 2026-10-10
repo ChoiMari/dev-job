@@ -6,29 +6,11 @@ import type { Todo, TodoFilter, TodoInput, TodoPage } from '../../api/todos';
 import { Badge } from '../../components/PixelArt';
 import { EmptyState, ErrorState, LoadingState, SuccessState } from '../../components/States';
 import todoArt from '../../assets/redesign/ext-img-03-personal-todos.png';
+import { deviceZone, dueFromLocal, dueLabel, localDueInput } from './todoTime';
 import './todos.css';
 
 const todos = createTodosApi(apiRequest);
-const deviceZone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Seoul';
 const message = (error: unknown) => error instanceof Error ? error.message : '할 일을 처리하지 못했습니다.';
-const two = (value: number) => String(value).padStart(2, '0');
-export function dueLabel(todo: Todo) {
-  if (!todo.dueAt || !todo.dueTimeZone) return '기한 없음';
-  return `${new Intl.DateTimeFormat('ko-KR', { dateStyle: 'medium', timeStyle: 'short', timeZone: todo.dueTimeZone }).format(new Date(todo.dueAt))} · ${todo.dueTimeZone}`;
-}
-export function localDueInput(value: string | null) {
-  if (!value) return '';
-  const date = new Date(value);
-  return `${date.getFullYear()}-${two(date.getMonth() + 1)}-${two(date.getDate())}T${two(date.getHours())}:${two(date.getMinutes())}`;
-}
-export function dueFromLocal(value: string): Pick<TodoInput, 'dueAt' | 'dueTimeZone'> {
-  if (!value) return { dueAt: null, dueTimeZone: null };
-  const date = new Date(value);
-  if (!Number.isFinite(date.getTime()) || localDueInput(date.toISOString()) !== value) throw new Error('기한 날짜와 시각을 확인해 주세요.');
-  const minutes = -date.getTimezoneOffset();
-  const offset = `${minutes < 0 ? '-' : '+'}${two(Math.floor(Math.abs(minutes) / 60))}:${two(Math.abs(minutes) % 60)}`;
-  return { dueAt: `${value}:00${offset}`, dueTimeZone: deviceZone };
-}
 
 export function TodosPage({ location }: { location: string }) {
   const path = location.split('?')[0];
@@ -114,7 +96,7 @@ function TodoEditor({ id }: { id?: number }) {
   const mounted = useRef(true);
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
   function accept(value: Todo) {
-    setTodo(value); setTitle(value.title); setDescription(value.description ?? ''); setDueLocal(localDueInput(value.dueAt));
+    setTodo(value); setTitle(value.title); setDescription(value.description ?? ''); setDueLocal(localDueInput(value.dueAt, value.dueTimeZone ?? deviceZone));
   }
   useEffect(() => {
     if (!id) return;
@@ -130,7 +112,7 @@ function TodoEditor({ id }: { id?: number }) {
     if (!title.trim()) { setError('제목을 입력해 주세요.'); return; }
     let due: Pick<TodoInput, 'dueAt' | 'dueTimeZone'>;
     try {
-      due = todo && dueLocal === localDueInput(todo.dueAt)
+      due = todo && dueLocal === localDueInput(todo.dueAt, todo.dueTimeZone ?? deviceZone)
         ? { dueAt: todo.dueAt, dueTimeZone: todo.dueTimeZone }
         : dueFromLocal(dueLocal);
     } catch (failure) { setError(message(failure)); return; }
@@ -171,7 +153,7 @@ function TodoEditor({ id }: { id?: number }) {
           <label>제목 *<input required maxLength={200} value={title} onChange={event => setTitle(event.target.value)} /></label>
           <label>설명<textarea maxLength={2000} rows={4} value={description} onChange={event => setDescription(event.target.value)} /></label>
           <label>기한 · 선택<input type="datetime-local" value={dueLocal} onChange={event => setDueLocal(event.target.value)} /></label>
-          <p className="todos-help">기한은 현재 기기 시간대({deviceZone})로 저장합니다. 비워 두면 기한이 없습니다.</p>
+          <p className="todos-help">새로 입력한 기한은 현재 기기 시간대({deviceZone})로 저장합니다.{todo && ` 현재 저장 시간대: ${todo.dueTimeZone ?? '없음'}.`} 비워 두면 기한이 없습니다.</p>
         </fieldset><div className="todo-actions"><button className="button-primary" type="submit" disabled={busy}>{busy ? '저장 중…' : '할 일 저장'}</button>
           {id && <button type="button" disabled={busy} onClick={() => { if (todo) accept(todo); setEditing(false); setError(''); }}>수정 취소</button>}</div></form>
           : todo && <div className="todo-detail"><h3>{todo.title}</h3>

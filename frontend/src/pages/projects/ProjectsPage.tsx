@@ -8,7 +8,7 @@ import type { Skill, SkillPage } from '../../api/skills';
 import { Badge } from '../../components/PixelArt';
 import { EmptyState, ErrorState, LoadingState, SuccessState } from '../../components/States';
 import './projects.css';
-import projectFolderArt from '../../assets/illustrations/project-folder.png';
+import projectFolderArt from '../../assets/redesign/cur-08-projects.png';
 
 const projects = createProjectsApi(apiRequest);
 const skills = createSkillsApi(apiRequest);
@@ -149,7 +149,7 @@ function ProjectEditor({ id }: { id?: number }) {
           {projectLink(project.projectUrl) && <a className="button-link" href={projectLink(project.projectUrl)} target="_blank" rel="noopener noreferrer">프로젝트 URL 보기 (새 창)</a>}
           <div className="project-actions"><button disabled={busy} onClick={() => { setEditing(true); setConfirmDelete(false); setSuccess(''); setError(''); }}>프로젝트 수정</button>
             <button disabled={busy} onClick={() => setConfirmDelete(true)}>프로젝트 삭제</button></div>
-          {confirmDelete && <div className="project-delete" role="group" aria-label="프로젝트 삭제 확인"><p>“{project.name}” 프로젝트와 연결된 기술을 삭제할까요?</p>
+          {confirmDelete && <div className="project-delete" role="group" aria-label="프로젝트 삭제 확인"><p>“{project.name}” 프로젝트와 프로젝트 기술 연결을 삭제할까요? 보유 기술은 유지됩니다.</p>
             <div className="project-actions"><button disabled={busy} onClick={() => void remove()}>{busy ? '삭제 중…' : '삭제 확인'}</button>
               <button disabled={busy} onClick={() => setConfirmDelete(false)}>삭제 취소</button></div></div>}
         </>}
