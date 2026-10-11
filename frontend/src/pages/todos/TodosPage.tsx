@@ -2,11 +2,11 @@ import { useEffect, useRef, useState } from 'react';
 import { apiRequest } from '../../api';
 import { ApiError } from '../../api/client';
 import { createTodosApi } from '../../api/todos';
-import type { Todo, TodoFilter, TodoInput, TodoPage } from '../../api/todos';
+import type { Todo, TodoInput } from '../../api/todos';
 import { Badge } from '../../components/PixelArt';
 import { EmptyState, ErrorState, LoadingState, SuccessState } from '../../components/States';
-import todoArt from '../../assets/redesign/ext-img-03-personal-todos.png';
 import { deviceZone, dueFromLocal, dueLabel, localDueInput } from './todoTime';
+import { TodoCalendar } from './TodoCalendar';
 import './todos.css';
 
 const todos = createTodosApi(apiRequest);
@@ -14,68 +14,13 @@ const message = (error: unknown) => error instanceof Error ? error.message : '�
 
 export function TodosPage({ location }: { location: string }) {
   const path = location.split('?')[0];
-  if (path === '/todos') return <TodoList />;
+  if (path === '/todos') return <TodoCalendar />;
   if (path === '/todos/new') return <TodoEditor />;
   const match = /^\/todos\/([1-9]\d*)$/.exec(path);
   const id = match ? Number(match[1]) : 0;
   return Number.isSafeInteger(id) && id > 0 ? <TodoEditor id={id} /> : <section className="card">
-    <EmptyState title="할 일 주소를 확인해 주세요." /><a className="button-link" href="#/todos">할 일 목록으로</a>
+    <EmptyState title="할 일 주소를 확인해 주세요." /><a className="button-link" href="#/todos">할 일 달력으로</a>
   </section>;
-}
-
-function TodoList() {
-  const [page, setPage] = useState(0);
-  const [filter, setFilter] = useState<TodoFilter>('open');
-  const [result, setResult] = useState<TodoPage>();
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [actionError, setActionError] = useState('');
-  const [busyId, setBusyId] = useState<number>();
-  const [retry, setRetry] = useState(0);
-  const busy = useRef(false);
-  useEffect(() => {
-    const controller = new AbortController(); setLoading(true); setError(''); setResult(undefined);
-    todos.list(page, filter, controller.signal).then(value => {
-      if (controller.signal.aborted) return;
-      if (page > 0 && !value.items.length && value.totalElements <= page * value.size) setPage(Math.max(0, page - 1));
-      else setResult(value);
-    }).catch(failure => { if (!controller.signal.aborted) setError(message(failure)); })
-      .finally(() => { if (!controller.signal.aborted) setLoading(false); });
-    return () => controller.abort();
-  }, [page, filter, retry]);
-  async function toggle(todo: Todo) {
-    if (busy.current) return;
-    busy.current = true; setBusyId(todo.id); setActionError('');
-    try { await todos.complete(todo.id, !todo.completed); setRetry(value => value + 1); }
-    catch (failure) { setActionError(message(failure)); }
-    finally { busy.current = false; setBusyId(undefined); }
-  }
-  return <div className="todos-page">
-    <section className="card todos-intro"><div><span className="eyebrow">MY NEXT STEP</span><h2>내가 등록한 할 일</h2>
-      <p>취업 준비를 작은 할 일로 나눠 기록하세요. 지원 기록에서 나온 다음 행동과 따로 관리됩니다.</p>
-      <a className="button-link button-primary" href="#/todos/new">할 일 등록</a></div>
-      <img src={todoArt} alt="" aria-hidden="true" width="180" height="180" /></section>
-    <section className="card todos-list-card" aria-labelledby="todos-list-title">
-      <div className="todos-list-heading"><h2 id="todos-list-title">할 일 목록</h2><span>기한이 빠른 순</span></div>
-      <div className="todos-filters" role="group" aria-label="완료 상태 필터">
-        {([['open', '미완료'], ['done', '완료'], ['all', '전체']] as const).map(([value, label]) =>
-          <button key={value} type="button" aria-pressed={filter === value} onClick={() => { setFilter(value); setPage(0); setActionError(''); }}>{label}</button>)}
-      </div>
-      {actionError && <p role="alert" className="form-error">{actionError}</p>}
-      {loading ? <LoadingState message="할 일을 불러오고 있습니다." /> : error ? <ErrorState message={error} onRetry={() => setRetry(value => value + 1)} />
-        : result && <>
-          {result.items.length ? <ul className="todos-list">{result.items.map(todo => <li key={todo.id} className={todo.completed ? 'is-done' : ''}>
-            <div className="todo-main"><a href={`#/todos/${todo.id}`}>{todo.title}</a><span>{dueLabel(todo)}</span></div>
-            <div className="todo-actions"><Badge tone={todo.completed ? 'success' : 'primary'} icon={todo.completed ? 'check' : 'clock'}>{todo.completed ? '완료' : '진행 중'}</Badge>
-              <button type="button" disabled={busyId !== undefined} onClick={() => void toggle(todo)}>{busyId === todo.id ? '처리 중…' : todo.completed ? '완료 취소' : '완료'}</button></div>
-          </li>)}</ul> : <EmptyState title={page ? '이 페이지에 할 일이 없습니다.' : filter === 'done' ? '완료한 할 일이 없습니다.' : '표시할 할 일이 없습니다.'}
-            message={filter === 'open' ? '할 일을 등록하거나 완료한 항목은 완료 탭에서 확인하세요.' : undefined} />}
-          <div className="todos-pagination"><button type="button" disabled={page === 0} onClick={() => setPage(value => value - 1)}>이전</button>
-            <span role="status">총 {result.totalElements}건 · {page + 1}페이지</span>
-            <button type="button" disabled={(page + 1) * result.size >= result.totalElements} onClick={() => setPage(value => value + 1)}>다음</button></div>
-        </>}
-    </section>
-  </div>;
 }
 
 function TodoEditor({ id }: { id?: number }) {
@@ -141,7 +86,7 @@ function TodoEditor({ id }: { id?: number }) {
     finally { inFlight.current = false; if (mounted.current) setBusy(false); }
   }
   return <section className="card todos-editor">
-    <a className="button-link" href="#/todos">← 할 일 목록</a>
+    <a className="button-link" href="#/todos">← 할 일 달력</a>
     <div className="todos-list-heading"><div><span className="eyebrow">MY TASK</span><h2>{id ? '할 일 상세' : '새 할 일'}</h2></div></div>
     {loading ? <LoadingState message="할 일을 불러오고 있습니다." /> : loadError
       ? loadStatus === 404 || loadStatus === 403 ? <EmptyState title={loadStatus === 404 ? '할 일을 찾을 수 없습니다.' : '접근 권한이 없습니다.'} message={loadError} />

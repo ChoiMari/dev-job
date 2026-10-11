@@ -37,10 +37,20 @@ const groups = [
   ] },
 ] as const;
 
+// Lucide ArrowLeft/ArrowRight paths, Copyright Lucide Icons and Contributors (ISC).
+function SidebarArrow({ direction }: { direction: 'left' | 'right' }) {
+  return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"
+    strokeLinejoin="round" aria-hidden="true" focusable="false">
+    {direction === 'right' ? <><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></>
+      : <><path d="M19 12H5" /><path d="m12 19-7-7 7-7" /></>}
+  </svg>;
+}
+
 export function Layout({ title, path, children, user, onLogout, loggingOut }: {
   title: string; path: string; children: ReactNode; user: CurrentUser; onLogout: () => void; loggingOut: boolean;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [character, setCharacter] = useState<CharacterState>();
   useEffect(() => {
     const controller = new AbortController();
@@ -58,7 +68,7 @@ export function Layout({ title, path, children, user, onLogout, loggingOut }: {
   const appearance = character && characterAppearanceUrl(character.equipment);
   const bunnyOutfit = character?.equipment.OUTFIT === 'BUNNY';
   const characterImage = appearance ? <img src={appearance} alt="" aria-hidden="true" /> : <PixelIcon name="profile" />;
-  return <div className="app-layout">
+  return <div className={`app-layout${sidebarCollapsed ? ' is-sidebar-collapsed' : ''}`}>
     <a className="skip-link" href="#main-content" onClick={event => {
       event.preventDefault();
       document.getElementById('main-content')?.focus();
@@ -72,13 +82,23 @@ export function Layout({ title, path, children, user, onLogout, loggingOut }: {
       </div>
     </header>
     <aside className="sidebar">
-      <button className="menu-toggle" type="button" aria-expanded={menuOpen} aria-controls="main-navigation" onClick={() => setMenuOpen(value => !value)}>
-        <PixelIcon name="menu" />{menuOpen ? '메뉴 닫기' : '메뉴 열기'}
-      </button>
+      <div className="sidebar-toolbar">
+        <span className="sidebar-toolbar-title">메뉴</span>
+        <button className="sidebar-collapse-toggle" type="button" aria-expanded={!sidebarCollapsed}
+          aria-controls="main-navigation" aria-label={sidebarCollapsed ? '사이드바 펼치기' : '사이드바 접기'}
+          onClick={() => setSidebarCollapsed(value => !value)}>
+          <SidebarArrow direction={sidebarCollapsed ? 'right' : 'left'} />
+        </button>
+        <button className="menu-toggle" type="button" aria-expanded={menuOpen} aria-controls="main-navigation"
+          aria-label={menuOpen ? '메뉴 닫기' : '메뉴 열기'} onClick={() => setMenuOpen(value => !value)}>
+          <SidebarArrow direction={menuOpen ? 'left' : 'right'} />
+        </button>
+      </div>
       <nav id="main-navigation" className={menuOpen ? 'is-open' : ''} aria-label="주요 메뉴">
         {groups.map(group => <div className="nav-group" key={group.label}>
-          {group.links.map(link => <a key={link.href} href={link.href} onClick={() => setMenuOpen(false)} aria-current={link.active(path) ? 'page' : undefined}>
-            <PixelIcon name={link.icon} />{link.label}
+          {group.links.map(link => <a key={link.href} href={link.href} onClick={() => setMenuOpen(false)} aria-label={link.label}
+            title={sidebarCollapsed ? link.label : undefined} aria-current={link.active(path) ? 'page' : undefined}>
+            <PixelIcon name={link.icon} /><span className="sidebar-link-label">{link.label}</span>
           </a>)}
         </div>)}
       </nav>

@@ -116,7 +116,7 @@ EXT-IMG-06E·06F·06G는 각각 민트·복숭아·기본 의상만 보여 주�
 | `redesign/cur-05-saved-jobs.png` | 관심 공고 목록·개인 상세 | 너비 112~210×150px, 모바일 72px, 장식 |
 | `redesign/cur-06-applications.png` | 지원 목록·상세 | 너비 112~200×150px, 모바일 64px, 장식 |
 | `redesign/cur-07-profile.png`, `redesign/ext-img-02-skill-levels.png` | 프로필·기술 | 각각 최대 150px, 96px(모바일 64px), 장식 |
-| `redesign/cur-08-projects.png`, `redesign/ext-img-03-personal-todos.png`, `redesign/ext-img-05a-companies.png` | 프로젝트·할 일·기업 | 각각 96px(모바일 64px), 최대 180px(모바일 96px), 최대 140px(370px 이하 숨김), 장식 |
+| `redesign/cur-08-projects.png`, `redesign/cur-24-todo-checklist-companion.png`, `redesign/ext-img-05a-companies.png` | 프로젝트·할 일·기업 | 각각 96px(모바일 64px), 104px(모바일 86px), 최대 140px(370px 이하 숨김), 장식 |
 | `redesign/cur-09-analysis.png`, `redesign/ext-img-04-expanded-analytics.png`, `redesign/ext-img-05d-learning.png` | Skill Gap·시장 분석·학습 목표 | 각각 96→64px, 112→72px, 112→72px, 장식. 수치는 HTML 텍스트/표 |
 | `redesign/cur-13-character-backdrop.png`, `redesign/ext-img-06b-growth-celebration.png` | 캐릭터 배경·보상 수령 | 각각 너비 최대 190px/높이 최대 235px(모바일 125px), 60×90px, 장식 |
 | `character/character-*.png`, `character/thumb-*.png`, `character/ext-img-06{e,f,g}-outfit-*.png` | 장착 결과·카탈로그 | 완성 모습 최대 280px 너비·2:3, 썸네일 76px(모바일 64px). 완성 모습의 `role="img"`에 장착 상태 라벨, 내부 이미지 빈 `alt`; 목록 버튼에 품목명·잠금 상태 텍스트 |

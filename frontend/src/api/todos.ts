@@ -36,17 +36,17 @@ export function createTodosApi(request: ReturnType<typeof createApiClient>) {
     return request(url, { method, body, csrfToken: csrf.token });
   }
   return {
-    list: async (page = 0, filter: TodoFilter = 'all', signal?: AbortSignal): Promise<TodoPage> => {
-      if (!nonnegative(page)) throw new TypeError('페이지 번호를 확인해 주세요.');
+    list: async (page = 0, filter: TodoFilter = 'all', signal?: AbortSignal, size = 20): Promise<TodoPage> => {
+      if (!nonnegative(page) || !positive(size) || size > 100) throw new TypeError('페이지 번호와 크기를 확인해 주세요.');
       const completed = filter === 'all' ? undefined : filter === 'done';
-      const value = await request('/me/todos', { query: { page, size: 20, completed }, signal });
+      const value = await request('/me/todos', { query: { page, size, completed }, signal });
       if (!value || typeof value !== 'object' || !('items' in value) || !Array.isArray(value.items)
-        || !('page' in value) || value.page !== page || !('size' in value) || value.size !== 20
+        || !('page' in value) || value.page !== page || !('size' in value) || value.size !== size
         || !('totalElements' in value) || !nonnegative(value.totalElements)
-        || value.totalElements < value.items.length || value.items.length > 20 || !value.items.every(isTodo)) return invalid();
+        || value.totalElements < value.items.length || value.items.length > size || !value.items.every(isTodo)) return invalid();
       const items = value.items as Todo[];
       if (new Set(items.map(item => item.id)).size !== items.length) return invalid();
-      return { items, page, size: 20, totalElements: value.totalElements };
+      return { items, page, size, totalElements: value.totalElements };
     },
     get: async (id: number, signal?: AbortSignal): Promise<Todo> => {
       const value = await request(path(id), { signal });

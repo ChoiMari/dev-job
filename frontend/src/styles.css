@@ -237,6 +237,9 @@ body { background: var(--background); }
 .sidebar-companion .pixel-character { width: 48px; height: 48px; }
 .sidebar-companion p { margin: 0; color: var(--sidebar-muted); font-size: .72rem; line-height: 1.55; }
 .sidebar-companion strong { color: var(--sidebar-text); }
+.sidebar-toolbar { display: flex; align-items: center; justify-content: space-between; min-height: 46px; margin-bottom: 12px; padding: 0 2px 8px 12px; border-bottom: 1px solid #5b5070; }
+.sidebar-toolbar-title { color: var(--sidebar-muted); font-size: .72rem; font-weight: 700; letter-spacing: .08em; }
+.sidebar-collapse-toggle { display: none; }
 .main-content { padding: 36px clamp(24px, 4vw, 64px) 64px; }
 .page-heading { max-width: 1280px; margin: 0 auto 26px; }
 .page-heading h1 { margin: 4px 0 0; font-size: clamp(1.65rem, 2.5vw, 2.2rem); letter-spacing: -.045em; }
@@ -309,13 +312,32 @@ input, select, textarea { accent-color: var(--primary); }
 .public-home-features h2 { margin: 0 0 8px; }
 .public-home-features p { margin: 0; }
 .public-home .button-primary { color: #fff; }
+@media (min-width: 1024px) {
+  .sidebar { padding-top: 16px; }
+  .sidebar-collapse-toggle { display: grid; place-items: center; width: 40px; height: 40px; min-height: 40px; padding: 0; border: 0; border-radius: 10px; background: transparent; color: var(--sidebar-muted); cursor: pointer; }
+  .sidebar-collapse-toggle:hover { background: var(--sidebar-active); color: #fff; }
+  .sidebar-collapse-toggle:focus-visible { outline: 2px solid #c8acf1; outline-offset: 2px; }
+  .sidebar-collapse-toggle svg { width: 18px; height: 18px; }
+  .app-layout.is-sidebar-collapsed { grid-template-columns: 72px minmax(0, 1fr); }
+  .is-sidebar-collapsed .sidebar { padding-left: 12px; padding-right: 12px; }
+  .is-sidebar-collapsed .sidebar-toolbar { justify-content: center; padding: 0 0 8px; }
+  .is-sidebar-collapsed .sidebar-toolbar-title { display: none; }
+  .is-sidebar-collapsed .sidebar nav a { justify-content: center; padding: 9px; }
+  .is-sidebar-collapsed .sidebar nav a .pixel-icon { width: 20px; height: 20px; flex: 0 0 auto; }
+  .is-sidebar-collapsed .sidebar-link-label, .is-sidebar-collapsed .sidebar-companion-info { display: none; }
+  .is-sidebar-collapsed .sidebar-companion { justify-content: center; padding-left: 0; padding-right: 0; }
+  .is-sidebar-collapsed .sidebar-companion-image { width: 42px; height: 42px; }
+}
 @media (max-width: 1023px) {
   .app-layout { grid-template: auto auto 1fr / minmax(0, 1fr); }
   .header { position: relative; min-height: 70px; }
-  .sidebar { position: relative; top: auto; height: auto; overflow: visible; padding: 10px 24px; }
-  .sidebar .menu-toggle { color: var(--sidebar-text); background: var(--sidebar-active); border-color: var(--sidebar-muted); }
+  .sidebar { position: relative; top: auto; height: auto; overflow: visible; padding: 6px 24px; }
+  .sidebar .menu-toggle { display: grid; place-items: center; width: 40px; height: 40px; min-height: 40px; padding: 0; border: 0; border-radius: 10px; background: transparent; color: var(--sidebar-muted); }
+  .sidebar .menu-toggle:hover { background: var(--sidebar-active); color: #fff; }
+  .sidebar .menu-toggle:focus-visible { outline: 2px solid #c8acf1; outline-offset: 2px; }
+  .sidebar .menu-toggle svg { width: 18px; height: 18px; }
   .sidebar nav { display: none; }
-  .sidebar nav.is-open { display: grid; }
+  .sidebar nav.is-open { display: grid; align-self: stretch; }
   .nav-group { margin: 12px 0; }
   .sidebar-companion { display: none; }
   .character-customize { grid-template-columns: 1fr; }
@@ -326,7 +348,7 @@ input, select, textarea { accent-color: var(--primary); }
   .account-controls { width: 100%; margin-left: 0; }
   .account-email { display: block; flex: 1; max-width: none; }
   .account-controls button { font-size: .72rem; }
-  .sidebar { padding: 9px 16px; }
+  .sidebar { padding: 6px 16px; }
   .main-content { padding: 22px 16px 48px; }
   .page-heading { margin-bottom: 18px; }
   .character-welcome { flex-direction: column-reverse; align-items: flex-start; padding: 24px; }
