@@ -1,12 +1,16 @@
 # Frontend 픽셀 아트 에셋 지도
 
-`docs/ui-spec.md`의 크림 배경, 라벤더 중심 색상, 절제된 픽셀 아트 기준에 맞춰 화면 머리말을 보조한다. 기존 `PixelCharacter`와 상태 아이콘은 유지한다. 첫 묶음 3개(대시보드·공고 목록·지원 목록), 두 번째 묶음 4개(관심 공고·프로젝트·역량·시장), 세 번째 묶음 4개(인증·프로필·공고 상세·지원 상세)에 대시보드 배너 1개를 더했다. 아래 크기는 파일 해상도와 화면 표시 크기를 구분한다.
+`docs/ui-spec.md`의 크림 배경, 라벤더 중심 색상, 절제된 픽셀 아트 기준에 맞춰 화면 머리말을 보조한다. 상태 아이콘과 화면별 장식 이미지를 유지하고, 인증 후 Header·Sidebar의 캐릭터는 장착 상태에 연결한다. 아래 크기는 파일 해상도와 화면 표시 크기를 구분한다.
 
 | 파일 경로 | 화면 경로 · 컴포넌트 | 표시 목적 | 원본 · 권장 표시 크기 | 투명 배경 | 접근성 처리 | 제작·교체 시 주의사항 |
 | --- | --- | --- | --- | --- | --- | --- |
+| `frontend/src/assets/redesign/brand-devjob-wordmark-dark.png` | 인증 후 공통 Header · `Layout` | 브랜드 로고 | Header 너비 164px | 예 | 링크에 `DevJob 대시보드` 이름 제공 | 기존 로고 이미지 재사용. Header의 중복 화면 제목을 제거한다. |
+| `frontend/src/assets/character/character-*.png` | 공통 Header 아바타·Sidebar 하단 · `Layout` | 사용자 장착 상태의 캐릭터 | 36×36px·50×50px 영역에서 원본을 각각 68px·78px 너비로 렌더링, 토끼 의상은 귀를 포함하도록 44px·64px 너비 | 예 | 이미지 자체는 장식, 링크 이름에 캐릭터·레벨·EXP 제공 | `GET /api/me/character`의 장착 정보로 선택한다. 작은 이미지를 확대하지 않고 원본을 직접 렌더링한다. 조회 실패 시 프로필 아이콘을 표시한다. |
+| `frontend/src/assets/redesign/cur-16-dashboard-developer.png` | 인증 후 `#/` · `DashboardPage` 히어로 | 개발 작업 중인 여성의 뒷모습 | 배너 왼쪽 너비 약 34%, 900px 이하 높이 220px·650px 이하 180px | 아니오 | 집계 카드가 정보를 전달하므로 `alt=""`, `aria-hidden="true"` | 장면의 코드 내용은 실제 데이터가 아니다. Sidebar 배경에는 사용하지 않는다. |
+| `frontend/src/assets/redesign/cur-17-dashboard-profile.png`, `cur-18-dashboard-projects.png`, `cur-19-dashboard-skills.png` | 인증 후 `#/` · `DashboardPage` 바로가기 | 프로필·프로젝트·역량의 단순 픽셀 장식 | 각각 76×76px | 예 | 인접 텍스트와 중복되므로 `alt=""`, `aria-hidden="true"` | 수치·상태를 이미지에 담지 않는다. |
+| `frontend/src/assets/redesign/cur-03-next-action.png` | 인증 후 `#/` · `DashboardPage` 할 일 머리말 | 할 일 보조 장식 | 52×52px | 예 | 인접 텍스트와 중복되므로 `alt=""`, `aria-hidden="true"` | 실제 할 일 상태를 이미지에 담지 않는다. |
 | `frontend/src/assets/redesign/cur-15-developer-at-work.png` | 비로그인 `#/` · `PublicHome` 히어로 | 여성 개발자의 작업 뒷모습으로 개발자 취업 준비 맥락 전달 | 1672×941px · 히어로 가용 너비 100%, 비율 유지 | 아니오 | 인접한 제목·설명이 의미를 전달하므로 `alt=""`, `aria-hidden="true"` | 기존 로고를 유지한다. 이미지가 실패해도 CSS 배경과 소개·로그인/회원가입 메뉴가 남는다. 장면의 공고·코드는 실제 데이터가 아니다. |
 | `frontend/src/assets/illustrations/dashboard-desk.png` | `#/` · `DashboardPage` 다음 행동 머리말 | 취업 준비 행동의 가벼운 시각 단서 | 192×192px · 데스크톱 64×64px, 모바일 48×48px | 예 | 주변 `다음 행동` 제목이 의미를 전달하므로 `alt=""`, `aria-hidden="true"` | 생성 원본을 최근접 이웃으로 축소한 PNG. 텍스트·수치·상태를 이미지에 넣지 말 것. 기존 캐릭터와 시각적 비중을 경쟁시키지 말 것. |
-| `frontend/src/assets/illustrations/dashboard-hero.webp` | `#/` · `DashboardPage` 첫 화면 배너 | 취업 준비 공간의 따뜻한 분위기와 픽셀 아트 콘셉트 전달 | 708×520px · 데스크톱 최대 460px 너비, 모바일 최대 225px 너비 | 예 | 문구가 별도로 있으므로 `alt=""`, `aria-hidden="true"` | Image Gen 원본을 내용에 맞게 자르고 최근접 이웃으로 축소한 WebP(약 244KB). 텍스트·실제 공고/지원 데이터·성장 상태를 넣지 말고 모바일에서 버튼을 가리지 않도록 배치할 것. |
 | `frontend/src/assets/illustrations/job-search.png` | `#/jobs` · `JobsPage` 검색 폼 머리말 | 공고 탐색의 시각 단서 | 192×192px · 데스크톱 96×96px, 모바일 64×64px | 예 | 검색 폼과 제목에 정보가 있으므로 `alt=""`, `aria-hidden="true"` | 종이 위의 선은 읽을 수 있는 글자가 아니다. 실제 공고 내용이나 검색 결과를 그림으로 암시하지 말 것. |
 | `frontend/src/assets/illustrations/application-cards.png` | `#/applications` · `ApplicationsPage` 소개 카드 | 지원 기록 관리의 시각 단서 | 192×192px · 데스크톱 96×96px, 모바일 64×64px | 예 | 제목·설명과 중복되므로 `alt=""`, `aria-hidden="true"` | 체크 표시는 특정 지원 건의 완료 상태가 아니다. 실제 상태는 텍스트 배지와 이력으로만 전달할 것. |
 | `frontend/src/assets/illustrations/saved-jobs.png` | `#/bookmarks` · `BookmarksPage` 목록 머리말 | 저장한 공고를 다시 확인하는 맥락 | 192×192px · 데스크톱 96×96px, 모바일 64×64px | 예 | 제목·설명이 있으므로 `alt=""`, `aria-hidden="true"` | 리본은 실제 저장 여부를 대신하지 않는다. 카드의 텍스트 배지를 유지할 것. |

@@ -98,7 +98,7 @@ EXT-IMG-06E·06F·06G는 각각 민트·복숭아·기본 의상만 보여 주�
 
 ## 적용·검증 기록
 
-### F09 실제 화면 사용 대조 (2026-10-11)
+### F09 이후 현재 화면 사용 대조 (2026-10-11)
 
 아래 경로는 모두 `frontend/src/assets/` 기준이다. 표의 크기는 원본 해상도가 아니라 CSS의 실제 표시 상한 또는 모바일 규칙이다. 장식 이미지는 빈 `alt`와 `aria-hidden`으로 처리하고 인접한 텍스트가 기능·상태를 전달한다. F09는 코드/CSS 대조이며 실제 브라우저의 픽셀 표시·실패 대체 화면은 확인하지 못했다.
 
@@ -108,7 +108,9 @@ EXT-IMG-06E·06F·06G는 각각 민트·복숭아·기본 의상만 보여 주�
 | `redesign/brand-devjob-wordmark-light.png` | 인증 화면 좌측 픽셀 장면 상단의 밝은 워드마크 | 원본 2172×724px, 최대 290px 너비, 투명 배경, 좌측 장면 전체가 장식이므로 빈 `alt`·`aria-hidden` 처리 |
 | `redesign/cur-15-developer-at-work.png` | 공개 홈 히어로: 여성 개발자가 뒷모습으로 작업하는 픽셀 아트 장면 | 원본 1672×941px, 가용 너비 100%, 비율 유지, 빈 `alt`·`aria-hidden` 장식. 로딩 실패 시 컬러 패턴 배경을 남기고 텍스트·인증 메뉴를 유지 |
 | `redesign/cur-01-login-scene.png` | 로그인·가입·비밀번호 찾기 좌측 장면 | 데스크톱 좌측 전면, 900px 이하 숨김, 장식 |
-| `illustrations/dashboard-hero.webp`, `illustrations/dashboard-desk.png` | 대시보드 히어로·다음 행동 제목 | 히어로 최대 460px(모바일 225/190px), 제목 52px, 장식. 준비된 `CUR-02/03` 대신 이 파일을 실제 사용 |
+| `redesign/cur-16-dashboard-developer.png`, `illustrations/dashboard-desk.png` | 대시보드 히어로·다음 행동 제목 | 새 개발 작업 장면은 히어로 왼쪽 약 34%(900px 이하 높이 220px, 650px 이하 180px), 다음 행동 이미지는 52px. 빈 `alt`·`aria-hidden` |
+| `redesign/cur-17-dashboard-profile.png`, `redesign/cur-18-dashboard-projects.png`, `redesign/cur-19-dashboard-skills.png`, `redesign/cur-03-next-action.png` | 대시보드 바로가기·할 일 제목 | 바로가기 3개는 각각 76px, 할 일 이미지는 52px. 빈 `alt`·`aria-hidden` |
+| `redesign/brand-devjob-wordmark-dark.png`, `character/character-*.png` | 인증 후 Header 로고·아바타와 Sidebar 캐릭터 | 로고 164px, 장착 상태 캐릭터 32/48px. 캐릭터가 없으면 프로필 아이콘 |
 | `redesign/cur-04-job-search.png`, `redesign/ext-img-07-source-exploration.png` | 공고 목록·수집 공고 상세 | 너비 112~210×150px, 모바일 72px, 장식. EXT-IMG-07은 관리자 배치에서도 최대 132px |
 | `redesign/cur-05-saved-jobs.png` | 관심 공고 목록·개인 상세 | 너비 112~210×150px, 모바일 72px, 장식 |
 | `redesign/cur-06-applications.png` | 지원 목록·상세 | 너비 112~200×150px, 모바일 64px, 장식 |

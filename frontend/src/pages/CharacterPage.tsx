@@ -60,6 +60,7 @@ export function CharacterPage() {
       const [current, catalog, newQuests] = await Promise.all([characters.state(), characters.items(), characters.quests()]);
       if (!mounted.current) return;
       setState(current); setDraft(current.equipment); setItems(catalog); setQuests(newQuests);
+      window.dispatchEvent(new CustomEvent('devjob:character-updated', { detail: current }));
       setClaimed(`${catalog.find(item => item.id === result.itemId)?.name ?? result.itemId} 보상을 받았습니다.`);
     } catch (failure) { if (mounted.current) setActionError(errorMessage(failure)); }
     finally { if (mounted.current) setClaiming(''); }
@@ -75,6 +76,7 @@ export function CharacterPage() {
       if (!mounted.current) return;
       if (saved.equipment[item.slot] !== item.id) throw new Error('저장된 캐릭터 상태가 선택한 항목과 다릅니다.');
       setState(saved); setDraft(saved.equipment); setSavedMessage(`${item.name} 적용을 저장했습니다.`);
+      window.dispatchEvent(new CustomEvent('devjob:character-updated', { detail: saved }));
     } catch (failure) {
       if (mounted.current) { setDraft(state.equipment); setActionError(errorMessage(failure)); }
     } finally {
