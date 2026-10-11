@@ -25,3 +25,95 @@
 .interviews-detail dd { margin: 4px 0 0; overflow-wrap: anywhere; }
 @media (max-width: 600px) { .interviews-hero { align-items: flex-start; } .interviews-hero img { width: 90px; } }
 @media (max-width: 370px) { .interviews-hero img { display: none; } }
+
+.interviews-editor-page { max-width: 1280px; margin: 0 auto; display: grid; gap: 18px; }
+.interviews-editor-hero { position: relative; display: flex; align-items: center; gap: 24px; min-height: 142px; overflow: hidden; padding: 24px 30px; border: 1px solid #dedafb; border-radius: 20px; background: linear-gradient(110deg, #f0efff 0%, #edecff 60%, #d7d6fb 100%); box-shadow: 0 8px 24px #34346f0c; }
+.interviews-editor-hero::before { content: '✦     ✦  ♥'; position: absolute; inset: 14px 30px auto auto; color: #dfb8ea; font-size: 16px; letter-spacing: 90px; pointer-events: none; }
+.interviews-editor-hero::after { content: ''; position: absolute; inset: auto 0 0 48%; height: 38px; opacity: .38; background: repeating-linear-gradient(90deg, transparent 0 16px, #a4a6eb 16px 36px, transparent 36px 49px, #b7b8f1 49px 67px); clip-path: polygon(0 45%, 8% 45%, 8% 0, 16% 0, 16% 55%, 25% 55%, 25% 18%, 33% 18%, 33% 75%, 42% 75%, 42% 28%, 50% 28%, 50% 0, 59% 0, 59% 65%, 69% 65%, 69% 28%, 78% 28%, 78% 52%, 89% 52%, 89% 10%, 100% 10%, 100% 100%, 0 100%); pointer-events: none; }
+.interviews-editor-hero > * { position: relative; z-index: 1; }
+.interviews-back { display: grid; place-items: center; width: 50px; height: 50px; flex: 0 0 auto; border: 1px solid #c7c7ed; border-radius: 12px; background: #fff; color: #434098; font-size: 1.3rem; text-decoration: none; }
+.interviews-back:hover { background: #f6f4ff; }
+.interviews-editor-hero h2 { margin: 2px 0 3px; font-size: clamp(1.35rem, 2.5vw, 2rem); }
+.interviews-editor-hero p { margin: 0; color: #64658e; }
+.interviews-editor-hero .interviews-hero-bubble { position: relative; flex: 0 0 auto; margin-left: auto; padding: 10px 14px; border: 1px solid #cac5fa; border-radius: 12px; background: #fffefa; box-shadow: 0 3px 8px #6254b820; color: #5c49ad; font-size: .8rem; font-weight: 700; line-height: 1.4; }
+.interviews-hero-bubble::after { content: ''; position: absolute; top: 46%; right: -8px; width: 14px; height: 14px; border-top: 1px solid #cac5fa; border-right: 1px solid #cac5fa; background: #fffefa; transform: rotate(45deg); }
+.lucide-icon { display: inline-block; width: 18px; height: 18px; flex: 0 0 auto; vertical-align: middle; }
+.interviews-back .lucide-icon { width: 20px; height: 20px; }
+.interviews-editor-hero img { width: 150px; height: 120px; object-fit: contain; align-self: flex-end; image-rendering: auto; }
+.interviews-editor-grid { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(280px, 1fr); align-items: start; gap: 18px; }
+.interviews-editor-form { min-width: 0; padding: 28px; }
+.interviews-editor-form fieldset { display: grid; gap: 16px; padding: 0; margin: 0; border: 0; min-width: 0; }
+.interviews-section-heading { display: flex; align-items: center; gap: 12px; margin-bottom: 4px; }
+.interviews-section-heading h3 { margin: 0; font-size: 1.05rem; }
+.interviews-section-heading p { margin: 3px 0 0; color: var(--muted); font-size: .82rem; }
+.interviews-section-icon { display: grid; place-items: center; width: 42px; height: 42px; flex: 0 0 auto; border-radius: 50%; background: #f0edff; color: #6853c5; font-size: 1.35rem; }
+.interviews-section-icon .lucide-icon { width: 22px; height: 22px; }
+.interviews-field { display: grid; gap: 7px; min-width: 0; font-size: .88rem; font-weight: 700; }
+.interviews-field > span:first-child { display: flex; align-items: center; gap: 5px; }
+.interviews-field > span:first-child .lucide-icon { width: 16px; height: 16px; color: #6650c4; }
+.interviews-field em { color: #d34970; font-style: normal; }
+.interviews-field input, .interviews-field textarea { width: 100%; min-width: 0; min-height: 48px; padding: 10px 14px; border: 1px solid #d7d5ec; border-radius: 9px; background: #fff; color: var(--text); font: inherit; font-weight: 400; }
+.interviews-field textarea { min-height: 80px; resize: vertical; }
+.interviews-field input:focus, .interviews-field textarea:focus { outline: 2px solid #b4a4ef; outline-offset: 1px; }
+.interviews-date-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.interviews-application-picker { margin-top: 10px; }
+.interviews-application-picker .interviews-help { font-weight: 400; }
+.interviews-application-combobox { position: relative; min-width: 0; }
+.interviews-search-input { position: relative; }
+.interviews-search-input > .lucide-icon { position: absolute; top: 50%; left: 14px; width: 18px; height: 18px; color: #7777a7; transform: translateY(-50%); pointer-events: none; }
+.interviews-search-input input { padding-left: 40px; padding-right: 42px; }
+.interviews-combobox-toggle { position: absolute; z-index: 1; top: 0; right: 0; display: grid; place-items: center; width: 42px; height: 48px; padding: 0; border: 0; background: transparent; color: #6b55c0; }
+.interviews-combobox-toggle .lucide-icon { width: 17px; height: 17px; }
+.interviews-combobox-toggle[aria-expanded="true"] .lucide-icon { transform: rotate(180deg); }
+.interviews-application-options { position: absolute; z-index: 10; top: calc(100% + 3px); right: 0; left: 0; max-height: 250px; overflow-y: auto; border: 1px solid #dcd9f1; border-radius: 9px; background: #fff; box-shadow: 0 10px 24px #302a6f24; }
+.interviews-application-options > button { display: flex; justify-content: space-between; align-items: center; gap: 12px; width: 100%; min-height: 58px; padding: 9px 14px; border: 0; border-bottom: 1px solid #eeecf7; border-radius: 0; background: #fff; text-align: left; }
+.interviews-application-options > button:hover, .interviews-application-options > button.is-selected { background: #f0edff; }
+.interviews-application-options strong { display: block; font-size: .87rem; }
+.interviews-application-options small { display: block; margin-top: 2px; color: var(--muted); font-size: .74rem; }
+.interviews-application-options > button > span:last-child { color: #6b55c0; font-size: 1.25rem; }
+.interviews-option-building { display: grid; place-items: center; width: 38px; height: 38px; flex: 0 0 auto; border-radius: 9px; background: #eeebff; color: #6752bd; }
+.interviews-option-building img { width: 34px; height: 34px; object-fit: contain; image-rendering: auto; }
+.interviews-option-copy { min-width: 0; flex: 1; }
+.interviews-option-check { display: grid; place-items: center; width: 22px; height: 22px; flex: 0 0 auto; border: 1px solid #c6c3e8; border-radius: 50%; }
+.interviews-option-check:has(.lucide-icon) { border-color: #6b55c0; background: #6b55c0; color: #fff !important; }
+.interviews-option-check .lucide-icon { width: 14px; height: 14px; }
+.interviews-application-options > p, .interviews-application-options > div { margin: 0; padding: 12px 14px; }
+.interviews-application-options .interviews-unlink { min-height: 38px; color: #6654b1; font-weight: 700; }
+.interviews-application-options .interviews-more { justify-content: center; min-height: 38px; padding: 5px 10px; background: #f7f5ff; color: #5c4aa4; font-weight: 700; }
+.interviews-extra { display: grid; gap: 14px; margin-top: 8px; padding-top: 22px; border-top: 1px dashed #d8d5ed; }
+.interviews-choice-row { display: flex; gap: 6px; }
+.interviews-choice-row button { flex: 1; min-width: 0; min-height: 38px; padding: 5px 7px; border: 1px solid #d6d4ed; border-radius: 8px; background: #fafaff; color: #6c6791; font-size: .82rem; }
+.interviews-choice-row button.is-selected { border-color: #8e76e6; background: #f0edff; color: #523bb0; font-weight: 800; }
+.interviews-memo-count { justify-self: end; margin-top: -18px; color: var(--muted); }
+.interviews-editor-form > .interviews-actions { justify-content: flex-end; padding-top: 16px; border-top: 1px solid #efecf7; }
+.interviews-editor-form > .interviews-actions .button-primary { min-width: 138px; }
+.interviews-editor-form > .interviews-actions .button-primary { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.interviews-preview-column { display: grid; gap: 16px; }
+.interviews-side-card { min-width: 0; padding: 22px; }
+.interviews-side-card .interviews-section-heading { margin-bottom: 16px; }
+.interviews-selected-application, .interviews-preview { padding: 18px; border: 1px solid #dcd9f1; border-radius: 10px; background: #fcfbff; }
+.interviews-selected-heading { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.interviews-selected-heading > div { min-width: 0; flex: 1; }
+.interviews-selected-heading strong { overflow-wrap: anywhere; }
+.interviews-selected-heading p { margin: 3px 0 0; color: var(--muted); font-size: .82rem; }
+.interviews-selected-heading .interviews-status { white-space: nowrap; }
+.interviews-selected-application > strong, .interviews-preview > strong { display: block; overflow-wrap: anywhere; }
+.interviews-selected-application > p, .interviews-preview > p { margin: 5px 0 14px; color: var(--muted); font-size: .85rem; }
+.interviews-selected-application dl { margin: 0; padding: 12px 0; border-top: 1px dashed #dcd9f1; }
+.interviews-selected-application dl div { display: flex; justify-content: space-between; gap: 12px; margin: 5px 0; }
+.interviews-selected-application dd { margin: 0; font-weight: 700; text-align: right; }
+.interviews-selected-application a { display: block; padding: 10px; border-radius: 8px; background: #f0edff; color: #5945ad; font-weight: 700; text-align: center; text-decoration: none; }
+.interviews-selected-application a .lucide-icon { width: 15px; height: 15px; }
+.interviews-preview > strong .lucide-icon, .interviews-preview > p .lucide-icon { color: #6b55c0; }
+.interviews-preview > span { display: inline-block; margin: 0 6px 8px 0; padding: 5px 10px; border-radius: 999px; background: #eee9ff; color: #5945ad; font-size: .75rem; font-weight: 700; }
+.interviews-preview > small { display: block; color: var(--muted); }
+.interviews-guide { background: #faf9ff; }
+.interviews-guide .interviews-section-icon { background: #fff5e5; color: #e7a000; }
+.interviews-guide h3 { margin: 0; }
+.interviews-guide > p { margin: 8px 0; color: var(--muted); font-size: .84rem; }
+.interviews-guide > p { display: flex; align-items: flex-start; gap: 8px; }
+.interviews-guide > p .lucide-icon { width: 16px; height: 16px; padding: 2px; border-radius: 50%; background: #eeeaff; color: #6651bd; }
+@media (max-width: 900px) { .interviews-editor-grid { grid-template-columns: 1fr; } .interviews-preview-column { grid-template-columns: repeat(2, minmax(0, 1fr)); } .interviews-guide { grid-column: 1 / -1; } }
+@media (max-width: 1050px) { .interviews-hero-bubble { display: none; } .interviews-editor-hero img { margin-left: auto; } }
+@media (max-width: 760px) { .interviews-preview-column, .interviews-date-row { grid-template-columns: 1fr; } }
+@media (max-width: 600px) { .interviews-editor-hero { min-height: 125px; gap: 12px; padding: 18px; } .interviews-editor-hero img { width: 85px; height: 85px; } .interviews-back { width: 40px; height: 40px; } .interviews-editor-hero p { font-size: .78rem; } .interviews-editor-form, .interviews-side-card { padding: 18px; } }

@@ -14,21 +14,29 @@ public class InterviewSchedule {
     @Column(nullable = false, length = 200) private String title;
     @Column(name = "starts_at", nullable = false) private Instant startsAt;
     @Column(name = "time_zone", nullable = false, length = 100) private String timeZone;
+    @Column(length = 12) private String stage;
+    @Column(name = "interview_method", length = 12) private String interviewMethod;
+    @Column(length = 500) private String memo;
     @Column(name = "cancelled_at") private Instant cancelledAt;
     @Column(name = "created_at", nullable = false, updatable = false) private Instant createdAt;
     @Column(name = "updated_at", nullable = false) private Instant updatedAt;
 
     protected InterviewSchedule() { }
-    public InterviewSchedule(User user, Application application, String title, Instant startsAt, String timeZone) {
+    public InterviewSchedule(User user, Application application, String title, Instant startsAt, String timeZone,
+            String stage, String interviewMethod, String memo) {
         this.user = user;
         this.createdAt = this.updatedAt = now();
-        update(application, title, startsAt, timeZone);
+        update(application, title, startsAt, timeZone, stage, interviewMethod, memo);
     }
-    public void update(Application application, String title, Instant startsAt, String timeZone) {
+    public void update(Application application, String title, Instant startsAt, String timeZone,
+            String stage, String interviewMethod, String memo) {
         this.application = application;
         this.title = title;
         this.startsAt = startsAt;
         this.timeZone = timeZone;
+        this.stage = stage;
+        this.interviewMethod = interviewMethod;
+        this.memo = memo;
         this.updatedAt = now();
     }
     public void setCancelled(boolean cancelled) {
@@ -45,6 +53,9 @@ public class InterviewSchedule {
     public String getTitle() { return title; }
     public Instant getStartsAt() { return startsAt; }
     public String getTimeZone() { return timeZone; }
+    public String getStage() { return stage; }
+    public String getInterviewMethod() { return interviewMethod; }
+    public String getMemo() { return memo; }
     public Instant getCancelledAt() { return cancelledAt; }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }

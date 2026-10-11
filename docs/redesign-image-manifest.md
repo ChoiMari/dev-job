@@ -123,6 +123,8 @@ EXT-IMG-06E·06F·06G는 각각 민트·복숭아·기본 의상만 보여 주�
 | `redesign/ext-img-05b-resumes.png`, `redesign/ext-img-08-ai-analysis.png` | 이력서·자기소개서 헤더/분석·추천 | 문서 헤더 너비 최대 180×150px(모바일 90px), 분석 120px, 추천 헤더 최대 180×150px, 장식 |
 | `redesign/cur-12-character-thoughtful.png` | 추천 동의 안내 | 최대 160px, 560px 이하 숨김, 장식 |
 | `redesign/ext-img-05c-interviews.png`, `redesign/ext-img-01-account-settings.png`, `redesign/cur-14-settings.png` | 면접·알림·설정 | 각각 최대 180px(모바일 90px), 최대 132px, 120px(390px 이하 74px), 장식 |
+| `redesign/interview-planner-cat.png` | 면접 일정 등록·수정 배너의 노트북 픽셀 고양이 | 데스크톱 150×120px, 모바일 85×85px 영역, 빈 `alt`·`aria-hidden`; 말풍선은 HTML/CSS 장식이며 일정 데이터는 별도 표시 |
+| `redesign/interview-building.png` | 면접 지원 이력 콤보박스·선택 카드의 공통 건물 이미지 | 34×34px, 빈 `alt`·`aria-hidden`; 회사별 로고가 아니며 회사명은 API 데이터로 표시 |
 
 `CUR-10`은 제작 참조 시트이고 `BRAND-01`, `CUR-02/03/11`, `EXT-IMG-06A/06C/06D` 등은 이 화면 코드에서 직접 불러오지 않는다. `CharacterLayers.tsx`가 실제 장착 PNG와 썸네일을 서버 자산 ID/장착값으로 선택한다.
 

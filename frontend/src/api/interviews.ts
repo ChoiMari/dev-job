@@ -2,11 +2,14 @@ import { ApiError } from './client.ts';
 import type { createApiClient } from './client.ts';
 
 export type InterviewStatus = 'SCHEDULED' | 'CANCELLED';
+export type InterviewStage = 'FIRST' | 'SECOND' | 'FINAL' | 'OTHER';
+export type InterviewMethod = 'IN_PERSON' | 'ONLINE' | 'PHONE';
 export type Interview = {
   id: number; applicationId: number | null; title: string; startsAt: string; timeZone: string;
+  stage: InterviewStage | null; interviewMethod: InterviewMethod | null; memo: string | null;
   status: InterviewStatus; cancelledAt: string | null; createdAt: string; updatedAt: string;
 };
-export type InterviewInput = Pick<Interview, 'applicationId' | 'title' | 'startsAt' | 'timeZone'>;
+export type InterviewInput = Pick<Interview, 'applicationId' | 'title' | 'startsAt' | 'timeZone' | 'stage' | 'interviewMethod' | 'memo'>;
 export type InterviewPage = { items: Interview[]; page: number; size: number; totalElements: number };
 const positive = (value: unknown): value is number => typeof value === 'number' && Number.isSafeInteger(value) && value > 0;
 const instant = (value: unknown): value is string => typeof value === 'string' && Number.isFinite(Date.parse(value));
@@ -15,6 +18,8 @@ function zone(value: unknown): value is string {
   if (typeof value !== 'string' || !value || value.length > 100) return false;
   try { new Intl.DateTimeFormat('en', { timeZone: value }); return true; } catch { return false; }
 }
+const stage = (value: unknown): value is InterviewStage | null => value === null || ['FIRST', 'SECOND', 'FINAL', 'OTHER'].includes(String(value));
+const interviewMethod = (value: unknown): value is InterviewMethod | null => value === null || ['IN_PERSON', 'ONLINE', 'PHONE'].includes(String(value));
 function invalid(): never { throw new ApiError('면접 일정 응답을 확인할 수 없습니다.', 200, 'INVALID_RESPONSE'); }
 export function isInterview(value: unknown): value is Interview {
   if (!value || typeof value !== 'object') return false;
@@ -22,6 +27,8 @@ export function isInterview(value: unknown): value is Interview {
   return positive(item.id) && (item.applicationId === null || positive(item.applicationId))
     && typeof item.title === 'string' && !!item.title.trim() && item.title.length <= 200
     && offset(item.startsAt) && zone(item.timeZone)
+    && stage(item.stage) && interviewMethod(item.interviewMethod)
+    && (item.memo === null || typeof item.memo === 'string' && item.memo.length <= 500)
     && (item.status === 'SCHEDULED' || item.status === 'CANCELLED')
     && (item.status === 'SCHEDULED' ? item.cancelledAt === null : instant(item.cancelledAt))
     && instant(item.createdAt) && instant(item.updatedAt);

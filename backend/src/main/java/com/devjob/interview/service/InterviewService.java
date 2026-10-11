@@ -18,7 +18,9 @@ import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class InterviewService {
-    private static final Set<String> FIELDS = Set.of("applicationId", "title", "startsAt", "timeZone");
+    private static final Set<String> FIELDS = Set.of("applicationId", "title", "startsAt", "timeZone", "stage", "interviewMethod", "memo");
+    private static final Set<String> STAGES = Set.of("FIRST", "SECOND", "FINAL", "OTHER");
+    private static final Set<String> METHODS = Set.of("IN_PERSON", "ONLINE", "PHONE");
     private final InterviewScheduleRepository interviews;
     private final ApplicationRepository applications;
     private final UserRepository users;
@@ -45,9 +47,12 @@ public class InterviewService {
         String title = title(input.get("title"));
         Schedule schedule = schedule(input.get("startsAt"), input.get("timeZone"));
         Application application = application(userId, input.get("applicationId"));
+        String stage = choice(input.get("stage"), STAGES);
+        String interviewMethod = choice(input.get("interviewMethod"), METHODS);
+        String memo = memo(input.get("memo"));
         var user = users.findById(userId).orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
         return InterviewResponse.from(interviews.saveAndFlush(
-                new InterviewSchedule(user, application, title, schedule.instant(), schedule.zone())));
+                new InterviewSchedule(user, application, title, schedule.instant(), schedule.zone(), stage, interviewMethod, memo)));
     }
 
     @Transactional
@@ -62,7 +67,10 @@ public class InterviewService {
                 : new Schedule(interview.getStartsAt(), interview.getTimeZone());
         Application application = input.has("applicationId") ? application(userId, input.get("applicationId"))
                 : interview.getApplication();
-        interview.update(application, title, schedule.instant(), schedule.zone());
+        String stage = input.has("stage") ? choice(input.get("stage"), STAGES) : interview.getStage();
+        String interviewMethod = input.has("interviewMethod") ? choice(input.get("interviewMethod"), METHODS) : interview.getInterviewMethod();
+        String memo = input.has("memo") ? memo(input.get("memo")) : interview.getMemo();
+        interview.update(application, title, schedule.instant(), schedule.zone(), stage, interviewMethod, memo);
         interviews.flush();
         return InterviewResponse.from(interview);
     }
@@ -101,6 +109,18 @@ public class InterviewService {
         String title = value.textValue().strip();
         if (title.isEmpty() || title.length() > 200 || title.codePoints().anyMatch(c -> Character.isISOControl(c))) throw badInput();
         return title;
+    }
+    private static String choice(JsonNode value, Set<String> allowed) {
+        if (value == null || value.isNull()) return null;
+        if (!value.isTextual() || !allowed.contains(value.textValue())) throw badInput();
+        return value.textValue();
+    }
+    private static String memo(JsonNode value) {
+        if (value == null || value.isNull()) return null;
+        if (!value.isTextual()) throw badInput();
+        String text = value.textValue().strip();
+        if (text.length() > 500 || text.codePoints().anyMatch(c -> Character.isISOControl(c) && c != '\n' && c != '\r' && c != '\t')) throw badInput();
+        return text.isEmpty() ? null : text;
     }
     private static Schedule schedule(JsonNode at, JsonNode zoneValue) {
         if (at == null || !at.isTextual() || zoneValue == null || !zoneValue.isTextual()) throw badInput();

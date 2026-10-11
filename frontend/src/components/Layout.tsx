@@ -110,7 +110,7 @@ export function Layout({ title, path, children, user, onLogout, loggingOut }: {
       </a>
     </aside>
     <main id="main-content" tabIndex={-1} className="main-content">
-      {path !== '/' && <div className="page-heading"><span className="eyebrow">MY CAREER SPACE</span><h1>{title}</h1></div>}
+      {path !== '/' && !path.startsWith('/interviews/') && <div className="page-heading"><span className="eyebrow">MY CAREER SPACE</span><h1>{title}</h1></div>}
       {children}
     </main>
   </div>;

@@ -157,6 +157,8 @@ V15__create_interested_companies.sql은 interested_company만 추가한다. id B
 
 `V17__interview_schedules.sql`은 `interview_schedule`을 추가한다. `id` BIGINT identity PK, `user_id` 필수 users FK, `application_id` 선택 application FK, `title` 필수 VARCHAR(200)·공백 검사, `starts_at` 필수 TIMESTAMPTZ, `time_zone` 필수 VARCHAR(100), `cancelled_at` nullable TIMESTAMPTZ, `created_at`·`updated_at` 필수 TIMESTAMPTZ다. 사용자·시각·ID 조회 인덱스와 지원 FK 인덱스를 둔다. 서버는 연결된 지원 건의 소유권과 IANA 시간대·요청 오프셋의 일치를 검증한다. 동일 시작 시각의 일정도 허용한다. 취소는 `cancelled_at`을 기록하고 재활성화는 이를 비운다. `Application.current_status`·상태 이력·`next_schedule_at`은 면접 일정에 의해 자동 변경되지 않는다.
 
+`V27__interview_details.sql`은 기존 행을 유지하며 선택 컬럼 `stage` VARCHAR(12), `interview_method` VARCHAR(12), `memo` VARCHAR(500)를 추가한다. 단계와 방식은 각각 허용된 코드만 CHECK로 저장하고, 기존 행에서는 모두 `NULL`이다.
+
 ### B07 학습 목표
 
 `V22__learning_goals.sql`은 `learning_goal`을 추가한다. BIGINT identity `id`, 필수 `user_id` FK, 선택 `skill_id` 공용 Skill FK, 필수 `title` VARCHAR(200), 선택 `description` VARCHAR(2000), 필수 `progress_percent` 0~100 정수, 선택 `completed_at`·`deleted_at`, 필수 `created_at`·`updated_at` TIMESTAMPTZ를 둔다. 완료 시 진행률 100을 CHECK로 보장한다. 활성 목표의 `(user_id, coalesce(skill_id,-1), title)` 부분 UNIQUE 인덱스로 동일 제목·기술의 동시 중복 요청을 막고, 사용자별 `(user_id, updated_at DESC, id DESC)` 부분 인덱스로 목록을 조회한다. 제목은 서비스에서 공백을 축약해 저장한다. 삭제 시각이 있는 행은 일반 조회에서 제외한다. UserSkill 관계를 삭제해도 공용 Skill FK는 유지된다. 목표와 Skill Gap 결과는 별도 데이터이며 완료·취소·삭제는 UserSkill의 숙련도·경험 또는 기존 분석 계산을 자동 변경하지 않는다.
