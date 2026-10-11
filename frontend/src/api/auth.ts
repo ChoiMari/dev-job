@@ -24,7 +24,7 @@ export function createAuthApi(request: Request, sessionProbe: Request = request)
     return request(path, { method, body, csrfToken: csrf.token });
   }
   return {
-    me: async (signal?: AbortSignal) => user(await request('/auth/me', { signal })),
+    me: async (signal?: AbortSignal) => user(await sessionProbe('/auth/me', { signal })),
     probeSession: async () => user(await sessionProbe('/auth/me')),
     register: async (email: string, password: string) => user(await mutation('/auth/register', { email, password })),
     login: async (email: string, password: string) => {

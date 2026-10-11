@@ -40,6 +40,19 @@ test('invalid CSRF response prevents mutations', async () => {
   assert.equal(calls, 1);
 });
 
+test('initial session check uses the quiet probe so anonymous visitors can see the public home', async () => {
+  const failure = new ApiError('로그인이 필요합니다.', 401, 'UNAUTHORIZED');
+  const auth = createAuthApi(
+    async () => { throw new Error('session check emitted a global unauthorized event'); },
+    async (path, options) => {
+      assert.equal(path, '/auth/me');
+      assert.ok(options.signal instanceof AbortSignal);
+      throw failure;
+    },
+  );
+  await assert.rejects(auth.me(new AbortController().signal), error => error === failure);
+});
+
 test('rejects invalid user and login resource contracts', async () => {
   for (const value of [null, {}, { id: -1, email: 'user@example.com' }, { id: 1, email: null }]) {
     await assert.rejects(createAuthApi(async () => value).me(), { code: 'INVALID_RESPONSE' });
