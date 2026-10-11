@@ -4,13 +4,15 @@ import { createJobsApi } from '../../api/jobs';
 import type { JobPage } from '../../api/jobs';
 import { Badge } from '../../components/PixelArt';
 import { BookmarkButton } from '../../components/BookmarkButton';
-import { EmptyState, ErrorState, LoadingState } from '../../components/States';
+import { ErrorState, LoadingState } from '../../components/States';
 import { isApplicationStatus } from '../../api/application-status';
 import { ApplicationStatusBadge } from '../../components/ApplicationStatusBadge';
+import { LucideIcon } from '../../components/LucideIcon';
 import { createSkillsApi } from '../../api/skills';
 import type { SkillPage } from '../../api/skills';
 import './jobs.css';
 import jobResultsCompanion from '../../assets/redesign/cur-20-job-results-companion.png';
+import searchEmptyCat from '../../assets/jobs/search-empty-cat.png';
 
 const jobs = createJobsApi(apiRequest);
 const skills = createSkillsApi(apiRequest);
@@ -124,6 +126,12 @@ export function JobsPage({ location }: { location: string }) {
   const [loading, setLoading] = useState(true);
   const [retry, setRetry] = useState(0);
   const [resetKey, setResetKey] = useState(0);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const activeFilterCount = ['q', 'role', 'careerBands', 'employmentType', 'location', 'deadlineBefore', 'skillId', 'minMatchRate',
+    'company', 'careerLevel', 'applicationStatus', 'source', 'itOnly'].filter(key => {
+    const value = params.get(key);
+    return value !== null && value !== '' && value !== 'false';
+  }).length;
   useEffect(() => {
     const controller = new AbortController();
     setLoading(true); setError(''); setData(undefined);
@@ -147,16 +155,24 @@ export function JobsPage({ location }: { location: string }) {
       for (const [key, value] of values) if (String(value).trim()) query.set(key, String(value).trim());
       query.set('page', '0'); window.location.hash = `/jobs?${query}`;
     }}>
-      <div className="job-filter-heading"><h2>상세 필터</h2><button type="button" onClick={() => {
-        if (search) window.location.hash = '/jobs'; else setResetKey(value => value + 1);
-      }}>초기화</button></div>
+      <div className="job-quick-search"><label className="sr-only" htmlFor="job-query">키워드 검색</label>
+        <input id="job-query" name="q" type="search" maxLength={200} defaultValue={params.get('q') || ''}
+          placeholder="기업명, 공고 제목, 직무로 검색하세요..." />
+        <button type="submit" className="job-quick-submit"><LucideIcon name="search" />검색</button></div>
+      <div className="job-filter-disclosure"><div className="job-filter-heading"><div className="job-filter-heading-title"><LucideIcon name="filter" />
+        <h2>상세 필터</h2>{activeFilterCount > 0 && <span className="job-filter-count">{activeFilterCount}개 적용</span>}</div>
+        <div className="job-filter-heading-actions">{filtersOpen && <button type="button" className="job-filter-reset" aria-label="검색 조건 초기화" title="검색 조건 초기화" onClick={() => {
+          if (search) window.location.hash = '/jobs'; else setResetKey(value => value + 1);
+        }}><LucideIcon name="rotateCcw" /></button>}
+          <button type="button" className="job-filter-toggle" aria-label={filtersOpen ? '상세 필터 접기' : '상세 필터 펼치기'}
+            aria-expanded={filtersOpen} aria-controls="job-filter-body" onClick={() => setFiltersOpen(value => !value)}>
+            <LucideIcon name="chevronDown" /></button></div></div>
+      <div id="job-filter-body" className="job-filter-body" hidden={!filtersOpen}>
       {legacyFilterApplied && <p className="job-legacy-filter-note">이전 검색 주소의 추가 조건이 적용 중입니다. 초기화하거나 새로 검색하면 해제됩니다.</p>}
-      <div className="job-filter-section job-keyword-filter"><label htmlFor="job-query">키워드 검색</label><input id="job-query" name="q" type="search" maxLength={200}
-        defaultValue={params.get('q') || ''} placeholder="직무, 기술, 회사, 공고 제목" /></div>
       <fieldset className="job-filter-section job-role-filter"><legend>직무</legend><div className="job-preset-list job-role-options">
         {roleOptions.map(option => <label key={option.value} className="job-radio-chip"><input type="radio" name="role" value={option.value} defaultChecked={role === option.value} />
           <span>{option.label}</span></label>)}
-      </div><small className="job-filter-help">기타는 제목으로 위 직무를 분류할 수 없는 공고입니다.</small></fieldset>
+      </div></fieldset>
       <CareerFilter initial={careerBands} />
       <EmploymentFilter initial={params.get('employmentType') || ''} />
       <RegionFilter initial={params.get('location') || ''} />
@@ -165,6 +181,8 @@ export function JobsPage({ location }: { location: string }) {
       <div className="job-filter-section"><label>최소 기술 일치도 (%)<input name="minMatchRate" type="number" min="0" max="100" defaultValue={minMatchRate || ''} /></label>
         <small className="job-filter-help">내 기술과 공고 AI 분석이 완료된 경우에만 계산됩니다.</small></div>
       <button className="button-primary job-filter-submit" type="submit">검색하기</button>
+      </div>
+      </div>
     </form>
     <section className="card job-search-results" aria-label="공고 검색 결과" aria-busy={loading}>
       <div className="job-search-heading job-hero job-results-hero"><div><p className="job-eyebrow">JOB EXPLORER</p><h2>채용공고 탐색</h2>
@@ -172,9 +190,14 @@ export function JobsPage({ location }: { location: string }) {
         <img src={jobResultsCompanion} alt="" aria-hidden="true" /></div>
       {loading ? <LoadingState message="저장된 공고를 검색하고 있습니다." /> : error ? <ErrorState message={error} onRetry={() => setRetry(v => v + 1)} /> : data && <>
         <p className="job-result-summary" role="status"><span>검색 결과 <strong>{data.totalElements}</strong>건</span><span>{data.page + 1}페이지 · {itOnly ? 'IT 직무' : '전체 저장 공고'}</span></p>
-        {data.items.length === 0 ? <><EmptyState title="검색 결과가 없습니다." message="조건을 바꾸거나 다른 페이지를 확인해 주세요." />
+        {data.items.length === 0 ? <><div className="job-empty-results" role="status">
+          <img src={searchEmptyCat} alt="" aria-hidden="true" />
+          <h3>검색 결과가 없습니다.</h3>
+          <p>{params.get('q') ? <>“{params.get('q')}”에 맞는 채용 공고를 찾지 못했어요.</> : <>조건에 맞는 채용 공고를 찾지 못했어요.</>}
+            <br />다른 키워드로 검색하거나, 필터 조건을 변경해보세요.</p>
+        </div>
           {page > 0 && <button onClick={() => navigatePage(0)}>첫 페이지로</button>}</> : <ul className="job-list job-results-list">{data.items.map(job => <li key={job.id} className="job-card job-result-card">
-          <div className="job-result-main"><div className="job-card-top"><p className="job-company">{job.company.name}</p><Badge icon="grid">{sourceLabel(job.source)}</Badge>{job.applicationStatus && <ApplicationStatusBadge status={job.applicationStatus} />}</div>
+          <div className="job-result-main"><div className="job-card-top"><p className="job-company">{job.company.name}</p><Badge icon="grid">{sourceLabel(job.source)}</Badge>{job.applicationStatus && <span className={`job-list-application-status job-list-application-status--${job.applicationStatus.toLowerCase()}`}><ApplicationStatusBadge status={job.applicationStatus} /></span>}</div>
           <h2><a href={`#/jobs/${job.id}?${new URLSearchParams({ from: search })}`}>{job.title}</a></h2>
           <div className="job-result-facts">{job.role && <span>{roleLabels[job.role] || job.role}</span>}{job.location && <span>{job.location}</span>}{job.careerRequirement && <span>{job.careerRequirement}</span>}{job.employmentType && <span>{job.employmentType}</span>}{job.matchRate !== null && <span>기술 일치도 {job.matchRate}%</span>}</div></div>
           <div className="job-result-side">{job.deadlineDate && <span className="job-result-deadline">마감 {job.deadlineDate}</span>}
