@@ -20,6 +20,7 @@ export type JobDetail = JobSummary & {
 };
 export type JobPage = { items: JobSummary[]; page: number; size: number; totalElements: number };
 export type JobFilters = { q?: string; company?: string; careerLevel?: string; location?: string;
+  careerBands?: string;
   role?: string;
   employmentType?: string; deadlineBefore?: string; applicationStatus?: ApplicationStatus; source?: string;
   skillId?: number; minMatchRate?: number; itOnly?: boolean; page?: number; size?: number; sort?: 'latest' | 'deadline' | 'matchRate' };

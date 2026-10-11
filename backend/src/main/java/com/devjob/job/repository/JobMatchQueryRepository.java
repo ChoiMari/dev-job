@@ -3,6 +3,7 @@ package com.devjob.job.repository;
 import com.devjob.job.dto.JobQuery;
 import com.devjob.job.service.ItJobTitles;
 import com.devjob.job.service.JobRoles;
+import com.devjob.job.service.JobCareerBands;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -82,6 +83,15 @@ public class JobMatchQueryRepository {
         if (input.company() != null) { from.append(" and lower(c.name) like :company escape '\\'"); parameters.addValue("company", pattern(input.company())); }
         if (input.location() != null) { from.append(" and lower(j.location) like :location escape '\\'"); parameters.addValue("location", pattern(input.location())); }
         if (input.careerLevel() != null) { from.append(" and lower(j.career_requirement) = :career"); parameters.addValue("career", input.careerLevel().toLowerCase(java.util.Locale.ROOT)); }
+        if (!input.bands().isEmpty()) {
+            from.append(" and (");
+            for (int i = 0; i < input.bands().size(); i++) {
+                if (i > 0) from.append(" or ");
+                from.append("regexp_like(j.career_requirement, :careerBand").append(i).append(", 'i')");
+                parameters.addValue("careerBand" + i, JobCareerBands.PATTERNS.get(input.bands().get(i)));
+            }
+            from.append(")");
+        }
         if (input.employmentType() != null) { from.append(" and lower(j.employment_type) = :employment"); parameters.addValue("employment", input.employmentType().toLowerCase(java.util.Locale.ROOT)); }
         if (input.deadline() != null) { from.append(" and j.deadline_date <= :deadline"); parameters.addValue("deadline", input.deadline()); }
         if (input.skill() != null) {

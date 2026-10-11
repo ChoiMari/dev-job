@@ -111,7 +111,8 @@ EXT-IMG-06E·06F·06G는 각각 민트·복숭아·기본 의상만 보여 주�
 | `redesign/cur-16-dashboard-developer.png`, `illustrations/dashboard-desk.png` | 대시보드 히어로·다음 행동 제목 | 새 개발 작업 장면은 히어로 왼쪽 약 34%(900px 이하 높이 220px, 650px 이하 180px), 다음 행동 이미지는 52px. 빈 `alt`·`aria-hidden` |
 | `redesign/cur-17-dashboard-profile.png`, `redesign/cur-18-dashboard-projects.png`, `redesign/cur-19-dashboard-skills.png`, `redesign/cur-03-next-action.png` | 대시보드 바로가기·할 일 제목 | 바로가기 3개는 각각 76px, 할 일 이미지는 52px. 빈 `alt`·`aria-hidden` |
 | `redesign/brand-devjob-wordmark-dark.png`, `character/character-*.png` | 인증 후 Header 로고·아바타와 Sidebar 캐릭터 | 로고 164px, 장착 상태 캐릭터 32/48px. 캐릭터가 없으면 프로필 아이콘 |
-| `redesign/cur-04-job-search.png`, `redesign/ext-img-07-source-exploration.png` | 공고 목록·수집 공고 상세 | 너비 112~210×150px, 모바일 72px, 장식. EXT-IMG-07은 관리자 배치에서도 최대 132px |
+| `redesign/cur-20-job-results-companion.png`, `redesign/ext-img-07-source-exploration.png` | 공고 검색 결과 머리말·수집 공고 상세 | 새 픽셀 캐릭터는 144×144px, 모바일 88×88px, 투명 배경 장식. 상세 이미지는 너비 112~210×150px, 모바일 72px이며 관리자 배치에서도 최대 132px |
+| `redesign/cur-21-bookmark-outline.png`, `redesign/cur-22-bookmark-saved.png` | 공고 검색 결과 카드의 저장 전후 버튼 | 각각 원본 1254×1254px, 40×40px 버튼 안에 표시. 버튼 접근성 이름과 상태는 실제 `bookmarked` 값으로 제공 |
 | `redesign/cur-05-saved-jobs.png` | 관심 공고 목록·개인 상세 | 너비 112~210×150px, 모바일 72px, 장식 |
 | `redesign/cur-06-applications.png` | 지원 목록·상세 | 너비 112~200×150px, 모바일 64px, 장식 |
 | `redesign/cur-07-profile.png`, `redesign/ext-img-02-skill-levels.png` | 프로필·기술 | 각각 최대 150px, 96px(모바일 64px), 장식 |

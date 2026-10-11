@@ -77,6 +77,10 @@ public class JobQueryService {
             if (input.company() != null) filters.add(contains(cb, company.get("name"), input.company()));
             if (input.location() != null) filters.add(contains(cb, root.get("location"), input.location()));
             if (input.careerLevel() != null) filters.add(cb.equal(cb.lower(root.get("careerRequirement")), input.careerLevel().toLowerCase(Locale.ROOT)));
+            if (!input.bands().isEmpty()) filters.add(cb.or(input.bands().stream()
+                    .map(band -> cb.isTrue(cb.function("regexp_like", Boolean.class, root.get("careerRequirement"),
+                            cb.literal(JobCareerBands.PATTERNS.get(band)), cb.literal("i"))))
+                    .toArray(Predicate[]::new)));
             if (input.employmentType() != null) filters.add(cb.equal(cb.lower(root.get("employmentType")), input.employmentType().toLowerCase(Locale.ROOT)));
             if (input.deadline() != null) filters.add(cb.lessThanOrEqualTo(root.get("deadlineDate"), input.deadline()));
             if (input.skill() != null) {

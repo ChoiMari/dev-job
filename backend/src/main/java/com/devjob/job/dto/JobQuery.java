@@ -7,13 +7,15 @@ import java.time.LocalDate;
 /** Stored job filters. */
 public record JobQuery(String q, String company, String careerLevel, String location,
         String employmentType, String deadlineBefore, Integer page, Integer size, String sort,
-        String skillId, String minMatchRate, String applicationStatus, Boolean itOnly, String source, String role) {
+        String skillId, String minMatchRate, String applicationStatus, Boolean itOnly, String source, String role,
+        String careerBands) {
     public JobQuery {
         q = text(q); company = text(company); careerLevel = text(careerLevel);
         location = text(location); employmentType = text(employmentType);
         deadlineBefore = text(deadlineBefore);
         source = text(source);
         role = text(role);
+        careerBands = text(careerBands);
         page = page == null ? 0 : page;
         size = size == null ? 20 : size;
         sort = sort == null ? "latest" : sort;
@@ -31,6 +33,13 @@ public record JobQuery(String q, String company, String careerLevel, String loca
         if (minMatchRate != null && (!minMatchRate.matches("\\d{1,3}") || Integer.parseInt(minMatchRate) > 100)) invalid();
         if (source != null && (source.length() > 100 || !source.matches("[A-Z][A-Z0-9_]*"))) invalid();
         if (role != null && !com.devjob.job.service.JobRoles.TERMS.containsKey(role)) invalid();
+        if (careerBands != null) {
+            if (careerBands.length() > 100) invalid();
+            var bands = careerBands.split(",", -1);
+            if (careerLevel != null || bands.length > com.devjob.job.service.JobCareerBands.PATTERNS.size()
+                    || java.util.Arrays.stream(bands).anyMatch(band -> !com.devjob.job.service.JobCareerBands.PATTERNS.containsKey(band))
+                    || java.util.Arrays.stream(bands).distinct().count() != bands.length) invalid();
+        }
         com.devjob.application.service.ApplicationService.parseStatus(applicationStatus);
         if (deadlineBefore != null) {
             if (!deadlineBefore.matches("\\d{4}-\\d{2}-\\d{2}")) invalid();
@@ -42,6 +51,7 @@ public record JobQuery(String q, String company, String careerLevel, String loca
     public LocalDate deadline() { return deadlineBefore == null ? null : LocalDate.parse(deadlineBefore); }
     public Long skill() { return skillId == null ? null : Long.parseLong(skillId); }
     public Integer minimumRate() { return minMatchRate == null ? null : Integer.parseInt(minMatchRate); }
+    public java.util.List<String> bands() { return careerBands == null ? java.util.List.of() : java.util.List.of(careerBands.split(",")); }
     private static String text(String value) {
         if (value == null || value.isBlank()) return null;
         value = value.strip();

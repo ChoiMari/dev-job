@@ -91,18 +91,18 @@ S05 구현 계약:
 ### S08 구현 계약
 
 - 저장된 공고만 조회하며 외부 Adapter·AI를 호출하지 않는다. 두 GET API 모두 S03 쿠키 세션 인증이 필요하다.
-- 지원 Query는 `q`, `company`, `role`, `skillId`, `careerLevel`, `location`, `employmentType`, `deadlineBefore`, `minMatchRate`, `applicationStatus`, `itOnly`, `source`, `page`, `size`, `sort`다. `q`는 제목·회사명 부분 일치이며 길이가 3자 이상일 때만 저장된 본문도 검색한다. 짧은 일반 단어가 긴 설명에서 우연히 매칭되는 잡음을 줄이기 위한 기준이다. `company`·`location`은 해당 필드의 대소문자 무시 부분 일치다. `role`은 제목 기반 `DEVELOPMENT`, `DATA_AI`, `SECURITY`, `INFRA`, `IT_OPERATIONS` 중 하나이며 잘못된 값은 `400`이다. `itOnly=true`는 개발·데이터·보안·인프라·전산 제목 신호가 있는 저장 공고만 조회한다(생략 시 false, 화면 기본값 true). 제목에 직무가 드러나지 않으면 누락될 수 있다. `%`, `_`, `\`는 검색 문자 그대로 취급한다. `careerLevel`·`employmentType`은 저장된 문자열과 대소문자 무시 정확히 일치한다. `skillId`는 완료된 분석의 공고 기술과 정확히 일치할 때만 포함한다. `applicationStatus`는 현재 세션 사용자의 지원 상태로 AND 필터링하며 빈 문자열·알 수 없는 상태는 `400`이다. `source`는 `JobSource.code`와 정확히 일치하며 대문자·숫자·밑줄 형식으로 최대 100자다. 형식 오류는 `400`, 존재하지 않는 코드는 빈 결과다. 화면 선택지는 전체·`ALIO_RECRUITMENT`·`WORK24_OPEN_RECRUITMENT`다.
+- 지원 Query는 `q`, `company`, `role`, `skillId`, `careerLevel`, `careerBands`, `location`, `employmentType`, `deadlineBefore`, `minMatchRate`, `applicationStatus`, `itOnly`, `source`, `page`, `size`, `sort`다. `q`는 제목·회사명 부분 일치이며 길이가 3자 이상일 때만 저장된 본문도 검색한다. 짧은 일반 단어가 긴 설명에서 우연히 매칭되는 잡음을 줄이기 위한 기준이다. `company`·`location`은 해당 필드의 대소문자 무시 부분 일치다. `role`은 제목 기반 `DEVELOPMENT`, `DATA_AI`, `SECURITY`, `INFRA`, `IT_OPERATIONS` 중 하나이며 잘못된 값은 `400`이다. `itOnly=true`는 개발·데이터·보안·인프라·전산 제목 신호가 있는 저장 공고만 조회한다(생략 시 false, 현재 화면도 전체 저장 공고가 기본값). 제목에 직무가 드러나지 않으면 누락될 수 있다. `%`, `_`, `\`는 검색 문자 그대로 취급한다. 기존 `careerLevel`과 `employmentType`은 저장된 문자열과 대소문자 무시 정확히 일치한다. `careerBands`는 `NEW`, `ANY`, `UP_TO_1`, `YEARS_1_3`, `YEARS_3_5`, `OVER_5`를 쉼표로 연결해 최대 6개까지 전달하며 선택 구간 사이에 OR, 다른 검색 조건과 AND로 적용한다. 원천 공고의 경력 문구에서 신입·무관·연차 표기를 탐색하므로 표기가 불명확한 공고는 빠질 수 있다. `careerLevel`과 동시 전달하거나 알 수 없는 값·중복 값이면 `400`이다. `skillId`는 완료된 분석의 공고 기술과 정확히 일치할 때만 포함한다. `applicationStatus`는 현재 세션 사용자의 지원 상태로 AND 필터링하며 빈 문자열·알 수 없는 상태는 `400`이다. `source`는 `JobSource.code`와 정확히 일치하며 대문자·숫자·밑줄 형식으로 최대 100자다. 형식 오류는 `400`, 존재하지 않는 코드는 빈 결과다. 이전 검색 주소는 전체·`ALIO_RECRUITMENT`·`WORK24_OPEN_RECRUITMENT` 출처 선택값을 유지할 수 있다.
 - 검색 문자열은 양끝 공백을 제거하고 공백뿐이면 조건을 생략한다. 각 검색 문자열은 최대 200자다. `deadlineBefore`는 유효한 `YYYY-MM-DD` 날짜이며 당일을 포함한다. 날짜가 없는 공고는 마감일 필터 결과에서 제외한다. 여러 필터는 AND로 결합한다.
 - `page`는 0 이상 정수, `size`는 1~100(기본 20)이다. `page × size > 2147483647`은 `400`이다. 결과가 없거나 범위를 벗어난 페이지는 `items: []`와 조건에 맞는 전체 건수를 반환한다.
 - 정렬은 `latest`(게시일 내림차순)·`deadline`(마감일 오름차순)·`matchRate`(기술 일치도 내림차순)이며 날짜·계산 불가 일치도는 뒤에 둔다. 값이 같으면 `id` 내림차순으로 안정적인 페이지 순서를 유지한다.
-- `skillId`는 양의 Long, `minMatchRate`는 0~100 정수다. 잘못된 페이지·필터·식별자는 `400`, 없는 양의 공고 ID는 `404 NOT_FOUND`다.
+- `skillId`는 양의 Long, `minMatchRate`는 0~100 정수다. 최소 일치도 필터는 사용자가 등록한 기술과 완료된 공고 AI 분석에서 일치도를 계산할 수 있는 공고만 포함하며, 계산 불가 상태를 0%로 취급하지 않는다. 잘못된 페이지·필터·식별자는 `400`, 없는 양의 공고 ID는 `404 NOT_FOUND`다.
 - 기존 응답 형태를 유지하며 `bookmarked`와 `applicationStatus`는 현재 세션 사용자의 실제 저장·지원 상태다. 목록은 현재 페이지의 공고 ID에 대해 상태와 적합도를 일괄 조회하며 상세에서도 사용자별로 확인한다. 지원 미등록 시 상태는 `null`이다. 분석 전에는 `matchRate: null`, `requiredSkills: []`, `preferredSkills: []`, `analysis: null`이다. 본문이 null이어도 기본 정보와 HTTP(S) `sourceUrl`은 반환한다.
 
 아래 표·분석 응답 설명은 후속 단계를 포함한 최종 MVP 계약이다.
 
 | 목적 / Method·URL | 인증 | Path / Query | Request Body | 성공 Response Body·Status | 주요 오류 |
 | --- | --- | --- | --- | --- | --- |
-| 공고 검색·필터 `GET /api/jobs` | 예 | Query: `q`, `company`, `role`, `skillId`, `careerLevel`, `location`, `employmentType`, `deadlineBefore`, `minMatchRate`, `applicationStatus`, `itOnly`, `source`, `page`, `size`, `sort` | 없음 | `JobSummary` 목록 · `200` | 필터·정렬값 오류 `400` |
+| 공고 검색·필터 `GET /api/jobs` | 예 | Query: `q`, `company`, `role`, `skillId`, `careerLevel`, `careerBands`, `location`, `employmentType`, `deadlineBefore`, `minMatchRate`, `applicationStatus`, `itOnly`, `source`, `page`, `size`, `sort` | 없음 | `JobSummary` 목록 · `200` | 필터·정렬값 오류 `400` |
 | 공고 상세 `GET /api/jobs/{jobId}` | 예 | Path: `jobId` | 없음 | 아래 `JobDetail` · `200` | 공고 없음 `404` |
 | AI 분석 요청·재시도 `POST /api/jobs/{jobId}/analysis` | 예 | Path: `jobId` | 없음 | `AIAnalysis` · 새 요청/진행 중 `202`, 완료 결과 재사용 `200` | 본인 북마크 없음 `403`, 공고 없음 `404`, 분석 요청 접수 실패 `503` |
 | AI 분석 상태·결과 `GET /api/jobs/{jobId}/analysis` | 예 | Path: `jobId` | 없음 | 아래 `AIAnalysis` · `200` | 공고 또는 분석 행 없음 `404` |

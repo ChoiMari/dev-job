@@ -84,6 +84,29 @@ class JobQueryDatabaseTest {
         mvc.perform(get("/api/jobs").with(authentication(principal)).param("deadlineBefore", "2026-10-10"))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.items[0].id").value(second)).andExpect(jsonPath("$.totalElements").value(1));
     }
+    @Test void careerBandsCombineWithOrBeforePagingInBothSearchPaths() throws Exception {
+        var source = sources.findByCode("S08_TEST").orElseThrow();
+        long any = posting(source, "Gamma", "Data Engineer", "부산", "경력무관", "계약직", "2026-10-03", null, null);
+        long mid = posting(source, "Delta", "Security Engineer", "서울", "경력 1~3년", "정규직", "2026-10-04", null, null);
+        posting(source, "Epsilon", "Infra Engineer", "서울", "경력 5년 이상", "정규직", "2026-10-05", null, null);
+        jobs.flush();
+        for (String sort : new String[]{"latest", "matchRate"}) {
+            mvc.perform(get("/api/jobs").with(authentication(principal))
+                    .param("careerBands", "NEW,ANY,YEARS_1_3").param("sort", sort).param("size", "2"))
+                    .andExpect(status().isOk()).andExpect(jsonPath("$.totalElements").value(3));
+            mvc.perform(get("/api/jobs").with(authentication(principal))
+                    .param("careerBands", "ANY,YEARS_1_3").param("location", "서울").param("sort", sort))
+                    .andExpect(status().isOk()).andExpect(jsonPath("$.totalElements").value(1))
+                    .andExpect(jsonPath("$.items[0].id").value(mid));
+        }
+        mvc.perform(get("/api/jobs").with(authentication(principal)).param("careerBands", "ANY"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.items[0].id").value(any));
+        for (String value : new String[]{"UNKNOWN", "NEW,NEW", "NEW,", "NEW,UNKNOWN"})
+            mvc.perform(get("/api/jobs").with(authentication(principal)).param("careerBands", value))
+                    .andExpect(status().isBadRequest());
+        mvc.perform(get("/api/jobs").with(authentication(principal)).param("careerLevel", "신입").param("careerBands", "NEW"))
+                .andExpect(status().isBadRequest());
+    }
     @Test void itOnlyFiltersBeforePagingInRegularAndMatchRateSearch() throws Exception {
         for (String sort : new String[]{"latest", "matchRate"}) {
             mvc.perform(get("/api/jobs").with(authentication(principal)).param("itOnly", "true")
