@@ -287,7 +287,7 @@ input, select, textarea { accent-color: var(--primary); }
 .public-home { min-height: 100vh; padding: 0 clamp(16px, 4vw, 56px) 56px; background: radial-gradient(circle at 85% 15%, #eee5fa, transparent 36%), var(--background); }
 .public-home-header { max-width: 1280px; min-height: 80px; margin: auto; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .public-home-brand { color: var(--text); font-size: 1.45rem; font-weight: 850; letter-spacing: -.04em; text-decoration: none; }
-.public-home-header nav, .public-home-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
+.public-home-header nav { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
 .public-home-header nav > a:not(.button-link) { display: inline-flex; align-items: center; min-height: 44px; padding: 8px; font-weight: 700; }
 .public-home-hero { max-width: 1280px; margin: 0 auto; padding: clamp(56px, 8vw, 112px) 0 64px; }
 .public-home-hero h1 { max-width: 16ch; margin: 14px 0 20px; font-size: clamp(2.3rem, 5vw, 4.5rem); line-height: 1.15; letter-spacing: -.055em; }
@@ -333,7 +333,5 @@ input, select, textarea { accent-color: var(--primary); }
   .public-home-header nav { gap: 4px; }
   .public-home-header .button-link { padding: 8px 10px; }
   .public-home-hero { padding: 56px 0 48px; }
-  .public-home-actions { align-items: stretch; }
-  .public-home-actions .button-link { flex: 1 1 100%; }
   .public-home-features { grid-template-columns: 1fr; }
 }

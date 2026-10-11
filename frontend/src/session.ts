@@ -6,6 +6,6 @@ export function sessionFailureKind(failure: unknown): 'anonymous' | 'error' {
 
 export function anonymousRoute(path: string): 'home' | 'auth' | 'login' {
   if (path === '/') return 'home';
-  if (path === '/login' || path === '/register') return 'auth';
+  if (path === '/login' || path === '/register' || path === '/forgot-password') return 'auth';
   return 'login';
 }

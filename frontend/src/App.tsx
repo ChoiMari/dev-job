@@ -40,7 +40,7 @@ export function App() {
   const [checking, setChecking] = useState(true);
   const [loggingOut, setLoggingOut] = useState(false);
   const [retry, setRetry] = useState(0);
-  const publicPath = path === '/login' || path === '/register';
+  const publicPath = path === '/login' || path === '/register' || path === '/forgot-password';
   useEffect(() => {
     const onNavigation = () => setLocation(getPath());
     window.addEventListener('hashchange', onNavigation);
@@ -64,7 +64,7 @@ export function App() {
     const expired = () => {
       setUser(null);
       const currentPath = getPath().split('?')[0];
-      if (currentPath !== '/login' && currentPath !== '/register')
+      if (currentPath !== '/login' && currentPath !== '/register' && currentPath !== '/forgot-password')
         window.location.hash = '/login?sessionExpired=1';
     };
     const visible = () => { if (document.visibilityState === 'visible') check(); };
@@ -86,7 +86,7 @@ export function App() {
     if (user && publicPath) window.location.hash = '/';
   }, [checking, error, user, publicPath, path]);
 
-  const title = publicPath ? path === '/register' ? '회원가입' : '로그인'
+  const title = publicPath ? path === '/register' ? '회원가입' : path === '/forgot-password' ? '비밀번호 찾기' : '로그인'
     : path === '/' ? user ? '대시보드' : '홈' : path === '/profile' ? '내 프로필' : path === '/states' ? '공통 상태 확인'
       : path === '/projects' || path.startsWith('/projects/') ? '프로젝트 관리'
       : path === '/todos' || path.startsWith('/todos/') ? '내 할 일'
@@ -128,7 +128,7 @@ export function App() {
   if (user && publicPath) return <main id="main-content" className="auth-page"><LoadingState message="대시보드로 이동하고 있습니다." /></main>;
   if (!user && anonymousRoute(path) === 'home') return <PublicHome />;
   if (!user && anonymousRoute(path) === 'login') return <main id="main-content" className="auth-page"><LoadingState message="로그인 화면으로 이동하고 있습니다." /></main>;
-  if (!user) return <AuthPage key={path} register={path === '/register'}
+  if (!user) return <AuthPage key={path} register={path === '/register'} forgotPassword={path === '/forgot-password'}
     registered={location === '/login?registered=1'} passwordChanged={location === '/login?passwordChanged=1'}
     sessionExpired={location === '/login?sessionExpired=1'}
     onLogin={value => { setUser(value); window.location.hash = '/'; }} />;

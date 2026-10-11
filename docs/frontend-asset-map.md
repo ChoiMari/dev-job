@@ -4,6 +4,7 @@
 
 | 파일 경로 | 화면 경로 · 컴포넌트 | 표시 목적 | 원본 · 권장 표시 크기 | 투명 배경 | 접근성 처리 | 제작·교체 시 주의사항 |
 | --- | --- | --- | --- | --- | --- | --- |
+| `frontend/src/assets/redesign/cur-15-developer-at-work.png` | 비로그인 `#/` · `PublicHome` 히어로 | 여성 개발자의 작업 뒷모습으로 개발자 취업 준비 맥락 전달 | 1672×941px · 히어로 가용 너비 100%, 비율 유지 | 아니오 | 인접한 제목·설명이 의미를 전달하므로 `alt=""`, `aria-hidden="true"` | 기존 로고를 유지한다. 이미지가 실패해도 CSS 배경과 소개·로그인/회원가입 메뉴가 남는다. 장면의 공고·코드는 실제 데이터가 아니다. |
 | `frontend/src/assets/illustrations/dashboard-desk.png` | `#/` · `DashboardPage` 다음 행동 머리말 | 취업 준비 행동의 가벼운 시각 단서 | 192×192px · 데스크톱 64×64px, 모바일 48×48px | 예 | 주변 `다음 행동` 제목이 의미를 전달하므로 `alt=""`, `aria-hidden="true"` | 생성 원본을 최근접 이웃으로 축소한 PNG. 텍스트·수치·상태를 이미지에 넣지 말 것. 기존 캐릭터와 시각적 비중을 경쟁시키지 말 것. |
 | `frontend/src/assets/illustrations/dashboard-hero.webp` | `#/` · `DashboardPage` 첫 화면 배너 | 취업 준비 공간의 따뜻한 분위기와 픽셀 아트 콘셉트 전달 | 708×520px · 데스크톱 최대 460px 너비, 모바일 최대 225px 너비 | 예 | 문구가 별도로 있으므로 `alt=""`, `aria-hidden="true"` | Image Gen 원본을 내용에 맞게 자르고 최근접 이웃으로 축소한 WebP(약 244KB). 텍스트·실제 공고/지원 데이터·성장 상태를 넣지 말고 모바일에서 버튼을 가리지 않도록 배치할 것. |
 | `frontend/src/assets/illustrations/job-search.png` | `#/jobs` · `JobsPage` 검색 폼 머리말 | 공고 탐색의 시각 단서 | 192×192px · 데스크톱 96×96px, 모바일 64×64px | 예 | 검색 폼과 제목에 정보가 있으므로 `alt=""`, `aria-hidden="true"` | 종이 위의 선은 읽을 수 있는 글자가 아니다. 실제 공고 내용이나 검색 결과를 그림으로 암시하지 말 것. |
