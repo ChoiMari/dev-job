@@ -43,6 +43,11 @@ public class ApplicationService {
         catch (IllegalArgumentException exception) { throw new ResponseStatusException(HttpStatus.BAD_REQUEST); }
     }
     public ApplicationResponse detail(Long userId, long id) { return ApplicationResponse.from(owned(userId, id, false)); }
+    public ApplicationResponse forJob(Long userId, long jobId) {
+        if (jobId < 1) fail(HttpStatus.BAD_REQUEST);
+        return ApplicationResponse.from(applications.findByUserIdAndJobId(userId, jobId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND)));
+    }
     public List<ApplicationResponse.History> history(Long userId, long id) {
         owned(userId, id, false);
         return histories.findByApplicationIdOrderByChangedAtAscIdAsc(id).stream().map(ApplicationResponse.History::from).toList();

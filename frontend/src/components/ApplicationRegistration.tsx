@@ -10,8 +10,9 @@ import type { ApplicationStatus } from '../api/application-status';
 import '../pages/applications/applications.css';
 
 const applications = createApplicationsApi(apiRequest);
-export function ApplicationRegistration({ jobId, personalSavedJobId, status, onCreated }: {
+export function ApplicationRegistration({ jobId, personalSavedJobId, status, onCreated, buttonStatusPicker = false }: {
   jobId?: number; personalSavedJobId?: number; status: ApplicationStatus | null; onCreated: (status: ApplicationStatus) => void;
+  buttonStatusPicker?: boolean;
 }) {
   const [initial, setInitial] = useState<CreateApplication['status']>('PLANNED');
   const [open, setOpen] = useState(false);
@@ -38,11 +39,18 @@ export function ApplicationRegistration({ jobId, personalSavedJobId, status, onC
       } finally { setBusy(false); }
     }}>
       <fieldset disabled={busy}><legend>지원 등록 정보</legend>
-        <label>초기 상태<select value={initial} onChange={event => setInitial(event.target.value as CreateApplication['status'])}>
+        {buttonStatusPicker ? <div className="application-status-field"><span id="registration-status-label">초기 상태</span>
+          <div className="application-status-options" role="group" aria-labelledby="registration-status-label">
+            {(['INTERESTED', 'PLANNED', 'APPLIED'] as const).map(value => <button key={value} type="button"
+              aria-pressed={initial === value} onClick={() => setInitial(value)}>{statusLabels[value]}</button>)}
+          </div>
+        </div> : <label>초기 상태<select value={initial} onChange={event => setInitial(event.target.value as CreateApplication['status'])}>
           {(['INTERESTED', 'PLANNED', 'APPLIED'] as const).map(value => <option key={value} value={value}>{statusLabels[value]}</option>)}
-        </select></label>
+        </select></label>}
         {initial === 'APPLIED' && <label>지원일<input name="appliedDate" type="date" required /></label>}
-        <label>다음 일정 (내 시간대)<input name="nextScheduleAt" type="datetime-local" /></label>
+        <label>다음 확인 일정 (선택)<input name="nextScheduleAt" type="datetime-local" />
+          <small>서류 결과 확인이나 면접 준비처럼 다음에 챙길 날짜와 시간입니다.</small>
+        </label>
         <label htmlFor="registration-note">메모</label><textarea id="registration-note" name="note" maxLength={2000} rows={3} />
         <div className="application-actions"><button className="button-primary" type="submit">{busy ? '등록 중…' : '지원 기록 저장'}</button>
           <button type="button" onClick={() => setOpen(false)}>취소</button></div>

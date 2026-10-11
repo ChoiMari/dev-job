@@ -32,7 +32,7 @@ public record JobQuery(String q, String company, String careerLevel, String loca
         if (skillId != null) try { Long.parseLong(skillId); } catch (NumberFormatException exception) { invalid(); }
         if (minMatchRate != null && (!minMatchRate.matches("\\d{1,3}") || Integer.parseInt(minMatchRate) > 100)) invalid();
         if (source != null && (source.length() > 100 || !source.matches("[A-Z][A-Z0-9_]*"))) invalid();
-        if (role != null && !com.devjob.job.service.JobRoles.TERMS.containsKey(role)) invalid();
+        if (role != null && !com.devjob.job.service.JobRoles.supports(role)) invalid();
         if (careerBands != null) {
             if (careerBands.length() > 100) invalid();
             var bands = careerBands.split(",", -1);

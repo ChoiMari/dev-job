@@ -27,6 +27,10 @@ public class ApplicationController {
     public ApplicationResponse detail(@AuthenticationPrincipal CurrentUser user, @PathVariable long applicationId) {
         return applications.detail(user.id(), applicationId);
     }
+    @GetMapping("/by-job/{jobId}")
+    public ApplicationResponse forJob(@AuthenticationPrincipal CurrentUser user, @PathVariable long jobId) {
+        return applications.forJob(user.id(), jobId);
+    }
     @PatchMapping("/{applicationId}")
     public ApplicationResponse update(@AuthenticationPrincipal CurrentUser user, @PathVariable long applicationId, @RequestBody ApplicationInput.Update input) {
         return applications.update(user.id(), applicationId, input);

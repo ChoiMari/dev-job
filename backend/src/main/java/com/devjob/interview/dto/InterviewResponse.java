@@ -7,12 +7,13 @@ import java.time.ZoneId;
 
 public record InterviewResponse(Long id, Long applicationId, String title, OffsetDateTime startsAt,
         String stage, String interviewMethod, String memo,
-        String timeZone, String status, Instant cancelledAt, Instant createdAt, Instant updatedAt) {
+        String timeZone, String status, Instant cancelledAt, Instant completedAt, Instant createdAt, Instant updatedAt) {
     public static InterviewResponse from(InterviewSchedule interview) {
         return new InterviewResponse(interview.getId(), interview.getApplicationId(), interview.getTitle(),
                 interview.getStartsAt().atZone(ZoneId.of(interview.getTimeZone())).toOffsetDateTime(),
                 interview.getStage(), interview.getInterviewMethod(), interview.getMemo(),
-                interview.getTimeZone(), interview.getCancelledAt() == null ? "SCHEDULED" : "CANCELLED",
-                interview.getCancelledAt(), interview.getCreatedAt(), interview.getUpdatedAt());
+                interview.getTimeZone(), interview.getCancelledAt() != null ? "CANCELLED"
+                        : interview.getCompletedAt() != null ? "COMPLETED" : "SCHEDULED",
+                interview.getCancelledAt(), interview.getCompletedAt(), interview.getCreatedAt(), interview.getUpdatedAt());
     }
 }

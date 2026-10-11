@@ -3089,6 +3089,8 @@ Docker Compose
 
 외부 LLM과 채용 API는 외부 서비스이므로 Compose 내부에 포함하지 않는다.
 
+로컬 지속 사용 환경은 별도 Compose 프로젝트 `devjob-live`의 PostgreSQL 17과 영속 볼륨 `devjob-live_postgres-data`를 사용한다. 개발·시연·일회용 검증 컨테이너와 분리하며 앱 Backend의 DB 대상은 무시된 `.env.live` 및 `scripts/start-live.ps1`로 고정한다. 상세 실행·보존 방식은 [로컬 고정 데이터 환경](local-live-data.md)에 기록한다.
+
 
 
 \---

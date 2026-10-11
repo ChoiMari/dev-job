@@ -1,26 +1,21 @@
 import { useEffect, useState } from 'react';
 import { apiRequest } from '../../api';
-import { ApiError } from '../../api/client';
 import { createJobsApi } from '../../api/jobs';
-import type { JobDetail, JobPage, JobSummary } from '../../api/jobs';
+import type { JobPage } from '../../api/jobs';
 import { Badge } from '../../components/PixelArt';
 import { BookmarkButton } from '../../components/BookmarkButton';
 import { EmptyState, ErrorState, LoadingState } from '../../components/States';
 import { isApplicationStatus } from '../../api/application-status';
 import { ApplicationStatusBadge } from '../../components/ApplicationStatusBadge';
-import { ApplicationRegistration } from '../../components/ApplicationRegistration';
-import { JobAnalysis } from '../../components/JobAnalysis';
-import { JobMatch } from '../../components/JobMatch';
 import { createSkillsApi } from '../../api/skills';
 import type { SkillPage } from '../../api/skills';
 import './jobs.css';
 import jobResultsCompanion from '../../assets/redesign/cur-20-job-results-companion.png';
-import jobDetailArt from '../../assets/redesign/ext-img-07-source-exploration.png';
 
 const jobs = createJobsApi(apiRequest);
 const skills = createSkillsApi(apiRequest);
 const fields = ['q', 'company', 'location', 'careerLevel', 'employmentType', 'deadlineBefore'] as const;
-const roleLabels: Record<string, string> = { DEVELOPMENT: '개발', DATA_AI: '데이터·AI', SECURITY: '보안', INFRA: '클라우드·인프라', IT_OPERATIONS: '전산·IT 운영' };
+const roleLabels: Record<string, string> = { DEVELOPMENT: '개발', DATA_AI: '데이터·AI', SECURITY: '보안', INFRA: '클라우드·인프라', IT_OPERATIONS: '전산·IT 운영', OTHER: '기타' };
 const roleOptions = [{ value: '', label: '전체' }, ...Object.entries(roleLabels).map(([value, label]) => ({ value, label }))];
 const regionOptions = ['전국', '서울', '부산', '대구', '인천', '광주', '대전', '울산', '세종', '경기', '강원', '충북', '충남', '전북', '전남', '경북', '경남', '제주'];
 const careerOptions = [
@@ -72,7 +67,6 @@ function EmploymentFilter({ initial }: { initial: string }) {
       defaultChecked /><span>{initial}</span></label>}
   </div></fieldset>;
 }
-const shown = (value: string | null) => value || '정보 없음';
 const sourceLabel = (source: string) => source === 'ALIO_RECRUITMENT' ? '공공기관 채용'
   : source === 'WORK24_OPEN_RECRUITMENT' ? '고용24' : source;
 function SkillFilter({ initial }: { initial: string }) {
@@ -101,15 +95,6 @@ function SkillFilter({ initial }: { initial: string }) {
     {result && !error && result.items.length === 0 && <p>일치하는 기술이 없습니다.</p>}
     {result && result.totalElements > result.size && <p>처음 {result.size}개 결과입니다. 검색어를 구체적으로 입력해 주세요.</p>}
   </div>;
-}
-export function Metadata({ job }: { job: JobSummary }) {
-  return <dl className="job-metadata">
-    <div><dt>직무</dt><dd>{job.role ? roleLabels[job.role] || job.role : '정보 없음'}</dd></div>
-    <div><dt>지역</dt><dd>{shown(job.location)}</dd></div>
-    <div><dt>경력</dt><dd>{shown(job.careerRequirement)}</dd></div>
-    <div><dt>고용 형태</dt><dd>{shown(job.employmentType)}</dd></div>
-    <div><dt>마감일</dt><dd>{shown(job.deadlineDate)}</dd></div>
-  </dl>;
 }
 export function JobsPage({ location }: { location: string }) {
   const search = location.split('?')[1] || '';
@@ -171,7 +156,7 @@ export function JobsPage({ location }: { location: string }) {
       <fieldset className="job-filter-section job-role-filter"><legend>직무</legend><div className="job-preset-list job-role-options">
         {roleOptions.map(option => <label key={option.value} className="job-radio-chip"><input type="radio" name="role" value={option.value} defaultChecked={role === option.value} />
           <span>{option.label}</span></label>)}
-      </div></fieldset>
+      </div><small className="job-filter-help">기타는 제목으로 위 직무를 분류할 수 없는 공고입니다.</small></fieldset>
       <CareerFilter initial={careerBands} />
       <EmploymentFilter initial={params.get('employmentType') || ''} />
       <RegionFilter initial={params.get('location') || ''} />
@@ -204,63 +189,4 @@ export function JobsPage({ location }: { location: string }) {
       </>}
     </section>
   </div>;
-}
-
-export function JobDetailPage({ location }: { location: string }) {
-  const path = location.split('?')[0];
-  const id = Number(path.slice('/jobs/'.length));
-  const valid = /^\/jobs\/[1-9]\d*$/.test(path) && Number.isSafeInteger(id);
-  const query = new URLSearchParams(location.split('?')[1]);
-  const from = query.get('from') || '';
-  const origin = query.get('origin') === 'bookmarks' ? 'bookmarks' : 'jobs';
-  const back = `#/${origin}${from ? `?${from}` : ''}`;
-  const [data, setData] = useState<JobDetail>();
-  const [error, setError] = useState('');
-  const [missing, setMissing] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [retry, setRetry] = useState(0);
-  const [analysisStatus, setAnalysisStatus] = useState<string | null>(null);
-  useEffect(() => {
-    const controller = new AbortController();
-    setLoading(true); setError(''); setMissing(false); setData(undefined);
-    if (!valid) { setError('공고 주소를 확인해 주세요.'); setLoading(false); return; }
-    jobs.detail(id, controller.signal).then(value => { if (!controller.signal.aborted) { setData(value); setAnalysisStatus(value.analysis && typeof value.analysis === 'object' && 'status' in value.analysis ? String(value.analysis.status) : null); } }).catch(failure => {
-      if (controller.signal.aborted) return;
-      if (failure instanceof ApiError && failure.status === 404) setMissing(true);
-      else setError(failure instanceof Error ? failure.message : '공고를 불러오지 못했습니다.');
-    }).finally(() => { if (!controller.signal.aborted) setLoading(false); });
-    return () => controller.abort();
-  }, [id, valid, retry]);
-  return <div className="jobs-page"><a className="button-link" href={back}>← {origin === 'bookmarks' ? '관심 공고 목록' : '채용공고 목록'}</a>
-    <section className="card" aria-busy={loading}>{loading ? <LoadingState message="공고 상세를 불러오고 있습니다." />
-      : missing ? <EmptyState title="공고를 찾을 수 없습니다." message="삭제되었거나 존재하지 않는 공고입니다. 목록에서 다시 선택해 주세요." />
-      : error ? <ErrorState message={error} onRetry={() => setRetry(v => v + 1)} /> : data && <>
-        <div className="job-detail-intro job-hero"><div><p className="job-eyebrow">COLLECTED JOB</p><Badge icon="grid">{sourceLabel(data.source)}</Badge><p className="job-company">{data.company.name}</p><h2>{data.title}</h2></div><img src={jobDetailArt} alt="" aria-hidden="true" /></div>
-        <Metadata job={data} /><p>게시일: {shown(data.postedDate)}</p>
-        <div className="job-source-actions"><a className="button-link button-primary" href={data.sourceUrl} target="_blank" rel="noopener noreferrer">외부 원문 열기 (새 창)</a><p>외부 사이트에서 지원하는 행동과 이 앱에 지원 이력을 기록하는 행동은 별개입니다.</p></div>
-        <BookmarkButton key={`${data.id}-bookmark`} jobId={data.id} saved={data.bookmarked}
-          onChange={saved => setData(current => current?.id === id ? { ...current, bookmarked: saved } : current)} />
-        <ApplicationRegistration key={`${data.id}-application`} jobId={data.id} status={data.applicationStatus}
-          onCreated={applicationStatus => setData(current => current?.id === id ? { ...current, applicationStatus } : current)} />
-        <JobAnalysis key={`${data.id}-analysis`} jobId={data.id} canRequest={data.bookmarked}
-          initialStatus={data.analysis && typeof data.analysis === 'object' && 'status' in data.analysis ? String(data.analysis.status) : null} onStatusChange={setAnalysisStatus} />
-        <JobMatch key={`${data.id}-match`} jobId={data.id} analysisStatus={analysisStatus} />
-        <h3>{data.source === 'ALIO_RECRUITMENT' ? '제공된 채용 내용' : '채용공고 원문'}</h3>{data.description ? <div className="job-description">{data.description}</div>
-          : <p>저장된 본문이 없습니다. 외부 원문에서 채용 조건을 확인해 주세요.</p>}
-        {data.recruitment && <>
-          <h3>전형 단계</h3>
-          {data.recruitment.steps.length ? <ol className="job-recruitment-list">{data.recruitment.steps.map(step =>
-            <li key={step.externalId}><strong>{step.title}</strong>
-              {step.openings !== null && <span>채용 {step.openings}명</span>}
-              {step.applicants !== null && <span>지원 {step.applicants}명</span>}
-              {step.competitionRate && <span>경쟁률 {step.competitionRate}</span>}
-              {step.eventDate && <span>기준일 {step.eventDate}</span>}
-            </li>)}</ol> : <p>제공된 전형 단계가 없습니다.</p>}
-          <h3>첨부파일</h3>
-          {data.recruitment.attachments.length ? <ul className="job-recruitment-list">{data.recruitment.attachments.map(file =>
-            <li key={file.externalId}><a href={file.url} target="_blank" rel="noopener noreferrer">{file.name} (새 창)</a></li>)}</ul>
-            : <p>제공된 첨부파일이 없습니다.</p>}
-        </>}
-      </>}
-    </section></div>;
 }

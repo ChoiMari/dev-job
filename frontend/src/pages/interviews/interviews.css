@@ -55,6 +55,8 @@
 .interviews-field input, .interviews-field textarea { width: 100%; min-width: 0; min-height: 48px; padding: 10px 14px; border: 1px solid #d7d5ec; border-radius: 9px; background: #fff; color: var(--text); font: inherit; font-weight: 400; }
 .interviews-field textarea { min-height: 80px; resize: vertical; }
 .interviews-field input:focus, .interviews-field textarea:focus { outline: 2px solid #b4a4ef; outline-offset: 1px; }
+.interviews-field [aria-invalid="true"] { border-color: #d34970; }
+.interviews-field-error { color: #b33558; font-size: .8rem; font-weight: 600; }
 .interviews-date-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
 .interviews-application-picker { margin-top: 10px; }
 .interviews-application-picker .interviews-help { font-weight: 400; }

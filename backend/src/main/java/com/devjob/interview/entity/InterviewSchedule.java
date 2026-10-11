@@ -18,6 +18,7 @@ public class InterviewSchedule {
     @Column(name = "interview_method", length = 12) private String interviewMethod;
     @Column(length = 500) private String memo;
     @Column(name = "cancelled_at") private Instant cancelledAt;
+    @Column(name = "completed_at") private Instant completedAt;
     @Column(name = "created_at", nullable = false, updatable = false) private Instant createdAt;
     @Column(name = "updated_at", nullable = false) private Instant updatedAt;
 
@@ -40,8 +41,16 @@ public class InterviewSchedule {
         this.updatedAt = now();
     }
     public void setCancelled(boolean cancelled) {
+        if (cancelled && completedAt != null) throw new IllegalStateException("완료된 면접은 먼저 예정 상태로 되돌려 주세요.");
         if ((cancelledAt != null) != cancelled) {
             this.cancelledAt = cancelled ? now() : null;
+            this.updatedAt = now();
+        }
+    }
+    public void setCompleted(boolean completed) {
+        if (completed && cancelledAt != null) throw new IllegalStateException("취소된 면접은 먼저 예정 상태로 되돌려 주세요.");
+        if ((completedAt != null) != completed) {
+            this.completedAt = completed ? now() : null;
             this.updatedAt = now();
         }
     }
@@ -57,6 +66,7 @@ public class InterviewSchedule {
     public String getInterviewMethod() { return interviewMethod; }
     public String getMemo() { return memo; }
     public Instant getCancelledAt() { return cancelledAt; }
+    public Instant getCompletedAt() { return completedAt; }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
 }

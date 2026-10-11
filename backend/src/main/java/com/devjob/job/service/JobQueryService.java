@@ -59,8 +59,12 @@ public class JobQueryService {
             var filters = new ArrayList<Predicate>();
             if (input.itOnly()) filters.add(cb.or(ItJobTitles.TERMS.stream()
                     .map(term -> contains(cb, root.get("title"), term)).toArray(Predicate[]::new)));
-            if (input.role() != null) filters.add(cb.or(JobRoles.TERMS.get(input.role()).stream()
-                    .map(term -> contains(cb, root.get("title"), term)).toArray(Predicate[]::new)));
+            if (input.role() != null) {
+                var terms = JobRoles.OTHER.equals(input.role()) ? JobRoles.ALL_TERMS : JobRoles.TERMS.get(input.role());
+                var matchingRole = cb.or(terms.stream()
+                        .map(term -> contains(cb, root.get("title"), term)).toArray(Predicate[]::new));
+                filters.add(JobRoles.OTHER.equals(input.role()) ? cb.not(matchingRole) : matchingRole);
+            }
             if (input.source() != null) filters.add(cb.equal(root.join("jobSource").get("code"), input.source()));
             if (input.applicationStatus() != null) {
                 var owned = query.subquery(Long.class);

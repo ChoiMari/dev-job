@@ -45,6 +45,7 @@ export function createApplicationsApi(request: ReturnType<typeof createApiClient
       return { items: v.items.map(parse), page: v.page, size: v.size, totalElements: v.totalElements };
     },
     async detail(id: number, signal?: AbortSignal) { validId(id); return parse(await request(`/applications/${id}`, { signal })); },
+    async forJob(jobId: number, signal?: AbortSignal) { validId(jobId); return parse(await request(`/applications/by-job/${jobId}`, { signal })); },
     async history(id: number, signal?: AbortSignal): Promise<ApplicationHistory[]> {
       validId(id);
       const v = await request(`/applications/${id}/history`, { signal });

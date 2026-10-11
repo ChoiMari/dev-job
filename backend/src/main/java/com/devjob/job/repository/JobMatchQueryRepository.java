@@ -65,8 +65,9 @@ public class JobMatchQueryRepository {
             from.append(")");
         }
         if (input.role() != null) {
-            from.append(" and (");
-            var terms = JobRoles.TERMS.get(input.role());
+            boolean other = JobRoles.OTHER.equals(input.role());
+            from.append(other ? " and not (" : " and (");
+            var terms = other ? JobRoles.ALL_TERMS : JobRoles.TERMS.get(input.role());
             for (int i = 0; i < terms.size(); i++) {
                 if (i > 0) from.append(" or ");
                 from.append("lower(j.title) like :roleTerm").append(i).append(" escape '\\'");

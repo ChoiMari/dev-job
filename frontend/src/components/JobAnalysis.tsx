@@ -31,10 +31,10 @@ export function JobAnalysis({ jobId, initialStatus, canRequest, onStatusChange }
     setBusy(true); setError('');
     try { const value = await api.request(jobId); setAnalysis(value); onStatusChange?.(value.status); }
     catch (failure) { setError(failure instanceof ApiError && failure.status === 503
-      ? 'AI 분석 서버 설정을 확인해 주세요.' : failure instanceof Error ? failure.message : '분석 요청에 실패했습니다.'); }
+      ? 'AI 서비스 키가 설정되지 않았습니다. 서버 설정 후 다시 시도해 주세요.' : failure instanceof Error ? failure.message : '분석 요청에 실패했습니다.'); }
     finally { setBusy(false); }
   };
-  return <section className="job-analysis" aria-live="polite">
+  return <section className={`job-analysis${analysis?.status === 'COMPLETED' ? ' job-analysis--completed' : ''}`} aria-live="polite">
     <h3>AI 공고 분석</h3>
     {!analysis && !initialStatus && <><p>{canRequest ? '공고 원문에서 필수·우대 기술을 추출합니다.' : 'AI 분석은 관심 공고로 저장한 뒤 요청할 수 있습니다.'}</p>
       <button type="button" className="button-primary" disabled={busy || !canRequest} onClick={run}>{busy ? '요청 중…' : '분석하기'}</button></>}

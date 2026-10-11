@@ -159,6 +159,8 @@ V15__create_interested_companies.sql은 interested_company만 추가한다. id B
 
 `V27__interview_details.sql`은 기존 행을 유지하며 선택 컬럼 `stage` VARCHAR(12), `interview_method` VARCHAR(12), `memo` VARCHAR(500)를 추가한다. 단계와 방식은 각각 허용된 코드만 CHECK로 저장하고, 기존 행에서는 모두 `NULL`이다.
 
+`V28__interview_completion.sql`은 면접 일정에 nullable `completed_at` TIMESTAMPTZ를 추가한다. 기존 행은 `NULL`이며 `cancelled_at`과 동시에 값이 존재하지 않도록 CHECK 제약을 둔다. 완료·취소는 별도 상태이고, 재활성화하면 해당 시각을 비운다.
+
 ### B07 학습 목표
 
 `V22__learning_goals.sql`은 `learning_goal`을 추가한다. BIGINT identity `id`, 필수 `user_id` FK, 선택 `skill_id` 공용 Skill FK, 필수 `title` VARCHAR(200), 선택 `description` VARCHAR(2000), 필수 `progress_percent` 0~100 정수, 선택 `completed_at`·`deleted_at`, 필수 `created_at`·`updated_at` TIMESTAMPTZ를 둔다. 완료 시 진행률 100을 CHECK로 보장한다. 활성 목표의 `(user_id, coalesce(skill_id,-1), title)` 부분 UNIQUE 인덱스로 동일 제목·기술의 동시 중복 요청을 막고, 사용자별 `(user_id, updated_at DESC, id DESC)` 부분 인덱스로 목록을 조회한다. 제목은 서비스에서 공백을 축약해 저장한다. 삭제 시각이 있는 행은 일반 조회에서 제외한다. UserSkill 관계를 삭제해도 공용 Skill FK는 유지된다. 목표와 Skill Gap 결과는 별도 데이터이며 완료·취소·삭제는 UserSkill의 숙련도·경험 또는 기존 분석 계산을 자동 변경하지 않는다.

@@ -117,10 +117,13 @@ B00은 새 엔드포인트를 확정하거나 구현하지 않는다. 아래 기
 | `POST /api/me/interviews` | `{applicationId?: number|null, title: string, startsAt: string, timeZone: string, stage?: "FIRST"|"SECOND"|"FINAL"|"OTHER"|null, interviewMethod?: "IN_PERSON"|"ONLINE"|"PHONE"|null, memo?: string|null}` | `Interview` · `201` | 입력·시간대 오류 `400`, 연결 지원 없음 `404`, 타인 지원 `403` |
 | `GET /api/me/interviews/{interviewId}` | 없음 | `Interview` · `200` | 없음 `404`, 타인 일정 `403` |
 | `PATCH /api/me/interviews/{interviewId}` | 위 필드 중 하나 이상. 시간 변경 시 `startsAt`과 `timeZone`을 함께 제공. 선택 필드에 `null`을 보내면 값을 비움 | `Interview` · `200` | 입력 오류 `400`, 없음 `404`, 타인 일정·지원 `403` |
-| `POST /api/me/interviews/{interviewId}/cancel` | 없음 | 취소된 `Interview` · `200` | 없음 `404`, 타인 일정 `403` |
+| `POST /api/me/interviews/{interviewId}/cancel` | 없음 | 취소된 `Interview` · `200` | 없음 `404`, 타인 일정 `403`, 완료 상태 `409` |
+| `POST /api/me/interviews/{interviewId}/complete` | 없음 | 완료된 `Interview` · `200` | 없음 `404`, 타인 일정 `403`, 취소 상태 `409` |
 | `POST /api/me/interviews/{interviewId}/reactivate` | 없음 | 활성 `Interview` · `200` | 없음 `404`, 타인 일정 `403` |
 
-`Interview`: `{id, applicationId: number|null, title, startsAt, timeZone, stage: "FIRST"|"SECOND"|"FINAL"|"OTHER"|null, interviewMethod: "IN_PERSON"|"ONLINE"|"PHONE"|null, memo: string|null, status: "SCHEDULED"|"CANCELLED", cancelledAt: string|null, createdAt, updatedAt}`. `title`은 공백 제외 1~200자다. `memo`는 앞뒤 공백을 제거해 최대 500자로 저장하며 빈 값은 `null`이다. 기존 일정의 세 추가 필드는 `null`이다. `startsAt`은 오프셋을 포함한 ISO 8601 날짜·시각, `timeZone`은 IANA 시간대 ID(최대 100자)이며 요청 오프셋이 해당 시각의 시간대 오프셋과 같아야 한다. 응답은 입력 시간대의 오프셋으로 시작 시각을 표시한다. 취소·재활성화는 기록을 보존하며 중복 요청은 같은 상태를 `200`으로 반환한다. 취소된 일정도 목록·상세에서 조회하고 변경할 수 있다. 지원 연결은 선택이며 연결된 지원은 본인 소유여야 한다. 면접 일정과 `Application.nextScheduleAt`은 서로 자동 동기화하지 않고, 지원 상태·이력도 변경하지 않는다.
+`Interview`: `{id, applicationId: number|null, title, startsAt, timeZone, stage: "FIRST"|"SECOND"|"FINAL"|"OTHER"|null, interviewMethod: "IN_PERSON"|"ONLINE"|"PHONE"|null, memo: string|null, status: "SCHEDULED"|"CANCELLED"|"COMPLETED", cancelledAt: string|null, completedAt: string|null, createdAt, updatedAt}`. `title`은 공백 제외 1~200자다. `memo`는 앞뒤 공백을 제거해 최대 500자로 저장하며 빈 값은 `null`이다. 기존 일정의 세 추가 필드는 `null`이다. `startsAt`은 오프셋을 포함한 ISO 8601 날짜·시각, `timeZone`은 IANA 시간대 ID(최대 100자)이며 요청 오프셋이 해당 시각의 시간대 오프셋과 같아야 한다. 응답은 입력 시간대의 오프셋으로 시작 시각을 표시한다. 완료·취소 시각은 각각 상태 전환 시 기록하며 동시에 존재할 수 없다. 완료·취소 중복 요청은 같은 상태를 `200`으로 반환한다. 완료와 취소 사이 직접 전환은 `409`이며 먼저 재활성화해야 한다. 재활성화는 두 시각을 비우고 예정 상태로 돌린다. 취소·완료 일정도 목록·상세에서 조회하고 변경할 수 있다. 지원 연결은 선택이며 연결된 지원은 본인 소유여야 한다. 면접 일정과 `Application.nextScheduleAt`은 서로 자동 동기화하지 않고, 지원 상태·이력도 변경하지 않는다.
+
+POST·PATCH의 필드 검증 실패는 `400`과 `INVALID_INPUT`으로 응답하고, `message`에는 제목·날짜/시간·시간대·지원 이력·단계·방식·메모 중 거절된 항목의 안전한 안내 문구를 담는다. 목록 페이지 입력 오류 등 다른 `400`은 공통 오류 문구를 유지한다.
 
 ### B07 · 학습 목표 — EXT-05-04 (확정)
 

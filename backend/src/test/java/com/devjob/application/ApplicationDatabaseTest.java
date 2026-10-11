@@ -107,6 +107,19 @@ class ApplicationDatabaseTest {
         change(first, id, "PLANNED", "").andExpect(status().isConflict());
         assertThat(histories.findByApplicationIdOrderByChangedAtAscIdAsc(id)).hasSize(2);
     }
+    @Test void byJobReturnsOnlyOwnersApplicationDetails() throws Exception {
+        long id = created("PLANNED", ",\"note\":\"Check documents\",\"nextScheduleAt\":\"2026-10-10T14:00:00+09:00\"");
+        mvc.perform(get("/api/applications/by-job/" + job).with(authentication(auth(first))))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.id").value(id))
+                .andExpect(jsonPath("$.currentStatus").value("PLANNED"))
+                .andExpect(jsonPath("$.note").value("Check documents"))
+                .andExpect(jsonPath("$.nextScheduleAt").value("2026-10-10T05:00:00Z"));
+        mvc.perform(get("/api/applications/by-job/" + job).with(authentication(auth(second))))
+                .andExpect(status().isNotFound());
+        mvc.perform(get("/api/applications/by-job/0").with(authentication(auth(first))))
+                .andExpect(status().isBadRequest());
+        mvc.perform(get("/api/applications/by-job/" + job)).andExpect(status().isUnauthorized());
+    }
     @Test void ownerOnlyReadsWritesAndHistoryAndUnknownIdsAreDistinct() throws Exception {
         long id = created("PLANNED", "");
         for (String suffix : List.of("", "/history"))

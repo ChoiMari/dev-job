@@ -2,29 +2,39 @@ import { useEffect, useRef, useState } from 'react';
 import { apiRequest } from '../../api';
 import { ApiError } from '../../api/client';
 import { createInterviewsApi } from '../../api/interviews';
-import type { Interview, InterviewPage, InterviewStage, InterviewMethod } from '../../api/interviews';
+import type { Interview, InterviewStage, InterviewMethod } from '../../api/interviews';
 import { createApplicationsApi } from '../../api/applications';
 import type { Application } from '../../api/applications';
 import { statusLabels } from '../../api/application-status';
 import { EmptyState, ErrorState, LoadingState, SuccessState } from '../../components/States';
 import { LucideIcon } from '../../components/LucideIcon';
 import { scheduleFromLocal, scheduleLabel, zonedLocalInput } from './interviewTime';
-import interviewArt from '../../assets/redesign/ext-img-05c-interviews.png';
 import interviewPlannerCat from '../../assets/redesign/interview-planner-cat.png';
 import interviewBuilding from '../../assets/redesign/interview-building.png';
+import { InterviewOverview } from './InterviewOverview';
 import './interviews.css';
 
 const interviews = createInterviewsApi(apiRequest);
 const applications = createApplicationsApi(apiRequest);
 const message = (error: unknown) => error instanceof Error ? error.message : '면접 일정을 처리하지 못했습니다.';
-const statusLabel = (item: Interview) => item.status === 'CANCELLED' ? '취소' : Date.parse(item.startsAt) < Date.now() ? '지난 일정' : '예정';
+const statusLabel = (item: Interview) => item.status === 'CANCELLED' ? '취소' : item.status === 'COMPLETED' ? '완료' : Date.parse(item.startsAt) < Date.now() ? '지난 일정' : '예정';
 const applicationName = (item: Application) => item.job?.company.name ?? item.personalSavedJob?.companyName ?? '회사 정보 없음';
 const applicationRole = (item: Application) => item.job?.title ?? item.personalSavedJob?.title ?? '공고 제목 없음';
 const stageLabels: Record<InterviewStage, string> = { FIRST: '1차', SECOND: '2차', FINAL: '최종', OTHER: '기타' };
 const methodLabels: Record<InterviewMethod, string> = { IN_PERSON: '대면', ONLINE: '온라인', PHONE: '전화' };
+type InterviewField = 'title' | 'schedule' | 'application' | 'stage' | 'method' | 'memo';
+function fieldForError(error: string): InterviewField | null {
+  if (error.includes('제목')) return 'title';
+  if (error.includes('날짜') || error.includes('시간') || error.includes('시각')) return 'schedule';
+  if (error.includes('지원 이력')) return 'application';
+  if (error.includes('단계')) return 'stage';
+  if (error.includes('방식')) return 'method';
+  if (error.includes('메모')) return 'memo';
+  return null;
+}
 export function InterviewsPage({ location }: { location: string }) {
   const path = location.split('?')[0];
-  if (path === '/interviews') return <InterviewList />;
+  if (path === '/interviews') return <InterviewOverview />;
   if (path === '/interviews/new') {
     const requestedId = new URLSearchParams(location.split('?')[1] || '').get('applicationId');
     const applicationId = requestedId && /^[1-9]\d*$/.test(requestedId) && Number.isSafeInteger(Number(requestedId)) ? requestedId : '';
@@ -35,40 +45,6 @@ export function InterviewsPage({ location }: { location: string }) {
   return Number.isSafeInteger(id) && id > 0 ? <InterviewEditor id={id} /> : <section className="card">
     <EmptyState title="면접 일정 주소를 확인해 주세요." /><a className="button-link" href="#/interviews">목록으로</a>
   </section>;
-}
-
-function InterviewList() {
-  const [page, setPage] = useState(0);
-  const [result, setResult] = useState<InterviewPage>();
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [retry, setRetry] = useState(0);
-  useEffect(() => {
-    const controller = new AbortController(); setLoading(true); setError(''); setResult(undefined);
-    interviews.list(page, controller.signal).then(value => { if (!controller.signal.aborted) setResult(value); })
-      .catch(failure => { if (!controller.signal.aborted) setError(message(failure)); })
-      .finally(() => { if (!controller.signal.aborted) setLoading(false); });
-    return () => controller.abort();
-  }, [page, retry]);
-  return <div className="interviews-page"><section className="card interviews-hero">
-    <div><span className="eyebrow">INTERVIEW PLAN</span><h2>면접 일정</h2>
-      <p>면접 일정을 별도로 기록하고 취소 상태도 보관합니다. 지원의 다음 일정은 자동으로 바뀌지 않습니다.</p>
-      <a className="button-link button-primary" href="#/interviews/new">면접 일정 등록</a></div>
-    <img src={interviewArt} alt="" aria-hidden="true" width="180" height="180" /></section>
-    <section className="card interviews-content" aria-labelledby="interviews-list-title"><h2 id="interviews-list-title">내 일정</h2>
-      {loading ? <LoadingState message="면접 일정을 불러오고 있습니다." /> : error
-        ? <ErrorState message={error} onRetry={() => setRetry(value => value + 1)} /> : result && <>
-          {result.items.length ? <ul className="interviews-list">{result.items.map(item => <li key={item.id}>
-            <div><span className={`interviews-status ${item.status === 'CANCELLED' ? 'is-cancelled' : ''}`}>{statusLabel(item)}</span>
-              <h3><a href={`#/interviews/${item.id}`}>{item.title}</a></h3>
-              <p>{scheduleLabel(item.startsAt, item.timeZone)}</p>
-              {item.applicationId && <a href={`#/applications/${item.applicationId}`}>연결된 지원 #{item.applicationId}</a>}</div>
-          </li>)}</ul> : <EmptyState title={page ? '이 페이지에 일정이 없습니다.' : '등록한 면접 일정이 없습니다.'} message="새 일정을 등록해 관리하세요." />}
-          <div className="interviews-actions"><button type="button" disabled={page === 0} onClick={() => setPage(value => value - 1)}>이전</button>
-            <span role="status">총 {result.totalElements}건 · {page + 1}페이지</span>
-            <button type="button" disabled={(page + 1) * result.size >= result.totalElements} onClick={() => setPage(value => value + 1)}>다음</button></div>
-        </>}
-    </section></div>;
 }
 
 function InterviewEditor({ id, initialApplicationId = '' }: { id?: number; initialApplicationId?: string }) {
@@ -94,6 +70,7 @@ function InterviewEditor({ id, initialApplicationId = '' }: { id?: number; initi
   const [loadError, setLoadError] = useState('');
   const [loadStatus, setLoadStatus] = useState(0);
   const [error, setError] = useState('');
+  const [invalidField, setInvalidField] = useState<InterviewField | null>(null);
   const [success, setSuccess] = useState('');
   const [busy, setBusy] = useState(false);
   const [retry, setRetry] = useState(0);
@@ -149,14 +126,14 @@ function InterviewEditor({ id, initialApplicationId = '' }: { id?: number; initi
   }, [applicationId, applicationRecords, editing]);
   async function save(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault(); if (inFlight.current) return;
-    setError(''); setSuccess('');
+    setError(''); setInvalidField(null); setSuccess('');
     const linked = applicationId.trim() ? Number(applicationId) : null;
-    if (linked !== null && (!Number.isSafeInteger(linked) || linked <= 0)) { setError('지원 ID는 양의 정수로 입력해 주세요.'); return; }
-    if (!title.trim()) { setError('면접 제목을 입력해 주세요.'); return; }
+    if (linked !== null && (!Number.isSafeInteger(linked) || linked <= 0)) { setError('연결된 지원 이력을 다시 선택해 주세요.'); setInvalidField('application'); return; }
+    if (!title.trim()) { setError('면접 제목을 입력해 주세요.'); setInvalidField('title'); return; }
     let schedule: { startsAt: string; timeZone: string };
     try { schedule = item && localTime === zonedLocalInput(item.startsAt, item.timeZone)
       ? { startsAt: item.startsAt, timeZone: item.timeZone } : scheduleFromLocal(localTime); }
-    catch (failure) { setError(message(failure)); return; }
+    catch (failure) { setError(message(failure)); setInvalidField('schedule'); return; }
     inFlight.current = true; setBusy(true);
     try {
       const input = { applicationId: linked, title: title.trim(), stage, interviewMethod, memo: memo.trim() || null, ...schedule };
@@ -164,15 +141,15 @@ function InterviewEditor({ id, initialApplicationId = '' }: { id?: number; initi
       if (!mounted.current) return;
       if (!id) window.location.hash = `/interviews/${value.id}`;
       else { accept(await interviews.get(id)); setEditing(false); setSuccess('면접 일정을 저장했습니다.'); }
-    } catch (failure) { if (mounted.current) setError(message(failure)); }
+    } catch (failure) { if (mounted.current) { const detail = message(failure); setError(detail); setInvalidField(fieldForError(detail)); } }
     finally { inFlight.current = false; if (mounted.current) setBusy(false); }
   }
-  async function changeStatus() {
+  async function changeStatus(action: 'cancel' | 'complete' | 'reactivate') {
     if (!id || !item || inFlight.current) return;
     inFlight.current = true; setBusy(true); setError(''); setSuccess('');
     try {
-      const value = item.status === 'CANCELLED' ? await interviews.reactivate(id) : await interviews.cancel(id);
-      if (mounted.current) { accept(value); setSuccess(value.status === 'CANCELLED' ? '면접 일정을 취소했습니다.' : '면접 일정을 다시 활성화했습니다.'); }
+      const value = action === 'cancel' ? await interviews.cancel(id) : action === 'complete' ? await interviews.complete(id) : await interviews.reactivate(id);
+      if (mounted.current) { accept(value); setSuccess(value.status === 'CANCELLED' ? '면접 일정을 취소했습니다.' : value.status === 'COMPLETED' ? '면접 일정을 완료했습니다.' : '면접 일정을 다시 활성화했습니다.'); }
     } catch (failure) { if (mounted.current) setError(message(failure)); }
     finally { inFlight.current = false; if (mounted.current) setBusy(false); }
   }
@@ -206,13 +183,16 @@ function InterviewEditor({ id, initialApplicationId = '' }: { id?: number; initi
             <fieldset disabled={busy}>
               <header className="interviews-section-heading"><span className="interviews-section-icon"><LucideIcon name="fileText" /></span><div><h3>기본 정보</h3><p>면접 일정의 기본 정보를 입력해 주세요.</p></div></header>
               <label className="interviews-field"><span><LucideIcon name="fileText" /> 면접 제목 <em aria-hidden="true">*</em></span>
-                <input required maxLength={200} placeholder="예: 백엔드 개발자 1차 면접" value={title} onChange={event => setTitle(event.target.value)} /></label>
+                <input required maxLength={200} aria-invalid={invalidField === 'title'} placeholder="예: 백엔드 개발자 1차 면접" value={title}
+                  onChange={event => { setTitle(event.target.value); setError(''); setInvalidField(null); }} />
+                {invalidField === 'title' && <small className="interviews-field-error">{error}</small>}</label>
               <div className="interviews-date-row">
-                <label className="interviews-field"><span><LucideIcon name="calendar" /> 면접 날짜 <em aria-hidden="true">*</em></span><input type="date" required value={datePart}
-                  onChange={event => setLocalTime(`${event.target.value}T${timePart}`)} /></label>
-                <label className="interviews-field"><span><LucideIcon name="clock" /> 시작 시간 <em aria-hidden="true">*</em></span><input type="time" required value={timePart}
-                  onChange={event => setLocalTime(`${datePart}T${event.target.value}`)} /></label>
+                <label className="interviews-field"><span><LucideIcon name="calendar" /> 면접 날짜 <em aria-hidden="true">*</em></span><input type="date" required aria-invalid={invalidField === 'schedule'} value={datePart}
+                  onChange={event => { setLocalTime(`${event.target.value}T${timePart}`); setError(''); setInvalidField(null); }} /></label>
+                <label className="interviews-field"><span><LucideIcon name="clock" /> 시작 시간 <em aria-hidden="true">*</em></span><input type="time" required aria-invalid={invalidField === 'schedule'} value={timePart}
+                  onChange={event => { setLocalTime(`${datePart}T${event.target.value}`); setError(''); setInvalidField(null); }} /></label>
               </div>
+              {invalidField === 'schedule' && <small className="interviews-field-error">{error}</small>}
               <div className="interviews-field interviews-application-picker"><span><LucideIcon name="link" /> 연결된 지원 이력 (선택)</span>
                 <p className="interviews-help">어떤 지원 건의 면접인지 연결하면 나중에 일정을 더 쉽게 관리할 수 있어요.</p>
                 <div className="interviews-application-combobox" ref={applicationPickerRef}>
@@ -220,7 +200,7 @@ function InterviewEditor({ id, initialApplicationId = '' }: { id?: number; initi
                     aria-expanded={applicationOpen} aria-controls="interviews-application-list" aria-autocomplete="list"
                     placeholder="회사명 또는 직무로 검색하세요" value={applicationOpen ? applicationQuery : selectedApplicationLabel}
                     onFocus={() => { setApplicationQuery(''); setApplicationOpen(true); }}
-                    onChange={event => { setApplicationQuery(event.target.value); setApplicationOpen(true); }}
+                    onChange={event => { setApplicationQuery(event.target.value); setApplicationOpen(true); setError(''); setInvalidField(null); }}
                     onKeyDown={event => {
                       if (event.key === 'Escape') { setApplicationOpen(false); event.currentTarget.blur(); }
                       if (event.key === 'ArrowDown') setApplicationOpen(true);
@@ -236,7 +216,7 @@ function InterviewEditor({ id, initialApplicationId = '' }: { id?: number; initi
                   {applicationId && <button type="button" role="option" aria-selected={false} className="interviews-unlink"
                     onClick={() => { setApplicationId(''); setApplicationQuery(''); setApplicationOpen(false); }}>연결하지 않기</button>}
                   {matchingApplications.map(value => <button type="button" role="option" key={value.id} className={applicationId === String(value.id) ? 'is-selected' : ''}
-                    aria-selected={applicationId === String(value.id)} onClick={() => { setApplicationId(String(value.id)); setApplicationQuery(''); setApplicationOpen(false); }}>
+                    aria-selected={applicationId === String(value.id)} onClick={() => { setApplicationId(String(value.id)); setApplicationQuery(''); setApplicationOpen(false); setError(''); setInvalidField(null); }}>
                     <span className="interviews-option-building"><img src={interviewBuilding} alt="" aria-hidden="true" /></span>
                     <span className="interviews-option-copy"><strong>{applicationName(value)} · {applicationRole(value)}</strong><small>{statusLabels[value.currentStatus]} · 지원번호 #{value.id}</small></span>
                     <span className="interviews-option-check" aria-hidden="true">{applicationId === String(value.id) ? <LucideIcon name="check" /> : null}</span>
@@ -246,14 +226,21 @@ function InterviewEditor({ id, initialApplicationId = '' }: { id?: number; initi
                   {!applicationsLoading && !applicationsError && !matchingApplications.length && <p className="interviews-help">{applicationQuery ? '검색 결과가 없습니다.' : '등록된 지원 이력이 없습니다.'}</p>}
                   {applicationRecords.length < applicationTotal && <button className="interviews-more" type="button" disabled={applicationsLoading} onClick={() => setApplicationPage(value => value + 1)}>지원 이력 더 보기</button>}
                 </div>}</div>
+                {invalidField === 'application' && <small className="interviews-field-error">{error}</small>}
                 <p className="interviews-help">연결해도 지원 상태와 지원 관리의 다음 일정은 자동으로 바뀌지 않습니다.</p>
               </div>
               <div className="interviews-extra"><header className="interviews-section-heading"><span className="interviews-section-icon"><LucideIcon name="sliders" /></span><div><h3>추가 정보</h3><p>면접 준비에 필요한 내용을 기록해 주세요.</p></div></header>
                 <div className="interviews-date-row"><div className="interviews-field"><span><LucideIcon name="sliders" /> 면접 단계</span><div className="interviews-choice-row">{(Object.keys(stageLabels) as InterviewStage[]).map(value =>
-                  <button key={value} type="button" className={stage === value ? 'is-selected' : ''} aria-pressed={stage === value} onClick={() => setStage(value)}>{stageLabels[value]}</button>)}</div></div>
+                  <button key={value} type="button" className={stage === value ? 'is-selected' : ''} aria-pressed={stage === value}
+                    onClick={() => { setStage(value); setError(''); setInvalidField(null); }}>{stageLabels[value]}</button>)}</div>
+                  {invalidField === 'stage' && <small className="interviews-field-error">{error}</small>}</div>
                   <div className="interviews-field"><span><LucideIcon name="monitor" /> 면접 방식</span><div className="interviews-choice-row">{(Object.keys(methodLabels) as InterviewMethod[]).map(value =>
-                    <button key={value} type="button" className={interviewMethod === value ? 'is-selected' : ''} aria-pressed={interviewMethod === value} onClick={() => setInterviewMethod(value)}>{methodLabels[value]}</button>)}</div></div></div>
-                <label className="interviews-field"><span><LucideIcon name="message" /> 메모</span><textarea maxLength={500} rows={3} placeholder="면접 장소, 접속 링크, 준비물 등을 기록하세요." value={memo} onChange={event => setMemo(event.target.value)} /></label>
+                    <button key={value} type="button" className={interviewMethod === value ? 'is-selected' : ''} aria-pressed={interviewMethod === value}
+                      onClick={() => { setInterviewMethod(value); setError(''); setInvalidField(null); }}>{methodLabels[value]}</button>)}</div>
+                    {invalidField === 'method' && <small className="interviews-field-error">{error}</small>}</div></div>
+                <label className="interviews-field"><span><LucideIcon name="message" /> 메모</span><textarea maxLength={500} rows={3} aria-invalid={invalidField === 'memo'} placeholder="면접 장소, 접속 링크, 준비물 등을 기록하세요." value={memo}
+                  onChange={event => { setMemo(event.target.value); setError(''); setInvalidField(null); }} />
+                  {invalidField === 'memo' && <small className="interviews-field-error">{error}</small>}</label>
                 <small className="interviews-memo-count">{memo.length} / 500</small>
               </div>
             </fieldset>
@@ -285,10 +272,12 @@ function InterviewEditor({ id, initialApplicationId = '' }: { id?: number; initi
             <div><dt>면접 단계</dt><dd>{item.stage ? stageLabels[item.stage] : '미지정'}</dd></div>
             <div><dt>면접 방식</dt><dd>{item.interviewMethod ? methodLabels[item.interviewMethod] : '미지정'}</dd></div>
             {item.memo && <div><dt>메모</dt><dd>{item.memo}</dd></div>}
-            {item.cancelledAt && <div><dt>취소 시각</dt><dd>{scheduleLabel(item.cancelledAt, item.timeZone)}</dd></div>}</dl>
+            {item.cancelledAt && <div><dt>취소 시각</dt><dd>{scheduleLabel(item.cancelledAt, item.timeZone)}</dd></div>}
+            {item.completedAt && <div><dt>완료 시각</dt><dd>{scheduleLabel(item.completedAt, item.timeZone)}</dd></div>}</dl>
           <p className="interviews-help">이 일정은 지원의 다음 일정 및 지원 상태와 독립적으로 관리됩니다.</p>
           <div className="interviews-actions"><button type="button" disabled={busy} onClick={() => { setEditing(true); setSuccess(''); }}>수정</button>
-            <button type="button" disabled={busy} onClick={() => void changeStatus()}>{busy ? '처리 중…' : item.status === 'CANCELLED' ? '재활성화' : '일정 취소'}</button></div>
+            {item.status === 'SCHEDULED' ? <><button type="button" disabled={busy} onClick={() => void changeStatus('complete')}>완료</button><button type="button" disabled={busy} onClick={() => void changeStatus('cancel')}>일정 취소</button></>
+              : <button type="button" disabled={busy} onClick={() => void changeStatus('reactivate')}>{busy ? '처리 중…' : '예정으로 되돌리기'}</button>}</div>
         </section>}
       </>}
   </div>;

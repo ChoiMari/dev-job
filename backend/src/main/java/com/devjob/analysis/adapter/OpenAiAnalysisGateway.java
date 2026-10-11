@@ -12,9 +12,9 @@ public class OpenAiAnalysisGateway implements AnalysisGateway {
     public OpenAiAnalysisGateway(ChatModel model, @Value("${OPENAI_API_KEY:}") String key) {
         this.model = model; this.key = key;
     }
-    @Override public boolean available() { return !key.isBlank(); }
+    @Override public boolean available() { return !key.isBlank() && !"disabled".equalsIgnoreCase(key); }
     @Override public String analyze(String title, String description) {
-        if (key.isBlank()) throw new IllegalStateException("AI provider unavailable");
+        if (!available()) throw new IllegalStateException("AI provider unavailable");
         String source = ("제목: " + title + "\n공고 본문:\n" + (description == null ? "" : description));
         if (source.length() > 12000) source = source.substring(0, 12000);
         String instruction = "채용공고에서 명시된 개발 기술만 추출하세요. 추측하거나 원문에 없는 기술을 만들지 마세요. "

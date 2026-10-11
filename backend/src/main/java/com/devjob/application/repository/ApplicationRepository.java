@@ -12,6 +12,8 @@ import org.springframework.data.repository.query.Param;
 public interface ApplicationRepository extends JpaRepository<Application, Long> {
     boolean existsByUserIdAndJobId(Long userId, Long jobId);
     boolean existsByUserIdAndPersonalSavedJobId(Long userId, Long personalSavedJobId);
+    @EntityGraph(attributePaths = {"job", "job.company", "job.jobSource"})
+    Optional<Application> findByUserIdAndJobId(Long userId, Long jobId);
     @EntityGraph(attributePaths = {"job", "job.company", "job.jobSource", "personalSavedJob"})
     Page<Application> findByUserId(Long userId, Pageable pageable);
     @EntityGraph(attributePaths = {"job", "job.company", "job.jobSource", "personalSavedJob"})
