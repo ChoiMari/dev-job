@@ -1,5 +1,6 @@
 export const applicationStatuses = ['INTERESTED', 'PLANNED', 'APPLIED', 'DOCUMENT_PASSED', 'INTERVIEW', 'FINAL_PASSED', 'REJECTED', 'WITHDRAWN'] as const;
 export type ApplicationStatus = typeof applicationStatuses[number];
+export const newApplicationStatuses = ['PLANNED', 'APPLIED', 'DOCUMENT_PASSED', 'INTERVIEW', 'FINAL_PASSED', 'REJECTED', 'WITHDRAWN'] as const;
 export const statusLabels: Record<ApplicationStatus, string> = {
   INTERESTED: '관심', PLANNED: '지원 예정', APPLIED: '서류 접수', DOCUMENT_PASSED: '서류 합격',
   INTERVIEW: '면접', FINAL_PASSED: '최종 합격', REJECTED: '불합격', WITHDRAWN: '철회',

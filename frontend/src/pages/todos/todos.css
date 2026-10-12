@@ -36,6 +36,89 @@
 .todo-delete p { margin-top: 0; }
 @media (max-width: 650px) { .todos-intro { align-items: flex-start; } .todos-intro img { width: 96px; } .todos-list li { align-items: flex-start; flex-direction: column; } .todo-actions { flex-shrink: 1; } }
 @media (max-width: 370px) { .todos-intro img { display: none; } .todos-pagination { justify-content: center; } }
+
+/* 할 일 대시보드와 등록 모달 */
+main#main-content:has(> .todos-calendar-page) > .page-heading { display: none; }
+.todos-calendar-page { max-width: 1320px; gap: 14px; color: #17245e; }
+.todos-dashboard-header { display: flex; align-items: center; gap: 14px; min-height: 76px; padding: 14px 20px; border: 1px solid #d5e2ff; border-radius: 13px; background: linear-gradient(90deg, #eff6ff, #fff); }
+.todos-dashboard-icon { display: grid; place-items: center; width: 42px; height: 42px; flex: 0 0 auto; border-radius: 9px; background: #e5edff; color: #365df0; }
+.todos-dashboard-icon .pixel-icon { width: 28px; height: 28px; }
+.todos-dashboard-header h2 { margin: 0; font-size: 1.12rem; color: #111c5d; }
+.todos-dashboard-header p { margin: 3px 0 0; color: #6273a5; font-size: .77rem; }
+.todos-dashboard-header > a { margin-left: auto; white-space: nowrap; border-color: #345df5; background: #345df5; color: #fff; font-size: .82rem; }
+.todos-dashboard-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-items: stretch; }
+.todos-dashboard-calendar { grid-column: 1 / -1; }
+.todos-dashboard-calendar, .todos-dashboard-selected, .todos-dashboard-list { min-width: 0; padding: 13px; border: 1px solid #d5e2ff; border-radius: 10px; background: #fff; }
+.todos-dashboard-calendar h3, .todos-dashboard-list h3 { display: flex; align-items: center; gap: 7px; margin: 0 0 12px; color: #111c5d; font-size: .93rem; }
+.todos-dashboard-calendar h3 .pixel-icon, .todos-dashboard-list h3 .pixel-icon { width: 18px; height: 18px; color: #345df5; }
+.todos-dashboard-calendar .todos-calendar-controls { display: flex; align-items: center; gap: 3px; flex-wrap: wrap; margin-bottom: 10px; }
+.todos-dashboard-calendar .todos-calendar-controls > button { min-width: 29px; min-height: 30px; padding: 3px 6px; border: 1px solid #d8e1fb; border-radius: 5px; background: #fff; color: #3156cc; font-size: .72rem; }
+.todos-dashboard-calendar .todos-calendar-controls > strong { margin: 0 auto 0 4px; font-size: .77rem; white-space: nowrap; }
+.todos-dashboard-calendar .todos-view-switch { display: flex; padding: 2px; border-radius: 6px; background: #eef2ff; }
+.todos-dashboard-calendar .todos-view-switch button { min-height: 27px; padding: 3px 7px; border: 0; border-radius: 5px; background: transparent; color: #4e63b1; font-size: .69rem; }
+.todos-dashboard-calendar .todos-view-switch button[aria-pressed="true"] { background: #375df1; color: #fff; }
+.todos-dashboard-calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); border-top: 1px solid #e0e8fa; border-left: 1px solid #e0e8fa; }
+.todos-dashboard-weekday { padding: 7px 0; border-right: 1px solid #e0e8fa; border-bottom: 1px solid #e0e8fa; color: #45589a; font-size: .68rem; font-weight: 750; text-align: center; }
+.todos-dashboard-weekday:first-child { color: #ed576b; }
+.todos-dashboard-weekday:nth-child(7) { color: #3262df; }
+.todos-dashboard-day { display: grid; justify-items: center; align-content: center; gap: 3px; min-width: 0; min-height: 48px; padding: 3px 0; border: 0; border-right: 1px solid #e0e8fa; border-bottom: 1px solid #e0e8fa; border-radius: 0; background: #fff; color: #17245e; font-size: .74rem; }
+.todos-dashboard-day.is-outside { color: #a2afd3; background: #f8faff; }
+.todos-dashboard-day.is-today > span:first-child { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 5px; background: #3863f4; color: #fff; }
+.todos-dashboard-day.is-selected { box-shadow: inset 0 0 0 2px #7898ff; background: #edf3ff; }
+.todos-dashboard-calendar-grid.is-day { grid-template-columns: 1fr; }
+.todos-dashboard-dots { display: flex; gap: 3px; min-height: 5px; }
+.todos-dashboard-dots i { width: 5px; height: 5px; border-radius: 50%; background: #8390dc; }
+.todos-dashboard-selected h3 { display: flex; flex-wrap: wrap; align-items: baseline; gap: 7px; margin: 0 0 7px; color: #111c5d; font-size: .86rem; }
+.todos-dashboard-selected h3 small { color: #7182b5; font-size: .68rem; }
+.todos-dashboard-selected ul, .todos-dashboard-list ul { margin: 0; padding: 0; list-style: none; }
+.todos-dashboard-selected, .todos-dashboard-list { display: flex; flex-direction: column; gap: 10px; }
+.todos-dashboard-list { align-content: start; }
+.todos-dashboard-card-footer { display: flex; justify-content: flex-end; margin-top: auto; padding-top: 14px; }
+.todos-dashboard-card-footer .button-link { display: inline-flex; align-items: center; gap: 5px; border-color: #3863f4; background: #3863f4; color: #fff; font-size: .74rem; }
+.todos-dashboard-tabs, .todos-dashboard-categories { display: flex; align-items: center; flex-wrap: wrap; gap: 5px; }
+.todos-dashboard-tabs button { min-height: 30px; padding: 5px 8px; border: 1px solid #d9e3fb; border-radius: 6px; background: #f8faff; color: #4e61a5; font-size: .72rem; font-weight: 750; }
+.todos-dashboard-tabs button[aria-pressed="true"] { background: #3863f4; border-color: #3863f4; color: #fff; }
+.todos-dashboard-tabs span { margin-left: 3px; }
+.todos-dashboard-categories button { min-height: 26px; padding: 4px 7px; border: 1px solid #dce4fa; border-radius: 6px; background: #fff; color: #5064a6; font-size: .68rem; font-weight: 750; }
+.todos-dashboard-categories button[aria-pressed="true"] { border-color: #3863f4; box-shadow: inset 0 0 0 1px #3863f4; color: #2855da; }
+.todos-dashboard-list-tools { display: flex; gap: 8px; justify-content: space-between; }
+.todos-dashboard-list-tools label { min-width: 0; flex: 1; }
+.todos-dashboard-list-tools input, .todos-dashboard-list-tools select { width: 100%; min-height: 32px; padding: 5px 7px; border: 1px solid #dce4fa; border-radius: 6px; background: #fff; color: #283a7a; font: inherit; font-size: .72rem; }
+.todos-dashboard-list-tools select { width: auto; }
+.todos-task-row { display: grid; grid-template-columns: 17px auto minmax(0, 1fr) 20px; align-items: center; gap: 7px; min-width: 0; padding: 9px 3px; border-top: 1px solid #e9eefb; }
+.todos-task-row input { width: 15px; height: 15px; margin: 0; accent-color: #3863f4; }
+.todos-task-category, .todo-category { display: inline-flex; align-items: center; min-width: 0; padding: 4px 7px; border: 1px solid #dce4fa; border-radius: 5px; background: #edf2ff; color: #3a60d8; font-size: .66rem; font-weight: 750; white-space: nowrap; }
+.is-category-0, .todo-category--0 { background: #e4f9eb !important; color: #18935d !important; border-color: #c7efd7 !important; }
+.is-category-1, .todo-category--1 { background: #e7f0ff !important; color: #345dde !important; border-color: #c9dafa !important; }
+.is-category-2, .todo-category--2 { background: #ffedf1 !important; color: #d95472 !important; border-color: #fad3dd !important; }
+.is-category-3, .todo-category--3 { background: #fff0df !important; color: #bb6c25 !important; border-color: #f9ddbb !important; }
+.is-category-4, .todo-category--4, .is-category-custom, .todo-category--custom { background: #eef0ff !important; color: #6260c3 !important; border-color: #d7d9fb !important; }
+.todos-dashboard-dots .is-category-0 { background: #24b779 !important; }.todos-dashboard-dots .is-category-1 { background: #4682ed !important; }.todos-dashboard-dots .is-category-2 { background: #f16e8d !important; }.todos-dashboard-dots .is-category-3 { background: #efad5b !important; }
+.todos-task-copy { display: grid; gap: 2px; min-width: 0; }.todos-task-copy a { color: #1c2c75; font-size: .72rem; font-weight: 750; overflow-wrap: anywhere; }.todos-task-copy small { color: #6d7eac; font-size: .63rem; }.todos-task-row.is-done .todos-task-copy a { color: #7b87a8; text-decoration: line-through; }
+.todos-task-reminder { color: #ed5676; }.todos-task-more { color: #243e9d; text-decoration: none; font-weight: 800; text-align: center; }
+.todos-dashboard-empty { display: grid; justify-items: center; align-content: center; gap: 6px; min-height: 160px; padding: 18px; text-align: center; }.todos-dashboard-empty strong { color: #15235d; font-size: .82rem; }.todos-dashboard-empty p { margin: 0; color: #7182b5; font-size: .7rem; }.todos-dashboard-empty .button-link { margin-top: 7px; border-color: #3863f4; background: #3863f4; color: #fff; font-size: .74rem; }
+.todos-modal-backdrop { position: fixed; z-index: 1100; inset: 0; display: grid; place-items: center; padding: 20px; overflow-y: auto; background: #171d4e91; }
+.todos-modal { width: min(100%, 520px); max-height: calc(100vh - 40px); overflow-y: auto; padding: 20px; border: 1px solid #d7e2fb; border-radius: 13px; background: #fff; box-shadow: 0 22px 65px #17214b40; }
+.todos-editor .todos-editor-content { width: 100%; }.todos-editor > .button-link { margin-bottom: 0; }
+.todos-editor .todos-list-heading, .todos-modal .todos-list-heading { align-items: center; justify-content: flex-start; padding-bottom: 13px; border-bottom: 1px solid #e5eafb; }
+.todos-editor-heading-icon { display: grid; place-items: center; width: 37px; height: 37px; border-radius: 7px; background: #e9efff; color: #3760e9; }.todos-editor-heading-icon .pixel-icon { width: 23px; height: 23px; }
+.todos-editor .todos-list-heading h2, .todos-modal .todos-list-heading h2 { font-size: 1rem; color: #14225e; }.todos-editor .todos-list-heading p, .todos-modal .todos-list-heading p { margin: 3px 0 0; color: #7280a9; font-size: .72rem; }
+.todos-modal-close { margin-left: auto; border: 0; background: transparent; color: #25377f; font-size: 1.4rem; }
+.todos-modal .todos-form, .todos-editor .todos-form { gap: 12px; }.todos-modal .todos-form fieldset, .todos-editor .todos-form fieldset { gap: 13px; }
+.todos-modal .todos-form label, .todos-editor .todos-form label { gap: 5px; color: #1b2d72; font-size: .76rem; font-weight: 750; }
+.todos-modal .todos-form em, .todos-editor .todos-form em { color: #ed5676; font-style: normal; }.todos-modal .todos-form small, .todos-editor .todos-form small { justify-self: end; color: #7685ad; font-size: .67rem; }
+.todos-modal .todos-form input, .todos-modal .todos-form textarea, .todos-modal .todos-form select,
+.todos-editor .todos-form input, .todos-editor .todos-form textarea, .todos-editor .todos-form select { width: 100%; min-height: 38px; padding: 8px 10px; border: 1px solid #d5e0fa; border-radius: 6px; background: #fff; color: #233774; font: inherit; font-size: .77rem; }
+.todos-modal .todos-form textarea, .todos-editor .todos-form textarea { min-height: 84px; resize: vertical; }
+.todos-category-field { display: grid; gap: 6px; color: #1b2d72; font-size: .76rem; }.todos-category-field > strong { font-size: .76rem; }
+.todos-category-choices { display: flex; flex-wrap: wrap; gap: 5px; }.todos-category-choices button { min-height: 30px; padding: 4px 9px; border-radius: 6px; font-size: .72rem; font-weight: 750; }.todos-category-choices .todo-category[aria-pressed="true"] { box-shadow: inset 0 0 0 1px #3863f4; border-color: #3863f4 !important; }
+.todos-category-choices .todos-category-open { border: 1px solid #d5e0fa; background: #fff; color: #355ce4; }
+.todos-category-picker { display: grid; gap: 8px; padding: 10px; border: 1px solid #bcd0ff; border-radius: 8px; background: #f7faff; }.todos-category-picker-heading { display: flex; justify-content: space-between; gap: 8px; }.todos-category-picker-heading span { color: #4c6ed2; font-size: .68rem; }
+.todos-category-picker-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px; }.todos-category-picker-grid button { min-height: 31px; border: 1px solid #d4def9; border-radius: 6px; background: #fff; color: #334881; font-size: .71rem; }.todos-category-picker-grid button[aria-pressed="true"] { border-color: #3863f4; background: #e7edff; color: #2852d3; }
+.todos-category-create { display: flex; gap: 5px; }.todos-category-create button { border: 1px solid #3863f4; border-radius: 6px; background: #fff; color: #2852d3; font-size: .72rem; }.todos-category-manage { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }.todos-category-manage li { display: flex; justify-content: space-between; align-items: center; padding: 4px 6px; background: #fff; border-radius: 5px; }.todos-category-manage button { min-height: 27px; border: 0; background: transparent; color: #bc3f62; font-size: .68rem; }
+.todos-date-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }.todos-modal .todos-help, .todos-editor .todos-help { margin: -8px 0 0; color: #6e7eab; font-size: .68rem; }
+.todos-modal .todo-actions, .todos-editor .todos-form > .todo-actions { justify-content: flex-end; padding-top: 12px; border-top: 1px solid #e6ebfa; }.todos-modal .todo-actions button, .todos-editor .todos-form > .todo-actions button { min-width: 90px; border: 1px solid #d5e0fa; border-radius: 6px; background: #fff; color: #3855b4; font-size: .76rem; }.todos-modal .todo-actions .button-primary, .todos-editor .todos-form > .todo-actions .button-primary { border-color: #3863f4; background: #3863f4; color: #fff; }
+@media (max-width: 560px) { .todos-dashboard-grid { grid-template-columns: 1fr; }.todos-dashboard-header { flex-wrap: wrap; }.todos-dashboard-header > a { margin-left: 0; }.todos-modal-backdrop { padding: 8px; }.todos-modal { max-height: calc(100vh - 16px); padding: 15px; } }
 .todos-calendar-page { max-width: 1320px; gap: 16px; }
 .todos-calendar-intro { display: grid; grid-template-columns: 104px minmax(0, 1fr) auto; align-items: center; gap: 16px; min-height: 122px; padding: 12px 22px; overflow: hidden; border: 1px solid #dce6fa; border-radius: 16px; background: linear-gradient(105deg, #edf4ff, #f5f8ff 66%, #eaf4ff); }
 .todos-calendar-intro img { width: 104px; height: 104px; max-height: none; object-fit: contain; margin: 0; }
@@ -113,3 +196,223 @@
 @media (max-width: 600px) { .todos-calendar-card { padding: 12px; } .todos-calendar-intro { padding: 16px; } .todos-calendar-intro img { width: 92px; } .todos-calendar-search { max-width: none; } .todos-calendar-day { min-height: 74px; padding: 3px; } .todos-day-number { width: 24px; min-height: 24px; font-size: .72rem; } .todos-day-item { min-height: 8px; padding: 0; font-size: 0; } .todos-day-item small { display: none; } .todos-calendar-aside { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 600px) { .todos-filter-list ul { padding: 0 12px; } .todos-filter-list li { grid-template-columns: 20px minmax(0, 1fr) auto; gap: 5px 10px; } .todos-filter-list-due { grid-column: 2; grid-row: 2; white-space: normal; } .todos-filter-list-status { grid-column: 3; grid-row: 1 / 3; } }
 @media (max-width: 600px) { .todos-calendar-intro { grid-template-columns: 86px minmax(0, 1fr); gap: 10px; padding: 12px; } .todos-calendar-intro img { width: 86px; height: 86px; } .todos-calendar-intro h2 { font-size: 1.12rem; } .todos-calendar-intro p { font-size: .75rem; } .todos-calendar-intro-add { grid-column: 2; justify-self: start; margin: 0; } }
+
+/* 할 일 대시보드와 카테고리 선택에 쓰는 픽셀 이미지 */
+.todos-dashboard-icon { width: 48px; height: 48px; background: transparent; }
+.todos-dashboard-icon img { width: 46px; height: 46px; object-fit: contain; image-rendering: pixelated; }
+.todos-dashboard-header > a, .todos-dashboard-empty .button-link { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.todos-dashboard-header > a img, .todos-dashboard-empty .button-link img { width: 17px; height: 17px; object-fit: contain; image-rendering: pixelated; }
+.todos-dashboard-calendar h3 img, .todos-dashboard-list h3 img { width: 22px; height: 22px; object-fit: contain; image-rendering: pixelated; }
+.todos-dashboard-calendar .todos-calendar-controls > button img { display: block; width: 14px; height: 14px; object-fit: contain; image-rendering: pixelated; }
+.todos-task-category, .todo-category, .todos-dashboard-categories button { gap: 4px; }
+.todos-task-category img, .todo-category img, .todos-dashboard-categories button img, .todos-category-picker-grid button img, .todos-category-manage img { width: 16px; height: 16px; flex: none; object-fit: contain; image-rendering: pixelated; }
+.todos-task-reminder { display: inline-flex; align-items: center; gap: 2px; }
+.todos-task-reminder img { width: 13px; height: 13px; object-fit: contain; image-rendering: pixelated; }
+.todos-task-more img { width: 18px; height: 18px; object-fit: contain; image-rendering: pixelated; }
+.todos-dashboard-empty .todos-empty-illustration { width: 105px; height: 90px; object-fit: contain; image-rendering: pixelated; }
+.todos-dashboard-list-tools label { position: relative; }
+.todos-dashboard-list-tools label > img { position: absolute; top: 50%; left: 7px; width: 17px; height: 17px; transform: translateY(-50%); object-fit: contain; image-rendering: pixelated; pointer-events: none; }
+.todos-dashboard-list-tools label > input { padding-left: 30px; }
+.todos-dashboard-list-tools .todos-sort-label { flex: 0 0 auto; }
+.todos-dashboard-list-tools .todos-sort-label select { padding-left: 26px; }
+.todos-editor-heading-icon { width: 39px; height: 39px; background: transparent; }
+.todos-editor-heading-icon img { width: 38px; height: 38px; object-fit: contain; image-rendering: pixelated; }
+.todos-category-picker-grid button { display: flex; align-items: center; gap: 5px; padding: 4px 7px; }
+.todos-category-manage li > span { display: inline-flex; align-items: center; gap: 5px; }
+.todos-category-icon-picker { display: grid; gap: 5px; color: #233774; }
+.todos-category-icon-picker > strong { font-size: .7rem; }
+.todos-category-icon-picker > div { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 5px; }
+.todos-category-icon-picker button { display: grid; justify-items: center; gap: 2px; min-height: 58px; padding: 5px 2px; border: 1px solid #d4def9; border-radius: 6px; background: #fff; color: #334881; font-size: .63rem; }
+.todos-category-icon-picker button[aria-pressed="true"] { border-color: #3863f4; box-shadow: inset 0 0 0 1px #3863f4; background: #e7edff; }
+.todos-category-icon-picker button img { width: 25px; height: 25px; object-fit: contain; image-rendering: pixelated; }
+.todos-field-label { display: inline-flex; align-items: center; gap: 4px; }
+.todos-field-label img { width: 17px; height: 17px; object-fit: contain; image-rendering: pixelated; }
+/* 생성 이미지의 투명 여백을 CSS로 보정해 원본은 재사용한다. */
+.todos-task-category img, .todo-category img, .todos-dashboard-categories button img, .todos-category-picker-grid button img, .todos-category-manage img { width: 28px; height: 28px; margin: -6px; max-width: none; }
+.todos-category-icon-picker button img { width: 43px; height: 43px; margin: -9px; max-width: none; }
+.todos-dashboard-icon img { width: 68px; height: 68px; margin: -11px; max-width: none; }
+.todos-dashboard-calendar h3 img, .todos-dashboard-list h3 img { width: 34px; height: 34px; margin: -6px; max-width: none; }
+.todos-editor-heading-icon img { width: 60px; height: 60px; margin: -11px; max-width: none; }
+.todos-dashboard-header > a img, .todos-dashboard-empty .button-link img, .todos-field-label img { width: 29px; height: 29px; margin: -6px; max-width: none; }
+.todos-task-reminder img { width: 23px; height: 23px; margin: -5px; max-width: none; }
+.todos-task-more img { width: 30px; height: 30px; margin: -6px; max-width: none; }
+.todos-dashboard-list-tools label > img { width: 28px; height: 28px; left: 1px; max-width: none; }
+
+/* 작은 화면에서도 새 자연색 아이콘을 읽을 수 있도록 원본 투명 여백과 버튼 크기를 맞춘다. */
+.todos-dashboard-icon img { width: 52px; height: 52px; margin: -2px; image-rendering: auto; }
+.todos-dashboard-calendar h3 img, .todos-dashboard-list h3 img { width: 29px; height: 29px; margin: -3px; image-rendering: auto; }
+.todos-editor-heading-icon img { width: 43px; height: 43px; margin: -2px; image-rendering: auto; }
+.todos-task-category img, .todo-category img, .todos-dashboard-categories button img, .todos-category-picker-grid button img, .todos-category-manage-list img { width: 22px; height: 22px; margin: 0; object-fit: contain; image-rendering: auto; }
+.todos-task-category, .todo-category, .todos-dashboard-categories button { gap: 5px; }
+.todos-dashboard-categories button { display: inline-flex; align-items: center; min-height: 34px; padding: 4px 8px; }
+.todos-category-choices button { min-height: 38px; }
+.todos-category-picker-grid button { min-height: 38px; }
+.todos-task-reminder img { width: 21px; height: 21px; margin: 0; image-rendering: auto; vertical-align: middle; }
+.todos-field-label img { width: 21px; height: 21px; margin: 0; image-rendering: auto; }
+.todos-calendar-arrow { display: grid; place-items: center; font-size: 1.5rem !important; font-weight: 700; line-height: 1; }
+.todos-dashboard-calendar .todos-calendar-controls > .todos-calendar-arrow { min-width: 34px; min-height: 34px; padding: 0 0 3px; }
+.todos-dashboard-list-tools { align-items: end; }
+.todos-dashboard-list-tools .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+.todos-dashboard-list-tools .todos-search-label { display: block; flex: 1 1 auto; }
+.todos-dashboard-list-tools .todos-search-label::before { content: ''; position: absolute; z-index: 1; top: 10px; left: 10px; width: 11px; height: 11px; border: 2px solid #6d7490; border-radius: 50%; pointer-events: none; }
+.todos-dashboard-list-tools .todos-search-label::after { content: ''; position: absolute; z-index: 1; top: 23px; left: 24px; width: 7px; height: 2px; background: #6d7490; transform: rotate(45deg); transform-origin: left center; pointer-events: none; }
+.todos-dashboard-list-tools .todos-search-label input { min-height: 38px; padding: 6px 8px 6px 36px; }
+.todos-dashboard-list-tools .todos-sort-label select { min-height: 38px; padding: 6px 24px 6px 9px; }
+.todos-task-row { grid-template-columns: 17px auto minmax(0, 1fr) 28px; }
+.todos-task-actions { position: relative; }
+.todos-task-more { display: grid; place-items: center; width: 28px; height: 28px; padding: 0; border: 0; border-radius: 6px; background: transparent; font-size: 1.35rem; line-height: 1; cursor: pointer; }
+.todos-task-more:hover, .todos-task-more[aria-expanded="true"] { background: #eef2ff; }
+.todos-task-menu { position: absolute; z-index: 5; top: 100%; right: 0; display: grid; gap: 3px; min-width: 112px; padding: 5px; border: 1px solid #d5def4; border-radius: 8px; background: #fff; box-shadow: 0 8px 20px #18204d27; }
+.todos-task-menu a, .todos-task-menu button, .todos-task-menu span { display: block; width: 100%; padding: 6px 8px; border: 0; border-radius: 5px; background: transparent; color: #263568; font-size: .74rem; text-align: left; text-decoration: none; white-space: nowrap; }
+.todos-task-menu a:hover, .todos-task-menu button:hover { background: #eef2ff; }
+.todos-task-menu button { cursor: pointer; }
+.todos-task-menu span { color: #a83c53; }
+.todos-modal .todos-form label .todos-field-label, .todos-editor .todos-form label .todos-field-label { display: inline-flex; justify-self: start; align-items: center; gap: 3px; min-height: 18px; }
+.todos-modal .todos-form label .todos-field-label em, .todos-editor .todos-form label .todos-field-label em { display: inline; }
+.todos-modal .todos-form .todos-no-due, .todos-editor .todos-form .todos-no-due { display: inline-flex; justify-self: start; align-items: center; gap: 7px; }
+.todos-modal .todos-form .todos-no-due input, .todos-editor .todos-form .todos-no-due input { width: 17px; height: 17px; min-height: 17px; margin: 0; accent-color: #5862c4; }
+.todos-category-picker-heading button { padding: 0; border: 0; background: transparent; color: #385fe1; font-size: .71rem; cursor: pointer; }
+.todos-category-add-link { min-height: 34px; border: 1px dashed #9db7f9; border-radius: 6px; background: #fff; color: #3154d5; font-size: .72rem; font-weight: 700; }
+.todos-category-dialog-backdrop { position: fixed; z-index: 1200; inset: 0; display: grid; place-items: center; padding: 16px; background: #171d4eb3; }
+.todos-category-dialog { width: min(100%, 440px); max-height: calc(100vh - 32px); overflow-y: auto; display: grid; gap: 14px; padding: 18px; border: 1px solid #cbd7f5; border-radius: 13px; background: #fff; box-shadow: 0 24px 70px #12194055; color: #19285e; }
+.todos-category-dialog header { display: flex; justify-content: space-between; align-items: start; gap: 12px; padding-bottom: 12px; border-bottom: 1px solid #e7ebf7; }
+.todos-category-dialog h2 { margin: 0; font-size: 1rem; }
+.todos-category-dialog header p { margin: 4px 0 0; color: #6a79a5; font-size: .7rem; }
+.todos-category-dialog header > button { width: 28px; height: 28px; border: 0; background: transparent; color: #263568; font-size: 1.4rem; }
+.todos-category-name-label { display: grid; gap: 5px; font-size: .75rem; font-weight: 750; }
+.todos-category-name-label em, .todos-category-icon-picker em, .todos-category-colors em { color: #e65d79; font-style: normal; }
+.todos-category-name-label input { min-height: 40px; padding: 8px 10px; border: 1px solid #cfdbf9; border-radius: 7px; font: inherit; }
+.todos-category-name-label small { justify-self: end; color: #7584a8; font-size: .65rem; }
+.todos-category-icon-picker > div { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+.todos-category-icon-picker button { min-height: 54px; padding: 4px; }
+.todos-category-icon-picker button img { width: 36px; height: 36px; margin: 0; image-rendering: auto; }
+.todos-category-icon-picker > p { margin: 0; color: #7180a9; font-size: .67rem; }
+.todos-category-colors { display: grid; gap: 8px; font-size: .75rem; }
+.todos-category-colors > div { display: flex; flex-wrap: wrap; gap: 12px; }
+.todos-category-colors button { width: 29px; height: 29px; padding: 0; border: 2px solid #fff; border-radius: 50%; box-shadow: 0 0 0 1px #d5def2; }
+.todos-category-colors button[aria-pressed="true"] { box-shadow: 0 0 0 2px #3863f4; }
+.todos-category-limit { margin: 0; padding: 9px; border-radius: 6px; background: #f0f4fe; color: #61729e; font-size: .69rem; }
+.todos-category-dialog footer { display: flex; justify-content: flex-end; gap: 7px; padding-top: 11px; border-top: 1px solid #e7ebf7; }
+.todos-category-dialog footer button, .todos-category-manage-summary button { min-height: 34px; padding: 5px 14px; border: 1px solid #cfdbf9; border-radius: 6px; background: #fff; color: #3150b1; font-size: .72rem; font-weight: 700; }
+.todos-category-dialog footer .button-primary, .todos-category-manage-summary button { border-color: #3863f4; background: #3863f4; color: #fff; }
+.todos-category-manage-summary { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 9px; border-radius: 7px; background: #f1f5ff; }
+.todos-category-manage-summary p { margin: 0; color: #6b7aa5; font-size: .66rem; line-height: 1.45; }
+.todos-category-manage-summary button { white-space: nowrap; }
+.todos-category-manage-list { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.todos-category-manage-list li { display: grid; grid-template-columns: 14px 24px minmax(0, 1fr) 70px 32px auto; align-items: center; gap: 6px; min-height: 39px; padding: 4px 6px; border: 1px solid #e1e7f6; border-radius: 6px; background: #fff; }
+.todos-category-manage-list li[draggable="true"] { cursor: grab; }
+.todos-category-manage-list li > strong { overflow: hidden; font-size: .73rem; text-overflow: ellipsis; white-space: nowrap; }
+.todos-category-drag { color: #8998c1; font-size: 1rem; }
+.todos-category-color-name { display: inline-flex; align-items: center; gap: 4px; font-size: .65rem; }
+.todos-category-color-name i { width: 10px; height: 10px; border-radius: 50%; background: currentColor; }
+.todos-category-manage-list li > button { min-height: 26px; padding: 3px 5px; border: 1px solid #dbe4f9; border-radius: 5px; background: #fff; color: #3651a2; font-size: .67rem; }
+.todos-category-manage-list .todos-delete-open, .todos-category-manage-list .todos-delete-confirm { color: #d34862; }
+.todos-category-delete-hint { margin: 0; color: #a14d67; font-size: .67rem; }
+.todos-category-delete-hint button { border: 0; background: transparent; color: #3651a2; text-decoration: underline; }
+@media (max-width: 460px) {
+  .todos-category-icon-picker > div { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .todos-category-manage-list li { grid-template-columns: 12px 22px minmax(0, 1fr) 48px 30px auto; gap: 4px; }
+  .todos-category-manage-summary { flex-wrap: wrap; }
+}
+
+/* 할 일 대시보드 피드백 */
+.todos-dashboard-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.todos-dashboard-calendar, .todos-dashboard-selected, .todos-dashboard-list { padding: 18px; }
+.todos-dashboard-calendar h3 img, .todos-dashboard-list h3 img { width: 30px; height: 30px; margin: 0; }
+.todos-dashboard-calendar .todos-calendar-controls { gap: 8px; margin-bottom: 14px; }
+.todos-calendar-period { display: inline-flex; align-items: center; gap: 4px; }
+.todos-calendar-period strong { min-width: 92px; color: #192967; font-size: .85rem; text-align: center; white-space: nowrap; }
+.todos-calendar-period .todos-calendar-arrow { min-width: 34px; min-height: 34px; padding: 0 0 3px; border: 1px solid #d8e1fb; border-radius: 6px; background: #fff; color: #3156cc; }
+.todos-dashboard-calendar-grid .todos-dashboard-day { min-height: 62px; font-size: .83rem; }
+.todos-dashboard-calendar-grid .todos-dashboard-day.is-sunday { color: #e25265; }
+.todos-dashboard-calendar-grid .todos-dashboard-day.is-saturday { color: #315fe2; }
+.todos-dashboard-calendar-grid .todos-dashboard-day.is-outside.is-sunday { color: #e6aab3; }
+.todos-dashboard-calendar-grid .todos-dashboard-day.is-outside.is-saturday { color: #a6b9ee; }
+.todos-dashboard-calendar-grid .todos-dashboard-day.is-today > span:first-child { color: #fff; }
+.todos-dashboard-empty { min-height: 230px; }
+.todos-dashboard-empty .todos-empty-illustration { width: 170px; height: 145px; image-rendering: auto; }
+.todos-category-notice { margin: 0; padding: 8px 12px; border: 1px solid #c8ecd8; border-radius: 8px; background: #effbf4; color: #2f7852; font-size: .75rem; }
+.todos-category-list-open { border: 1px solid #d5e0fa; background: #fff; color: #355ce4; }
+.todos-dashboard-categories .todos-category-expand { border: 1px dashed #abc1ef; background: #f9fbff; color: #3058ce; }
+.todo-tone-blue { --todo-tone-bg:#e8f0ff; --todo-tone-ink:#315dd4; --todo-tone-border:#c7d9fa; }
+.todo-tone-green { --todo-tone-bg:#e3faed; --todo-tone-ink:#168b5b; --todo-tone-border:#bdebd3; }
+.todo-tone-pink { --todo-tone-bg:#ffedf3; --todo-tone-ink:#d65278; --todo-tone-border:#f9cddd; }
+.todo-tone-orange { --todo-tone-bg:#fff0e1; --todo-tone-ink:#bd6d27; --todo-tone-border:#f9d8b9; }
+.todo-tone-yellow { --todo-tone-bg:#fff5d8; --todo-tone-ink:#a47513; --todo-tone-border:#f4e5ae; }
+.todo-tone-purple { --todo-tone-bg:#f1eaff; --todo-tone-ink:#7046bb; --todo-tone-border:#decdfa; }
+.todo-tone-sky { --todo-tone-bg:#e8f7ff; --todo-tone-ink:#247bb4; --todo-tone-border:#c6e9fa; }
+.todo-tone-gray { --todo-tone-bg:#eef1f7; --todo-tone-ink:#64718c; --todo-tone-border:#d8dfec; }
+.todos-dashboard-categories button[class*="todo-tone-"], .todos-task-category[class*="todo-tone-"], .todo-category[class*="todo-tone-"] { background: var(--todo-tone-bg); color: var(--todo-tone-ink); border-color: var(--todo-tone-border); }
+.todos-dashboard-categories button[class*="todo-tone-"][aria-pressed="true"], .todos-category-choices .todo-category[class*="todo-tone-"][aria-pressed="true"] { color: var(--todo-tone-ink); border-color: var(--todo-tone-ink) !important; box-shadow: inset 0 0 0 1px var(--todo-tone-ink); }
+.todos-category-color-name[class*="todo-tone-"] { justify-content: center; padding: 3px 5px; border-radius: 5px; background: var(--todo-tone-bg); color: var(--todo-tone-ink); font-weight: 750; }
+.todos-category-color-name i { background: var(--todo-tone-ink); }
+.todos-dashboard-dots i[class*="todo-tone-"] { background: var(--todo-tone-ink); }
+.todos-category-manage-list li > button { display: grid; place-items: center; min-width: 28px; min-height: 28px; }
+.todos-category-manage-list li > button .lucide-icon { width: 15px; height: 15px; }
+.todos-category-manage-list .todos-delete-open { color: #d34862; border-color: #f4d7df; background: #fff7f9; }
+.todos-category-manage-list li > button:hover { background: #edf2ff; }
+.todos-task-row { position: relative; z-index: 0; align-items: start; min-height: 57px; padding: 10px 3px 18px; }
+.todos-task-row:has(.todos-task-menu) { z-index: 6; }
+.todos-task-reminder { position: absolute; right: 36px; bottom: 4px; }
+.todos-task-reminder img { width: 20px; height: 20px; }
+.todos-task-actions { align-self: start; }
+.todos-task-more { width: 23px; height: 23px; font-size: 1.13rem; line-height: 1; }
+.todos-task-menu { top: 27px; min-width: 116px; padding: 6px; border-radius: 9px; }
+.todos-task-menu a, .todos-task-menu button { display: flex; align-items: center; gap: 7px; min-height: 31px; padding: 6px 8px; font-weight: 700; }
+.todos-task-menu .lucide-icon { width: 14px; height: 14px; }
+.todos-task-menu a:hover { color: #2e55cf; background: #edf2ff; }
+.todos-task-menu button:hover { color: #ce4560; background: #fff0f3; }
+.todo-detail { display: grid; gap: 14px; }
+.todo-detail h3 { margin: 0; color: #152660; font-size: 1.08rem; }
+.todo-detail-meta { gap: 8px; color: #6a7aa7; font-size: .76rem; }
+.todo-detail-meta .todo-category img { width: 22px; height: 22px; margin: 0; }
+.todo-description { margin: 0; padding: 12px; border: 1px solid #e2e8f7; border-radius: 8px; background: #f8faff; color: #2d3d72; font-size: .78rem; }
+.todo-detail > .todo-actions { justify-content: flex-end; margin-top: 0; padding-top: 13px; border-top: 1px solid #e6ebfa; }
+.todo-detail > .todo-actions button { min-height: 36px; padding: 7px 13px; border: 1px solid #d4def8; border-radius: 6px; background: #fff; color: #3855b4; font-size: .75rem; }
+.todo-detail > .todo-actions button:first-child { border-color: #3863f4; background: #3863f4; color: #fff; }
+@media (max-width: 1000px) { .todos-dashboard-grid { grid-template-columns: minmax(0, 1fr); } .todos-dashboard-calendar { grid-column: auto; } }
+@media (max-width: 560px) {
+  .todos-dashboard-calendar, .todos-dashboard-selected, .todos-dashboard-list { padding: 13px; }
+  .todos-dashboard-calendar-grid .todos-dashboard-day { min-height: 48px; }
+  .todos-calendar-period strong { min-width: 82px; font-size: .77rem; }
+  .todos-dashboard-empty .todos-empty-illustration { width: 145px; height: 125px; }
+}
+
+/* 할 일 목록과 카테고리 모달의 작은 요소 정렬 */
+.todos-dashboard-list h3 img { flex: 0 0 52px; width: 52px; height: 52px; margin: -11px; object-fit: contain; }
+.todos-task-row { align-items: start; min-height: 64px; padding-bottom: 10px; }
+.todos-task-row { grid-template-columns: 17px auto minmax(0, 1fr) 52px; }
+.todos-task-actions { display: flex; align-items: center; justify-content: flex-end; gap: 4px; }
+.todos-task-menu { position: static; grid-column: 1 / -1; justify-self: end; width: 140px; max-width: 100%; margin-top: 4px; }
+.todos-task-reminder { position: static; display: grid; place-items: center; width: 23px; height: 23px; }
+.todos-task-reminder img { display: block; width: 22px; height: 22px; margin: 0; }
+.todo-detail-status { display: inline-flex; align-items: center; gap: 6px; min-height: 31px; padding: 5px 9px; border: 1px solid #d8e1f7; border-radius: 6px; background: #f3f6ff; color: #3857a1; font-weight: 750; white-space: nowrap; }
+.todo-detail-status i { width: 8px; height: 8px; border-radius: 50%; background: #4b77d5; }
+.todo-detail-status.is-done { border-color: #c6e7d5; background: #effaf3; color: #24744d; }
+.todo-detail-status.is-done i { background: #2cab68; }
+.todos-category-field-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.todos-category-field-heading > button { min-height: 27px; padding: 3px 5px; border: 0; background: transparent; color: #4263b9; font-size: .71rem; }
+.todos-category-name-label { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 6px; }
+.todos-category-name-label > span { grid-column: 1 / -1; }
+.todos-category-name-label > input { grid-column: 1 / -1; width: 100%; box-sizing: border-box; }
+.todos-category-name-label > small { grid-column: 2; margin-top: -2px; }
+.todos-category-colors > div { align-items: center; }
+.todos-category-colors button { box-sizing: border-box; flex: 0 0 34px; width: 34px; min-width: 34px; height: 34px; min-height: 34px; aspect-ratio: 1; border-radius: 50%; }
+.todo-category-image { position: relative; display: block; flex: none; overflow: hidden; }
+.todo-category-image img { position: absolute; display: block; max-width: none; margin: 0; image-rendering: pixelated; }
+.todos-dashboard-categories .todos-category-all[aria-pressed="true"] { border-color: #3863f4; background: #3863f4; color: #fff; box-shadow: none; }
+.todos-task-row.is-done .todos-task-copy small { color: #7b87a8; text-decoration: line-through; }
+.todos-category-icon-picker > div { grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 5px; }
+.todos-category-icon-picker button { display: grid; place-items: center; min-width: 0; min-height: 0; aspect-ratio: 1; padding: 3px; border-radius: 6px; }
+.todos-category-icon-picker button img { display: block; width: 30px; height: 30px; margin: 0; object-fit: contain; }
+.todos-category-icon-picker button:hover { background: #f1f8ff; }
+.todos-category-icon-picker button[aria-pressed="true"], .todos-category-icon-picker button[aria-pressed="true"]:hover { border-color: #6b9cf7 !important; background: #eaf3ff !important; color: #29488e !important; }
+.todos-category-name-label input:focus, .todos-category-name-label input:focus-visible { outline: 2px solid #8bcfee; outline-offset: 2px; border-color: #82c7eb; box-shadow: 0 0 0 2px #e8f7ff; }
+.todos-category-dialog footer .todos-category-manage-open { margin-right: auto; padding-inline: 8px; border: 0; background: transparent; color: #3864a6; }
+.todos-modal-backdrop.is-category-manager-route { background: transparent; pointer-events: none; }
+.todos-modal-backdrop.is-category-manager-route > .todos-modal { display: none; }
+.todos-modal-backdrop.is-category-manager-route > .todos-category-dialog-backdrop { pointer-events: auto; }
+@media (max-width: 460px) {
+  .todos-category-icon-picker > div { grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; }
+  .todos-category-icon-picker button { padding: 1px; }
+}

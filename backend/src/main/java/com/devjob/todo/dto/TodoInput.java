@@ -14,7 +14,12 @@ public record TodoInput(
         @NotBlank @JsonDeserialize(using = StrictText.class) String title,
         @JsonDeserialize(using = StrictText.class) String description,
         @JsonFormat(without = JsonFormat.Feature.ADJUST_DATES_TO_CONTEXT_TIME_ZONE) OffsetDateTime dueAt,
-        @JsonDeserialize(using = StrictText.class) String dueTimeZone) {
+        @JsonDeserialize(using = StrictText.class) String dueTimeZone,
+        @JsonDeserialize(using = StrictText.class) String category,
+        Integer reminderMinutes) {
+    public TodoInput(String title, String description, OffsetDateTime dueAt, String dueTimeZone) {
+        this(title, description, dueAt, dueTimeZone, null, null);
+    }
     public static class StrictText extends JsonDeserializer<String> {
         @Override public String deserialize(JsonParser parser, DeserializationContext context) throws IOException {
             if (parser.currentToken() != JsonToken.VALUE_STRING) return (String) context.handleUnexpectedToken(String.class, parser);

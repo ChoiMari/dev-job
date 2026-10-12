@@ -4,7 +4,7 @@ export const deviceZone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'A
 const two = (value: number) => String(value).padStart(2, '0');
 export function dueLabel(todo: Todo) {
   if (!todo.dueAt || !todo.dueTimeZone) return '기한 없음';
-  return `${new Intl.DateTimeFormat('ko-KR', { dateStyle: 'medium', timeStyle: 'short', timeZone: todo.dueTimeZone }).format(new Date(todo.dueAt))} · ${todo.dueTimeZone}`;
+  return new Intl.DateTimeFormat('ko-KR', { dateStyle: 'medium', timeStyle: 'short', timeZone: todo.dueTimeZone }).format(new Date(todo.dueAt));
 }
 export function localDueInput(value: string | null, zone = deviceZone) {
   if (!value) return '';

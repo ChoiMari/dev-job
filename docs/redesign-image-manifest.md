@@ -116,6 +116,7 @@ EXT-IMG-06E·06F·06G는 각각 민트·복숭아·기본 의상만 보여 주�
 | `redesign/cur-05-saved-jobs.png` | 관심 공고 목록·개인 상세 | 너비 112~210×150px, 모바일 72px, 장식 |
 | `redesign/cur-06-applications.png` | 기존 지원 화면 자산, 현재 화면 미사용 | 파일은 보존 |
 | `redesign/application-detail-pixel.png` | 지원 상세 모달 머리말 | 기존 지원 관리 픽셀 이미지의 색·선 굵기를 참조해 새로 생성한 투명 문서 폴더·돋보기 이미지. 40×40px, 빈 `alt`·`aria-hidden` |
+| `redesign/application-status-pixel-strip.png` | 공고 상세·관심 공고 등의 지원 상태 배지 | 승인된 첫 번째 시안의 7칸 가로 스프라이트. 지원 예정·서류 접수·서류 합격·면접·최종 합격·불합격·철회 순서로 21×21px 영역에 표시한다. 이미지는 장식용이며 상태명 텍스트를 함께 표시한다. |
 | `redesign/cur-07-profile.png`, `redesign/ext-img-02-skill-levels.png` | 프로필·기술 | 각각 최대 150px, 96px(모바일 64px), 장식 |
 | `redesign/cur-08-projects.png`, `redesign/cur-24-todo-checklist-companion.png`, `redesign/ext-img-05a-companies.png` | 프로젝트·할 일·기업 | 각각 96px(모바일 64px), 104px(모바일 86px), 최대 140px(370px 이하 숨김), 장식 |
 | `redesign/cur-09-analysis.png`, `redesign/ext-img-04-expanded-analytics.png`, `redesign/ext-img-05d-learning.png` | Skill Gap·시장 분석·학습 목표 | 각각 96→64px, 112→72px, 112→72px, 장식. 수치는 HTML 텍스트/표 |
@@ -125,7 +126,14 @@ EXT-IMG-06E·06F·06G는 각각 민트·복숭아·기본 의상만 보여 주�
 | `redesign/cur-12-character-thoughtful.png` | 추천 동의 안내 | 최대 160px, 560px 이하 숨김, 장식 |
 | `redesign/ext-img-05c-interviews.png`, `redesign/ext-img-01-account-settings.png`, `redesign/cur-14-settings.png` | 면접·알림·설정 | 각각 최대 180px(모바일 90px), 최대 132px, 120px(390px 이하 74px), 장식 |
 | `redesign/interview-planner-cat.png` | 면접 일정 등록·수정 배너의 노트북 픽셀 고양이 | 데스크톱 150×120px, 모바일 85×85px 영역, 빈 `alt`·`aria-hidden`; 말풍선은 HTML/CSS 장식이며 일정 데이터는 별도 표시 |
+| `redesign/interview-calendar-pixel.png` | 면접 일정 목록 머리말 | 첨부 참고 이미지의 작은 달력 느낌으로 새로 생성한 투명 픽셀 이미지. 54px(좁은 화면 48px) 영역, 빈 `alt`·`aria-hidden` |
+| `redesign/interview-empty-cat-calendar.png` | 면접 일정 목록의 선택 날짜 빈 상태 | 첨부 참고 이미지의 고양이·달력 구성을 바탕으로 새로 생성한 투명 픽셀 이미지. 최대 180×145px 영역, 빈 `alt`·`aria-hidden`; 안내는 HTML 텍스트 |
+| `redesign/interview-list-empty-cat.png` | 면접 일정 목록형의 빈 결과 | 고양이·돋보기·빈 달력을 새로 생성한 투명 픽셀 이미지. 최대 184×150px 영역, 빈 `alt`·`aria-hidden`; 상황별 문구는 HTML 텍스트 |
 | `redesign/interview-building.png` | 면접 지원 이력 콤보박스·선택 카드의 공통 건물 이미지 | 34×34px, 빈 `alt`·`aria-hidden`; 회사별 로고가 아니며 회사명은 API 데이터로 표시 |
+| `redesign/todo-empty-cat-calendar.png` | 할 일 달력의 선택 날짜 빈 상태 | 고양이·달력 픽셀 그림. 안내 문구와 추가 버튼은 HTML로 표시 |
+| `redesign/todo-clipboard-check.png`, `redesign/todo-calendar-icon.png`, `redesign/todo-checklist-icon.png` | 할 일 대시보드·등록 모달·영역 머리말 | 이 세 머리말 이미지만 하늘색 계열 픽셀 이미지이며 목록 머리말은 작은 크기에 맞춘 체크 표시 그림으로 교체했다. 제목은 HTML 텍스트이며 이미지는 빈 `alt` |
+| `redesign/todo-category-{icon_key}.png` (28개) | 기본·사용자 정의 카테고리 태그와 7열 4행 아이콘 선택 | 사용자 첨부 이미지를 참고해 아이콘을 하나씩 독립된 투명 PNG로 생성한다. 각 버튼의 중앙에 같은 크기로 표시하며 DB에는 경로가 아닌 `icon_key`만 저장한다. 기존 `interview`·`other` 키는 표시용 아이콘에 매핑하고 알 수 없는 키는 `puzzle`로 표시한다. 카테고리명은 별도 텍스트 |
+| `redesign/todo-bell-icon.png` | 할 일 알림 표시 | 금색·산호색 종 이미지. 알림 문구 없이 아이콘과 접근 가능한 이름만 표시한다. 달력 이동·검색·정렬·행 메뉴는 CSS·텍스트 요소로 표시한다 |
 
 `CUR-10`은 제작 참조 시트이고 `BRAND-01`, `CUR-02/03/11`, `EXT-IMG-06A/06C/06D` 등은 이 화면 코드에서 직접 불러오지 않는다. `CharacterLayers.tsx`가 실제 장착 PNG와 썸네일을 서버 자산 ID/장착값으로 선택한다.
 

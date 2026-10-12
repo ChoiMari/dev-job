@@ -64,38 +64,37 @@
 .job-detail-tab-panel .application-registration > h3::before { content: ''; display: block; width: 5px; height: 18px; border-radius: 3px; background: #6752e8; }
 .job-detail-tab-panel .application-registration > p { margin: 0 0 17px; color: #69709b; font-size: .81rem; line-height: 1.6; }
 .job-detail-tab-panel .application-registration > button { min-height: 40px; padding: 8px 15px; border: 1px solid #ded9fa; border-radius: 8px; background: #f1efff; color: #5541c0; font-size: .78rem; font-weight: 750; }
-.job-detail-tab-panel .application-form fieldset { gap: 13px; padding: 17px; border: 1px solid #e3e7fa; border-radius: 10px; background: #f8f9ff; }
-.job-detail-tab-panel .application-form legend { padding: 0 7px; color: #39459a; font-size: .8rem; font-weight: 750; }
-.job-detail-tab-panel .application-form fieldset > label { gap: 6px; color: #343d75; font-size: .77rem; font-weight: 750; }
-.job-detail-tab-panel .application-form label small { color: #747ba8; font-size: .7rem; font-weight: 500; line-height: 1.5; }
-.job-detail-tab-panel .application-status-field { display: grid; gap: 7px; color: #343d75; font-size: .77rem; font-weight: 750; }
-.job-detail-tab-panel .application-status-options { display: flex; flex-wrap: wrap; gap: 7px; }
-.job-detail-tab-panel .application-status-options button { min-height: 38px; padding: 8px 13px; border: 1px solid #d8ddf5; border-radius: 8px; background: #fff; color: #595f95; font-size: .77rem; font-weight: 750; }
-.job-detail-tab-panel .application-status-options button[aria-pressed="true"] { border-color: #6650ef; background: #eeeaff; color: #513dc4; }
-.job-detail-tab-panel .application-status-options button:focus-visible { outline: 2px solid #6650ef; outline-offset: 2px; }
-.job-detail-tab-panel .application-form input,
-.job-detail-tab-panel .application-form select,
-.job-detail-tab-panel .application-form textarea { min-height: 42px; padding: 9px 11px; border: 1px solid #d8ddf5; border-radius: 8px; background: #fff; color: #23265a; font-size: .8rem; }
-.job-detail-tab-panel .application-form textarea { min-height: 88px; }
-.job-detail-tab-panel .application-form input:focus-visible,
-.job-detail-tab-panel .application-form select:focus-visible,
-.job-detail-tab-panel .application-form textarea:focus-visible { outline: 2px solid #6650ef; outline-offset: 1px; }
-.job-detail-tab-panel .application-actions { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 9px; margin-top: 3px; }
-.job-detail-tab-panel .application-actions > button { width: auto; min-height: 41px; margin: 0; padding: 8px 15px; border-radius: 8px; font-size: .78rem; font-weight: 750; }
-.job-detail-tab-panel .application-actions > button[type="submit"] { border: 1px solid #ded9fa; background: #eeeaff; color: #5541d5; }
-.job-detail-tab-panel .application-actions > button[type="submit"]:hover { background: #e1dcff; }
-.job-detail-tab-panel .application-actions > button[type="button"] { border: 1px solid #ded9fa; background: #fff; color: #66569c; }
+.job-detail-tab-panel .application-registration .application-form fieldset { gap: 16px; padding: 18px; border: 1px solid #dce2fa; border-radius: 10px; background: #fff; }
+.job-detail-tab-panel .application-registration .application-form legend { padding: 0 7px; color: #28317d; font-size: .8rem; font-weight: 750; }
+.application-registration-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: 14px 12px; }
+.application-registration-fields label { display: flex; flex-direction: column; align-self: start; gap: 6px; min-width: 0; color: #343d75; font-size: .77rem; font-weight: 750; }
+.application-registration-field-title b { color: #e14762; }
+.application-registration-fields label small { color: #747ba8; font-size: .7rem; font-weight: 500; line-height: 1.5; }
+.application-registration-fields .application-registration-wide { grid-column: 1 / -1; }
+.job-detail-tab-panel .application-registration-fields input,
+.job-detail-tab-panel .application-registration-fields select,
+.job-detail-tab-panel .application-registration-fields textarea { box-sizing: border-box; width: 100%; min-height: 42px; padding: 9px 11px; border: 1px solid #d8ddf5; border-radius: 8px; background: #fff; color: #23265a; font: inherit; font-size: .8rem; }
+.job-detail-tab-panel .application-registration-fields input:disabled { background: #f5f6fb; color: #8991ad; }
+.job-detail-tab-panel .application-registration-fields textarea { min-height: 84px; }
+.job-detail-tab-panel .application-registration-fields input:focus-visible,
+.job-detail-tab-panel .application-registration-fields select:focus-visible,
+.job-detail-tab-panel .application-registration-fields textarea:focus-visible { outline: 2px solid #6650ef; outline-offset: 1px; }
+.job-detail-tab-panel .application-registration .application-actions { display: flex; justify-content: flex-end; gap: 8px; margin: 0; }
+.job-detail-tab-panel .application-registration .application-actions > button { width: auto; min-height: 38px; margin: 0; padding: 8px 15px; border-radius: 7px; font-size: .78rem; font-weight: 750; }
+.job-detail-tab-panel .application-registration .application-actions > button[type="submit"] { border: 1px solid #6650ef; background: #6650ef; color: #fff; }
+.job-detail-tab-panel .application-registration .application-actions > button[type="submit"]:hover:not(:disabled) { background: #5541d5; }
+.job-detail-tab-panel .application-registration .application-actions > button[type="button"] { border: 1px solid #d8ddf5; background: #fff; color: #5144a9; }
+@media (max-width: 480px) { .application-registration-fields { grid-template-columns: 1fr; } }
 .job-detail-application { padding: 14px 0 3px; }
 .job-detail-application > header { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
 .job-detail-application > header .lucide-icon { width: 18px; height: 18px; color: #614be8; }
 .job-detail-application h3 { margin: 0; font-size: .98rem; }
-.job-detail-application-current { padding: 13px 15px; border: 1px solid #e3e7fa; border-radius: 9px; background: #f8f9ff; }
-.job-detail-application-status-row { display: flex; align-items: center; flex-wrap: wrap; justify-content: space-between; gap: 8px; }
-.job-detail-application-label { color: #656b9e; font-size: .76rem; font-weight: 700; }
-.job-detail-application-facts { display: grid; gap: 9px; margin: 13px 0 0; padding: 13px 0 0; border-top: 1px solid #e3e7fa; }
-.job-detail-application-facts > div { display: grid; grid-template-columns: 100px minmax(0, 1fr); gap: 10px; font-size: .76rem; line-height: 1.55; }
-.job-detail-application-facts dt { color: #69709b; }
-.job-detail-application-facts dd { min-width: 0; margin: 0; color: #29316e; white-space: pre-wrap; overflow-wrap: anywhere; }
+.job-detail-application-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; margin: 0; }
+.job-detail-application-facts > div { display: grid; align-content: start; gap: 7px; min-width: 0; padding: 11px 12px; border: 1px solid #e3e7fa; border-radius: 8px; background: #f8f9ff; font-size: .76rem; line-height: 1.5; }
+.job-detail-application-facts dt { display: inline-flex; align-items: center; gap: 5px; color: #69709b; font-weight: 700; }
+.job-detail-application-facts dt .lucide-icon { width: 14px; height: 14px; color: #6650ef; }
+.job-detail-application-facts dd { min-width: 0; margin: 0; color: #29316e; font-weight: 650; white-space: pre-wrap; overflow-wrap: anywhere; }
+.job-detail-application-facts .job-detail-application-note { grid-column: 1 / -1; }
 .job-detail-application-footer { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; padding-top: 15px; }
 .job-detail-application-footer > a { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 12px; border: 1px solid #ded9fa; border-radius: 8px; background: #f1efff; color: #5541c0; font-size: .76rem; font-weight: 750; text-decoration: none; }
 .job-detail-application-footer .lucide-icon { width: 15px; height: 15px; }
@@ -152,7 +151,7 @@
   .job-detail-content-row { grid-template-columns: 1fr; gap: 7px; }
   .job-detail-tab-panel { padding: 5px 13px 14px; }
   .job-detail-content > header .job-detail-source-link { width: 100%; margin-left: 0; }
-  .job-detail-application-facts > div { grid-template-columns: 1fr; gap: 2px; }
+  .job-detail-application-facts { grid-template-columns: 1fr; }
 }
 @media (max-width: 420px) {
   .job-detail-banner { gap: 8px; min-height: 142px; padding: 13px 10px; }

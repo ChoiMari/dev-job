@@ -50,7 +50,7 @@ export function BookmarksPage({ location }: { location: string }) {
   const [bookmarkBusyIds, setBookmarkBusyIds] = useState<number[]>([]);
   const [pendingDeleteIds, setPendingDeleteIds] = useState<number[]>([]);
   const [deleteBusyIds, setDeleteBusyIds] = useState<number[]>([]);
-  const [registeredManualIds, setRegisteredManualIds] = useState<number[]>([]);
+  const [registeredKeys, setRegisteredKeys] = useState<string[]>([]);
   const savedCount = data ? data.totalElements - unbookmarkedIds.length : 0;
   const isUnbookmarked = (item: SavedJob) => item.kind === 'COLLECTED' && unbookmarkedIds.includes(item.jobId!);
   const visibleItems = data?.items.filter(item => (view === 'ALL' || item.kind === view)
@@ -128,8 +128,12 @@ export function BookmarksPage({ location }: { location: string }) {
                 <small title={item.deadlineDate ? `마감일 ${item.deadlineDate}` : undefined}>{item.deadlineDate ? deadlineLabel(item.deadlineDate) : `저장 ${new Date(item.createdAt).toLocaleDateString('ko-KR')}`}</small></div></div>
             <SavedAnalysis item={item} onUpdated={() => { if (!isUnbookmarked(item)) setRetry(value => value + 1); }} />
             <div className="saved-card-actions"><a href={item.url} target="_blank" rel="noopener noreferrer">외부 원문 열기 <LucideIcon name="arrowRight" /></a>
-              {(item.applicationStatus || (item.kind === 'MANUAL' && registeredManualIds.includes(item.id))) && <a href="#/applications">지원관리 <LucideIcon name="arrowRight" /></a>}
-              {item.kind === 'MANUAL' && <a className="saved-card-edit" href={`#/bookmarks/${item.id}/edit`}>공고 수정</a>}</div>
+              {(item.applicationStatus || registeredKeys.includes(`${item.kind}-${item.id}`)) && <a href="#/applications">지원관리 <LucideIcon name="arrowRight" /></a>}
+              {item.kind === 'MANUAL' && <a className="saved-card-edit" href={`#/bookmarks/${item.id}/edit`}>공고 수정</a>}
+              {!item.applicationStatus && !registeredKeys.includes(`${item.kind}-${item.id}`) && <div className="job-detail-tab-panel saved-card-application"><ApplicationRegistration
+                jobId={item.kind === 'COLLECTED' ? item.jobId ?? undefined : undefined}
+                personalSavedJobId={item.kind === 'MANUAL' ? item.id : undefined} status={item.applicationStatus} compact
+                onCreated={() => { setRegisteredKeys(keys => [...keys, `${item.kind}-${item.id}`]); setRetry(value => value + 1); }} /></div>}</div>
             {item.kind === 'COLLECTED' && pendingUnbookmarkIds.includes(item.jobId!) && <div className="saved-unbookmark-confirm" role="status">
               <p>관심 해제 예정입니다. 확정하면 저장 목록에서 제거됩니다. 이 화면에서는 다시 관심 등록할 수 있습니다.</p>
               <button type="button" onClick={() => setPendingUnbookmarkIds(ids => ids.filter(id => id !== item.jobId))}>해제 취소</button>
@@ -153,9 +157,6 @@ export function BookmarksPage({ location }: { location: string }) {
                 finally { setDeleteBusyIds(ids => ids.filter(id => id !== item.id)); }
               }}>{deleteBusyIds.includes(item.id) ? '삭제 중…' : '삭제 확정'}</button>
             </div>}
-            {item.kind === 'MANUAL' && !item.applicationStatus && !registeredManualIds.includes(item.id) && <div className="job-detail-tab-panel saved-card-application"><ApplicationRegistration
-              personalSavedJobId={item.id} status={item.applicationStatus} buttonStatusPicker
-              onCreated={() => { setRegisteredManualIds(ids => [...ids, item.id]); setRetry(value => value + 1); }} /></div>}
           </li>)}</ul>}
         <nav className="job-actions job-pagination" aria-label="관심공고 페이지"><button disabled={page === 0} onClick={() => navigatePage(page - 1)}>이전 페이지</button>
           <button disabled={(page + 1) * size >= data.totalElements} onClick={() => navigatePage(page + 1)}>다음 페이지</button></nav>

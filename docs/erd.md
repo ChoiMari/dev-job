@@ -143,6 +143,8 @@ S11 물리 매핑: `V7__create_applications.sql`은 기존 데이터를 변경�
 
 `V14__personal_todos.sql`은 `personal_todo`를 추가한다. `id` BIGINT identity PK, `user_id` 필수 users FK, `title` 필수 VARCHAR(200)·공백 검사, `description` VARCHAR(2000), `due_at` TIMESTAMPTZ와 `due_time_zone` VARCHAR(100)은 둘 다 있거나 둘 다 없다. `completed_at`·`deleted_at`은 nullable TIMESTAMPTZ, `created_at`·`updated_at`은 필수 TIMESTAMPTZ다. 활성 목록 조회용 `(user_id, due_at ASC NULLS LAST, id DESC)` 부분 인덱스를 둔다. 서버는 `due_time_zone`의 IANA ID와 `due_at`의 요청 오프셋 일치를 검증한다. 완료 취소 시 `completed_at`을 비우고, 삭제 시 `deleted_at`을 채워 일반 조회에서 제외한다. 지원 기록·`nextActions`와 관계를 만들지 않는다. B10 `V23`는 기존 완료 Todo의 소급 차단용 `reward_eligible`을 추가한다.
 
+`V30__todo_categories_and_reminders.sql`은 기존 행을 유지하며 `category` VARCHAR(30) 필수·기본 `기타`, `reminder_minutes` 정수·기본 1440을 추가한다. 알림 값은 -1·10·60·1440만 허용한다. 카테고리는 `personal_todo_category(id,user_id,name,icon_key,color_key,sort_order)`에 계정별로 저장하며 `(user_id,name)`을 유일하게 제한한다. `V31__todo_category_icons.sql`은 아이콘 키를 추가했고, `V32__todo_category_management.sql`은 색상·정렬 순서와 기본 8개 카테고리를 추가했다. `V33__todo_category_icon_and_sky_color.sql`은 단순화한 아이콘 5개와 하늘색 선택지를 추가하고, `V34__todo_category_reference_icons.sql`은 참고 스타일 아이콘 12개의 키를 허용한다. 신규 계정은 첫 카테고리 조회·할 일 생성 시 기본 8개를 시드한다. 서비스는 카테고리 총 20개 상한과 사용 중인 카테고리·마지막 카테고리 삭제 금지를 검사한다. 카테고리 이름 변경은 같은 트랜잭션에서 해당 계정의 할 일 이름도 갱신한다.
+
 ### B04 관심 기업의 별도 소유 모델
 
 InterestedCompany는 사용자별 관심 기업 정보로 User 1:N이며 공고 수집용 공용 Company와 FK가 없다. id는 각각 독립된 ID 공간이다. B11 출처 확장도 공용 회사명을 사용자 기록과 자동 병합하지 않는다. 현재 JobPostingWriter는 신규 공고에 새 공용 Company를 연결하고, 같은 회사명만으로 공용 행끼리도 병합하지 않는다.

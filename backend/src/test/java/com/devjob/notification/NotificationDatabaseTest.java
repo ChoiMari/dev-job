@@ -113,4 +113,18 @@ class NotificationDatabaseTest {
         service.deliverDue();
         assertThat(jdbc.queryForObject("select count(*) from notification where user_id=?", Long.class, owner)).isZero();
     }
+
+    @Test void todoReminderRespectsSelectedLeadTimeAndDisabledValue() {
+        long tenMinutes = todo(Instant.now().plusSeconds(3600));
+        long disabled = todo(Instant.now().plusSeconds(300));
+        jdbc.update("update personal_todo set reminder_minutes=10 where id=?", tenMinutes);
+        jdbc.update("update personal_todo set reminder_minutes=-1 where id=?", disabled);
+        service.deliverDue();
+        assertThat(jdbc.queryForObject("select count(*) from notification where user_id=?", Long.class, owner)).isZero();
+        jdbc.update("update personal_todo set due_at=? where id=?",
+                Timestamp.from(Instant.now().plusSeconds(300)), tenMinutes);
+        service.deliverDue();
+        assertThat(jdbc.queryForObject("select count(*) from notification where user_id=? and type='TODO_REMINDER'",
+                Long.class, owner)).isEqualTo(1);
+    }
 }

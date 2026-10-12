@@ -37,19 +37,14 @@ function JobApplicationPanel({ application }: { application: Application }) {
   const schedule = application.nextScheduleAt ? new Date(application.nextScheduleAt).toLocaleString('ko-KR') : null;
   return <section className="job-detail-application" aria-label="내 지원 현황">
     <header><LucideIcon name="briefcase" /><h3>내 지원 현황</h3></header>
-    <div className="job-detail-application-current">
-      <div className="job-detail-application-status-row">
-        <span className="job-detail-application-label">현재 진행 상태</span>
-        <span className={`job-detail-status job-detail-status--${status.toLowerCase()}`}><ApplicationStatusBadge status={status} /></span>
-      </div>
-      <dl className="job-detail-application-facts">
-        {application.appliedDate && <div><dt>실제 지원일</dt><dd>{application.appliedDate}</dd></div>}
-        {schedule && <div><dt>다음 확인 일정</dt><dd>{schedule}</dd></div>}
-        <div><dt>메모</dt><dd>{application.note || '기록된 메모가 없습니다.'}</dd></div>
-      </dl>
-    </div>
+    <dl className="job-detail-application-facts">
+      <div><dt><LucideIcon name="fileText" /> 진행 상태</dt><dd><span className={`job-detail-status job-detail-status--${status.toLowerCase()}`}><ApplicationStatusBadge status={status} /></span></dd></div>
+      {application.appliedDate && <div><dt><LucideIcon name="calendar" /> 지원일</dt><dd>{application.appliedDate}</dd></div>}
+      {schedule && <div><dt><LucideIcon name="clock" /> 다음 확인 일정</dt><dd>{schedule}</dd></div>}
+      {application.note && <div className="job-detail-application-note"><dt><LucideIcon name="message" /> 메모</dt><dd>{application.note}</dd></div>}
+    </dl>
     <div className="job-detail-application-footer">
-      <a className="button-link" href={`#/applications/${application.id}`}>지원 관리에서 수정하기 <LucideIcon name="arrowRight" /></a>
+      <a className="button-link" href={`#/applications/${application.id}`}>지원 상세 보기 <LucideIcon name="arrowRight" /></a>
     </div>
   </section>;
 }
@@ -197,7 +192,7 @@ export function JobDetailPage({ location }: { location: string }) {
                 ? applicationError ? <ErrorState message={applicationError} onRetry={() => setApplicationRetry(value => value + 1)} />
                   : application ? <JobApplicationPanel application={application} />
                     : <LoadingState message="내 지원 기록을 불러오고 있습니다." />
-                : <ApplicationRegistration key={data.id} jobId={data.id} status={null} buttonStatusPicker onCreated={applicationStatus =>
+                : <ApplicationRegistration key={data.id} jobId={data.id} status={null} onCreated={applicationStatus =>
                   setData(current => current?.id === id ? { ...current, applicationStatus } : current)} />)}
             </div>
           </section>

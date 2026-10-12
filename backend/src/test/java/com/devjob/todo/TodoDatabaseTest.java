@@ -137,4 +137,62 @@ class TodoDatabaseTest {
         mvc.perform(get("/api/dashboard").with(as(owner))).andExpect(jsonPath("$.personalTodos[0].id").value(undated))
                 .andExpect(jsonPath("$.nextActions").isEmpty());
     }
+    @Test void categoriesAreOwnedAndCannotBeRemovedWhileUsed() throws Exception {
+        var created = mvc.perform(post("/api/me/todos/categories").with(as(owner)).with(csrf())
+                .contentType("application/json").content("{\"name\":\"건강\",\"iconKey\":\"health\"}"))
+                .andExpect(status().isCreated()).andExpect(jsonPath("$.name").value("건강"))
+                .andExpect(jsonPath("$.iconKey").value("health")).andReturn();
+        long categoryId = json.readTree(created.getResponse().getContentAsString()).get("id").asLong();
+        mvc.perform(get("/api/me/todos/categories").with(as(other)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(8));
+        mvc.perform(get("/api/me/todos/categories").with(as(owner)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$[0].name").value("서류"))
+                .andExpect(jsonPath("$[8].iconKey").value("health"));
+        mvc.perform(patch("/api/me/todos/categories/" + categoryId).with(as(owner)).with(csrf())
+                .contentType("application/json").content("{\"name\":\"건강 관리\",\"iconKey\":\"trophy\",\"colorKey\":\"sky\"}"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.name").value("건강 관리"))
+                .andExpect(jsonPath("$.iconKey").value("trophy"))
+                .andExpect(jsonPath("$.colorKey").value("sky"));
+        mvc.perform(patch("/api/me/todos/categories/" + categoryId).with(as(other)).with(csrf())
+                .contentType("application/json").content("{\"name\":\"침범\"}"))
+                .andExpect(status().isNotFound());
+        var order = mvc.perform(get("/api/me/todos/categories").with(as(owner))).andReturn();
+        var ids = json.readTree(order.getResponse().getContentAsString());
+        var reordered = json.createArrayNode();
+        reordered.add(categoryId);
+        for (var item : ids) if (item.get("id").asLong() != categoryId) reordered.add(item.get("id").asLong());
+        mvc.perform(put("/api/me/todos/categories/order").with(as(owner)).with(csrf())
+                .contentType("application/json").content(json.createObjectNode().set("ids", reordered).toString()))
+                .andExpect(status().isOk()).andExpect(jsonPath("$[0].id").value(categoryId));
+        mvc.perform(post("/api/me/todos/categories").with(as(owner)).with(csrf())
+                .contentType("application/json").content("{\"name\":\"운동\",\"iconKey\":\"unknown\"}"))
+                .andExpect(status().isBadRequest());
+        mvc.perform(post("/api/me/todos/categories").with(as(owner)).with(csrf())
+                .contentType("application/json").content("{\"name\":\"건강 관리\"}"))
+                .andExpect(status().isConflict());
+        long todoId = create("{\"title\":\"운동\",\"category\":\"건강 관리\",\"reminderMinutes\":10}");
+        mvc.perform(get("/api/me/todos/" + todoId).with(as(owner)))
+                .andExpect(jsonPath("$.category").value("건강 관리"))
+                .andExpect(jsonPath("$.reminderMinutes").value(10));
+        mvc.perform(patch("/api/me/todos/categories/" + categoryId).with(as(owner)).with(csrf())
+                .contentType("application/json").content("{\"name\":\"운동 관리\"}"))
+                .andExpect(status().isOk());
+        entityManager.clear();
+        mvc.perform(get("/api/me/todos/" + todoId).with(as(owner)))
+                .andExpect(jsonPath("$.category").value("운동 관리"));
+        mvc.perform(post("/api/me/todos").with(as(other)).with(csrf()).contentType("application/json")
+                .content("{\"title\":\"타인 카테고리\",\"category\":\"건강\"}"))
+                .andExpect(status().isBadRequest());
+        mvc.perform(delete("/api/me/todos/categories/" + categoryId).with(as(owner)).with(csrf()))
+                .andExpect(status().isConflict());
+        mvc.perform(patch("/api/me/todos/" + todoId).with(as(owner)).with(csrf())
+                .contentType("application/json").content("{\"category\":\"기타\",\"reminderMinutes\":-1}"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.category").value("기타"))
+                .andExpect(jsonPath("$.reminderMinutes").value(-1));
+        mvc.perform(delete("/api/me/todos/categories/" + categoryId).with(as(owner)).with(csrf()))
+                .andExpect(status().isNoContent());
+        mvc.perform(post("/api/me/todos").with(as(owner)).with(csrf()).contentType("application/json")
+                .content("{\"title\":\"잘못된 알림\",\"reminderMinutes\":5}"))
+                .andExpect(status().isBadRequest());
+    }
 }

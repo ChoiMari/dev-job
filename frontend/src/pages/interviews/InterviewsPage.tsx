@@ -115,7 +115,7 @@ function InterviewEditor({ id, initialApplicationId = '' }: { id?: number; initi
   }, [editing, applicationPage, applicationsRetry]);
   useEffect(() => {
     const selectedId = Number(applicationId);
-    if (!selectedId || !editing) { setSelectedApplication(undefined); return; }
+    if (!selectedId) { setSelectedApplication(undefined); return; }
     const loaded = applicationRecords.find(value => value.id === selectedId);
     if (loaded) { setSelectedApplication(loaded); return; }
     const controller = new AbortController();
@@ -164,7 +164,7 @@ function InterviewEditor({ id, initialApplicationId = '' }: { id?: number; initi
   const timePart = /T(\d{2}:\d{2})$/.exec(localTime)?.[1] ?? '';
   const previewTime = localTime && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(localTime)
     ? new Date(localTime).toLocaleString('ko-KR', { dateStyle: 'full', timeStyle: 'short' }) : '날짜와 시간을 선택해 주세요';
-  return <div className="interviews-editor-page">
+  return <div className={`interviews-editor-page${id ? '' : ' interviews-editor-page--new'}`}>
     <section className="interviews-editor-hero">
       <a className="interviews-back" href="#/interviews" aria-label="면접 일정 목록으로"><LucideIcon name="arrowLeft" /></a>
       <div><h2>{id ? '면접 일정 상세' : '면접 일정 등록'}</h2>
@@ -181,7 +181,6 @@ function InterviewEditor({ id, initialApplicationId = '' }: { id?: number; initi
         {editing ? <div className="interviews-editor-grid">
           <form className="card interviews-editor-form" onSubmit={save}>
             <fieldset disabled={busy}>
-              <header className="interviews-section-heading"><span className="interviews-section-icon"><LucideIcon name="fileText" /></span><div><h3>기본 정보</h3><p>면접 일정의 기본 정보를 입력해 주세요.</p></div></header>
               <label className="interviews-field"><span><LucideIcon name="fileText" /> 면접 제목 <em aria-hidden="true">*</em></span>
                 <input required maxLength={200} aria-invalid={invalidField === 'title'} placeholder="예: 백엔드 개발자 1차 면접" value={title}
                   onChange={event => { setTitle(event.target.value); setError(''); setInvalidField(null); }} />
@@ -266,17 +265,17 @@ function InterviewEditor({ id, initialApplicationId = '' }: { id?: number; initi
               <p><LucideIcon name="check" /> 저장한 일정은 면접 일정 목록에서 수정할 수 있습니다.</p>
               <p><LucideIcon name="check" /> 지원 상태와 다음 일정은 자동으로 변경되지 않습니다.</p></section>
           </aside>
-        </div> : item && <section className="card interviews-editor interviews-detail"><span className={`interviews-status ${item.status === 'CANCELLED' ? 'is-cancelled' : ''}`}>{statusLabel(item)}</span>
-          <h3>{item.title}</h3><dl><div><dt>시작</dt><dd>{scheduleLabel(item.startsAt, item.timeZone)}</dd></div>
-            <div><dt>연결된 지원</dt><dd>{item.applicationId ? <a href={`#/applications/${item.applicationId}`}>지원 #{item.applicationId}</a> : '없음'}</dd></div>
-            <div><dt>면접 단계</dt><dd>{item.stage ? stageLabels[item.stage] : '미지정'}</dd></div>
-            <div><dt>면접 방식</dt><dd>{item.interviewMethod ? methodLabels[item.interviewMethod] : '미지정'}</dd></div>
-            {item.memo && <div><dt>메모</dt><dd>{item.memo}</dd></div>}
-            {item.cancelledAt && <div><dt>취소 시각</dt><dd>{scheduleLabel(item.cancelledAt, item.timeZone)}</dd></div>}
-            {item.completedAt && <div><dt>완료 시각</dt><dd>{scheduleLabel(item.completedAt, item.timeZone)}</dd></div>}</dl>
-          <p className="interviews-help">이 일정은 지원의 다음 일정 및 지원 상태와 독립적으로 관리됩니다.</p>
-          <div className="interviews-actions"><button type="button" disabled={busy} onClick={() => { setEditing(true); setSuccess(''); }}>수정</button>
-            {item.status === 'SCHEDULED' ? <><button type="button" disabled={busy} onClick={() => void changeStatus('complete')}>완료</button><button type="button" disabled={busy} onClick={() => void changeStatus('cancel')}>일정 취소</button></>
+        </div> : item && <section className="card interviews-detail">
+          <div className="interviews-detail-heading"><span className={`interviews-status ${item.status === 'CANCELLED' ? 'is-cancelled' : item.status === 'COMPLETED' ? 'is-completed' : ''}`}>{statusLabel(item)}</span><h3>{item.title}</h3></div>
+          <dl className="interviews-detail-grid"><div className="interviews-detail-time"><dt><LucideIcon name="calendar" /> 면접 일시</dt><dd>{new Intl.DateTimeFormat('ko-KR', { dateStyle: 'full', timeStyle: 'short', timeZone: item.timeZone }).format(new Date(item.startsAt))}<small>{item.timeZone === 'Asia/Seoul' ? '한국 시간' : item.timeZone}</small></dd></div>
+            {item.applicationId && <div className="interviews-detail-application"><dt><LucideIcon name="briefcase" /> 연결된 지원</dt><dd><a href={`#/applications/${item.applicationId}`}>{selectedApplication ? <span><strong>{applicationName(selectedApplication)}</strong><span>{applicationRole(selectedApplication)}</span></span> : '지원 상세 보기'} <LucideIcon name="arrowRight" /></a></dd></div>}
+            {item.stage && <div><dt><LucideIcon name="sliders" /> 면접 단계</dt><dd>{stageLabels[item.stage]}</dd></div>}
+            {item.interviewMethod && <div><dt><LucideIcon name="monitor" /> 면접 방식</dt><dd>{methodLabels[item.interviewMethod]}</dd></div>}
+            {item.memo && <div className="interviews-detail-memo"><dt><LucideIcon name="fileText" /> 메모</dt><dd>{item.memo}</dd></div>}
+            {item.cancelledAt && <div><dt><LucideIcon name="clock" /> 취소 시각</dt><dd>{scheduleLabel(item.cancelledAt, item.timeZone)}</dd></div>}
+            {item.completedAt && <div><dt><LucideIcon name="clock" /> 완료 시각</dt><dd>{scheduleLabel(item.completedAt, item.timeZone)}</dd></div>}</dl>
+          <div className="interviews-actions"><button type="button" disabled={busy} onClick={() => { setEditing(true); setSuccess(''); }}><LucideIcon name="pencil" /> 수정</button>
+            {item.status === 'SCHEDULED' ? <><button className="interviews-detail-complete" type="button" disabled={busy} onClick={() => void changeStatus('complete')}><LucideIcon name="check" /> 완료</button><button className="interviews-detail-cancel" type="button" disabled={busy} onClick={() => void changeStatus('cancel')}>일정 취소</button></>
               : <button type="button" disabled={busy} onClick={() => void changeStatus('reactivate')}>{busy ? '처리 중…' : '예정으로 되돌리기'}</button>}</div>
         </section>}
       </>}

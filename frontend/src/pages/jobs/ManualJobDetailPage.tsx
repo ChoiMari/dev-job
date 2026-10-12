@@ -106,7 +106,7 @@ export function ManualJobDetailPage({ location, onBack, initialApplicationStatus
                       {!job.location && !job.employmentType && !job.careerLevel && <div><dd>입력한 근무 정보가 없습니다.</dd></div>}
                     </dl></section>
                     {job.note && <section className="job-detail-content-row"><h4>내 메모</h4><p>{job.note}</p></section>}
-                  </div> : <ApplicationRegistration personalSavedJobId={job.id} status={applicationStatus} buttonStatusPicker onCreated={setApplicationStatus} />}
+                  </div> : <ApplicationRegistration personalSavedJobId={job.id} status={applicationStatus} onCreated={setApplicationStatus} />}
                 </div>
               </section>
             </div>

@@ -115,7 +115,13 @@
 .jobs-page--saved .job-pagination { padding-top: 14px; border-top: 1px solid #e7eafd; }
 .jobs-page--saved .job-pagination button { border: 1px solid #ded9fa; background: #f1efff; color: #5541c0; font-size: .76rem; font-weight: 750; }
 .jobs-page--saved .job-pagination button:disabled { opacity: .55; }
-.saved-card-application { margin-top: 12px; border: 1px solid #e3e7fa; border-radius: 9px; background: #fff; }
+.saved-card-actions:has(.saved-card-application) .saved-card-edit { margin-left: 0; }
+.saved-card-application { margin-left: auto; padding: 0; border: 0; background: transparent; }
+.saved-card-application:has(.application-form) { flex: 1 0 100%; margin-left: 0; }
+.saved-card-application .application-registration--compact { margin: 0; padding: 0; border: 0; }
+.saved-card-application .application-registration--compact > button { min-height: 30px; padding: 4px 9px; border: 1px solid #ded9fa; border-radius: 6px; background: #f1efff; color: #5541c0; font-size: .7rem; font-weight: 750; }
+.saved-card-application .application-registration--compact .application-form { margin-top: 8px; }
+.saved-card-application .application-form button:hover { text-decoration: none; }
 @media (max-width: 700px) {
   .saved-page-header { padding: 15px; }
   .saved-page-heading-actions { width: 100%; justify-content: space-between; }

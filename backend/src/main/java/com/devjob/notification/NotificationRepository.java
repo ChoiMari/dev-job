@@ -21,7 +21,8 @@ public class NotificationRepository {
     }
     public List<Candidate> dueTodos(Instant end) {
         return jdbc.query("select id, user_id from personal_todo where deleted_at is null and completed_at is null "
-                + "and due_at > current_timestamp and due_at <= ? order by due_at, id",
+                + "and reminder_minutes >= 0 and due_at > current_timestamp and due_at <= ? "
+                + "and due_at - reminder_minutes * interval '1 minute' <= current_timestamp order by due_at, id",
                 (rs, row) -> new Candidate(rs.getLong(1), rs.getLong(2)), Timestamp.from(end));
     }
     public DueEvent lockCurrent(NotificationType type, long id, Instant end) {
@@ -29,8 +30,9 @@ public class NotificationRepository {
                 ? "select id, user_id, starts_at, title from interview_schedule where id=? "
                     + "and cancelled_at is null and starts_at > current_timestamp and starts_at <= ? for update"
                 : "select id, user_id, due_at, title from personal_todo where id=? "
-                    + "and deleted_at is null and completed_at is null and due_at > current_timestamp "
-                    + "and due_at <= ? for update";
+                    + "and deleted_at is null and completed_at is null and reminder_minutes >= 0 "
+                    + "and due_at > current_timestamp and due_at <= ? "
+                    + "and due_at - reminder_minutes * interval '1 minute' <= current_timestamp for update";
         return jdbc.query(sql, rs -> rs.next() ? new DueEvent(rs.getLong(1), rs.getLong(2),
                 rs.getTimestamp(3).toInstant(), rs.getString(4)) : null, id, Timestamp.from(end));
     }

@@ -5,7 +5,8 @@ import { createTodosApi } from '../src/api/todos.ts';
 
 const now = '2026-10-08T00:00:00Z';
 const input = { title: '지원서 검토', description: null, dueAt: '2026-10-15T18:00:00+09:00', dueTimeZone: 'Asia/Seoul' };
-const todo = { id: 7, ...input, completed: false, completedAt: null, createdAt: now, updatedAt: now };
+const todo = { id: 7, ...input, category: '기타', reminderMinutes: 1440,
+  completed: false, completedAt: null, createdAt: now, updatedAt: now };
 const json = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
 
 test('todo API uses session, fresh CSRF, detail and saved completion state', async () => {
@@ -42,6 +43,30 @@ test('todo list passes filter, page and abort signal', async () => {
     return json({ items: [], page: 2, size: 20, totalElements: 40 });
   }));
   assert.equal((await api.list(2, 'open', controller.signal)).page, 2);
+});
+
+test('category management sends icon, color, order and deletion with CSRF', async () => {
+  const category = { id: 9, name: '건강', iconKey: 'health', colorKey: 'pink', sortOrder: 8 };
+  const calls = []; let tokens = 0;
+  const api = createTodosApi(createApiClient('/api', async (url, options) => {
+    if (url === '/api/auth/csrf') return json({ headerName: 'X-CSRF-TOKEN', token: `t${++tokens}` });
+    calls.push({ url, method: options.method, body: options.body && JSON.parse(options.body), token: options.headers?.['X-CSRF-TOKEN'] });
+    if (url.endsWith('/categories/order')) return json([{ ...category, sortOrder: 0 }]);
+    if (options.method === 'DELETE') return new Response(null, { status: 204 });
+    if (options.method === 'PATCH') return json({ ...category, name: '운동' });
+    return json(category, 201);
+  }));
+  assert.equal((await api.createCategory('건강', 'health', 'pink')).iconKey, 'health');
+  assert.equal((await api.updateCategory(9, { name: '운동', iconKey: 'health', colorKey: 'pink' })).name, '운동');
+  assert.equal((await api.reorderCategories([9]))[0].sortOrder, 0);
+  await api.deleteCategory(9);
+  assert.deepEqual(calls.map(call => [call.method, call.url]), [
+    ['POST', '/api/me/todos/categories'], ['PATCH', '/api/me/todos/categories/9'],
+    ['PUT', '/api/me/todos/categories/order'], ['DELETE', '/api/me/todos/categories/9'],
+  ]);
+  assert.deepEqual(calls[0].body, { name: '건강', iconKey: 'health', colorKey: 'pink' });
+  assert.deepEqual(calls[2].body, { ids: [9] });
+  assert.deepEqual(calls.map(call => call.token), ['t1', 't2', 't3', 't4']);
 });
 
 test('todo responses reject malformed states and mutation failures propagate', async () => {

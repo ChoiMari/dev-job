@@ -6,7 +6,8 @@ import { scheduleFromLocal, scheduleLabel, zonedLocalInput } from '../src/pages/
 
 const now = '2026-10-10T00:00:00Z';
 const input = { applicationId: 12, title: '1차 면접', startsAt: '2026-10-15T10:00:00+09:00', timeZone: 'Asia/Seoul' };
-const scheduled = { id: 7, ...input, status: 'SCHEDULED', cancelledAt: null, createdAt: now, updatedAt: now };
+const scheduled = { id: 7, ...input, stage: null, interviewMethod: null, memo: null,
+  status: 'SCHEDULED', cancelledAt: null, completedAt: null, createdAt: now, updatedAt: now };
 const json = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
 
 test('interview CRUD and state changes stay on the independent personal resource', async () => {

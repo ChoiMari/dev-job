@@ -1,0 +1,12 @@
+.application-status-pixel {
+  display: inline-block;
+  width: 21px;
+  height: 21px;
+  flex: 0 0 21px;
+  background-repeat: no-repeat;
+  background-size: 147px auto;
+  background-position-y: center;
+}
+.application-status-pixel--document_passed { clip-path: inset(0 1px 0 0); }
+.application-status-pixel--rejected { background-size: 160px auto; }
+.application-status-badge > span:last-child { min-width: 0; }

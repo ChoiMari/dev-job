@@ -65,13 +65,20 @@ B00은 새 엔드포인트를 확정하거나 구현하지 않는다. 아래 기
 | Method·URL | 요청 | 성공 |
 | --- | --- | --- |
 | `GET /api/me/todos` | 선택 `completed=true|false`, `page`, `size`; 필터 생략 시 완료·미완료 모두 | `200` `{items:[Todo],page,size,totalElements}`. 활성 항목만, 기한 빠른 순·기한 없음 마지막·ID 내림차순. 범위 초과 페이지는 빈 `items`와 실제 총수 |
-| `POST /api/me/todos` | `{ "title":"지원서 검토", "description":"오탈자 확인", "dueAt":"2026-10-15T18:00:00+09:00", "dueTimeZone":"Asia/Seoul" }` | `201` 생성된 `Todo` |
+| `POST /api/me/todos` | `{ "title":"지원서 검토", "description":"오탈자 확인", "dueAt":"2026-10-15T18:00:00+09:00", "dueTimeZone":"Asia/Seoul", "category":"서류", "reminderMinutes":10 }` | `201` 생성된 `Todo` |
 | `GET /api/me/todos/{todoId}` | 없음 | `200` `Todo` |
 | `PATCH /api/me/todos/{todoId}` | 변경할 필드만 담은 비어 있지 않은 JSON 객체 | `200` 변경된 `Todo` |
 | `PATCH /api/me/todos/{todoId}/completion` | `{ "completed": true }` 또는 `false` | `200` `Todo`; 같은 상태의 재요청은 `completedAt`·`updatedAt`을 유지 |
 | `DELETE /api/me/todos/{todoId}` | 없음 | `204` 본문 없음; `deletedAt`을 저장하고 일반 조회에서 숨김. 반복 삭제는 `404` |
+| `GET /api/me/todos/categories` | 없음 | `200` 기본·추가 카테고리 `{id,name,iconKey,colorKey,sortOrder}[]`를 정렬 순서대로 반환. 새 계정은 기본 8개를 생성 |
+| `POST /api/me/todos/categories` | `{ "name":"건강", "iconKey":"health", "colorKey":"pink" }` | `201` 생성된 카테고리. 중복 이름·20개 초과는 `409` |
+| `PATCH /api/me/todos/categories/{categoryId}` | `name`·`iconKey`·`colorKey` 중 변경할 필드 | `200` 변경된 카테고리. 이름 변경 시 기존 할 일의 카테고리 이름도 함께 변경. 중복 이름은 `409` |
+| `PUT /api/me/todos/categories/order` | `{ "ids":[카테고리 ID 전체] }` | `200` 정렬된 카테고리 배열. 누락·중복·타인 ID는 `400` |
+| `DELETE /api/me/todos/categories/{categoryId}` | 없음 | `204`; 사용 중인 카테고리는 `409`, 없는 ID는 `404` |
 
-`Todo`는 `{id,title,description,dueAt,dueTimeZone,completed,completedAt,createdAt,updatedAt}`이다. 제목은 trim 후 1~200자 필수, 설명은 trim 후 최대 2000자이며 생략·`null`·공백은 `null`로 저장한다. 기한은 `dueAt` ISO 8601 오프셋 날짜·시각과 IANA `dueTimeZone`을 둘 다 보내거나 둘 다 생략/`null`로 보낸다. 입력 오프셋이 해당 시간대의 실제 오프셋과 다르면 `400`이다. 응답 `dueAt`은 저장된 시점을 지정 시간대의 오프셋으로 돌려준다. 생성 시 `completed=false`, `completedAt=null`이다. `PATCH`에서 제목 `null`·공백은 `400`, 설명 `null`은 제거, 기한은 두 필드를 `null`로 보내 제거한다. 알 수 없는 수정 필드와 빈 객체는 `400`이다. 완료 취소는 `completedAt=null`로 돌린다. 텍스트의 제어문자는 허용하지 않는다.
+`Todo`는 `{id,title,description,dueAt,dueTimeZone,category,reminderMinutes,completed,completedAt,createdAt,updatedAt}`이다. 제목은 trim 후 1~200자 필수, 설명은 trim 후 최대 2000자이며 생략·`null`·공백은 `null`로 저장한다. 기한은 `dueAt` ISO 8601 오프셋 날짜·시각과 IANA `dueTimeZone`을 둘 다 보내거나 둘 다 생략/`null`로 보낸다. 입력 오프셋이 해당 시간대의 실제 오프셋과 다르면 `400`이다. 응답 `dueAt`은 저장된 시점을 지정 시간대의 오프셋으로 돌려준다. `category`는 `서류`·`면접`·`공부`·`자기계발`·`기타` 또는 사용자가 등록한 카테고리 이름으로, 최대 30자다. 생략 시 `기타`이며 기존 행도 `기타`로 이관한다. `reminderMinutes`는 `-1`(없음)·`10`·`60`·`1440` 중 하나이고 생략 시 기존 동작인 `1440`이다. 알림은 앱 내 수신 설정이 켜져 있고 기한이 미래이며 지정된 사전 알림 시각이 지났을 때 생성된다. 생성 시 `completed=false`, `completedAt=null`이다. `PATCH`에서 제목 `null`·공백은 `400`, 설명 `null`은 제거, 기한은 두 필드를 `null`로 보내 제거한다. 알 수 없는 수정 필드와 빈 객체는 `400`이다. 완료 취소는 `completedAt=null`로 돌린다. 텍스트의 제어문자는 허용하지 않는다.
+
+카테고리는 계정별 최대 20개다. 기본 8개(`서류`·`면접`·`공부`·`자기계발`·`일상`·`취미`·`여행`·`기타`)도 DB 행으로 보관하여 수정·정렬·삭제할 수 있다. 마지막 1개와 활성 할 일에 쓰인 카테고리는 삭제할 수 없다. 이름은 trim 후 1~20자다. `iconKey`는 `document`·`interview`·`study`·`growth`·`health`·`travel`·`other`·`briefcase`·`graduation`·`dumbbell`·`coffee`·`home`·`gamepad`·`sun`·`people`·`music`·`lightbulb`·`star`·`calendar`·`flag`·`laptop`·`leaf`·`gift`·`trophy`·`mail`·`camera`·`target`·`puzzle`·`pencil`·`clock` 중 하나이며 생략 시 `other`다. `colorKey`는 `blue`·`green`·`pink`·`orange`·`yellow`·`purple`·`sky`·`gray` 중 하나이며 생략 시 `blue`다. 알 수 없는 키와 `null`은 `400`이다. 아이콘 이미지는 프런트에 미리 포함되며 여러 카테고리가 재사용한다.
 
 시각은 DB의 마이크로초 정밀도에 맞춰 저장·응답한다. 따라서 더 세밀한 소수 초가 들어오면 마이크로초로 내림한 값이 첫 응답과 재조회에 동일하게 나타난다.
 
@@ -239,7 +246,7 @@ POST는 정확한 동의 본문을 매번 요구하고 지정 버전만 비동�
 
 ### B13 · 앱 내 알림 — EXT-01-04 확정
 
-제공 종류는 `INTERVIEW_REMINDER`(면접 시작), `TODO_REMINDER`(개인 할 일 기한) 두 가지이며 전달 채널은 **앱 내 목록**뿐이다. 두 종류 모두 기본 수신한다. 아직 미래인 일정의 시각이 현재부터 24시간 이내가 되면 예약 작업(1분 간격)이 알림을 생성한다. 24시간 이내에 새로 만든 일정은 다음 예약 스캔에서 생성되며 지난 시각은 알리지 않는다. 면접 취소와 할 일 완료·삭제는 스캔 대상에서 제외한다. 일정 시각이 바뀌면 바뀐 시각은 새 이벤트다. 제목만 바뀌어도 같은 시각의 알림은 다시 만들지 않는다. 이미 생성된 알림은 읽음 여부와 함께 남으며 보관·삭제 API는 없다.
+제공 종류는 `INTERVIEW_REMINDER`(면접 시작), `TODO_REMINDER`(개인 할 일 기한) 두 가지이며 전달 채널은 **앱 내 목록**뿐이다. 두 종류 모두 기본 수신한다. 면접은 아직 미래인 시작 시각이 현재부터 24시간 이내가 되면 예약 작업(1분 간격)이 알림을 생성한다. 할 일은 저장된 `reminderMinutes`만큼 기한이 가까워졌을 때 생성하며 `-1`이면 생성하지 않는다. 지정 사전 알림 시간이 이미 지났어도 기한이 미래라면 다음 스캔에서 생성한다. 지난 시각은 알리지 않는다. 면접 취소와 할 일 완료·삭제는 스캔 대상에서 제외한다. 일정 시각이 바뀌면 바뀐 시각은 새 이벤트다. 제목만 바뀌어도 같은 시각의 알림은 다시 만들지 않는다. 이미 생성된 알림은 읽음 여부와 함께 남으며 보관·삭제 API는 없다.
 
 | Method·URL | 요청 | 성공 응답 | 오류 |
 | --- | --- | --- | --- |

@@ -3,7 +3,7 @@ import { apiRequest } from '../../api';
 import { createApplicationsApi } from '../../api/applications';
 import { createJobsApi } from '../../api/jobs';
 import { createSavedJobsApi } from '../../api/saved-jobs';
-import { scheduleInput, statusLabels } from '../../api/application-status';
+import { newApplicationStatuses, scheduleInput, statusLabels } from '../../api/application-status';
 import type { ApplicationStatus } from '../../api/application-status';
 import { LucideIcon } from '../../components/LucideIcon';
 import applicationAddArt from '../../assets/redesign/application-add-pixel.png';
@@ -12,8 +12,7 @@ const applications = createApplicationsApi(apiRequest);
 const jobs = createJobsApi(apiRequest);
 const savedJobs = createSavedJobsApi(apiRequest);
 type Candidate = { kind: 'COLLECTED' | 'MANUAL'; id: number; company: string; title: string; location: string | null; applicationStatus: string | null };
-const newStatuses = ['PLANNED', 'APPLIED', 'DOCUMENT_PASSED', 'INTERVIEW', 'FINAL_PASSED', 'REJECTED', 'WITHDRAWN'] as const;
-type NewStatus = Extract<ApplicationStatus, typeof newStatuses[number]>;
+type NewStatus = Extract<ApplicationStatus, typeof newApplicationStatuses[number]>;
 
 export function AddApplicationModal({ onClose, onAdded }: { onClose: () => void; onAdded: () => void }) {
   const [tab, setTab] = useState<'saved' | 'all'>('saved');
@@ -70,7 +69,7 @@ export function AddApplicationModal({ onClose, onAdded }: { onClose: () => void;
         </div>
         {more && <button type="button" className="application-more" disabled={loading} onClick={() => setPage(value => value + 1)}>공고 더 보기</button>}
         <a className="application-new-job" href="#/bookmarks/new"><LucideIcon name="plus" /> 목록에 없나요? 새 공고 등록하기</a>
-        <div className="application-modal-fields"><label><span className="application-field-title">지원일{requiresAppliedDate && <b aria-hidden="true"> *</b>}</span><input name="appliedDate" type="date" required={requiresAppliedDate} disabled={status === 'PLANNED'} /><small>{status === 'PLANNED' ? '지원 예정 상태에서는 입력하지 않습니다.' : status === 'WITHDRAWN' ? '실제 지원했다면 날짜를 입력해 주세요.' : '실제 지원한 날짜를 선택해 주세요.'}</small></label><label><span className="application-field-title">진행 상태 <b aria-hidden="true">*</b></span><select value={status} onChange={event => setStatus(event.target.value as NewStatus)}>{newStatuses.map(value => <option key={value} value={value}>{statusLabels[value]}</option>)}</select></label><label className="application-modal-wide">다음 확인 일정 (선택)<input name="nextScheduleAt" type="datetime-local" /></label><label className="application-modal-wide">메모 (선택)<textarea name="note" maxLength={2000} rows={3} placeholder="지원 경로, 확인할 내용 등을 기록하세요." /></label></div>
+        <div className="application-modal-fields"><label><span className="application-field-title">지원일{requiresAppliedDate && <b aria-hidden="true"> *</b>}</span><input name="appliedDate" type="date" required={requiresAppliedDate} disabled={status === 'PLANNED'} /><small>{status === 'PLANNED' ? '지원 예정 상태에서는 입력하지 않습니다.' : status === 'WITHDRAWN' ? '실제 지원했다면 날짜를 입력해 주세요.' : '실제 지원한 날짜를 선택해 주세요.'}</small></label><label><span className="application-field-title">진행 상태 <b aria-hidden="true">*</b></span><select value={status} onChange={event => setStatus(event.target.value as NewStatus)}>{newApplicationStatuses.map(value => <option key={value} value={value}>{statusLabels[value]}</option>)}</select></label><label className="application-modal-wide">다음 확인 일정 (선택)<input name="nextScheduleAt" type="datetime-local" /></label><label className="application-modal-wide">메모 (선택)<textarea name="note" maxLength={2000} rows={3} placeholder="지원 경로, 확인할 내용 등을 기록하세요." /></label></div>
         {error && <p className="application-modal-error" role="alert">{error}</p>}
       </form>
       <footer className="application-modal-footer"><button type="button" onClick={onClose}>취소</button><button type="submit" form="add-application-form" className="button-primary" disabled={!selected || busy}>{busy ? '추가 중…' : '지원 내역 추가'}</button></footer>

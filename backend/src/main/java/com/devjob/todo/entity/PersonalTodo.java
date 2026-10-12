@@ -11,6 +11,8 @@ public class PersonalTodo {
     @ManyToOne(fetch = FetchType.LAZY, optional = false) @JoinColumn(name = "user_id", nullable = false) private User user;
     @Column(nullable = false, length = 200) private String title;
     @Column(length = 2000) private String description;
+    @Column(nullable = false, length = 30) private String category = "기타";
+    @Column(name = "reminder_minutes", nullable = false) private int reminderMinutes = 1440;
     @Column(name = "due_at") private Instant dueAt;
     @Column(name = "due_time_zone", length = 100) private String dueTimeZone;
     @Column(name = "completed_at") private Instant completedAt;
@@ -21,12 +23,21 @@ public class PersonalTodo {
 
     protected PersonalTodo() { }
     public PersonalTodo(User user, String title, String description, Instant dueAt, String dueTimeZone) {
+        this(user, title, description, dueAt, dueTimeZone, "기타", 1440);
+    }
+    public PersonalTodo(User user, String title, String description, Instant dueAt, String dueTimeZone,
+            String category, int reminderMinutes) {
         this.user = user;
         this.createdAt = this.updatedAt = now();
-        update(title, description, dueAt, dueTimeZone);
+        update(title, description, dueAt, dueTimeZone, category, reminderMinutes);
     }
     public void update(String title, String description, Instant dueAt, String dueTimeZone) {
+        update(title, description, dueAt, dueTimeZone, category, reminderMinutes);
+    }
+    public void update(String title, String description, Instant dueAt, String dueTimeZone,
+            String category, int reminderMinutes) {
         this.title = title; this.description = description; this.dueAt = dueAt; this.dueTimeZone = dueTimeZone;
+        this.category = category; this.reminderMinutes = reminderMinutes;
         this.updatedAt = now();
     }
     public void setCompleted(boolean completed) {
@@ -41,6 +52,8 @@ public class PersonalTodo {
     public Long getUserId() { return user.getId(); }
     public String getTitle() { return title; }
     public String getDescription() { return description; }
+    public String getCategory() { return category; }
+    public int getReminderMinutes() { return reminderMinutes; }
     public Instant getDueAt() { return dueAt; }
     public String getDueTimeZone() { return dueTimeZone; }
     public Instant getCompletedAt() { return completedAt; }

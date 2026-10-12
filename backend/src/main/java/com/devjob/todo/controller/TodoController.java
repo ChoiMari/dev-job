@@ -36,4 +36,27 @@ public class TodoController {
     }
     @DeleteMapping("/{todoId}") @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@AuthenticationPrincipal CurrentUser user, @PathVariable Long todoId) { service.delete(user.id(), todoId); }
+    @GetMapping("/categories")
+    public List<com.devjob.todo.repository.TodoCategoryRepository.Category> categories(@AuthenticationPrincipal CurrentUser user) {
+        return service.categories(user.id());
+    }
+    @PostMapping("/categories") @ResponseStatus(HttpStatus.CREATED)
+    public com.devjob.todo.repository.TodoCategoryRepository.Category createCategory(
+            @AuthenticationPrincipal CurrentUser user, @RequestBody JsonNode input) {
+        return service.createCategory(user.id(), input);
+    }
+    @PatchMapping("/categories/{categoryId}")
+    public com.devjob.todo.repository.TodoCategoryRepository.Category updateCategory(
+            @AuthenticationPrincipal CurrentUser user, @PathVariable Long categoryId, @RequestBody JsonNode input) {
+        return service.updateCategory(user.id(), categoryId, input);
+    }
+    @PutMapping("/categories/order")
+    public List<com.devjob.todo.repository.TodoCategoryRepository.Category> reorderCategories(
+            @AuthenticationPrincipal CurrentUser user, @RequestBody JsonNode input) {
+        return service.reorderCategories(user.id(), input);
+    }
+    @DeleteMapping("/categories/{categoryId}") @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteCategory(@AuthenticationPrincipal CurrentUser user, @PathVariable Long categoryId) {
+        service.deleteCategory(user.id(), categoryId);
+    }
 }
