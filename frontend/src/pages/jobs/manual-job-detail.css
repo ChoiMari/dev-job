@@ -1,0 +1,8 @@
+.main-content:has(> .manual-job-detail-page) > .page-heading { display: none; }
+.manual-job-detail-page .manual-job-content-actions { display: flex; flex-wrap: wrap; gap: 7px; margin-left: auto; }
+.manual-job-detail-page .job-detail-content > header .manual-job-content-actions .job-detail-source-link { width: auto; margin-left: 0; }
+.manual-job-detail-page .job-detail-side-card .job-analysis--completed > p:first-of-type { margin-bottom: 13px; }
+@media (max-width: 650px) {
+  .manual-job-detail-page .manual-job-content-actions { width: 100%; margin-left: 0; }
+  .manual-job-detail-page .job-detail-content > header .manual-job-content-actions .job-detail-source-link { flex: 1 1 150px; }
+}

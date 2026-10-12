@@ -12,6 +12,7 @@
 .saved-total img { width: 19px; height: 19px; object-fit: contain; }
 .saved-create { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 40px; padding: 8px 14px; border: 1px solid #6650ef; border-radius: 8px; background: #6650ef; color: #fff; font-size: .78rem; font-weight: 750; }
 .saved-create:hover { background: #5541d5; }
+.saved-create { text-decoration: none; }
 .saved-create .lucide-icon { width: 16px; height: 16px; }
 .jobs-page--saved > .saved-page-content { min-width: 0; padding: 18px !important; }
 .saved-toolbar { display: grid; gap: 11px; margin-bottom: 14px; }
@@ -35,8 +36,10 @@
 .saved-card-labels { display: flex; align-items: center; flex-wrap: wrap; gap: 5px 8px; }
 .saved-card-labels strong { color: #39459a; font-size: .8rem; }
 .saved-kind { padding: 3px 7px; border-radius: 5px; background: #eaf2ff; color: #285aa8; font-size: .68rem; font-weight: 750; }
-.saved-kind--manual { background: #fff1df; color: #925c12; }
+.saved-kind--manual { background: #ffe8f1; color: #b52b91; }
 .saved-kind--unbookmarked { background: #f4f2fb; color: #6f6a92; }
+.saved-kind--pending-unbookmark { background: #f1edff; color: #6651aa; }
+.saved-kind--pending { background: #fff0f2; color: #a23c57; }
 .saved-card-labels .badge { font-size: .68rem; }
 .saved-card-application-status--planned .badge { border-color: #c8d8fc; background: #eaf2ff; color: #285aa8; }
 .saved-card h2 { margin: 5px 0; color: #15194b; font-size: .94rem; line-height: 1.4; }
@@ -51,6 +54,11 @@
 .saved-card .saved-remove, .saved-card .saved-remove:hover,
 .saved-card .saved-remove[aria-pressed="true"], .saved-card .saved-remove[aria-pressed="true"]:hover { display: grid; place-items: center; width: 40px; height: 40px; min-height: 40px; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; color: #5144bd; }
 .saved-remove img { width: 42px; height: 42px; max-width: none; object-fit: contain; }
+.saved-remove:not(.saved-manual-delete) img { transform: scaleY(.9); }
+.saved-card .saved-manual-delete img { width: 56px; height: 56px; transform: translateY(-6px); }
+.saved-card .saved-manual-delete[aria-pressed="true"] img { opacity: .48; }
+.saved-card--delete-pending { border-color: #e7b8c9 !important; }
+.saved-card--unbookmark-pending { border-color: #c9c2f5 !important; }
 .saved-remove .lucide-icon { width: 17px; height: 17px; }
 .saved-analysis { display: grid; grid-template-columns: 54px minmax(0, 1fr) auto; align-items: center; gap: 8px; margin-top: 12px; padding: 9px 12px; border: 1px solid #e0e8f4; border-radius: 8px; background: linear-gradient(90deg, #f2fbf5, #f8f7ff); }
 .saved-analysis > img { width: 52px; height: 52px; object-fit: contain; }
@@ -93,15 +101,20 @@
 .saved-card-actions a, .saved-card-actions button { display: inline-flex; align-items: center; gap: 4px; min-height: 30px; padding: 4px 0; border: 0; background: transparent; color: #5541c0; font-size: .7rem; font-weight: 750; text-decoration: none; }
 .saved-card-actions a:hover, .saved-card-actions button:hover { text-decoration: underline; }
 .saved-card-actions .lucide-icon { width: 12px; height: 12px; }
+.saved-delete-confirm { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; margin-top: 11px; padding: 9px 11px; border: 1px solid #f1d9df; border-radius: 8px; background: #fff8fa; }
+.saved-delete-confirm p { flex: 1 1 220px; margin: 0; color: #8b4261; font-size: .72rem; line-height: 1.5; }
+.saved-delete-confirm button { min-height: 31px; padding: 5px 9px; border: 1px solid #e6c2d0; border-radius: 6px; background: #fff; color: #844160; font-size: .71rem; font-weight: 750; }
+.saved-delete-confirm .saved-delete-commit { border-color: #a23c57; background: #a23c57; color: #fff; }
+.saved-delete-confirm button:disabled { opacity: .55; cursor: wait; }
+.saved-unbookmark-confirm { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; margin-top: 11px; padding: 9px 11px; border: 1px solid #dcd5fa; border-radius: 8px; background: #f8f6ff; }
+.saved-unbookmark-confirm p { flex: 1 1 220px; margin: 0; color: #5e5196; font-size: .72rem; line-height: 1.5; }
+.saved-unbookmark-confirm button { min-height: 31px; padding: 5px 9px; border: 1px solid #d0c7f4; border-radius: 6px; background: #fff; color: #5849a8; font-size: .71rem; font-weight: 750; }
+.saved-unbookmark-confirm .saved-unbookmark-commit { border-color: #6650ef; background: #6650ef; color: #fff; }
+.saved-unbookmark-confirm button:disabled { opacity: .55; cursor: wait; }
 .jobs-page--saved .job-pagination { padding-top: 14px; border-top: 1px solid #e7eafd; }
 .jobs-page--saved .job-pagination button { border: 1px solid #ded9fa; background: #f1efff; color: #5541c0; font-size: .76rem; font-weight: 750; }
 .jobs-page--saved .job-pagination button:disabled { opacity: .55; }
-.jobs-page--saved .application-form fieldset { border-color: #e3e7fa; border-radius: 10px; background: #f8f9ff; }
-.jobs-page--saved .application-form input, .jobs-page--saved .application-form textarea { border-color: #d8ddf5; background: #fff; color: #23265a; }
-.saved-card .application-registration { margin:12px 0 0; padding:12px; border:1px solid #e3e7fa; border-radius:8px; background:#f8f9ff; }
-.saved-card .application-registration h3 { margin:0 0 6px; color:#181a50; font-size:.8rem; }
-.saved-card .application-registration p { margin:5px 0 9px; color:#69709b; font-size:.72rem; }
-.saved-card .application-registration > button, .saved-card .application-registration > a { min-height:34px; padding:6px 10px; border:1px solid #ded9fa; border-radius:7px; background:#f1efff; color:#5541c0; font-size:.72rem; font-weight:750; }
+.saved-card-application { margin-top: 12px; border: 1px solid #e3e7fa; border-radius: 9px; background: #fff; }
 @media (max-width: 700px) {
   .saved-page-header { padding: 15px; }
   .saved-page-heading-actions { width: 100%; justify-content: space-between; }

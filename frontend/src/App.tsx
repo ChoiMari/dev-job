@@ -23,6 +23,7 @@ import { TodosPage } from './pages/todos/TodosPage';
 import { CharacterPage } from './pages/CharacterPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { ManualJobDetailPage } from './pages/jobs/ManualJobDetailPage';
+import { ManualJobFormPage } from './pages/jobs/ManualJobFormPage';
 import { InterviewsPage } from './pages/interviews/InterviewsPage';
 import { LearningGoalsPage } from './pages/learning-goals/LearningGoalsPage';
 import { ResumesPage } from './pages/resumes/ResumesPage';
@@ -144,6 +145,7 @@ export function App() {
 
       : path === '/states' ? <StatePreview /> : path === '/jobs' ? <JobsPage location={location} />
       : path === '/bookmarks' ? <BookmarksPage location={location} />
+      : path === '/bookmarks/new' || /^\/bookmarks\/[1-9]\d*\/edit$/.test(path) ? <ManualJobFormPage key={path} location={location} />
       : path.startsWith('/bookmarks/') ? <ManualJobDetailPage key={path} location={location} />
       : path.startsWith('/jobs/') ? <JobDetailPage location={location} />
       : path === '/applications' ? <ApplicationsPage location={location} />

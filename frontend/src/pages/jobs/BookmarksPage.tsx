@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { apiRequest } from '../../api';
 import { createSavedJobsApi } from '../../api/saved-jobs';
-import type { ManualSavedJobInput, SavedJob, SavedJobsPage } from '../../api/saved-jobs';
+import type { SavedJob, SavedJobsPage } from '../../api/saved-jobs';
 import { createBookmarksApi } from '../../api/bookmarks';
 import { createAnalysisApi } from '../../api/analysis';
 import { ApiError } from '../../api/client';
@@ -10,10 +10,12 @@ import { ApplicationStatusBadge } from '../../components/ApplicationStatusBadge'
 import { ErrorState, LoadingState } from '../../components/States';
 import { LucideIcon } from '../../components/LucideIcon';
 import './jobs.css';
+import './job-detail.css';
 import './bookmarks.css';
 import savedBookmarkArt from '../../assets/jobs/saved-bookmark-filled.png';
 import cardBookmarkArt from '../../assets/jobs/saved-card-bookmark-filled.png';
 import emptyBookmarkArt from '../../assets/jobs/saved-card-bookmark-outline.png';
+import savedTrashArt from '../../assets/jobs/saved-trash-pixel.png';
 import savedHeartArt from '../../assets/jobs/saved-heart.png';
 import analysisRobot from '../../assets/jobs/saved-analysis-robot-v3.png';
 import savedEmptyCat from '../../assets/jobs/saved-empty-cat.png';
@@ -22,7 +24,6 @@ const savedJobs = createSavedJobsApi(apiRequest);
 const bookmarks = createBookmarksApi(apiRequest);
 const roleLabels: Record<string, string> = { DEVELOPMENT: '개발', DATA_AI: '데이터·AI', SECURITY: '보안',
   INFRA: '클라우드·인프라', IT_OPERATIONS: '전산·IT 운영' };
-const optional = (form: FormData, name: string) => String(form.get(name) || '').trim() || null;
 function deadlineLabel(value: string) {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
   if (!match) return `마감 ${value}`;
@@ -30,12 +31,6 @@ function deadlineLabel(value: string) {
   const days = Math.round((Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]))
     - Date.UTC(today.getFullYear(), today.getMonth(), today.getDate())) / 86400000);
   return days > 0 ? `D-${days}` : days === 0 ? 'D-Day' : '마감';
-}
-function formInput(form: FormData): ManualSavedJobInput {
-  return { url: String(form.get('url') || '').trim(), companyName: String(form.get('companyName') || '').trim(),
-    title: String(form.get('title') || '').trim(), role: optional(form, 'role'), careerLevel: optional(form, 'careerLevel'),
-    location: optional(form, 'location'), employmentType: optional(form, 'employmentType'),
-    deadlineDate: optional(form, 'deadlineDate'), note: optional(form, 'note'), description: optional(form, 'description') };
 }
 export function BookmarksPage({ location }: { location: string }) {
   const search = location.split('?')[1] || '';
@@ -46,23 +41,23 @@ export function BookmarksPage({ location }: { location: string }) {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [retry, setRetry] = useState(0);
-  const [editing, setEditing] = useState<SavedJob | null>(null);
-  const [showForm, setShowForm] = useState(params.get('new') === '1');
-  const [saving, setSaving] = useState(false);
-  const [formError, setFormError] = useState('');
   const [actionError, setActionError] = useState('');
   const [view, setView] = useState<'ALL' | 'COLLECTED' | 'MANUAL'>('ALL');
   const [query, setQuery] = useState('');
   const [order, setOrder] = useState<'newest' | 'oldest'>('newest');
   const [unbookmarkedIds, setUnbookmarkedIds] = useState<number[]>([]);
+  const [pendingUnbookmarkIds, setPendingUnbookmarkIds] = useState<number[]>([]);
   const [bookmarkBusyIds, setBookmarkBusyIds] = useState<number[]>([]);
+  const [pendingDeleteIds, setPendingDeleteIds] = useState<number[]>([]);
+  const [deleteBusyIds, setDeleteBusyIds] = useState<number[]>([]);
+  const [registeredManualIds, setRegisteredManualIds] = useState<number[]>([]);
   const savedCount = data ? data.totalElements - unbookmarkedIds.length : 0;
   const isUnbookmarked = (item: SavedJob) => item.kind === 'COLLECTED' && unbookmarkedIds.includes(item.jobId!);
   const visibleItems = data?.items.filter(item => (view === 'ALL' || item.kind === view)
     && `${item.companyName} ${item.title} ${item.role || ''}`.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()))
     .sort((a, b) => (order === 'newest' ? -1 : 1) * (Date.parse(a.createdAt) - Date.parse(b.createdAt))) || [];
   const navigatePage = (next: number) => { window.location.hash = `/bookmarks?page=${next}`; };
-  const openCreate = () => { setEditing(null); setFormError(''); setShowForm(true); window.scrollTo(0, 0); };
+  const openCreate = () => { window.location.hash = '/bookmarks/new'; };
   useEffect(() => {
     const controller = new AbortController(); setLoading(true); setError(''); setData(undefined);
     if (!Number.isSafeInteger(page) || page < 0 || page * size > 2147483647) {
@@ -81,7 +76,7 @@ export function BookmarksPage({ location }: { location: string }) {
       <img src={savedBookmarkArt} alt="" aria-hidden="true" />
       <div className="saved-page-heading"><h1>관심 공고</h1><p>저장한 채용공고를 관리하고 AI 분석을 확인하세요.</p></div>
       <div className="saved-page-heading-actions"><span className="saved-total"><img src={savedHeartArt} alt="" aria-hidden="true" /> {data ? `${savedCount}개 저장됨` : '저장한 공고'}</span>
-        <button type="button" className="saved-create" onClick={openCreate}><LucideIcon name="plus" />공고 직접 등록</button></div>
+        <a className="saved-create" href="#/bookmarks/new"><LucideIcon name="plus" />공고 직접 등록</a></div>
     </section>
     <section className="card saved-page-content" aria-label="관심 공고 목록" aria-busy={loading}>
       <div className="saved-toolbar"><div className="saved-tabs" role="group" aria-label="공고 종류">
@@ -92,40 +87,15 @@ export function BookmarksPage({ location }: { location: string }) {
           <input id="saved-query" type="search" value={query} onChange={event => setQuery(event.target.value)} placeholder="현재 페이지에서 회사명·공고명·직무 검색" />
           <label className="saved-visually-hidden" htmlFor="saved-order">현재 페이지 정렬</label><select id="saved-order" value={order} onChange={event => setOrder(event.target.value as 'newest' | 'oldest')}>
             <option value="newest">최근 저장순</option><option value="oldest">오래된 저장순</option></select></div></div>
-      {showForm && <form className="application-form" key={editing?.id || 'new'} onSubmit={async event => {
-        event.preventDefault(); if (saving) return;
-        const input = formInput(new FormData(event.currentTarget)); setSaving(true); setFormError('');
-        try {
-          if (editing) await savedJobs.update(editing.id, input); else await savedJobs.create(input);
-          setShowForm(false); setEditing(null); setRetry(value => value + 1);
-          if (!editing && page > 0) navigatePage(0);
-        } catch (failure) { setFormError(failure instanceof ApiError && failure.status === 409
-          ? '이미 저장한 URL입니다.' : failure instanceof Error ? failure.message : '저장하지 못했습니다.'); }
-        finally { setSaving(false); }
-      }}><fieldset disabled={saving}><legend>{editing ? '직접 등록 공고 수정' : '관심공고 직접 등록'}</legend>
-        <label>채용공고 URL *<input name="url" type="url" required maxLength={2048} defaultValue={editing?.url || ''} /></label>
-        <label>기업명 *<input name="companyName" required maxLength={200} defaultValue={editing?.companyName || ''} /></label>
-        <label>채용공고 제목 *<input name="title" required maxLength={300} defaultValue={editing?.title || ''} /></label>
-        <label>직무<input name="role" maxLength={120} defaultValue={editing?.role || ''} /></label>
-        <label>경력<input name="careerLevel" maxLength={120} defaultValue={editing?.careerLevel || ''} /></label>
-        <label>근무지역<input name="location" maxLength={200} defaultValue={editing?.location || ''} /></label>
-        <label>고용형태<input name="employmentType" maxLength={120} defaultValue={editing?.employmentType || ''} /></label>
-        <label>마감일<input name="deadlineDate" type="date" defaultValue={editing?.deadlineDate || ''} /></label>
-        <label>메모<textarea name="note" maxLength={2000} rows={3} defaultValue={editing?.note || ''} /></label>
-        <label>공고 본문 (AI 분석 입력)<textarea name="description" maxLength={12000} rows={8} defaultValue={editing?.description || ''} /></label>
-        {formError && <ErrorState message={formError} />}
-        <div className="job-actions"><button className="button-primary" type="submit">{saving ? '저장 중…' : '저장'}</button>
-          <button type="button" onClick={() => { setShowForm(false); setEditing(null); }}>취소</button></div>
-      </fieldset></form>}
       {actionError && <ErrorState message={actionError} onRetry={() => { setActionError(''); setRetry(value => value + 1); }} />}
       {loading ? <LoadingState message="관심공고를 불러오고 있습니다." /> : error ? <ErrorState message={error} onRetry={() => setRetry(value => value + 1)} /> : data && <>
         <p className="saved-page-summary" role="status">총 {savedCount}건 · {data.page + 1}페이지{data.totalElements > size && ' · 검색·분류는 현재 페이지에 적용됩니다.'}</p>
         {data.items.length === 0 ? <SavedEmpty hasItems={false} onCreate={openCreate} />
           : visibleItems.length === 0 ? <SavedEmpty hasItems onCreate={openCreate} />
-          : <ul className="job-list saved-list">{visibleItems.map(item => <li className="job-card saved-card" key={`${item.kind}-${item.id}`}>
+          : <ul className="job-list saved-list">{visibleItems.map(item => <li className={`job-card saved-card${pendingDeleteIds.includes(item.id) && item.kind === 'MANUAL' ? ' saved-card--delete-pending' : ''}${item.kind === 'COLLECTED' && pendingUnbookmarkIds.includes(item.jobId!) ? ' saved-card--unbookmark-pending' : ''}`} key={`${item.kind}-${item.id}`}>
             <div className="saved-card-top"><span className="saved-company-icon"><LucideIcon name="building" /></span>
               <div className="saved-card-copy"><div className="saved-card-labels"><strong>{item.companyName}</strong>
-                <span className={`saved-kind saved-kind--${isUnbookmarked(item) ? 'unbookmarked' : item.kind.toLowerCase()}`}>{isUnbookmarked(item) ? '관심 해제됨' : item.kind === 'MANUAL' ? '직접 등록' : '저장한 공고'}</span>
+                <span className={`saved-kind saved-kind--${pendingDeleteIds.includes(item.id) && item.kind === 'MANUAL' ? 'pending' : item.kind === 'COLLECTED' && pendingUnbookmarkIds.includes(item.jobId!) ? 'pending-unbookmark' : isUnbookmarked(item) ? 'unbookmarked' : item.kind.toLowerCase()}`}>{pendingDeleteIds.includes(item.id) && item.kind === 'MANUAL' ? '삭제 예정' : item.kind === 'COLLECTED' && pendingUnbookmarkIds.includes(item.jobId!) ? '관심 해제 예정' : isUnbookmarked(item) ? '관심 해제됨' : item.kind === 'MANUAL' ? '직접 등록' : '저장한 공고'}</span>
                 {item.applicationStatus && <span className={`saved-card-application-status--${item.applicationStatus.toLowerCase()}`}><ApplicationStatusBadge status={item.applicationStatus} /></span>}</div>
                 <h2>{item.kind === 'COLLECTED' && item.jobId
                   ? <a href={`#/jobs/${item.jobId}?origin=bookmarks`}>{item.title} <LucideIcon name="chevronRight" /></a>
@@ -133,37 +103,59 @@ export function BookmarksPage({ location }: { location: string }) {
                 <div className="saved-card-meta">{item.location && <span>{item.location}</span>}{item.careerLevel && <span>{item.careerLevel}</span>}
                   {item.employmentType && <span>{item.employmentType}</span>}</div>
                 {item.role && <span className="saved-role">{roleLabels[item.role] || item.role}</span>}</div>
-              <div className="saved-card-side">{item.kind === 'MANUAL' ? <button type="button" className="saved-remove" aria-label={`${item.title} 삭제`} title="직접 등록 공고 삭제" onClick={async () => {
-                if (!window.confirm('이 관심공고를 삭제할까요? 지원 기록은 유지됩니다.')) return;
-                setActionError('');
-                try { await savedJobs.delete(item.id); setRetry(value => value + 1); }
-                catch (failure) { setActionError(failure instanceof Error ? failure.message : '삭제하지 못했습니다.'); }
-              }}><LucideIcon name="trash" /></button> : <button type="button" className="saved-remove"
-                aria-label={`${item.title} ${isUnbookmarked(item) ? '다시 관심 등록' : '관심 해제'}`}
+              <div className="saved-card-side">{item.kind === 'MANUAL' ? <button type="button" className="saved-remove saved-manual-delete" aria-label={`${item.title} ${pendingDeleteIds.includes(item.id) ? '삭제 취소' : '삭제 예정으로 표시'}`}
+                aria-pressed={pendingDeleteIds.includes(item.id)} disabled={deleteBusyIds.includes(item.id)}
+                title={pendingDeleteIds.includes(item.id) ? '삭제 예정 취소' : '삭제 예정으로 표시'}
+                onClick={() => setPendingDeleteIds(ids => ids.includes(item.id) ? ids.filter(id => id !== item.id) : [...ids, item.id])}>
+                <img src={savedTrashArt} alt="" aria-hidden="true" /></button> : <button type="button" className="saved-remove"
+                aria-label={`${item.title} ${isUnbookmarked(item) ? '다시 관심 등록' : pendingUnbookmarkIds.includes(item.jobId!) ? '관심 해제 취소' : '관심 해제 예정으로 표시'}`}
                 aria-pressed={!isUnbookmarked(item)} disabled={bookmarkBusyIds.includes(item.jobId!)}
-                title={isUnbookmarked(item) ? '다시 관심 공고로 등록' : '관심 공고 해제'}
+                title={isUnbookmarked(item) ? '다시 관심 공고로 등록' : pendingUnbookmarkIds.includes(item.jobId!) ? '관심 해제 취소' : '관심 해제 예정으로 표시'}
                 onClick={async () => {
                   if (bookmarkBusyIds.includes(item.jobId!)) return;
+                  if (!isUnbookmarked(item)) {
+                    setPendingUnbookmarkIds(ids => ids.includes(item.jobId!) ? ids.filter(id => id !== item.jobId) : [...ids, item.jobId!]);
+                    return;
+                  }
                   setBookmarkBusyIds(ids => [...ids, item.jobId!]); setActionError('');
                   try {
-                    if (isUnbookmarked(item)) {
-                      await bookmarks.add(item.jobId!);
-                      setUnbookmarkedIds(ids => ids.filter(id => id !== item.jobId));
-                      setRetry(value => value + 1);
-                    } else {
-                      await bookmarks.remove(item.jobId!);
-                      setUnbookmarkedIds(ids => [...ids, item.jobId!]);
-                    }
+                    await bookmarks.add(item.jobId!);
+                    setUnbookmarkedIds(ids => ids.filter(id => id !== item.jobId));
+                    setRetry(value => value + 1);
                   } catch (failure) { setActionError(failure instanceof Error ? failure.message : '관심 공고를 변경하지 못했습니다.'); }
                   finally { setBookmarkBusyIds(ids => ids.filter(id => id !== item.jobId)); }
                 }}><img src={isUnbookmarked(item) ? emptyBookmarkArt : cardBookmarkArt} alt="" aria-hidden="true" /></button>}
                 <small title={item.deadlineDate ? `마감일 ${item.deadlineDate}` : undefined}>{item.deadlineDate ? deadlineLabel(item.deadlineDate) : `저장 ${new Date(item.createdAt).toLocaleDateString('ko-KR')}`}</small></div></div>
             <SavedAnalysis item={item} onUpdated={() => { if (!isUnbookmarked(item)) setRetry(value => value + 1); }} />
             <div className="saved-card-actions"><a href={item.url} target="_blank" rel="noopener noreferrer">외부 원문 열기 <LucideIcon name="arrowRight" /></a>
-              {item.kind === 'MANUAL' && <button type="button" onClick={() => { setEditing(item); setShowForm(true); window.scrollTo(0, 0); }}>공고 수정</button>}
+              {item.kind === 'MANUAL' && <a href={`#/bookmarks/${item.id}/edit`}>공고 수정</a>}
               {item.kind === 'COLLECTED' && item.applicationStatus && <a href="#/applications">지원관리 <LucideIcon name="arrowRight" /></a>}</div>
-            {item.kind === 'MANUAL' && <ApplicationRegistration personalSavedJobId={item.id} status={item.applicationStatus}
-              onCreated={() => setRetry(value => value + 1)} />}
+            {item.kind === 'COLLECTED' && pendingUnbookmarkIds.includes(item.jobId!) && <div className="saved-unbookmark-confirm" role="status">
+              <p>관심 해제 예정입니다. 확정하면 저장 목록에서 제거됩니다. 이 화면에서는 다시 관심 등록할 수 있습니다.</p>
+              <button type="button" onClick={() => setPendingUnbookmarkIds(ids => ids.filter(id => id !== item.jobId))}>해제 취소</button>
+              <button type="button" className="saved-unbookmark-commit" disabled={bookmarkBusyIds.includes(item.jobId!)} onClick={async () => {
+                setBookmarkBusyIds(ids => [...ids, item.jobId!]); setActionError('');
+                try {
+                  await bookmarks.remove(item.jobId!);
+                  setUnbookmarkedIds(ids => [...ids, item.jobId!]);
+                  setPendingUnbookmarkIds(ids => ids.filter(id => id !== item.jobId));
+                } catch (failure) { setActionError(failure instanceof Error ? failure.message : '관심 공고를 해제하지 못했습니다.'); }
+                finally { setBookmarkBusyIds(ids => ids.filter(id => id !== item.jobId)); }
+              }}>{bookmarkBusyIds.includes(item.jobId!) ? '해제 중…' : '관심 해제 확정'}</button>
+            </div>}
+            {item.kind === 'MANUAL' && pendingDeleteIds.includes(item.id) && <div className="saved-delete-confirm" role="status">
+              <p>삭제 예정입니다. 확정 전에는 공고와 지원 기록이 그대로 유지됩니다.</p>
+              <button type="button" onClick={() => setPendingDeleteIds(ids => ids.filter(id => id !== item.id))}>삭제 취소</button>
+              <button type="button" className="saved-delete-commit" disabled={deleteBusyIds.includes(item.id)} onClick={async () => {
+                setDeleteBusyIds(ids => [...ids, item.id]); setActionError('');
+                try { await savedJobs.delete(item.id); setPendingDeleteIds(ids => ids.filter(id => id !== item.id)); setRetry(value => value + 1); }
+                catch (failure) { setActionError(failure instanceof Error ? failure.message : '삭제하지 못했습니다.'); }
+                finally { setDeleteBusyIds(ids => ids.filter(id => id !== item.id)); }
+              }}>{deleteBusyIds.includes(item.id) ? '삭제 중…' : '삭제 확정'}</button>
+            </div>}
+            {item.kind === 'MANUAL' && !item.applicationStatus && !registeredManualIds.includes(item.id) && <div className="job-detail-tab-panel saved-card-application"><ApplicationRegistration
+              personalSavedJobId={item.id} status={item.applicationStatus} buttonStatusPicker
+              onCreated={() => { setRegisteredManualIds(ids => [...ids, item.id]); setRetry(value => value + 1); }} /></div>}
           </li>)}</ul>}
         <nav className="job-actions job-pagination" aria-label="관심공고 페이지"><button disabled={page === 0} onClick={() => navigatePage(page - 1)}>이전 페이지</button>
           <button disabled={(page + 1) * size >= data.totalElements} onClick={() => navigatePage(page + 1)}>다음 페이지</button></nav>
