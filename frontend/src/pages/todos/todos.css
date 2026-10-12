@@ -73,8 +73,9 @@ main#main-content:has(> .todos-calendar-page) > .page-heading { display: none; }
 .todos-dashboard-selected ul, .todos-dashboard-list ul { margin: 0; padding: 0; list-style: none; }
 .todos-dashboard-selected, .todos-dashboard-list { display: flex; flex-direction: column; gap: 10px; }
 .todos-dashboard-list { align-content: start; }
-.todos-dashboard-card-footer { display: flex; justify-content: flex-end; margin-top: auto; padding-top: 14px; }
-.todos-dashboard-card-footer .button-link { display: inline-flex; align-items: center; gap: 5px; border-color: #3863f4; background: #3863f4; color: #fff; font-size: .74rem; }
+.todos-dashboard-card-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.todos-dashboard-card-heading h3 { min-width: 0; margin-bottom: 0; }
+.todos-dashboard-card-add { display: inline-grid; flex: 0 0 36px; place-items: center; width: 36px; height: 36px; min-height: 36px; padding: 0; font-size: 1.3rem; line-height: 1; }
 .todos-dashboard-tabs, .todos-dashboard-categories { display: flex; align-items: center; flex-wrap: wrap; gap: 5px; }
 .todos-dashboard-tabs button { min-height: 30px; padding: 5px 8px; border: 1px solid #d9e3fb; border-radius: 6px; background: #f8faff; color: #4e61a5; font-size: .72rem; font-weight: 750; }
 .todos-dashboard-tabs button[aria-pressed="true"] { background: #3863f4; border-color: #3863f4; color: #fff; }
@@ -416,3 +417,73 @@ main#main-content:has(> .todos-calendar-page) > .page-heading { display: none; }
   .todos-category-icon-picker > div { grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; }
   .todos-category-icon-picker button { padding: 1px; }
 }
+
+/* 채용공고 화면과 같은 버튼 상태 */
+.todos-calendar-page .button-primary { border-color: #6650ef; background: #6650ef; color: #fff; }
+.todos-calendar-page .button-primary:hover { border-color: #5541d5; background: #5541d5; color: #fff; }
+.todos-calendar-page .button-primary:focus-visible,
+.todos-calendar-page button:focus-visible { outline: 2px solid #6650ef; outline-offset: 2px; }
+.todos-calendar-page .todos-dashboard-tabs button:not([aria-pressed="true"]),
+.todos-calendar-page .todos-dashboard-categories .todos-category-all:not([aria-pressed="true"]),
+.todos-calendar-page .todos-dashboard-calendar .todos-view-switch button:not([aria-pressed="true"]),
+.todos-calendar-page .todos-dashboard-categories .todos-category-expand { border-color: #d8ddf5; background: #f8f9ff; color: #5541c0; }
+.todos-calendar-page .todos-dashboard-tabs button[aria-pressed="true"],
+.todos-calendar-page .todos-dashboard-categories .todos-category-all[aria-pressed="true"],
+.todos-calendar-page .todos-dashboard-calendar .todos-view-switch button[aria-pressed="true"] { border-color: #6650ef; background: #6650ef; color: #fff; box-shadow: none; }
+.todos-calendar-page .todos-dashboard-tabs button[aria-pressed="true"]:hover,
+.todos-calendar-page .todos-dashboard-categories .todos-category-all[aria-pressed="true"]:hover,
+.todos-calendar-page .todos-dashboard-calendar .todos-view-switch button[aria-pressed="true"]:hover { border-color: #5541d5; background: #5541d5; }
+.todos-calendar-page .todos-dashboard-tabs button:not([aria-pressed="true"]):hover,
+.todos-calendar-page .todos-dashboard-categories .todos-category-all:not([aria-pressed="true"]):hover,
+.todos-calendar-page .todos-dashboard-categories .todos-category-expand:hover,
+.todos-calendar-page .todos-dashboard-calendar .todos-view-switch button:not([aria-pressed="true"]):hover,
+.todos-calendar-page .todos-dashboard-calendar .todos-calendar-controls > button:hover,
+.todos-calendar-page .todos-dashboard-calendar .todos-calendar-arrow:hover,
+.todos-calendar-page .todos-task-more:hover { background: #eeeaff; color: #5541c0; }
+.todos-calendar-page .todos-dashboard-calendar .todos-calendar-controls > button,
+.todos-calendar-page .todos-dashboard-calendar .todos-calendar-arrow { color: #5541c0; }
+.todos-calendar-page .todos-dashboard-day.is-today > span:first-child { background: #6650ef; }
+.todos-calendar-page .todos-dashboard-day.is-selected { box-shadow: inset 0 0 0 2px #8f7cf4; background: #f1efff; }
+.todos-calendar-page .todos-dashboard-day:hover:not(.is-selected) { background: #f8f6ff; }
+.todos-calendar-page .todos-task-row input { accent-color: #6650ef; }
+.todos-dashboard-list .todos-task-category .todo-category-image img { image-rendering: auto; }
+.todos-calendar-page .todos-dashboard-card-add { box-sizing: border-box; flex: 0 0 30px; width: 30px; min-width: 30px; height: 30px; min-height: 30px; padding: 0; border: 1px solid #6650ef; border-radius: 6px; background: transparent; color: #6650ef; font-size: 1.1rem; line-height: 1; }
+.todos-calendar-page .todos-dashboard-card-add:hover { border-color: #5541d5; background: transparent; color: #5541d5; }
+.todos-task-menu a, .todos-task-menu button { box-sizing: border-box; justify-content: flex-start; width: 100%; gap: 8px; text-align: left; }
+.todos-task-menu .lucide-icon { flex: 0 0 14px; }
+.todos-dashboard-selected .todos-task-category .todo-category-image img { image-rendering: auto; }
+
+/* 채용공고 화면의 보라색 버튼 상태를 할 일 모달에도 적용 */
+.todos-modal button:focus-visible, .todos-category-dialog button:focus-visible { outline: 2px solid #6650ef; outline-offset: 2px; }
+.todos-modal .todo-actions button, .todos-category-dialog footer button,
+.todos-category-manage-list li > button { border-color: #ded9fa; color: #5541c0; }
+.todos-modal .todo-actions button:hover:not(:disabled), .todos-category-dialog footer button:hover:not(:disabled),
+.todos-category-manage-list li > button:hover:not(:disabled) { border-color: #c5b9fa; background: #eeeaff; color: #5541c0; }
+.todos-modal .todo-actions .button-primary, .todo-detail > .todo-actions button:first-child,
+.todos-category-dialog footer .button-primary, .todos-category-manage-summary button { border-color: #6650ef; background: #6650ef; color: #fff; }
+.todos-modal .todo-actions .button-primary:hover:not(:disabled), .todo-detail > .todo-actions button:first-child:hover:not(:disabled),
+.todos-category-dialog footer .button-primary:hover:not(:disabled), .todos-category-manage-summary button:hover:not(:disabled) { border-color: #5541d5; background: #5541d5; color: #fff; }
+.todos-modal-close, .todos-category-dialog header > button { border-radius: 6px; }
+.todos-modal-close:hover, .todos-category-dialog header > button:hover { background: #eeeaff; color: #5541c0; }
+.todos-category-field-heading > button, .todos-category-dialog footer .todos-category-manage-open { color: #5541c0; }
+.todos-category-field-heading > button:hover, .todos-category-dialog footer .todos-category-manage-open:hover { background: #eeeaff; color: #5541c0; }
+.todos-category-choices .todo-category[aria-pressed="true"] { border-color: #6650ef !important; box-shadow: inset 0 0 0 1px #6650ef; }
+.todos-category-choices .todos-category-open { border-color: #ded9fa; color: #5541c0; }
+.todos-category-choices .todos-category-open:hover { background: #eeeaff; }
+.todos-category-icon-picker button:hover { border-color: #c5b9fa; background: #f8f6ff; }
+.todos-category-icon-picker button[aria-pressed="true"], .todos-category-icon-picker button[aria-pressed="true"]:hover { border-color: #6650ef !important; box-shadow: inset 0 0 0 1px #6650ef; background: #eeeaff !important; color: #5541c0 !important; }
+.todos-category-colors button[aria-pressed="true"] { box-shadow: 0 0 0 2px #6650ef; }
+.todos-category-manage-list .todos-delete-open, .todos-category-manage-list .todos-delete-confirm { border-color: #f4d7df; background: #fff7f9; color: #d34862; }
+.todos-category-manage-list .todos-delete-open:hover:not(:disabled), .todos-category-manage-list .todos-delete-confirm:hover:not(:disabled) { border-color: #f4d7df; background: #fff0f3; color: #c8425e; }
+.todo-detail > .todo-actions button:last-child, .todo-delete .todo-actions button:first-child { border-color: #f4d7df; color: #c8425e; }
+.todo-detail > .todo-actions button:last-child:hover:not(:disabled), .todo-delete .todo-actions button:first-child:hover:not(:disabled) { border-color: #edb9c6; background: #fff0f3; color: #b52f4a; }
+
+.todo-detail { gap: 12px; }
+.todo-detail-main { display: grid; gap: 5px; }
+.todo-detail .todo-description { padding: 0; border: 0; background: transparent; color: #65749f; line-height: 1.5; overflow-wrap: anywhere; white-space: pre-wrap; }
+.todo-detail-schedule { display: flex; flex-wrap: wrap; gap: 7px; }
+.todo-detail-schedule > span { display: inline-flex; align-items: center; gap: 5px; min-height: 29px; padding: 5px 8px; border-radius: 6px; background: #f5f6fc; color: #5d6e9d; font-size: .7rem; white-space: nowrap; }
+.todo-detail-schedule .lucide-icon { width: 14px; height: 14px; flex: 0 0 14px; }
+.todo-detail-meta { gap: 6px; }
+.todos-category-choices .todo-category .todo-category-image img,
+.todos-category-manage-list .todo-category-image img { image-rendering: auto; }

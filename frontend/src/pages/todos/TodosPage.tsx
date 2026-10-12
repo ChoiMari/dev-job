@@ -7,7 +7,7 @@ import { LucideIcon } from '../../components/LucideIcon';
 import clipboardPlus from '../../assets/redesign/todo-clipboard-check.png';
 import bellIcon from '../../assets/redesign/todo-bell-icon.png';
 import { EmptyState, ErrorState, LoadingState, SuccessState } from '../../components/States';
-import { deviceZone, dueFromLocal, dueLabel, localDueInput } from './todoTime';
+import { deviceZone, dueFromLocal, localDueInput } from './todoTime';
 import { TodoCalendar } from './TodoCalendar';
 import { CategoryImage, categoryIconChoices } from './todoIcons';
 import type { CategoryIconKey } from './todoIcons';
@@ -197,7 +197,7 @@ function TodoEditor({ id, initialEdit = false, initialManage = false }: { id?: n
         {error && <p role="alert" className="form-error">{error}</p>}
         {editing ? <form className="todos-form" onSubmit={save}><fieldset disabled={busy}>
           <label><span className="todos-field-label">제목 <em>*</em></span><input required maxLength={200} placeholder="할 일 제목을 입력하세요." value={title} onChange={event => setTitle(event.target.value)} /></label>
-          <div className="todos-category-field"><div className="todos-category-field-heading"><strong>카테고리 <em>*</em></strong><button type="button" onClick={() => setCategoryDialog('manage')}>카테고리 관리</button></div><div className="todos-category-choices">{categoryOptions.map(item => <button type="button" key={item.id} className={`todo-category todo-tone-${item.colorKey}`} aria-pressed={category === item.name} onClick={() => setCategory(item.name)}><CategoryImage name={item.name} iconKey={item.iconKey} />{item.name}</button>)}
+          <div className="todos-category-field"><div className="todos-category-field-heading"><strong>카테고리 <em>*</em></strong><button type="button" onClick={() => setCategoryDialog('manage')}>카테고리 관리</button></div><div className="todos-category-choices">{categoryOptions.map(item => <button type="button" key={item.id} className={`todo-category todo-tone-${item.colorKey}`} aria-pressed={category === item.name} onClick={() => setCategory(item.name)}><CategoryImage name={item.name} iconKey={item.iconKey} size={24} />{item.name}</button>)}
             <button type="button" className="todos-category-open" aria-label="카테고리 추가" disabled={categoryOptions.length >= 20} onClick={() => openCategoryDialog()}>＋</button></div></div>
           <div className="todos-date-fields"><label>날짜<input type="date" disabled={noDue} value={noDue ? '' : dueLocal.slice(0, 10)} onChange={event => setDueLocal(event.target.value ? `${event.target.value}T${dueLocal.slice(11, 16) || '23:59'}` : '')} /></label>
             <label>시간 (선택)<input type="time" disabled={noDue || !dueLocal} value={noDue || dueLocal.slice(11, 16) === '23:59' ? '' : dueLocal.slice(11, 16)} onChange={event => setDueLocal(`${dueLocal.slice(0, 10)}T${event.target.value || '23:59'}`)} /></label></div>
@@ -206,9 +206,14 @@ function TodoEditor({ id, initialEdit = false, initialManage = false }: { id?: n
           <label>내용 (선택)<textarea maxLength={2000} rows={4} placeholder="상세 내용을 입력하세요." value={description} onChange={event => setDescription(event.target.value)} /><small>{description.length} / 2000</small></label>
           <label><span className="todos-field-label"><img src={bellIcon} alt="" />알림</span><select disabled={noDue} value={reminderMinutes} onChange={event => setReminderMinutes(Number(event.target.value) as TodoInput['reminderMinutes'])}><option value={10}>10분 전</option><option value={60}>1시간 전</option><option value={1440}>하루 전</option><option value={-1}>알림 없음</option></select></label>
         </fieldset><div className="todo-actions"><button type="button" disabled={busy} onClick={() => { if (id && todo) { accept(todo); setEditing(false); setError(''); } else window.location.hash = '/todos'; }}>취소</button><button className="button-primary" type="submit" disabled={busy}>{busy ? '저장 중…' : id ? '저장하기' : '등록하기'}</button></div></form>
-          : todo && <div className="todo-detail"><h3>{todo.title}</h3>
-            <div className="todo-detail-meta"><span className={`todo-detail-status${todo.completed ? ' is-done' : ''}`}><i aria-hidden="true" />{todo.completed ? '완료' : '진행 중'}</span><span className={`todo-category todo-tone-${customCategories.find(item => item.name === todo.category)?.colorKey ?? 'gray'}`}><CategoryImage name={todo.category} iconKey={customCategories.find(item => item.name === todo.category)?.iconKey} />{todo.category}</span><span>{dueLabel(todo)}</span></div>
-            {todo.description && <p className="todo-description">{todo.description}</p>}
+          : todo && <div className="todo-detail"><div className="todo-detail-main"><h3>{todo.title}</h3>
+            {todo.description && <p className="todo-description">{todo.description}</p>}</div>
+            <div className="todo-detail-schedule">
+              <span><LucideIcon name="calendar" />{todo.dueAt ? new Intl.DateTimeFormat('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit', weekday: 'short', timeZone: todo.dueTimeZone ?? deviceZone }).format(new Date(todo.dueAt)) : '기한 없음'}</span>
+              {todo.dueAt && <span><LucideIcon name="clock" />{localDueInput(todo.dueAt, todo.dueTimeZone ?? deviceZone).slice(11)} 마감</span>}
+              {todo.reminderMinutes >= 0 && <span><LucideIcon name="bell" />{todo.reminderMinutes === 10 ? '10분 전' : todo.reminderMinutes === 60 ? '1시간 전' : todo.reminderMinutes === 1440 ? '하루 전' : `${todo.reminderMinutes}분 전`} 알림</span>}
+            </div>
+            <div className="todo-detail-meta"><span className={`todo-detail-status${todo.completed ? ' is-done' : ''}`}><i aria-hidden="true" />{todo.completed ? '완료' : '진행 중'}</span><span className={`todo-category todo-tone-${customCategories.find(item => item.name === todo.category)?.colorKey ?? 'gray'}`}><CategoryImage name={todo.category} iconKey={customCategories.find(item => item.name === todo.category)?.iconKey} />{todo.category}</span></div>
             <div className="todo-actions"><button type="button" disabled={busy} onClick={() => void toggle()}>{busy ? '처리 중…' : todo.completed ? '완료 취소' : '완료'}</button>
               <button type="button" disabled={busy} onClick={() => { setEditing(true); setConfirmDelete(false); setSuccess(''); setError(''); }}>수정</button>
               <button type="button" disabled={busy} onClick={() => setConfirmDelete(true)}>삭제</button></div>
@@ -236,7 +241,7 @@ function TodoEditor({ id, initialEdit = false, initialManage = false }: { id?: n
             onDragStart={() => setDraggingCategoryId(item.id)}
             onDragOver={event => { event.preventDefault(); if (draggingCategoryId === null || draggingCategoryId === item.id) return; setCustomCategories(current => { const moving = current.find(value => value.id === draggingCategoryId); if (!moving) return current; const rest = current.filter(value => value.id !== draggingCategoryId); const target = rest.findIndex(value => value.id === item.id); rest.splice(target, 0, moving); return rest; }); }}
             onDrop={event => { event.preventDefault(); void finishCategoryDrag(); }} onDragEnd={() => setDraggingCategoryId(null)}>
-            <span className="todos-category-drag" aria-hidden="true">⠿</span><CategoryImage name={item.name} iconKey={item.iconKey} /><strong>{item.name}</strong>
+            <span className="todos-category-drag" aria-hidden="true">⠿</span><CategoryImage name={item.name} iconKey={item.iconKey} size={24} /><strong>{item.name}</strong>
             <span className={`todos-category-color-name todo-tone-${item.colorKey}`}><i />{categoryColors.find(color => color.key === item.colorKey)?.label ?? '파랑'}</span>
             <button type="button" aria-label={`${item.name} 수정`} onClick={() => openCategoryDialog(item)}><LucideIcon name="pencil" /></button>
             {categoryDeleteId === item.id ? <button type="button" className="todos-delete-confirm" disabled={categoryBusy} onClick={() => void removeCategory(item)}>삭제 확인</button>

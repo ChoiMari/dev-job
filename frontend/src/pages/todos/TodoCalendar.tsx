@@ -121,7 +121,7 @@ export function TodoCalendar() {
   }
   const row = (todo: Todo, compact = false) => <li key={todo.id} className={`todos-task-row${todo.completed ? ' is-done' : ''}`}>
     <input type="checkbox" aria-label={`${todo.title} 완료`} checked={todo.completed} disabled={busyId !== undefined} onChange={() => void toggle(todo)} />
-    <span className={`todos-task-category ${categoryClass(todo.category)}`}><CategoryImage name={todo.category} iconKey={iconFor(todo.category)} />{todo.category}</span>
+    <span className={`todos-task-category ${categoryClass(todo.category)}`}><CategoryImage name={todo.category} iconKey={iconFor(todo.category)} size={24} />{todo.category}</span>
     <div className="todos-task-copy"><a href={`#/todos/${todo.id}`}>{todo.title}</a>
       <small>{todo.dueAt ? compact ? dueTime(todo) : `${dueKey(todo)} ${dueTime(todo)}` : '기한 없음'}</small></div>
     <div className="todos-task-actions">
@@ -150,18 +150,16 @@ export function TodoCalendar() {
                 onClick={() => { setSelected(key); if (view === 'month' && date.getMonth() !== anchor.getMonth()) setAnchor(date); }}>
                 <span>{date.getDate()}</span>{dayItems.length > 0 && <span className="todos-dashboard-dots" aria-hidden="true">{dayItems.slice(0, 3).map(todo => <i key={todo.id} className={categoryClass(todo.category)} />)}</span>}</button>;
             })}</div></section>
-        <section className="card todos-dashboard-selected"><h3>{selectedDate.getFullYear()}년 {selectedDate.getMonth() + 1}월 {selectedDate.getDate()}일 ({weekdays[selectedDate.getDay()]}) <small>{selectedTodos.length}개의 할 일</small></h3>
+        <section className="card todos-dashboard-selected"><div className="todos-dashboard-card-heading"><h3>{selectedDate.getFullYear()}년 {selectedDate.getMonth() + 1}월 {selectedDate.getDate()}일 ({weekdays[selectedDate.getDay()]}) <small>{selectedTodos.length}개의 할 일</small></h3><a className="button-link button-primary todos-dashboard-card-add" href="#/todos/new" aria-label="할 일 추가" title="할 일 추가">＋</a></div>
             {selectedTodos.length ? <ul>{selectedTodos.map(todo => row(todo, true))}</ul>
-              : <div className="todos-dashboard-empty"><img className="todos-empty-illustration" src={emptyCalendar} alt="" /><strong>등록한 할 일이 없습니다.</strong><p>할 일을 등록하면 달력에 표시됩니다.</p></div>}
-            <div className="todos-dashboard-card-footer"><a className="button-link button-primary" href="#/todos/new"><span aria-hidden="true">＋</span>할 일 추가</a></div></section>
-        <section className="card todos-dashboard-list"><h3><img src={checklistIcon} alt="" /> 전체 할 일</h3>
+              : <div className="todos-dashboard-empty"><img className="todos-empty-illustration" src={emptyCalendar} alt="" /><strong>등록한 할 일이 없습니다.</strong><p>할 일을 등록하면 달력에 표시됩니다.</p></div>}</section>
+        <section className="card todos-dashboard-list"><div className="todos-dashboard-card-heading"><h3><img src={checklistIcon} alt="" /> 전체 할 일</h3><a className="button-link button-primary todos-dashboard-card-add" href="#/todos/new" aria-label="할 일 추가" title="할 일 추가">＋</a></div>
           <div className="todos-dashboard-tabs" role="group" aria-label="완료 상태 필터">{([['all', '전체'], ['open', '진행 중'], ['done', '완료']] as const).map(([value, label]) => <button key={value} type="button" aria-pressed={status === value} onClick={() => setStatus(value)}>{label} <span>{counts[value]}</span></button>)}</div>
           <div className="todos-dashboard-categories" role="group" aria-label="카테고리 필터"><button type="button" className="todos-category-all" aria-pressed={category === null} onClick={() => setCategory(null)}>All</button>{visibleCategories.map(name => <button type="button" key={name} className={categoryClass(name)} aria-pressed={category === name} onClick={() => setCategory(name)}><CategoryImage name={name} iconKey={iconFor(name)} />{name}</button>)}
             {categories.length > 3 && <button type="button" className="todos-category-expand" aria-expanded={categoriesExpanded} onClick={() => setCategoriesExpanded(value => !value)}>{categoriesExpanded ? '접기' : '⋯ 더보기'}</button>}</div>
           <div className="todos-dashboard-list-tools"><label className="todos-search-label"><span className="sr-only">할 일 검색</span><input type="search" value={query} onChange={event => setQuery(event.target.value)} placeholder="제목 또는 내용 검색" /></label><label className="todos-sort-label"><span className="sr-only">정렬</span><select value={sort} onChange={event => setSort(event.target.value as SortOrder)}><option value="latest">최신순</option><option value="due">기한순</option></select></label></div>
           {ordered.length ? <ul>{ordered.map(todo => row(todo))}</ul>
             : <div className="todos-dashboard-empty"><strong>조건에 맞는 할 일이 없습니다.</strong><p>검색어나 카테고리를 바꿔 보세요.</p></div>}
-          <div className="todos-dashboard-card-footer"><a className="button-link button-primary" href="#/todos/new"><span aria-hidden="true">＋</span>할 일 추가</a></div>
         </section>
       </div>}
   </div>;
