@@ -127,7 +127,7 @@ export function JobsPage({ location }: { location: string }) {
   const [retry, setRetry] = useState(0);
   const [resetKey, setResetKey] = useState(0);
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const activeFilterCount = ['q', 'role', 'careerBands', 'employmentType', 'location', 'deadlineBefore', 'skillId', 'minMatchRate',
+  const activeFilterCount = ['role', 'careerBands', 'employmentType', 'location', 'deadlineBefore', 'skillId', 'minMatchRate',
     'company', 'careerLevel', 'applicationStatus', 'source', 'itOnly'].filter(key => {
     const value = params.get(key);
     return value !== null && value !== '' && value !== 'false';
