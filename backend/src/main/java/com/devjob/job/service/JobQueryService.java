@@ -105,7 +105,7 @@ public class JobQueryService {
         Set<Long> saved = ids.isEmpty() ? Set.of() : new HashSet<>(bookmarks.findSavedJobIds(userId, ids));
         var statuses = new java.util.HashMap<Long, String>();
         var rates = matchQueries.ratesForJobs(userId, ids);
-        if (!ids.isEmpty()) applications.findByUserIdAndJobIdIn(userId, ids)
+        if (!ids.isEmpty()) applications.findByUserIdAndJobIdInAndDeletedAtIsNull(userId, ids)
                 .forEach(application -> statuses.put(application.getJob().getId(), application.getCurrentStatus().name()));
         return new JobPage(page.getContent().stream().map(job ->
                 JobSummary.from(job, saved.contains(job.getId()), statuses.get(job.getId()), rates.get(job.getId()))).toList(),
@@ -120,7 +120,7 @@ public class JobQueryService {
         jobs.findAllById(ids).forEach(job -> byId.put(job.getId(), job));
         var saved = new HashSet<>(bookmarks.findSavedJobIds(userId, ids));
         var statuses = new java.util.HashMap<Long, String>();
-        applications.findByUserIdAndJobIdIn(userId, ids)
+        applications.findByUserIdAndJobIdInAndDeletedAtIsNull(userId, ids)
                 .forEach(application -> statuses.put(application.getJob().getId(), application.getCurrentStatus().name()));
         var rates = matchQueries.ratesForJobs(userId, ids);
         return new JobPage(ids.stream().map(id -> JobSummary.from(byId.get(id), saved.contains(id), statuses.get(id), rates.get(id))).toList(),
@@ -130,7 +130,7 @@ public class JobQueryService {
     public JobDetail detail(Long userId, long id) {
         if (id < 1) throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
         var job = jobs.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-        var owned = applications.findByUserIdAndJobIdIn(userId, java.util.List.of(id));
+        var owned = applications.findByUserIdAndJobIdInAndDeletedAtIsNull(userId, java.util.List.of(id));
         var analysis = analyses.findByJobId(id).orElse(null);
         return JobDetail.from(job, bookmarks.existsByUserIdAndJobId(userId, id),
                 owned.isEmpty() ? null : owned.get(0).getCurrentStatus().name(), analysis,

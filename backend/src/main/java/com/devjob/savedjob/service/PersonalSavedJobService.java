@@ -48,7 +48,7 @@ public class PersonalSavedJobService {
                 select saved.*, a.current_status as application_status,
                   case when saved.kind='COLLECTED' then ca.status else pa.status end as analysis_status
                 """ + union + """
-                left join application a on a.user_id=:userId and
+                left join application a on a.user_id=:userId and a.deleted_at is null and
                   ((saved.kind='COLLECTED' and a.job_posting_id=saved.job_id) or
                    (saved.kind='MANUAL' and a.personal_saved_job_id=saved.id))
                 left join ai_analysis ca on saved.kind='COLLECTED' and ca.job_posting_id=saved.job_id

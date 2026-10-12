@@ -8,8 +8,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 
 @Entity
-@Table(name = "application", uniqueConstraints = @UniqueConstraint(name = "uk_application_user_job",
-        columnNames = {"user_id", "job_posting_id"}))
+@Table(name = "application")
 public class Application {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY) private Long id;
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
@@ -25,6 +24,7 @@ public class Application {
     @Column(length = 2000) private String note;
     @Column(name = "created_at", nullable = false, updatable = false) private Instant createdAt;
     @Column(name = "updated_at", nullable = false) private Instant updatedAt;
+    @Column(name = "deleted_at") private Instant deletedAt;
 
     protected Application() { }
     public Application(User user, JobPosting job, ApplicationStatus status, LocalDate appliedDate,
@@ -46,9 +46,11 @@ public class Application {
     }
     public void transition(ApplicationStatus next, LocalDate appliedDate, Instant changedAt) {
         currentStatus = next;
-        if (next == ApplicationStatus.APPLIED) this.appliedDate = appliedDate;
+        if (next == ApplicationStatus.PLANNED) this.appliedDate = null;
+        else if (appliedDate != null) this.appliedDate = appliedDate;
         updatedAt = changedAt;
     }
+    public void delete() { deletedAt = Instant.now(); updatedAt = deletedAt; }
     public Long getId() { return id; }
     public User getUser() { return user; }
     public JobPosting getJob() { return job; }
@@ -59,4 +61,5 @@ public class Application {
     public Instant getNextScheduleAt() { return nextScheduleAt; }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
+    public Instant getDeletedAt() { return deletedAt; }
 }

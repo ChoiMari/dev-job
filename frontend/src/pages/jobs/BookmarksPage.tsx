@@ -128,8 +128,8 @@ export function BookmarksPage({ location }: { location: string }) {
                 <small title={item.deadlineDate ? `마감일 ${item.deadlineDate}` : undefined}>{item.deadlineDate ? deadlineLabel(item.deadlineDate) : `저장 ${new Date(item.createdAt).toLocaleDateString('ko-KR')}`}</small></div></div>
             <SavedAnalysis item={item} onUpdated={() => { if (!isUnbookmarked(item)) setRetry(value => value + 1); }} />
             <div className="saved-card-actions"><a href={item.url} target="_blank" rel="noopener noreferrer">외부 원문 열기 <LucideIcon name="arrowRight" /></a>
-              {item.kind === 'MANUAL' && <a href={`#/bookmarks/${item.id}/edit`}>공고 수정</a>}
-              {item.kind === 'COLLECTED' && item.applicationStatus && <a href="#/applications">지원관리 <LucideIcon name="arrowRight" /></a>}</div>
+              {(item.applicationStatus || (item.kind === 'MANUAL' && registeredManualIds.includes(item.id))) && <a href="#/applications">지원관리 <LucideIcon name="arrowRight" /></a>}
+              {item.kind === 'MANUAL' && <a className="saved-card-edit" href={`#/bookmarks/${item.id}/edit`}>공고 수정</a>}</div>
             {item.kind === 'COLLECTED' && pendingUnbookmarkIds.includes(item.jobId!) && <div className="saved-unbookmark-confirm" role="status">
               <p>관심 해제 예정입니다. 확정하면 저장 목록에서 제거됩니다. 이 화면에서는 다시 관심 등록할 수 있습니다.</p>
               <button type="button" onClick={() => setPendingUnbookmarkIds(ids => ids.filter(id => id !== item.jobId))}>해제 취소</button>

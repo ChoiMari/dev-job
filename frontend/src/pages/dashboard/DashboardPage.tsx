@@ -58,8 +58,8 @@ export function DashboardPage({ user }: { user: CurrentUser }) {
         <span className="eyebrow">MY CAREER SPACE</span>
         <h1>나의 취업 준비 현황</h1>
         <div className="dashboard-hero-metrics" aria-label="나의 취업 준비 현황">
-          <a href="#/applications" className="dashboard-hero-metric"><span>진행 중인 지원</span><strong>{activeApplications}<small>건</small></strong><small>지원·서류 통과·면접</small></a>
-          <a href="#/applications" className="dashboard-hero-metric"><span>완료한 지원</span><strong>{completedApplications}<small>건</small></strong><small>최종 합격·탈락·철회</small></a>
+          <a href="#/applications" className="dashboard-hero-metric"><span>진행 중인 지원</span><strong>{activeApplications}<small>건</small></strong><small>서류 접수·서류 합격·면접</small></a>
+          <a href="#/applications" className="dashboard-hero-metric"><span>완료한 지원</span><strong>{completedApplications}<small>건</small></strong><small>최종 합격·불합격·철회</small></a>
           <a href="#/bookmarks" className="dashboard-hero-metric"><span>관심 공고</span><strong>{data.bookmarkCount}<small>건</small></strong><small>저장한 공고</small></a>
           <a href="#/companies" className="dashboard-hero-metric"><span>관심 기업</span><strong>{companyCount ?? '—'}{companyCount !== null && <small>곳</small>}</strong><small>{companyCountError ? '기업 수를 불러오지 못했습니다' : '등록한 기업 전체 · 보관 포함'}</small></a>
         </div>

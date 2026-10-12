@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { createApplicationsApi } from '../src/api/applications.ts';
 import { createApiClient, ApiError } from '../src/api/client.ts';
 import { createJobsApi } from '../src/api/jobs.ts';
+import { statusChangeInput } from '../src/api/application-status.ts';
 
 const job = { id: 1, title: 'Backend', company: { id: 2, name: 'Alpha' }, source: 'TEST',
   location: null, careerRequirement: null, employmentType: null, deadlineDate: null,
@@ -11,6 +12,14 @@ const application = { id: 3, job, personalSavedJob: null, currentStatus: 'PLANNE
   createdAt: '2026-10-06T01:00:00Z', updatedAt: '2026-10-06T01:00:00Z' };
 const history = [{ id: 4, fromStatus: null, toStatus: 'PLANNED', changedAt: application.createdAt }];
 const json = value => new Response(JSON.stringify(value), { headers: { 'content-type': 'application/json' } });
+
+test('status move preserves an existing application date and requests one only when needed', () => {
+  assert.deepEqual(statusChangeInput('APPLIED', '2026-10-13'), { status: 'APPLIED' });
+  assert.deepEqual(statusChangeInput('INTERVIEW', '2026-10-13'), { status: 'INTERVIEW' });
+  assert.deepEqual(statusChangeInput('PLANNED', '2026-10-13'), { status: 'PLANNED' });
+  assert.deepEqual(statusChangeInput('APPLIED', null, '2026-10-13'), { status: 'APPLIED', appliedDate: '2026-10-13' });
+  assert.deepEqual(statusChangeInput('WITHDRAWN', null), { status: 'WITHDRAWN', appliedDate: null });
+});
 
 test('registration, partial PATCH and status change use fresh CSRF and same-origin sessions', async () => {
   const calls = [];
@@ -28,6 +37,18 @@ test('registration, partial PATCH and status change use fresh CSRF and same-orig
   assert.equal(calls[1][1].method, 'POST');
   assert.deepEqual(JSON.parse(calls[3][1].body), { note: null });
   assert.equal(calls[5][1].method, 'PATCH');
+});
+test('delete sends a CSRF protected request for the selected application', async () => {
+  const calls = [];
+  const api = createApplicationsApi(createApiClient('/api', async (path, options) => {
+    calls.push([path, options]);
+    if (path === '/api/auth/csrf') return json({ headerName: 'X-CSRF-TOKEN', token: 'fresh' });
+    return new Response(null, { status: 204 });
+  }));
+  await api.delete(3);
+  assert.deepEqual(calls.map(([path]) => path), ['/api/auth/csrf', '/api/applications/3']);
+  assert.equal(calls[1][1].method, 'DELETE');
+  assert.equal(calls[1][1].headers['X-CSRF-TOKEN'], 'fresh');
 });
 test('paginated and status-filtered list, detail and history preserve cancellation and null first state', async () => {
   const controller = new AbortController();

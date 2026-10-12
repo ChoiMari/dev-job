@@ -159,10 +159,11 @@ B14의 원문 기반 상대 추천은 별도 [확장 API B14](extension-api-spec
 ### S11 구현 계약
 
 - 지원 목록은 세션 사용자만 조회하고 1절 페이지 응답을 사용한다. `status`는 정확한 상태값이며 잘못된 값·빈 값은 `400`이다. 정렬은 등록 시각·ID 내림차순이다. 이력은 변경 시각·ID 오름차순으로 페이지 없이 반환한다.
-- 생성·상태 변경의 `status`는 필수 JSON 문자열이다. 생성 시 양의 JSON 정수(Long 범위) `jobId` 또는 `personalSavedJobId` 중 정확히 하나를 보낸다. 개인 관심공고는 현재 사용자가 소유한 활성 공고여야 하며 다른 사용자 공고는 `404`다. 초기 상태 3개 이외의 생성은 `400`이다. `APPLIED` 생성·전이에만 유효한 `appliedDate`가 필수이며 다른 상태 요청에서는 생략 또는 `null`로 보낸다. 이후 전이에서 기존 지원일은 유지한다. 날짜는 연도 0001~9999의 `YYYY-MM-DD`, 일정은 시간대가 포함된 ISO 8601이며 응답 일정은 UTC로 정규화한다.
+- 생성·상태 변경의 `status`는 필수 JSON 문자열이다. 생성 시 양의 JSON 정수(Long 범위) `jobId` 또는 `personalSavedJobId` 중 정확히 하나를 보낸다. 개인 관심공고는 현재 사용자가 소유한 활성 공고여야 하며 다른 사용자 공고는 `404`다. 신규 등록은 지원 예정·서류 접수·서류 합격·면접·최종 합격·불합격·철회를 허용하며, 기존 `INTERESTED` 생성 계약도 호환을 위해 유지한다. 생성 시 `APPLIED`·`DOCUMENT_PASSED`·`INTERVIEW`·`FINAL_PASSED`·`REJECTED`에는 유효한 `appliedDate`가 필수다. `PLANNED`·`INTERESTED`에는 지원일을 보낼 수 없고, `WITHDRAWN`에는 실제 지원 여부에 따라 선택적으로 보낸다. 상태 변경 시 `PLANNED`로 옮기면 지원일을 비우며 요청에 지원일을 보낼 수 없다. 기존 지원일이 있으면 다른 상태로 옮길 때 유지하며 요청에 다시 보낼 수 없다. 지원일이 없으면 `APPLIED`·`DOCUMENT_PASSED`·`INTERVIEW`·`FINAL_PASSED`·`REJECTED`로 옮길 때 필수이고 `WITHDRAWN`으로 옮길 때는 선택이다. 날짜는 연도 0001~9999의 `YYYY-MM-DD`, 일정은 시간대가 포함된 ISO 8601이며 응답 일정은 UTC로 정규화한다.
 - `note`는 선택 JSON 문자열(최대 2000자); 양끝 공백 제거, 공백뿐이면 `null`이다. 줄바꿈·탭 이외 제어 문자는 거부한다. `PATCH` 메모·일정은 누락 필드를 유지하고 명시적 `null`은 비운다. 빈 객체·알 수 없는 필드·잘못된 JSON 타입은 `400`이다. 이 경로로 상태·지원일·사용자·공고를 변경할 수 없다.
 - 모든 변경 요청은 최신 CSRF 토큰이 필요하다. 사용자 ID는 세션에서만 얻으며 타인 소유 상세·수정·상태·이력은 `403`, 없는 지원은 `404`다. 중복 생성은 출처별 `(user_id, job_posting_id)` 또는 `(user_id, personal_saved_job_id)` 유일 키로 `409`를 보장한다.
-- 초기 상태와 실제 상태 변경마다 이력을 같은 트랜잭션에 저장한다. 메모·일정 변경은 이력을 만들지 않는다. 수정·전이는 지원 행 잠금으로 직렬화하고 최신 상태로 전이를 검증한다. 같은 상태·건너뛰기·역행·종료 상태 전이는 `409`이며 이력이 추가되지 않는다.
+- 초기 상태와 실제 상태 변경마다 이력을 같은 트랜잭션에 저장한다. 메모·일정 변경은 이력을 만들지 않는다. 수정·전이는 지원 행 잠금으로 직렬화하고 최신 상태로 전이를 검증한다. 현재 상태와 다른 지원 관리 상태로 자유롭게 옮길 수 있다. 같은 상태 또는 `INTERESTED`로의 변경은 `409`이며 이력이 추가되지 않는다.
+- 삭제는 소유자에게만 허용하는 soft delete다. 활성 목록·상세·공고 지원 상태·대시보드·추천에서는 삭제 기록을 제외하고, 기존 이력과 면접 연결은 보존한다. 삭제 후 같은 공고에 새 지원 기록을 만들 수 있도록 유일 키는 활성 행에만 적용한다. 삭제된 기록의 상세·수정·상태 변경·이력은 `404`다.
 
 | 목적 / Method·URL | 인증 | Path / Query | Request Body | 성공 Response Body·Status | 주요 오류 |
 | --- | --- | --- | --- | --- | --- |
@@ -176,8 +177,9 @@ B14의 원문 기반 상대 추천은 별도 [확장 API B14](extension-api-spec
 | 지원 메모·일정 수정 `PATCH /api/applications/{applicationId}` | 예 | Path: `applicationId` | `{ "note": "...", "nextScheduleAt": "2026-10-10T14:00:00+09:00" }` 중 변경할 필드 | `Application` · `200` | 값 오류 `400`, 없음 `404`, 타인 소유 `403` |
 | 지원 상태 변경 `PATCH /api/applications/{applicationId}/status` | 예 | Path: `applicationId` | `{ "status": "APPLIED", "appliedDate": "2026-10-05" }` | `Application` · `200` | 허용되지 않은 전이·동일 상태 `409`, 값 오류 `400`, 없음 `404`, 타인 소유 `403` |
 | 지원 상태 이력 `GET /api/applications/{applicationId}/history` | 예 | Path: `applicationId` | 없음 | `ApplicationStatusHistory[]` · `200` | 없음 `404`, 타인 소유 `403` |
+| 지원 내역 삭제 `DELETE /api/applications/{applicationId}` | 예 | Path: `applicationId` | 없음 | 본문 없음 · `204` | 없음·이미 삭제 `404`, 타인 소유 `403` |
 
-`Bookmark`: `{ "id": 1, "job": JobSummary, "createdAt": "..." }`. `Application`: `{ "id": 1, "job": JobSummary | null, "personalSavedJob": PersonalSavedJob | null, "currentStatus": "PLANNED", "appliedDate": null, "nextScheduleAt": null, "note": null, "createdAt": "...", "updatedAt": "..." }`. 두 공고 필드 중 하나만 값이 있다. `ApplicationStatusHistory`: `{ "id": 1, "fromStatus": null, "toStatus": "PLANNED", "changedAt": "..." }`. 지원 생성 시 초기 상태는 `INTERESTED`, `PLANNED`, `APPLIED` 중 하나이며 최초 상태도 이력에 남긴다. `APPLIED`로 생성하거나 변경할 때 `appliedDate`를 입력해 실제 지원일을 기록한다. 상태 전이는 `INTERESTED → PLANNED → APPLIED → DOCUMENT_PASSED → INTERVIEW → FINAL_PASSED`를 기본으로 하고, `INTERESTED`·`PLANNED`·`APPLIED`에서 `WITHDRAWN`, `APPLIED`·`DOCUMENT_PASSED`·`INTERVIEW`에서 `REJECTED`를 허용한다. 종료 상태에서는 추가 전이를 허용하지 않는다. 북마크와 지원은 서로 독립적으로 생성·삭제된다.
+`Bookmark`: `{ "id": 1, "job": JobSummary, "createdAt": "..." }`. `Application`: `{ "id": 1, "job": JobSummary | null, "personalSavedJob": PersonalSavedJob | null, "currentStatus": "PLANNED", "appliedDate": null, "nextScheduleAt": null, "note": null, "createdAt": "...", "updatedAt": "..." }`. 두 공고 필드 중 하나만 값이 있다. `ApplicationStatusHistory`: `{ "id": 1, "fromStatus": null, "toStatus": "PLANNED", "changedAt": "..." }`. 지원 생성 시 위 신규 등록 상태와 호환용 `INTERESTED`를 초기 상태로 사용할 수 있고 최초 상태도 이력에 남긴다. 이미 진행된 상태로 등록할 때도 실제 지원일을 기록한다. 기존 `INTERESTED` 기록에서는 다른 지원 관리 상태로 이동할 수 있지만 새 `INTERESTED` 전이는 허용하지 않는다. 북마크와 지원은 서로 독립적으로 생성·삭제된다.
 
 B06 면접 일정은 지원 건 연결이 선택인 별도 리소스다. [확장 API B06](extension-api-spec.md#b06--면접-일정--ext-05-03-확정)에 목록·등록·상세·변경·취소·재활성화 계약을 둔다. 면접 일정의 변경은 이 절의 `nextScheduleAt`, 지원 상태, 상태 이력을 자동 변경하지 않는다.
 

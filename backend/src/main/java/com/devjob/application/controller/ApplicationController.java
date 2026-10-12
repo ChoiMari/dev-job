@@ -43,4 +43,9 @@ public class ApplicationController {
     public List<ApplicationResponse.History> history(@AuthenticationPrincipal CurrentUser user, @PathVariable long applicationId) {
         return applications.history(user.id(), applicationId);
     }
+    @DeleteMapping("/{applicationId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void delete(@AuthenticationPrincipal CurrentUser user, @PathVariable long applicationId) {
+        applications.delete(user.id(), applicationId);
+    }
 }

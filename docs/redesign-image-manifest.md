@@ -114,7 +114,8 @@ EXT-IMG-06E·06F·06G는 각각 민트·복숭아·기본 의상만 보여 주�
 | `redesign/cur-20-job-results-companion.png`, `redesign/ext-img-07-source-exploration.png` | 공고 검색 결과 머리말·수집 공고 상세 | 새 픽셀 캐릭터는 144×144px, 모바일 88×88px, 투명 배경 장식. 상세 이미지는 너비 112~210×150px, 모바일 72px이며 관리자 배치에서도 최대 132px |
 | `redesign/cur-21-bookmark-outline.png`, `redesign/cur-22-bookmark-saved.png` | 공고 검색 결과 카드의 저장 전후 버튼 | 각각 원본 1254×1254px, 40×40px 버튼 안에 표시. 버튼 접근성 이름과 상태는 실제 `bookmarked` 값으로 제공 |
 | `redesign/cur-05-saved-jobs.png` | 관심 공고 목록·개인 상세 | 너비 112~210×150px, 모바일 72px, 장식 |
-| `redesign/cur-06-applications.png` | 지원 목록·상세 | 너비 112~200×150px, 모바일 64px, 장식 |
+| `redesign/cur-06-applications.png` | 기존 지원 화면 자산, 현재 화면 미사용 | 파일은 보존 |
+| `redesign/application-detail-pixel.png` | 지원 상세 모달 머리말 | 기존 지원 관리 픽셀 이미지의 색·선 굵기를 참조해 새로 생성한 투명 문서 폴더·돋보기 이미지. 40×40px, 빈 `alt`·`aria-hidden` |
 | `redesign/cur-07-profile.png`, `redesign/ext-img-02-skill-levels.png` | 프로필·기술 | 각각 최대 150px, 96px(모바일 64px), 장식 |
 | `redesign/cur-08-projects.png`, `redesign/cur-24-todo-checklist-companion.png`, `redesign/ext-img-05a-companies.png` | 프로젝트·할 일·기업 | 각각 96px(모바일 64px), 104px(모바일 86px), 최대 140px(370px 이하 숨김), 장식 |
 | `redesign/cur-09-analysis.png`, `redesign/ext-img-04-expanded-analytics.png`, `redesign/ext-img-05d-learning.png` | Skill Gap·시장 분석·학습 목표 | 각각 96→64px, 112→72px, 112→72px, 장식. 수치는 HTML 텍스트/표 |

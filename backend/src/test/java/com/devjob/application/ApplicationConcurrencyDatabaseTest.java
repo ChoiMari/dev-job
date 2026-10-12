@@ -73,7 +73,7 @@ class ApplicationConcurrencyDatabaseTest {
             try { service.create(userId, input()); return 201; }
             catch (ResponseStatusException error) { return error.getStatusCode().value(); }
         })).containsExactlyInAnyOrder(201, 409);
-        var rows = applications.findByUserIdAndJobIdIn(userId, List.of(jobId));
+        var rows = applications.findByUserIdAndJobIdInAndDeletedAtIsNull(userId, List.of(jobId));
         assertThat(rows).hasSize(1);
         assertThat(histories.findByApplicationIdOrderByChangedAtAscIdAsc(rows.get(0).getId())).hasSize(1);
     }
@@ -89,7 +89,7 @@ class ApplicationConcurrencyDatabaseTest {
     @Test void rollbackNeverLeavesStatusAndHistoryOutOfSync() {
         assertThatThrownBy(() -> tx.executeWithoutResult(status -> { service.create(userId, input()); throw new IllegalStateException("rollback"); }))
                 .isInstanceOf(IllegalStateException.class);
-        assertThat(applications.findByUserIdAndJobIdIn(userId, List.of(jobId))).isEmpty();
+        assertThat(applications.findByUserIdAndJobIdInAndDeletedAtIsNull(userId, List.of(jobId))).isEmpty();
         long id = service.create(userId, input()).id();
         assertThatThrownBy(() -> tx.executeWithoutResult(status -> {
             service.changeStatus(userId, id, new ApplicationInput.ChangeStatus(ApplicationStatus.WITHDRAWN, null));

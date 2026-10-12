@@ -110,6 +110,7 @@ public class InterviewService {
         var application = applications.findById(value.longValue())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         if (!application.getUser().getId().equals(userId)) throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        if (application.getDeletedAt() != null) throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         return application;
     }
 

@@ -33,8 +33,8 @@ public class ApplicationService {
         if (page < 0 || size < 1 || size > 100 || (long) page * size > Integer.MAX_VALUE) fail(HttpStatus.BAD_REQUEST);
         ApplicationStatus parsed = parseStatus(status);
         var pageable = PageRequest.of(page, size, Sort.by(Sort.Order.desc("createdAt"), Sort.Order.desc("id")));
-        var result = parsed == null ? applications.findByUserId(userId, pageable)
-                : applications.findByUserIdAndCurrentStatus(userId, parsed, pageable);
+        var result = parsed == null ? applications.findByUserIdAndDeletedAtIsNull(userId, pageable)
+                : applications.findByUserIdAndCurrentStatusAndDeletedAtIsNull(userId, parsed, pageable);
         return new ApplicationResponse.Page(result.getContent().stream().map(ApplicationResponse::from).toList(), page, size, result.getTotalElements());
     }
     public static ApplicationStatus parseStatus(String value) {
@@ -45,7 +45,7 @@ public class ApplicationService {
     public ApplicationResponse detail(Long userId, long id) { return ApplicationResponse.from(owned(userId, id, false)); }
     public ApplicationResponse forJob(Long userId, long jobId) {
         if (jobId < 1) fail(HttpStatus.BAD_REQUEST);
-        return ApplicationResponse.from(applications.findByUserIdAndJobId(userId, jobId)
+        return ApplicationResponse.from(applications.findByUserIdAndJobIdAndDeletedAtIsNull(userId, jobId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND)));
     }
     public List<ApplicationResponse.History> history(Long userId, long id) {
@@ -55,7 +55,7 @@ public class ApplicationService {
     @Transactional
     public ApplicationResponse create(Long userId, ApplicationInput.Create input) {
         if (!input.status().canStart()) fail(HttpStatus.BAD_REQUEST);
-        validateAppliedDate(input.status(), input.appliedDate());
+        validateInitialAppliedDate(input.status(), input.appliedDate());
         var user = users.findById(userId).orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
         if ((input.jobId() == null) == (input.personalSavedJobId() == null)) fail(HttpStatus.BAD_REQUEST);
         var job = input.jobId() == null ? null : jobs.findById(input.jobId())
@@ -63,8 +63,8 @@ public class ApplicationService {
         var personalJob = input.personalSavedJobId() == null ? null : personalJobs
                 .findByIdAndUserIdAndDeletedAtIsNull(input.personalSavedJobId(), userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-        if (job != null && applications.existsByUserIdAndJobId(userId, job.getId())) fail(HttpStatus.CONFLICT);
-        if (personalJob != null && applications.existsByUserIdAndPersonalSavedJobId(userId, personalJob.getId())) fail(HttpStatus.CONFLICT);
+        if (job != null && applications.existsByUserIdAndJobIdAndDeletedAtIsNull(userId, job.getId())) fail(HttpStatus.CONFLICT);
+        if (personalJob != null && applications.existsByUserIdAndPersonalSavedJobIdAndDeletedAtIsNull(userId, personalJob.getId())) fail(HttpStatus.CONFLICT);
         try {
             var application = applications.saveAndFlush(job == null
                     ? new Application(user, personalJob, input.status(), input.appliedDate(), input.note(), input.nextScheduleAt())
@@ -86,7 +86,7 @@ public class ApplicationService {
     public ApplicationResponse changeStatus(Long userId, long id, ApplicationInput.ChangeStatus input) {
         var application = owned(userId, id, true);
         if (!application.getCurrentStatus().canTransitionTo(input.status())) fail(HttpStatus.CONFLICT);
-        validateAppliedDate(input.status(), input.appliedDate());
+        validateTransitionAppliedDate(application, input.status(), input.appliedDate());
         var previous = application.getCurrentStatus();
         var changedAt = Instant.now();
         application.transition(input.status(), input.appliedDate(), changedAt);
@@ -94,15 +94,33 @@ public class ApplicationService {
         applications.flush();
         return ApplicationResponse.from(application);
     }
+    @Transactional
+    public void delete(Long userId, long id) {
+        var application = owned(userId, id, true);
+        application.delete();
+        applications.flush();
+    }
     private Application owned(Long userId, long id, boolean lock) {
         if (id < 1) fail(HttpStatus.BAD_REQUEST);
         var application = (lock ? applications.findForUpdate(id) : applications.findById(id))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         if (!application.getUser().getId().equals(userId)) fail(HttpStatus.FORBIDDEN);
+        if (application.getDeletedAt() != null) fail(HttpStatus.NOT_FOUND);
         return application;
     }
-    private void validateAppliedDate(ApplicationStatus status, LocalDate date) {
-        if ((status == ApplicationStatus.APPLIED) != (date != null)) fail(HttpStatus.BAD_REQUEST);
+    private void validateInitialAppliedDate(ApplicationStatus status, LocalDate date) {
+        if (status == ApplicationStatus.PLANNED || status == ApplicationStatus.INTERESTED) {
+            if (date != null) fail(HttpStatus.BAD_REQUEST);
+        } else if (status != ApplicationStatus.WITHDRAWN && date == null) fail(HttpStatus.BAD_REQUEST);
+    }
+    private void validateTransitionAppliedDate(Application application, ApplicationStatus status, LocalDate date) {
+        if (status == ApplicationStatus.PLANNED) {
+            if (date != null) fail(HttpStatus.BAD_REQUEST);
+            return;
+        }
+        if (application.getAppliedDate() != null) {
+            if (date != null) fail(HttpStatus.BAD_REQUEST);
+        } else if (status != ApplicationStatus.WITHDRAWN && date == null) fail(HttpStatus.BAD_REQUEST);
     }
     private static void fail(HttpStatus status) { throw new ResponseStatusException(status); }
 }

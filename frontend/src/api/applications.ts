@@ -13,7 +13,7 @@ export type Application = {
 export type ApplicationPage = { items: Application[]; page: number; size: number; totalElements: number };
 export type ApplicationHistory = { id: number; fromStatus: ApplicationStatus | null; toStatus: ApplicationStatus; changedAt: string };
 export type CreateApplication = {
-  jobId?: number; personalSavedJobId?: number; status: 'INTERESTED' | 'PLANNED' | 'APPLIED'; appliedDate: string | null; note: string | null; nextScheduleAt: string | null;
+  jobId?: number; personalSavedJobId?: number; status: ApplicationStatus; appliedDate: string | null; note: string | null; nextScheduleAt: string | null;
 };
 const object = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null;
 const integer = (v: unknown): v is number => typeof v === 'number' && Number.isSafeInteger(v) && v >= 0;
@@ -62,6 +62,12 @@ export function createApplicationsApi(request: ReturnType<typeof createApiClient
     },
     changeStatus(id: number, input: { status: ApplicationStatus; appliedDate?: string | null }) {
       validId(id); return mutate(`/applications/${id}/status`, 'PATCH', input);
+    },
+    async delete(id: number) {
+      validId(id);
+      const csrf = await request('/auth/csrf');
+      if (!object(csrf) || csrf.headerName !== 'X-CSRF-TOKEN' || typeof csrf.token !== 'string' || !csrf.token) throw invalid();
+      await request(`/applications/${id}`, { method: 'DELETE', csrfToken: csrf.token });
     },
   };
 }

@@ -96,7 +96,7 @@ export function App() {
 
       : path === '/jobs' ? '채용공고' : path === '/bookmarks' || path.startsWith('/bookmarks/') ? '관심 공고'
       : path.startsWith('/jobs/') ? '공고 상세'
-      : path === '/applications' ? '지원 관리' : path.startsWith('/applications/') ? '지원 상세'
+      : path === '/applications' || path.startsWith('/applications/') ? '지원 관리'
       : path === '/analytics/skills' ? '채용시장 분석' : path === '/skill-gap' ? '역량 분석'
       : path === '/character' ? '내 캐릭터' : path === '/settings' ? '설정'
       : path === '/interviews' || path.startsWith('/interviews/') ? '면접 일정'

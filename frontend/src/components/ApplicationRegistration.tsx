@@ -41,11 +41,11 @@ export function ApplicationRegistration({ jobId, personalSavedJobId, status, onC
       <fieldset disabled={busy}><legend>지원 등록 정보</legend>
         {buttonStatusPicker ? <div className="application-status-field"><span id="registration-status-label">초기 상태</span>
           <div className="application-status-options" role="group" aria-labelledby="registration-status-label">
-            {(['INTERESTED', 'PLANNED', 'APPLIED'] as const).map(value => <button key={value} type="button"
+            {(['PLANNED', 'APPLIED'] as const).map(value => <button key={value} type="button"
               aria-pressed={initial === value} onClick={() => setInitial(value)}>{statusLabels[value]}</button>)}
           </div>
         </div> : <label>초기 상태<select value={initial} onChange={event => setInitial(event.target.value as CreateApplication['status'])}>
-          {(['INTERESTED', 'PLANNED', 'APPLIED'] as const).map(value => <option key={value} value={value}>{statusLabels[value]}</option>)}
+          {(['PLANNED', 'APPLIED'] as const).map(value => <option key={value} value={value}>{statusLabels[value]}</option>)}
         </select></label>}
         {initial === 'APPLIED' && <label>지원일<input name="appliedDate" type="date" required /></label>}
         <label>다음 확인 일정 (선택)<input name="nextScheduleAt" type="datetime-local" />

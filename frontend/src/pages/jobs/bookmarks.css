@@ -99,6 +99,7 @@
 .saved-empty p { margin: 0 0 4px; color: #69709b; font-size: .79rem; line-height: 1.55; }
 .saved-card-actions { display: flex; flex-wrap: wrap; gap: 7px 14px; margin-top: 11px; }
 .saved-card-actions a, .saved-card-actions button { display: inline-flex; align-items: center; gap: 4px; min-height: 30px; padding: 4px 0; border: 0; background: transparent; color: #5541c0; font-size: .7rem; font-weight: 750; text-decoration: none; }
+.saved-card-actions .saved-card-edit { margin-left: auto; }
 .saved-card-actions a:hover, .saved-card-actions button:hover { text-decoration: underline; }
 .saved-card-actions .lucide-icon { width: 12px; height: 12px; }
 .saved-delete-confirm { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; margin-top: 11px; padding: 9px 11px; border: 1px solid #f1d9df; border-radius: 8px; background: #fff8fa; }

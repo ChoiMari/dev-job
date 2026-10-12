@@ -50,3 +50,176 @@
   .application-actions > * { width: 100%; }
   .application-hero { padding: 16px; }
 }
+.main-content:has(> .applications-page--board) > .page-heading { display: none; }
+.applications-page--board { max-width: 1280px; gap: 14px; color: #181a50; container-type: inline-size; }
+.application-board-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 13px; padding: 18px 20px; border: 1px solid #e3e5f8; border-radius: 12px; background: #fff; box-shadow: 0 4px 17px #465bc50b; }
+.application-board-heading { display: flex; align-items: center; gap: 13px; min-width: 0; flex: 1 1 250px; }
+.application-board-heading > img { width: 46px; height: 46px; flex: 0 0 auto; object-fit: contain; image-rendering: pixelated; }
+.application-board-heading h1 { margin: 0 0 4px; color: #15194b; font-size: clamp(1.3rem, 2.3vw, 1.65rem); }
+.application-board-heading p { margin: 0; color: #69709b; font-size: .78rem; }
+.application-board-header-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 9px; }
+.application-board-total { display: inline-flex; align-items: center; min-height: 40px; padding: 8px 11px; border: 1px solid #ded9fa; border-radius: 8px; background: #f8f7ff; color: #5541c0; font-size: .78rem; font-weight: 750; white-space: nowrap; }
+.application-board-header .button-primary { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 40px; padding: 8px 14px; border: 1px solid #6650ef; border-radius: 8px; background: #6650ef; color: #fff; font-size: .78rem; font-weight: 750; white-space: nowrap; }
+.application-board-header .button-primary:hover { background: #5541d5; }
+.application-board-header svg, .application-new-job svg { width: 16px; height: 16px; }
+.application-kanban-scroll { min-width: 0; padding: 14px; border: 1px solid #e3e5f8; border-radius: 12px; background: #fff; box-shadow: 0 4px 17px #465bc50b; }
+.application-kanban { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 9px; align-items: start; }
+.application-kanban-column { --column-bg: #edf4ff; --column-border: #bdd1ff; --column-head: #dfeaff; --column-count: #cbdcff; --column-accent: #3556b3; min-width: 0; min-height: 290px; border: 1px solid var(--column-border); border-radius: 9px; background: var(--column-bg); }
+.application-kanban-column--passed { --column-bg: #eaf8f3; --column-border: #aee0cb; --column-head: #d6f1e5; --column-count: #bce9d5; --column-accent: #19765c; }
+.application-kanban-column--interview { --column-bg: #fff8e9; --column-border: #f3d58d; --column-head: #fff0c7; --column-count: #ffe3a1; --column-accent: #93601a; }
+.application-kanban-column--final { --column-bg: #f3edff; --column-border: #d7c4f8; --column-head: #e9ddff; --column-count: #ddcafa; --column-accent: #6742a7; }
+.application-kanban-column--rejected { --column-bg: #fff0f2; --column-border: #f6c3cb; --column-head: #ffe0e6; --column-count: #f9cbd4; --column-accent: #a63c56; }
+.application-kanban-column--other { --column-bg: #f2f4f9; --column-border: #d3d9e8; --column-head: #e7ebf4; --column-count: #d5deed; --column-accent: #55627e; }
+.application-kanban-column h2 { margin: 0; padding: 11px; border-bottom: 1px solid var(--column-border); background: var(--column-head); color: var(--column-accent); font-size: .83rem; display: flex; align-items: center; gap: 6px; }
+.application-kanban-column h2 span { background: var(--column-count); color: var(--column-accent); padding: 2px 7px; border-radius: 99px; font-size: .71rem; }
+.application-kanban-cards { padding: 8px; display: grid; align-content: start; gap: 8px; }
+.application-kanban-card { min-width: 0; background: #fff; border: 1px solid #dce2fa; border-radius: 9px; padding: 11px; font-size: .79rem; box-shadow: 0 2px 10px #465bc508; }
+.application-kanban-card--planned { border-left: 3px solid #7180d7; }
+.application-kanban-card--withdrawn { border-left: 3px solid #c77698; }
+.application-kanban-card--interested { border-left: 3px solid #9878d2; }
+.application-kanban-card:hover { border-color: #c8c6f6; }
+.application-kanban-card[draggable="true"] { cursor: grab; }
+.application-kanban-card h3 { font-size: .88rem; margin: 5px 0; line-height: 1.4; overflow-wrap: anywhere; }
+.application-kanban-card h3 a { color: #28317d; text-decoration: none; }
+.application-kanban-card h3 a:hover { color: #5541d5; text-decoration: underline; }
+.application-kanban-card p { margin: 5px 0; }
+.application-kanban-card .application-kind { border-radius: 4px; padding: 2px 5px; font-size: .66rem; font-weight: 750; line-height: 1.25; }
+.application-kanban-card .application-kind--collected { background: #eaf2ff; color: #285aa8; }
+.application-kanban-card .application-kind--manual { background: #ffe8f1; color: #b52b91; }
+.application-kanban-labels { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; min-width: 0; }
+.application-other-status { border-radius: 4px; padding: 2px 5px; font-size: .66rem; font-weight: 750; line-height: 1.25; }
+.application-other-status--planned { background: #e9edff; color: #4b58af; }
+.application-other-status--withdrawn { background: #f7e9ef; color: #9a4565; }
+.application-other-status--interested { background: #efeaff; color: #6d4bb2; }
+.application-kanban-card-top { display: flex; justify-content: space-between; align-items: start; }
+.application-card-menu-wrap { position: relative; }
+.application-icon-button { background: transparent; border: 0; padding: 2px 6px; min-height: 28px; cursor: pointer; color: #5541c0; font-weight: 800; }
+.application-icon-button svg { width: 18px; height: 18px; }
+.application-card-menu { position: absolute; right: 0; top: 100%; z-index: 4; width: 112px; background: #fff; border: 1px solid #d8ddf5; border-radius: 8px; box-shadow: 0 6px 20px #19255c24; display: grid; overflow: hidden; }
+.applications-page--board .application-card-menu > a, .applications-page--board .application-card-menu > button { display: grid; grid-template-columns: 15px 1fr; align-items: center; justify-content: stretch; justify-items: start; gap: 8px; width: 100%; min-height: 38px; box-sizing: border-box; text-align: left; padding: 9px 11px; background: #fff; border: 0; border-radius: 0; color: #28317d; font: inherit; font-size: .78rem; font-weight: 700; text-decoration: none; cursor: pointer; }
+.application-card-menu a { border-bottom: 1px solid #edf0fc; }
+.application-card-menu a:hover, .application-card-menu button:hover { background: #f1efff; color: #5541c0; }
+.application-card-menu .lucide-icon { width: 15px; height: 15px; flex: 0 0 auto; }
+.application-kanban-meta { color: #667198; }
+.application-kanban-date, .application-kanban-schedule { display: flex; align-items: center; gap: 4px; color: #535fa3; }
+.application-kanban-date svg, .application-kanban-schedule svg { width: 13px; height: 13px; }
+.application-kanban-schedule { background: #fff7df; padding: 6px; border-radius: 5px; }
+.application-kanban-note { white-space: pre-wrap; overflow-wrap: anywhere; color: #56617e; max-height: 3.6em; overflow: hidden; }
+.application-kanban-empty { text-align: center; color: #7a83a1; font-size: .8rem; padding: 32px 8px; }
+.application-more, .application-new-job { border: 1px dashed #7392ff; border-radius: 6px; background: #f6f9ff; color: #3a4fc3; padding: 9px; font: inherit; cursor: pointer; text-decoration: none; }
+.application-board-error { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; padding: 11px 14px; border: 1px solid #f2c4d0; border-radius: 10px; background: #fff5f7; color: #9e3753; font-size: .78rem; }
+.application-board-error > span { display: inline-flex; align-items: center; gap: 7px; min-width: 0; }
+.application-board-error .lucide-icon { width: 17px; height: 17px; flex: 0 0 auto; }
+.application-board-error button { min-height: 32px; padding: 5px 10px; border: 1px solid #efc0cb; border-radius: 7px; background: #fff; color: #9e3753; font-size: .72rem; font-weight: 750; }
+.application-modal-error { color: #ba2845; background: #fff0f3; padding: 10px; border-radius: 6px; }
+.application-modal-backdrop { position: fixed; z-index: 100; inset: 0; background: #1d244a91; display: grid; place-items: center; padding: 12px; }
+.application-modal, .application-confirm { width: min(100%, 520px); max-height: calc(100vh - 24px); overflow-y: auto; background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 18px 50px #161c4670; }
+.application-modal { box-sizing: border-box; display: flex; flex-direction: column; width: min(100%, 560px); border: 1px solid #d8ddf5; padding: 0; overflow: hidden; color: #182052; }
+.application-modal > form { min-height: 0; overflow-y: auto; padding: 16px 20px 20px; }
+.application-modal-head, .application-modal-footer { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.application-modal-head { flex: 0 0 auto; padding: 14px 20px; border-bottom: 1px solid #e3e7fa; background: #fff; }
+.application-modal-head img { width: 48px; height: 48px; object-fit: contain; flex: 0 0 auto; }
+.application-modal-head > div { flex: 1; min-width: 0; }
+.application-modal-head h2 { margin: 0; color: #182052; font-size: 1.05rem; }
+.application-modal-head p { margin: 3px 0 0; font-size: .75rem; color: #687397; }
+.application-modal .application-icon-button { align-self: flex-start; }
+.application-modal-label { font-weight: 700; font-size: .85rem; }
+.application-modal-label span, .application-modal-fields label > span { color: #e14762; }
+.application-modal-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.application-modal-tabs button { min-height: 38px; border: 1px solid #d8ddf5; border-radius: 7px; background: #f7f8ff; color: #5144a9; font: inherit; font-size: .79rem; font-weight: 700; cursor: pointer; }
+.application-modal-tabs button[aria-selected="true"] { border-color: #6650ef; background: #6650ef; color: #fff; }
+.application-modal-search { margin: 8px 0; display: flex; align-items: center; gap: 6px; border: 1px solid #d8ddf5; border-radius: 7px; padding: 0 10px; }
+.application-modal-search svg { width: 17px; height: 17px; }
+.application-modal-search input { border: 0; width: 100%; min-height: 38px; font: inherit; font-size: .79rem; outline: 0; }
+.application-modal-search:focus-within { outline: 2px solid #6650ef; outline-offset: 1px; }
+.application-candidate-list { border: 1px solid #dce3fa; border-radius: 7px; max-height: 205px; overflow-y: auto; }
+.application-candidate-list button { display: grid; grid-template-columns: 18px minmax(0, 1fr); align-items: start; justify-content: stretch; gap: 10px; width: 100%; min-height: 0; text-align: left; background: #fff; border: 0; border-bottom: 1px solid #eef0fa; border-radius: 0; padding: 9px 11px; color: #1b285b; font: inherit; font-size: .77rem; cursor: pointer; }
+.application-candidate-list button.is-selected { background: #f0edff; }
+.application-candidate-list button:disabled { opacity: .55; cursor: not-allowed; }
+.application-candidate-copy { display: grid; gap: 2px; min-width: 0; line-height: 1.4; }
+.application-candidate-copy strong { color: #182052; font-size: .75rem; }
+.application-candidate-title { overflow-wrap: anywhere; }
+.application-candidate-list small { display: block; color: #7784a9; font-size: .7rem; overflow-wrap: anywhere; }
+.application-candidate-mark { color: #6650ef; line-height: 1.4; text-align: center; }
+.application-candidate-empty { text-align: center; padding: 20px; color: #7784a9; }
+.application-modal .application-more { display: flex; width: max-content; min-height: 27px; margin: 5px 0 0 auto; padding: 3px 4px; border: 0; border-radius: 4px; background: transparent; color: #5541c0; font-size: .72rem; font-weight: 750; }
+.application-modal .application-more:hover { background: #f1efff; }
+.application-new-job { display: flex; align-items: center; justify-content: center; gap: 5px; margin: 8px 0 14px; border-color: #c9c0fa; background: #f7f5ff; color: #5541c0; font-size: .78rem; font-weight: 700; text-align: center; }
+.application-modal-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.application-modal-fields label { display: flex; flex-direction: column; justify-content: flex-start; align-self: start; gap: 5px; min-width: 0; font-size: .78rem; font-weight: 700; }
+.application-confirm label { display: grid; gap: 5px; font-size: .78rem; font-weight: 700; }
+.application-field-title b { color: #e14762; }
+.application-modal-fields input, .application-modal-fields select, .application-modal-fields textarea, .application-confirm input, .application-confirm select { box-sizing: border-box; width: 100%; min-width: 0; padding: 9px 11px; border: 1px solid #d8ddf5; border-radius: 7px; background: #fff; color: #23265a; font: inherit; font-size: .79rem; }
+.application-modal-fields input:focus-visible, .application-modal-fields select:focus-visible, .application-modal-fields textarea:focus-visible { outline: 2px solid #6650ef; outline-offset: 1px; }
+.application-modal-fields small { font-size: .73rem; color: #7784a9; font-weight: 400; }
+.application-modal-wide { grid-column: 1 / -1; }
+.application-modal-footer { flex: 0 0 auto; justify-content: end; padding: 12px 20px; border-top: 1px solid #e3e7fa; background: #fff; }
+.application-modal-footer button { min-height: 38px; padding: 8px 16px; border: 1px solid #d8ddf5; border-radius: 7px; background: #fff; color: #5144a9; font: inherit; font-size: .79rem; font-weight: 700; cursor: pointer; }
+.application-modal-footer .button-primary { border-color: #6650ef; background: #6650ef; color: #fff; }
+.application-modal-footer .button-primary:hover:not(:disabled) { background: #5541d5; }
+.application-confirm { box-sizing: border-box; width: min(100%, 430px); padding: 0; overflow: hidden; border: 1px solid #d8ddf5; color: #182052; }
+.application-confirm-head { display: flex; align-items: center; gap: 11px; padding: 17px 20px; border-bottom: 1px solid #e3e7fa; background: #f8faff; }
+.application-confirm-head > div { min-width: 0; }
+.application-confirm-head h2 { margin: 0; font-size: 1rem; line-height: 1.3; }
+.application-confirm-head p { margin: 4px 0 0; color: #687397; font-size: .73rem; }
+.application-confirm-icon { display: grid; flex: 0 0 auto; place-items: center; width: 34px; height: 34px; border-radius: 8px; background: #eae8ff; color: #5b49d5; }
+.application-confirm-icon--danger { background: #ffedf1; color: #b63255; }
+.application-confirm-icon .lucide-icon { width: 19px; height: 19px; }
+.application-confirm-content { display: grid; gap: 12px; padding: 18px 20px; font-size: .8rem; }
+.application-confirm-content > strong { overflow-wrap: anywhere; font-size: .82rem; }
+.application-confirm-transition { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin: 0; padding: 11px 12px; border: 1px solid #dde3fa; border-radius: 8px; background: #f7f8ff; color: #485887; }
+.application-confirm-transition strong { color: #5541c0; }
+.application-confirm-transition .lucide-icon { width: 15px; height: 15px; color: #6650ef; }
+.application-confirm-hint { margin: 0; color: #855a30; font-size: .73rem; }
+.application-confirm-actions { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 20px; border-top: 1px solid #e3e7fa; }
+.application-confirm-actions button { min-height: 36px; padding: 7px 14px; border: 1px solid #d8ddf5; border-radius: 7px; background: #fff; color: #5144a9; font: inherit; font-size: .78rem; font-weight: 700; cursor: pointer; }
+.application-confirm-actions .button-primary { border-color: #6650ef; background: #6650ef; color: #fff; }
+.application-confirm-actions .application-danger-button { border-color: #bf4869; background: #bf4869; color: #fff; }
+.application-confirm-actions button:disabled { opacity: .55; cursor: not-allowed; }
+.application-detail-backdrop { z-index: 110; }
+.application-detail-modal { box-sizing: border-box; width: min(100%, 590px); max-height: calc(100dvh - 24px); display: flex; flex-direction: column; overflow: hidden; border: 1px solid #d8ddf5; border-radius: 12px; background: #fff; color: #182052; box-shadow: 0 18px 50px #161c4670; }
+.application-detail-modal-head { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 14px 20px; border-bottom: 1px solid #e3e7fa; background: #f8faff; }
+.application-detail-modal-head img { width: 40px; height: 40px; object-fit: contain; }
+.application-detail-modal-head > div { min-width: 0; }
+.application-detail-modal-head h2 { margin: 0; font-size: 1.05rem; }
+.application-detail-modal-head p { margin: 3px 0 0; color: #687397; font-size: .75rem; }
+.application-detail-head-actions { display: inline-flex; align-items: center; justify-self: end; gap: 6px; width: max-content; }
+.application-detail-head-actions > a { display: grid; place-items: center; width: 30px; height: 30px; margin-left: 2px; color: #5541c0; text-decoration: none; }
+.application-detail-head-actions > a .lucide-icon { width: 20px; height: 20px; }
+.application-detail-edit { display: inline-flex; align-items: center; gap: 4px; min-height: 30px; padding: 4px 9px; border: 1px solid #b8c7ff; border-radius: 6px; background: #f3f6ff; color: #374eb4; font: inherit; font-size: .72rem; font-weight: 700; cursor: pointer; }
+.application-detail-edit .lucide-icon { width: 14px; height: 14px; }
+.application-detail-delete { display: inline-flex; align-items: center; gap: 4px; min-height: 30px; padding: 4px 9px; border: 1px solid #f0c8d1; border-radius: 6px; background: #fff7f8; color: #ad3c5a; font: inherit; font-size: .72rem; font-weight: 700; cursor: pointer; }
+.application-detail-delete .lucide-icon { width: 14px; height: 14px; }
+.application-detail-delete-backdrop { z-index: 120; }
+.application-detail-modal-body { min-height: 0; overflow-y: auto; padding: 18px 20px 22px; }
+.application-detail-job { padding-bottom: 14px; border-bottom: 1px solid #e3e7fa; }
+.application-detail-job .application-kind { padding: 2px 6px; border-radius: 4px; background: #eaf2ff; color: #285aa8; font-size: .67rem; }
+.application-detail-job .application-kind--manual { background: #ffe8f1; color: #b52b91; }
+.application-detail-job p { margin: 8px 0 4px; color: #59658a; font-size: .78rem; }
+.application-detail-job h3 { margin: 0; font-size: .95rem; line-height: 1.45; overflow-wrap: anywhere; }
+.application-detail-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; margin: 16px 0; }
+.application-detail-facts > div { display: grid; align-content: start; gap: 7px; min-width: 0; padding: 11px 12px; border: 1px solid #e3e7fa; border-radius: 8px; background: #f8f9ff; }
+.application-detail-facts span { display: inline-flex; align-items: center; gap: 5px; color: #687397; font-size: .72rem; font-weight: 700; }
+.application-detail-facts span .lucide-icon { width: 14px; height: 14px; color: #6650ef; }
+.application-detail-facts strong { color: #182052; font-size: .8rem; font-weight: 650; white-space: pre-wrap; overflow-wrap: anywhere; }
+.application-detail-facts .application-detail-note { grid-column: 1 / -1; }
+.application-detail-links a { display: inline-flex; align-items: center; gap: 7px; min-height: 34px; padding: 7px 10px; border: 1px solid #cdc7fa; border-radius: 7px; background: #f7f5ff; color: #5541c0; font-size: .77rem; font-weight: 750; text-decoration: none; }
+.application-detail-links .lucide-icon, .application-detail-interviews .lucide-icon { width: 15px; height: 15px; }
+.application-detail-interviews { display: flex; flex-wrap: wrap; gap: 8px 16px; margin: 14px 0 0; }
+.application-detail-interviews a { display: inline-flex; align-items: center; gap: 5px; color: #5541c0; font-size: .75rem; font-weight: 700; text-decoration: none; }
+.application-detail-links a:hover, .application-detail-interviews a:hover { text-decoration: underline; }
+.application-detail-modal .application-editor { grid-template-columns: minmax(0, 1fr); gap: 14px; margin-top: 18px; border-top: 1px solid #e3e7fa; padding-top: 16px; }
+.application-detail-modal .application-form fieldset { gap: 10px; padding: 12px 14px 14px; border: 1px solid #e1e5fa; border-radius: 8px; background: #f8f9ff; }
+.application-detail-modal .application-form legend { color: #28317d; font-size: .82rem; }
+.application-detail-modal .application-form label { gap: 5px; color: #52608d; font-size: .76rem; font-weight: 700; }
+.application-detail-modal .application-form input, .application-detail-modal .application-form select, .application-detail-modal .application-form textarea { box-sizing: border-box; min-height: 38px; padding: 8px 10px; border: 1px solid #d6ddf7; border-radius: 7px; background: #fff; color: #1c275b; font: inherit; font-size: .78rem; }
+.application-detail-modal .application-form textarea { min-height: 72px; }
+.application-detail-modal .application-form fieldset > button { justify-self: end; width: auto; min-height: 35px; padding: 7px 13px; border: 1px solid #6650ef; border-radius: 7px; background: #6650ef; color: #fff; font: inherit; font-size: .77rem; font-weight: 750; cursor: pointer; }
+.application-detail-modal .application-form fieldset > button:hover:not(:disabled) { background: #5541d5; }
+.application-detail-modal .application-form fieldset > p { margin: 0; color: #855a30; font-size: .73rem; }
+@media (max-width: 500px) { .application-detail-modal-head { grid-template-columns: 40px minmax(0, 1fr); padding: 12px 14px; } .application-detail-head-actions { grid-column: 1 / -1; width: 100%; justify-content: flex-end; } .application-detail-facts { grid-template-columns: 1fr; } .application-detail-modal-body { padding: 14px; } }
+@container (max-width: 1120px) { .application-kanban { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@container (max-width: 700px) { .application-kanban { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@container (max-width: 470px) { .application-kanban { grid-template-columns: minmax(0, 1fr); } .application-board-header-actions { width: 100%; justify-content: space-between; } }
+@media (max-width: 700px) { .application-board-header { align-items: start; padding: 14px; } .application-kanban-scroll { padding: 10px; } }
+@media (max-width: 360px) { .application-modal-fields { grid-template-columns: 1fr; } }

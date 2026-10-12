@@ -115,12 +115,14 @@ S10 물리 매핑: `V6__create_bookmarks.sql`은 `bookmark` 테이블만 추가�
 
 S11 물리 매핑: `V7__create_applications.sql`은 기존 데이터를 변경하지 않고 `application`, `application_status_history` 두 테이블을 추가한다. ID는 BIGINT identity, FK는 필수이며 cascade 삭제는 없다. `application`은 `(user_id, job_posting_id)` UNIQUE, 상태 VARCHAR(30) CHECK, 지원일 DATE, 다음 일정·생성·수정 시각 TIMESTAMPTZ, 메모 VARCHAR(2000)이다. 실제 지원 이후 상태의 지원일은 DB CHECK로도 필수다. 이력은 from/to 상태 VARCHAR(30) CHECK, 변경 시각 TIMESTAMPTZ 필수이며 최초 from만 null이다. 사용자·상태·등록 시각·ID 목록 인덱스와 지원·변경 시각·ID 이력 인덱스를 둔다. 서비스가 초기·전이 이력을 같은 트랜잭션에 저장하고 수정 시 행 잠금으로 동시 상태 변경을 보호한다.
 
+`V29__soft_delete_applications.sql`은 `application.deleted_at`을 추가하고 수집·개인 공고별 유일 키를 활성 행(`deleted_at IS NULL`)의 부분 인덱스로 바꾼다. 삭제한 지원의 이력과 면접 FK는 유지하고, 활성 지원 조회에는 `deleted_at IS NULL`을 적용한다. 삭제 후 같은 공고를 다시 등록할 수 있다.
+
 | 엔티티 | 목적 | 주요 컬럼 및 키 | 핵심 제약 |
 | --- | --- | --- | --- |
 | `Bookmark` | 사용자별 관심 공고 | `id` PK, `user_id` FK, `job_posting_id` FK, `created_at` | `(user_id, job_posting_id)` 유일 |
 | `PersonalSavedJob` | 사용자 직접 등록 개인 관심공고 | `id` PK, `user_id` FK, `url`, `company_name`, `title`, `role`, `career_level`, `location`, `employment_type`, `deadline_date`, `note`, `description`, `created_at`, `updated_at`, `deleted_at` | 활성 `(user_id, url)` 부분 UNIQUE. 삭제는 `deleted_at`을 채워 이력 보존 |
 | `PersonalSavedJobAnalysis` | 사용자가 붙여넣은 개인 공고 본문의 AI 분석 | `personal_saved_job_id` PK·FK, `status`, `result_json`, `failure_reason`, `analyzed_at`, `updated_at` | 개인 공고당 최대 한 행. 제목·본문 수정 시 기존 결과 삭제 |
-| `Application` | 공고별 현재 지원 상황 | `id` PK, `user_id` FK, nullable `job_posting_id` FK, nullable `personal_saved_job_id` FK, `current_status`, `applied_date`, `next_schedule_at`, `note`, `created_at`, `updated_at` | 두 공고 FK 중 정확히 하나만 값; 사용자·공고 종류별 유일; 상태는 아래 허용값 중 하나 |
+| `Application` | 공고별 현재 지원 상황 | `id` PK, `user_id` FK, nullable `job_posting_id` FK, nullable `personal_saved_job_id` FK, `current_status`, `applied_date`, `next_schedule_at`, `note`, `created_at`, `updated_at`, `deleted_at` | 두 공고 FK 중 정확히 하나만 값; 사용자·공고 종류별 활성 행 유일; 상태는 아래 허용값 중 하나 |
 | `ApplicationStatusHistory` | 지원 상태 변경 기록 | `id` PK, `application_id` FK, `from_status`, `to_status`, `changed_at` | `to_status`, `changed_at` 필수; 최초 등록 시 `from_status`는 비움; 상태가 실제 변경될 때마다 한 행 추가 |
 
 `Bookmark`와 `Application`은 각각 사용자와 공고 사이의 관계에 별도 의미와 속성이 있어 중간 테이블로 둔다. `Application.current_status`의 허용값은 `INTERESTED`, `PLANNED`, `APPLIED`, `DOCUMENT_PASSED`, `INTERVIEW`, `FINAL_PASSED`, `REJECTED`, `WITHDRAWN`이다. 지원일은 실제 지원을 기록할 때 사용하며, 메모와 다음 일정은 사용자 흐름에 있는 선택 정보다. 상태의 전이 가능 여부는 `user-flow.md`를 따르며 DB의 허용값 제약만으로 전이 규칙을 대신하지 않는다.

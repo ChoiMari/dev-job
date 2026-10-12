@@ -38,12 +38,13 @@ class ApplicationDatabaseTest {
     @Autowired ApplicationStatusHistoryRepository histories;
     @Autowired JdbcTemplate jdbc;
     User first, second;
+    JobSource source;
     long job, otherJob;
     @BeforeEach void seed() {
         assertThat(jdbc.queryForObject("select current_database()", String.class)).isEqualTo("devjob_s11_test");
         first = users.saveAndFlush(new User("s11-first@example.com", "hash"));
         second = users.saveAndFlush(new User("s11-second@example.com", "hash"));
-        var source = sources.save(new JobSource("S11_TEST", "Test"));
+        source = sources.save(new JobSource("S11_TEST", "Test"));
         job = posting(source, "Backend"); otherJob = posting(source, "Frontend");
         jobs.flush();
     }
@@ -60,7 +61,7 @@ class ApplicationDatabaseTest {
     }
     long created(String state, String extra) throws Exception {
         create(first, job, state, extra).andExpect(status().isCreated()).andExpect(jsonPath("$.job.applicationStatus").value(state));
-        return applications.findByUserIdAndJobIdIn(first.getId(), List.of(job)).get(0).getId();
+        return applications.findByUserIdAndJobIdInAndDeletedAtIsNull(first.getId(), List.of(job)).get(0).getId();
     }
     ResultActions change(User user, long id, String state, String extra) throws Exception {
         return mvc.perform(patch("/api/applications/" + id + "/status").with(authentication(auth(user))).with(csrf())
@@ -78,8 +79,13 @@ class ApplicationDatabaseTest {
         mvc.perform(get("/api/applications/" + id + "/history").with(authentication(auth(first))))
                 .andExpect(jsonPath("$.length()").value(6)).andExpect(jsonPath("$[5].fromStatus").value("INTERVIEW"))
                 .andExpect(jsonPath("$[5].toStatus").value("FINAL_PASSED"));
-        change(first, id, "REJECTED", "").andExpect(status().isConflict());
-        assertThat(histories.findByApplicationIdOrderByChangedAtAscIdAsc(id)).hasSize(6);
+        change(first, id, "REJECTED", "").andExpect(status().isOk())
+                .andExpect(jsonPath("$.appliedDate").value("2026-10-05"));
+        change(first, id, "PLANNED", "").andExpect(status().isOk())
+                .andExpect(jsonPath("$.appliedDate").isEmpty());
+        change(first, id, "INTERVIEW", "").andExpect(status().isBadRequest());
+        change(first, id, "INTERVIEW", ",\"appliedDate\":\"2026-10-06\"").andExpect(status().isOk());
+        assertThat(histories.findByApplicationIdOrderByChangedAtAscIdAsc(id)).hasSize(9);
     }
     @Test void allInitialStatesRequireCorrectDatesAndDuplicateIsPerUserAndJob() throws Exception {
         create(first, job, "APPLIED", "").andExpect(status().isBadRequest());
@@ -90,8 +96,37 @@ class ApplicationDatabaseTest {
         create(first, job, "PLANNED", "").andExpect(status().isConflict());
         create(second, job, "PLANNED", "").andExpect(status().isCreated());
         change(first, id, "APPLIED", ",\"appliedDate\":\"2026-10-05\"").andExpect(status().isConflict());
-        change(first, id, "INTERVIEW", "").andExpect(status().isConflict());
+        change(first, id, "INTERVIEW", "").andExpect(status().isOk());
+        assertThat(histories.findByApplicationIdOrderByChangedAtAscIdAsc(id)).hasSize(2);
+    }
+    @Test void laterStatusesCanBeRegisteredWithAnActualApplicationDate() throws Exception {
+        for (String state : List.of("DOCUMENT_PASSED", "INTERVIEW", "FINAL_PASSED", "REJECTED")) {
+            long postingId = posting(source, state);
+            create(first, postingId, state, "").andExpect(status().isBadRequest());
+            create(first, postingId, state, ",\"appliedDate\":\"2026-10-05\"")
+                    .andExpect(status().isCreated()).andExpect(jsonPath("$.currentStatus").value(state))
+                    .andExpect(jsonPath("$.appliedDate").value("2026-10-05"));
+        }
+        create(first, posting(source, "withdrawn-before"), "WITHDRAWN", "")
+                .andExpect(status().isCreated()).andExpect(jsonPath("$.appliedDate").isEmpty());
+        create(first, posting(source, "withdrawn-after"), "WITHDRAWN", ",\"appliedDate\":\"2026-10-05\"")
+                .andExpect(status().isCreated()).andExpect(jsonPath("$.appliedDate").value("2026-10-05"));
+    }
+    @Test void deleteHidesApplicationPreservesHistoryAndAllowsRegistrationAgain() throws Exception {
+        long id = created("APPLIED", ",\"appliedDate\":\"2026-10-05\"");
+        mvc.perform(delete("/api/applications/" + id).with(authentication(auth(second))).with(csrf()))
+                .andExpect(status().isForbidden());
+        mvc.perform(delete("/api/applications/" + id).with(authentication(auth(first))).with(csrf()))
+                .andExpect(status().isNoContent());
+        mvc.perform(get("/api/applications/" + id).with(authentication(auth(first))))
+                .andExpect(status().isNotFound());
+        mvc.perform(get("/api/applications/by-job/" + job).with(authentication(auth(first))))
+                .andExpect(status().isNotFound());
+        mvc.perform(get("/api/applications?status=APPLIED").with(authentication(auth(first))))
+                .andExpect(jsonPath("$.totalElements").value(0));
         assertThat(histories.findByApplicationIdOrderByChangedAtAscIdAsc(id)).hasSize(1);
+        create(first, job, "PLANNED", "").andExpect(status().isCreated());
+        assertThat(applications.findByUserIdAndJobIdInAndDeletedAtIsNull(first.getId(), List.of(job))).hasSize(1);
     }
     @Test void metadataPatchPreservesOmittedFieldsClearsNullsAndDoesNotCreateHistory() throws Exception {
         long id = created("PLANNED", ",\"note\":\"first\",\"nextScheduleAt\":\"2026-10-10T14:00:00+09:00\"");

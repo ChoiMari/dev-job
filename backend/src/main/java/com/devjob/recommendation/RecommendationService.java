@@ -202,11 +202,11 @@ public class RecommendationService {
     private Candidate candidate(long userId, String kind, long id) {
         String sql = "MANUAL".equals(kind) ? """
                 select p.title,p.description,p.updated_at,p.deadline_date,
-                  exists(select 1 from application a where a.user_id=? and a.personal_saved_job_id=p.id) as applied
+                  exists(select 1 from application a where a.user_id=? and a.personal_saved_job_id=p.id and a.deleted_at is null) as applied
                 from personal_saved_job p where p.id=? and p.user_id=? and p.deleted_at is null
                 """ : """
                 select j.title,j.description,j.updated_at,j.deadline_date,
-                  exists(select 1 from application a where a.user_id=? and a.job_posting_id=j.id) as applied
+                  exists(select 1 from application a where a.user_id=? and a.job_posting_id=j.id and a.deleted_at is null) as applied
                 from job_posting j where j.id=?
                 """;
         var found = jdbc.query(sql, (rs, n) -> {

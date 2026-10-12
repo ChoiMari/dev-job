@@ -43,7 +43,7 @@ public class JobMatchQueryRepository {
                 .addValue("today", today).addValue("limit", limit);
         return jdbc.query(RATES + "select j.id from rates r join job_posting j on j.id = r.job_posting_id "
                 + "where r.rate > 0 and (j.deadline_date is null or j.deadline_date >= :today) "
-                + "and not exists (select 1 from application ap where ap.user_id = :userId and ap.job_posting_id = j.id) "
+                + "and not exists (select 1 from application ap where ap.user_id = :userId and ap.job_posting_id = j.id and ap.deleted_at is null) "
                 + "order by r.rate desc, j.deadline_date asc nulls last, j.id desc limit :limit",
                 parameters, (row, index) -> row.getLong(1));
     }
@@ -100,7 +100,7 @@ public class JobMatchQueryRepository {
             parameters.addValue("skillId", input.skill());
         }
         if (input.applicationStatus() != null) {
-            from.append(" and exists (select 1 from application ap where ap.job_posting_id = j.id and ap.user_id = :userId and ap.current_status = :status)");
+            from.append(" and exists (select 1 from application ap where ap.job_posting_id = j.id and ap.user_id = :userId and ap.current_status = :status and ap.deleted_at is null)");
             parameters.addValue("status", input.applicationStatus());
         }
         if (input.minimumRate() != null) { from.append(" and r.rate >= :minimumRate"); parameters.addValue("minimumRate", input.minimumRate()); }
