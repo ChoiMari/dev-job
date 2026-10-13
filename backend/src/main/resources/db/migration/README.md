@@ -20,3 +20,6 @@ S05 격리 DB `devjob_s05_test`에는 기술 migration이 이미 V3으로 적용
 통합본을 해당 DB에 직접 실행하지 않는다. 각 DB의 `flyway_schema_history`를 확인하고
 이미 적용한 파일의 이름·checksum을 임의로 바꾸거나 `repair`·`clean`으로 해결하지 않는다.
 기존 이력과 격리 검증은 `docs/s05-implementation-report.md`에 기록한다.
+
+V35__interested_company_profile.sql은 기존 관심 기업 행에 산업·규모·지역·관심도·즐겨찾기를 추가하고, 기업별 태그 연결 및 사용자 태그 표를 만든다. 기존 행은 관심도 MEDIUM, 즐겨찾기 false, 태그 없음으로 유지한다.
+V36__company_tag_presentation.sql은 사용자 기업 태그에 색상 키와 정렬 순서를 추가한다. 기존 태그는 파랑으로 유지하고 기존 계정의 기본 8개 태그를 채운다. 신규 계정은 첫 목록 조회 때 기본 태그를 준비한다.

@@ -131,6 +131,10 @@ S13 구현: 비교 API는 완료된 분석이 없으면 `409 CONFLICT`를 반환
 
 ### B04 관심 기업 관리 계약 — EXT-05-01
 
+기업 관리 확장(V35): 기존 필드에 선택 `industry`(80자), `companySize`(STARTUP/SMALL/MEDIUM/LARGE), `region`(80자), `interestLevel`(HIGH/MEDIUM/LOW), `favorite`(boolean), `tags`(최대 5개, 각 1~30자)를 추가한다. 응답에는 새 필드가 항상 포함되며 기존 기록은 관심도 MEDIUM·즐겨찾기 false·빈 태그로 보인다. 기존 POST 필드만 보내는 클라이언트도 허용한다. PATCH는 새 필드도 일부만 보낼 수 있고 null 산업·규모·지역은 값을 비우며 null 태그는 빈 목록으로 바꾼다. 잘못된 enum·태그 형식은 400이다.
+
+`GET /api/me/companies`는 기존 page·size 외에 선택 `q`(기업명·메모·태그 부분 검색, 최대 100자), `industry`, `companySize`, `region`(접두 일치), `interestLevel`, `favorite`, `tag`(정확히 일치), `order`(latest 기본/oldest/name)를 받는다. `totalElements`는 필터 후 건수다. 사용자 태그는 `GET /api/me/company-tags` 목록(`id,name,colorKey,sortOrder`), `POST /api/me/company-tags` `{name,colorKey}` 등록(201), `PATCH /api/me/company-tags/{tagId}` 이름·색상 변경, `PUT /api/me/company-tags/order` `{tagIds:[...]}` 순서 변경, `DELETE /api/me/company-tags/{tagId}` 삭제(204)로 관리한다. 첫 조회에서 기본 8개 태그를 저장한다. 전체 최대 30개, 이름 1~20자, 색상은 blue/green/pink/yellow/purple/sky/orange/red/mint/gray다. 중복·상한·마지막 태그 삭제는 409, 본인 소유가 아닌 태그 변경·삭제는 404다. 이름 변경과 삭제는 본인 기업 기록의 태그 연결에도 반영한다. 모든 변경 요청은 CSRF를 요구한다.
+
 /api/me/companies는 세션 사용자의 독립적인 InterestedCompany 기록이다. 공고의 공용 Company ID와 다른 ID 공간이며 JobPosting.company_id와 자동 연결·병합하지 않는다. 현재 공고 수집은 신규 공고마다 공용 Company 행을 만들고 이름에 유일성을 두지 않는다. 동명 기업은 이름만으로 같은 기업이라고 판단하지 않는다. B11 출처 확장도 검증된 별도 기업 식별 근거가 생기기 전까지 이 경계를 유지한다.
 
 | 목적 / Method·URL | 인증 | Path / Query | Request Body | 성공 Response Body·Status | 주요 오류 |

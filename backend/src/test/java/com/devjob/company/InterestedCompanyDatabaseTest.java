@@ -77,6 +77,33 @@ class InterestedCompanyDatabaseTest {
         mvc.perform(get("/api/me/companies/" + second).with(as(owner))).andExpect(status().isOk());
         mvc.perform(get("/api/me/companies/" + otherId).with(as(other))).andExpect(status().isOk());
     }
+    @Test void profileFiltersAndCustomTagRemovalStayUserScoped() throws Exception {
+        var tagResponse = mvc.perform(post("/api/me/company-tags").with(as(owner)).with(csrf())
+                .contentType("application/json").content("{\"name\":\"직접태그\",\"colorKey\":\"blue\"}"))
+                .andExpect(status().isCreated()).andReturn();
+        long tagId = json.readTree(tagResponse.getResponse().getContentAsString()).get("id").asLong();
+        var created = mvc.perform(post("/api/me/companies").with(as(owner)).with(csrf())
+                .contentType("application/json").content("""
+                    {"name":"테스트기업","websiteUrl":null,"note":"플랫폼 연구","status":"INTERESTED",
+                     "industry":"IT·서비스","companySize":"SMALL","region":"서울 강남구",
+                     "interestLevel":"HIGH","favorite":true,"tags":["AI","직접태그"]}
+                    """)).andExpect(status().isCreated())
+                .andExpect(jsonPath("$.tags.length()").value(2))
+                .andExpect(jsonPath("$.favorite").value(true)).andReturn();
+        long companyId = json.readTree(created.getResponse().getContentAsString()).get("id").asLong();
+        mvc.perform(get("/api/me/companies").with(as(owner)).param("q", "플랫폼")
+                .param("companySize", "SMALL").param("region", "서울").param("tag", "직접태그"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.totalElements").value(1));
+        mvc.perform(get("/api/me/companies").with(as(other)).param("tag", "직접태그"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.totalElements").value(0));
+        mvc.perform(delete("/api/me/company-tags/" + tagId).with(as(other)).with(csrf()))
+                .andExpect(status().isNotFound());
+        mvc.perform(delete("/api/me/company-tags/" + tagId).with(as(owner)).with(csrf()))
+                .andExpect(status().isNoContent());
+        mvc.perform(get("/api/me/companies/" + companyId).with(as(owner)))
+                .andExpect(jsonPath("$.tags.length()").value(1))
+                .andExpect(jsonPath("$.tags[0]").value("AI"));
+    }
     @Test void websiteIdentityIsPerUserAndRejectsDuplicateOnCreateAndPatch() throws Exception {
         long first = create(owner, "A", "HTTPS://EXAMPLE.COM:443/");
         mvc.perform(get("/api/me/companies/" + first).with(as(owner)))

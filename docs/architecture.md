@@ -194,7 +194,7 @@ DevJob은 기본적으로 \*\*Frontend + Spring Boot Backend + PostgreSQL + Exte
 
 | Language       | JavaScript 또는 TypeScript |
 
-| UI             | CSS / UI Component       |
+| UI             | 기존 CSS / UI Component, 신규 화면 수정에 Tailwind CSS 유틸리티 점진 적용 |
 
 | Communication  | REST API                 |
 

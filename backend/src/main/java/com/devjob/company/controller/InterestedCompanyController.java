@@ -17,8 +17,12 @@ public class InterestedCompanyController {
     public InterestedCompanyController(InterestedCompanyService companies) { this.companies = companies; }
     public record CompanyPage(List<CompanyResponse> items, int page, int size, long totalElements) { }
     @GetMapping public CompanyPage list(@AuthenticationPrincipal CurrentUser user,
-            @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size) {
-        var result = companies.list(user.id(), page, size);
+            @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String q, @RequestParam(required = false) String industry,
+            @RequestParam(required = false) CompanySize companySize, @RequestParam(required = false) String region,
+            @RequestParam(required = false) InterestLevel interestLevel, @RequestParam(required = false) Boolean favorite,
+            @RequestParam(required = false) String tag, @RequestParam(defaultValue = "latest") String order) {
+        var result = companies.list(user.id(), page, size, q, industry, companySize, region, interestLevel, favorite, tag, order);
         return new CompanyPage(result.getContent(), page, size, result.getTotalElements());
     }
     @PostMapping @ResponseStatus(HttpStatus.CREATED)

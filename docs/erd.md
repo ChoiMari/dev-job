@@ -147,6 +147,8 @@ S11 물리 매핑: `V7__create_applications.sql`은 기존 데이터를 변경�
 
 ### B04 관심 기업의 별도 소유 모델
 
+V35__interested_company_profile.sql은 기존 기업 행을 유지하며 industry VARCHAR(80), company_size enum 문자열(STARTUP/SMALL/MEDIUM/LARGE), region VARCHAR(80), interest_level enum 문자열(HIGH/MEDIUM/LOW, 기본 MEDIUM), favorite BOOLEAN(기본 false)을 추가한다. `interested_company_tag(company_id,position,tag)`는 기업별 최대 5개 태그의 순서를 저장하고 기업 삭제 시 함께 제거한다. `personal_company_tag(id,user_id,name)`은 사용자별 태그를 저장하며 (user_id,name)을 유일하게 제한한다. V36__company_tag_presentation.sql은 태그 색상 키와 정렬 순서를 추가하고 기존 계정에 기본 8개를 채운다. 신규 계정은 최초 조회 때 기본 8개를 저장하고 전체 최대 30개를 서비스에서 제한한다. 태그 이름 변경·삭제는 사용자 소유 기업의 연결에도 반영한다. 계정 삭제 시 기업 태그 연결을 기업보다 먼저, 사용자 태그를 사용자보다 먼저 삭제한다.
+
 InterestedCompany는 사용자별 관심 기업 정보로 User 1:N이며 공고 수집용 공용 Company와 FK가 없다. id는 각각 독립된 ID 공간이다. B11 출처 확장도 공용 회사명을 사용자 기록과 자동 병합하지 않는다. 현재 JobPostingWriter는 신규 공고에 새 공용 Company를 연결하고, 같은 회사명만으로 공용 행끼리도 병합하지 않는다.
 
 V15__create_interested_companies.sql은 interested_company만 추가한다. id BIGINT identity, user_id 필수 users FK, name 필수 VARCHAR(200), website_url 선택 VARCHAR(2048), note 선택 VARCHAR(2000), status 필수 VARCHAR(20) CHECK(INTERESTED, RESEARCHING, ARCHIVED), 생성·수정 시각 필수 TIMESTAMPTZ다. (user_id, website_url) UNIQUE는 웹사이트가 있는 기록의 사용자별 중복을 막는다. URL이 null인 동명 기록은 허용한다. 사용자별 목록에 (user_id, created_at DESC, id DESC) 인덱스를 사용한다. 삭제는 사용자 기록 한 건만 제거하고 공용 회사·공고 관계에는 영향이 없다. 기존 테이블·데이터를 변경하지 않는다.
@@ -205,6 +207,6 @@ V15__create_interested_companies.sql은 interested_company만 추가한다. id B
 
 ### B15 계정 삭제
 
-새 테이블·migration·FK cascade 없이 애플리케이션 서비스가 사용자 행을 잠그고 FK 자식부터 삭제한다. 직접 `user_id`를 가진 `semantic_recommendation`, `notification`, `notification_preference`, `interview_schedule`, `application`, `resume`, `cover_letter`, `personal_saved_job`, `project`, `bookmark`, `user_skill`, `profiles`, `personal_todo`, `interested_company`, `learning_goal`, `character_activity`, `character_reward`, `character_equipment` 및 최종 `users` 행을 제거한다. 간접 소유인 `document_analysis`, `resume_version`, `cover_letter_version`, `application_status_history`, `personal_saved_job_analysis`, `project_skill`도 부모를 통해 소유자를 한정해 먼저 제거한다. 총 25개 테이블이며 `deleted_at`이 있는 행도 제외하지 않는다. 영향 안내의 리소스 코드와 건수 조회는 이 삭제 대상 목록을 공유한다.
+애플리케이션 서비스가 사용자 행을 잠그고 FK 자식부터 삭제한다. 직접 `user_id`를 가진 `semantic_recommendation`, `notification`, `notification_preference`, `interview_schedule`, `application`, `resume`, `cover_letter`, `personal_saved_job`, `project`, `bookmark`, `user_skill`, `profiles`, `personal_todo`, `interested_company`, `personal_company_tag`, `learning_goal`, `character_activity`, `character_reward`, `character_equipment` 및 최종 `users` 행을 제거한다. 간접 소유인 `document_analysis`, `resume_version`, `cover_letter_version`, `application_status_history`, `personal_saved_job_analysis`, `project_skill`, `interested_company_tag`도 부모를 통해 소유자를 한정해 먼저 제거한다. 총 27개 테이블이며 `deleted_at`이 있는 행도 제외하지 않는다. 영향 안내의 리소스 코드와 건수 조회는 이 삭제 대상 목록을 공유한다.
 
 모든 SQL은 하나의 DB 트랜잭션에서 실행되므로 중간 FK·DB 실패 시 전체 롤백한다. 삭제 성공 후 현재 세션은 종료하고, 다른 세션은 인증 필터가 `users` 행 부재를 확인해 무효화한다. 로그인은 사용자 행 잠금으로 삭제와 직렬화한다. 공용 `job_posting`·`company`·`job_source`·`job_collection_run`, `ai_analysis`·`job_skill`·공고 전형/첨부 메타데이터, `skill`·`skill_alias` 및 다른 사용자 행은 삭제하지 않는다. 운영 DB의 개인 기록은 즉시 제거하고 앱 내 복원 기능은 없다. DB 백업과 이미 전송된 AI 제공자 사본은 별도 보존 정책에 따르며 이 트랜잭션의 대상이 아니다.

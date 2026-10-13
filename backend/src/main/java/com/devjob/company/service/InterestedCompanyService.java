@@ -25,9 +25,23 @@ public class InterestedCompanyService {
     }
     @Transactional(readOnly = true)
     public Page<CompanyResponse> list(Long userId, int page, int size) {
+        return list(userId, page, size, null, null, null, null, null, null, null, "latest");
+    }
+    @Transactional(readOnly = true)
+    public Page<CompanyResponse> list(Long userId, int page, int size, String q, String industry,
+            CompanySize companySize, String region, InterestLevel interestLevel, Boolean favorite, String tag, String order) {
         if (page < 0 || size < 1 || size > 100 || (long) page * size > Integer.MAX_VALUE) throw error(HttpStatus.BAD_REQUEST);
-        return companies.findByUser_Id(userId, PageRequest.of(page, size,
-                Sort.by(Sort.Direction.DESC, "createdAt", "id"))).map(CompanyResponse::from);
+        if (q != null && q.length() > 100 || industry != null && industry.length() > 80
+                || region != null && region.length() > 80 || tag != null && tag.length() > 30
+                || !java.util.Set.of("latest", "oldest", "name").contains(order)) throw error(HttpStatus.BAD_REQUEST);
+        Sort sorting = switch (order) {
+            case "oldest" -> Sort.by(Sort.Direction.ASC, "createdAt", "id");
+            case "name" -> Sort.by(Sort.Order.asc("name"), Sort.Order.desc("id"));
+            default -> Sort.by(Sort.Direction.DESC, "createdAt", "id");
+        };
+        return companies.search(userId, blankToNull(q), blankToNull(industry), companySize,
+                blankToNull(region), interestLevel, favorite, blankToNull(tag),
+                PageRequest.of(page, size, sorting)).map(CompanyResponse::from);
     }
     @Transactional(readOnly = true)
     public CompanyResponse get(Long userId, Long id) { return CompanyResponse.from(owned(userId, id, false)); }
@@ -66,6 +80,7 @@ public class InterestedCompanyService {
     private void validate(CompanyInput input) {
         if (!validator.validate(input).isEmpty()) throw error(HttpStatus.BAD_REQUEST);
     }
+    private String blankToNull(String value) { return value == null || value.isBlank() ? null : value.strip(); }
     private String website(String value) {
         if (value == null || value.isBlank()) return null;
         try {

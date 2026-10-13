@@ -49,7 +49,7 @@ class AccountDeletionDatabaseTest {
 
         JsonNode impact = json.readTree(mvc.perform(get("/api/auth/me/deletion-impact").session(current))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
-        assertThat(impact.path("deletedResources").size()).isEqualTo(25);
+        assertThat(impact.path("deletedResources").size()).isEqualTo(27);
         assertThat(impact.path("recoverableInApp").asBoolean()).isFalse();
         assertThat(impact.path("confirmationText").asText()).isEqualTo("계정 삭제");
         for (JsonNode resource : impact.path("deletedResources"))
@@ -106,7 +106,7 @@ class AccountDeletionDatabaseTest {
                 .andExpect(status().isUnauthorized());
 
         for (String table : new String[]{"profiles", "user_skill", "project", "bookmark",
-                "application", "personal_saved_job", "personal_todo", "interested_company", "resume",
+                "application", "personal_saved_job", "personal_todo", "interested_company", "personal_company_tag", "resume",
                 "cover_letter", "interview_schedule", "learning_goal", "character_equipment",
                 "character_activity", "character_reward", "notification_preference", "notification",
                 "semantic_recommendation"}) {
@@ -187,8 +187,10 @@ class AccountDeletionDatabaseTest {
                 + "values (?,'Old todo',now(),now(),now()) returning id", user);
         jdbc.update("insert into personal_todo(user_id,title,created_at,updated_at) "
                 + "values (?,'Other todo',now(),now())", other);
-        jdbc.update("insert into interested_company(user_id,name,status,created_at,updated_at) "
-                + "values (?,'Interested','INTERESTED',now(),now())", user);
+        long interestedCompany = id("insert into interested_company(user_id,name,status,interest_level,favorite,created_at,updated_at) "
+                + "values (?,'Interested','INTERESTED','MEDIUM',false,now(),now()) returning id", user);
+        jdbc.update("insert into interested_company_tag(company_id,position,tag) values (?,0,'직접태그')", interestedCompany);
+        jdbc.update("insert into personal_company_tag(user_id,name) values (?,'직접태그')", user);
         long resume = id("insert into resume(user_id,title,deleted_at,created_at,updated_at) "
                 + "values (?,'Resume',now(),now(),now()) returning id", user);
         long rv = id("insert into resume_version(resume_id,version_number,content_ciphertext,content_nonce,created_at) "

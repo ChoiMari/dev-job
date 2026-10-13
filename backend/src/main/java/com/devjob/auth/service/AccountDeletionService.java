@@ -17,7 +17,7 @@ public class AccountDeletionService {
     private static final String EXTERNAL_NOTICE = "운영 DB의 개인 기록은 즉시 삭제되며 앱에서 복구할 수 없습니다. "
             + "DB 백업과 이미 전송된 AI 제공자 사본은 이 요청으로 삭제를 보장하지 않으며 별도 보존 정책에 따릅니다.";
 
-    // Every user-owned table in Flyway V1-V26 appears here, including soft-deleted rows.
+    // Every user-owned table appears here, including soft-deleted rows.
     // The order follows foreign keys from children to parents. The same list drives the impact response.
     private static final List<Resource> RESOURCES = List.of(
             direct("semantic_recommendation", "의미 기반 추천 결과"),
@@ -42,7 +42,10 @@ public class AccountDeletionService {
             direct("user_skill", "보유 기술·숙련도·경험"),
             direct("profiles", "프로필"),
             direct("personal_todo", "개인 할 일"),
+            indirect("interested_company_tag", "관심 기업 태그 연결",
+                    "company_id in (select id from interested_company where user_id=?)"),
             direct("interested_company", "관심 기업"),
+            direct("personal_company_tag", "관심 기업 사용자 태그"),
             direct("learning_goal", "학습 목표"),
             direct("character_activity", "캐릭터 활동·EXP"),
             direct("character_reward", "캐릭터 보상"),
