@@ -136,10 +136,10 @@ export function App() {
     onLogin={value => { setUser(value); window.location.hash = '/'; }} />;
 
   return <Layout title={title} path={path} user={user} onLogout={logout} loggingOut={loggingOut}>
-    {path === '/' ? <DashboardPage key={user.id} user={user} /> : path === '/profile' ? <>
+    {path === '/' ? <DashboardPage key={user.id} user={user} /> : path === '/profile' ? <div className="profile-page">
       <ProfilePage key={`profile-${user.id}`} email={user.email} onEmailChange={email => setUser(current => current ? { ...current, email } : current)} />
       <ProfileSkills key={`skills-${user.id}`} />
-    </> : path === '/projects' || path.startsWith('/projects/') ? <ProjectsPage key={`${user.id}:${path}`} location={location} />
+    </div> : path === '/projects' || path.startsWith('/projects/') ? <ProjectsPage key={`${user.id}:${path}`} location={location} />
       : path === '/todos' || path.startsWith('/todos/') ? <TodosPage key={`${user.id}:${path}`} location={location} />
       : path === '/companies' || path.startsWith('/companies/') ? <CompaniesPage key={user.id + ':' + path} location={location} />
 

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { apiRequest } from '../api';
 import { createSkillsApi } from '../api/skills';
 import type { OwnedSkill, Skill, SkillPage } from '../api/skills';
-import { Badge } from './PixelArt';
+import { LucideIcon } from './LucideIcon';
 import { EmptyState, ErrorState, LoadingState, SuccessState } from './States';
 import { skillLevelLabel, skillLevelLabels } from './skillLevel';
 import './ProfileSkills.css';
@@ -28,6 +28,7 @@ export function ProfileSkills() {
   const [success, setSuccess] = useState('');
   const [editingId, setEditingId] = useState<number | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [menuId, setMenuId] = useState<number | null>(null);
   const [draftLevel, setDraftLevel] = useState('');
   const [draftMonths, setDraftMonths] = useState('');
   const [editError, setEditError] = useState('');
@@ -95,17 +96,19 @@ export function ProfileSkills() {
     finally { inFlight.current = false; if (mounted.current) setPending(false); }
   }
   const disabled = pending || loading || !!loadError;
-  return <section className="card profile-skills" aria-labelledby="profile-skills-title">
-    <Badge tone="primary" icon="grid">나의 기술</Badge>
-    <h2 id="profile-skills-title">기술 스택</h2>
-    <p>표준 기술이나 별칭으로 검색하고 보유 기술을 추가하세요. Postgres는 PostgreSQL로 저장됩니다.</p>
+  return <>
+    <section className="profile-skills" aria-labelledby="profile-skills-title">
+    <div className="profile-section-head"><h2 id="profile-skills-title"><LucideIcon name="cog" />보유 기술</h2>
+      <button type="button" onClick={() => document.getElementById('skill-query')?.focus()}><LucideIcon name="plus" />기술 추가</button></div>
     {loading ? <LoadingState message="내 기술을 불러오고 있습니다." /> : loadError
       ? <ErrorState message={loadError} onRetry={() => setRetry(value => value + 1)} />
       : owned.length === 0 ? <EmptyState title="등록한 기술이 없습니다." message="아래에서 첫 기술을 추가해 보세요." />
       : <ul className="profile-skills__owned" aria-label="내 기술 목록">{owned.map(item => <li key={item.id}>
-        <div className="profile-skills__owned-heading"><Badge tone="success" icon="check">{item.name}</Badge>
-          <button type="button" disabled={disabled} onClick={() => startEditing(item)} aria-label={`${item.name} 숙련도와 경험 수정`}>수정</button>
-          <button type="button" disabled={disabled} onClick={() => { setDeletingId(item.id); setEditingId(null); setSuccess(''); }} aria-label={`${item.name} 삭제`}>삭제</button>
+        <div className="profile-skills__owned-heading"><span className="profile-skill-mark" aria-hidden="true">{item.name.slice(0, 2).toUpperCase()}</span>
+          <div className="profile-skill-summary"><strong>{item.name}</strong><small>{skillLevelLabel(item.proficiencyLevel)} · {item.experienceMonths === null ? '경험 미입력' : `${item.experienceMonths}개월`}</small></div>
+          <div className="profile-skill-actions"><button type="button" disabled={disabled} onClick={() => setMenuId(current => current === item.id ? null : item.id)} aria-label={`${item.name} 메뉴`} aria-expanded={menuId === item.id}><LucideIcon name="more" /></button>
+            {menuId === item.id && <div className="profile-skill-menu"><button type="button" onClick={() => { startEditing(item); setMenuId(null); }}>수정</button>
+              <button type="button" onClick={() => { setDeletingId(item.id); setEditingId(null); setSuccess(''); setMenuId(null); }}>삭제</button></div>}</div>
         </div>
         {editingId === item.id ? <form className="profile-skills__editor" onSubmit={event => { event.preventDefault(); void saveExperience(item); }}>
           <label htmlFor={`skill-level-${item.id}`}>숙련도</label>
@@ -119,7 +122,7 @@ export function ProfileSkills() {
           <div className="profile-skills__editor-actions"><button type="submit" disabled={pending}>저장</button>
             <button type="button" disabled={pending} onClick={() => { setEditingId(null); setEditError(''); }}>취소</button></div>
           {editError && <p className="form-error" role="alert">{editError}</p>}
-        </form> : <p className="profile-skills__values">숙련도: {skillLevelLabel(item.proficiencyLevel)} · 경험: {item.experienceMonths === null ? '정보 없음' : `${item.experienceMonths}개월`}</p>}
+        </form> : null}
         {deletingId === item.id && <div className="profile-skills__delete-confirm">
           <p>{item.name} 기술을 삭제하면 숙련도와 경험도 함께 삭제됩니다. 다시 등록해도 복원되지 않습니다.</p>
           <button type="button" disabled={disabled} onClick={() => void mutate(item, true)}>삭제 확인</button>
@@ -128,18 +131,21 @@ export function ProfileSkills() {
       </li>)}</ul>}
     {success && <SuccessState title={success} compact />}
     {mutationError && <p className="form-error" role="alert">{mutationError}</p>}
+    </section>
+    <section className="profile-skill-search" aria-labelledby="profile-skill-search-title"><div className="profile-section-head"><h2 id="profile-skill-search-title"><LucideIcon name="search" />기술 검색 및 추가</h2></div>
     <form className="profile-skills__search" onSubmit={event => {
       event.preventDefault(); setPage(0); setSearched(query.trim()); setSearchRetry(value => value + 1);
     }}>
-      <label htmlFor="skill-query">기술명 또는 별칭</label>
+      <label htmlFor="skill-query" className="sr-only">기술명 또는 별칭</label>
       <div><input id="skill-query" value={query} maxLength={100} onChange={event => setQuery(event.target.value)}
-        placeholder="예: Java, Postgres" disabled={pending} aria-describedby="skill-help" />
+        placeholder="기술명을 검색하세요. (예: Python, Spring, React 등)" disabled={pending} aria-describedby="skill-help" />
         <button type="submit" disabled={pending || searching}>검색</button></div>
-      <p id="skill-help">최대 100자. 목록에 없는 기술은 이름으로 추가할 수 있습니다. 기존 이름·별칭은 표준 기술로 연결됩니다.</p>
+      <p id="skill-help">목록에 없는 기술도 이름으로 추가할 수 있습니다. 기존 이름·별칭은 표준 기술로 연결됩니다.</p>
     </form>
     {searching ? <LoadingState message="표준 기술을 검색하고 있습니다." /> : searchError
       ? <ErrorState message={searchError} onRetry={() => setSearchRetry(value => value + 1)} /> : result && <>
         <p role="status">검색 결과 {result.totalElements}개</p>
+        {!searched && <div className="profile-skill-suggestions"><strong>기술 목록</strong>{result.items.slice(0, 10).map(item => <button type="button" key={item.id} onClick={() => { setQuery(item.name); setSearched(item.name); setPage(0); }}>{item.name}</button>)}</div>}
         {result.items.length === 0 ? <p>일치하는 표준 기술이 없습니다.</p> : <ul className="profile-skills__results" aria-label="기술 검색 결과">
           {result.items.map(item => {
             const has = owned.some(value => value.id === item.id);
@@ -158,5 +164,6 @@ export function ProfileSkills() {
         </button>}
       </>}
     {pending && <p role="status">기술 변경을 저장하고 있습니다.</p>}
-  </section>;
+    </section>
+  </>;
 }
