@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { authApi } from './api';
+import { authApi, profileApi } from './api';
 import { ApiError } from './api/client';
 import { anonymousRoute, sessionFailureKind } from './session';
 import type { CurrentUser } from './api/auth';
@@ -38,6 +38,7 @@ export function App() {
   const [location, setLocation] = useState(getPath);
   const path = location.split('?')[0];
   const [user, setUser] = useState<CurrentUser | null>();
+  const [nickname, setNickname] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [checking, setChecking] = useState(true);
   const [loggingOut, setLoggingOut] = useState(false);
@@ -87,6 +88,13 @@ export function App() {
     if (!user && anonymousRoute(path) === 'login') window.location.hash = '/login';
     if (user && publicPath) window.location.hash = '/';
   }, [checking, error, user, publicPath, path]);
+  useEffect(() => {
+    if (!user) { setNickname(null); return; }
+    const controller = new AbortController();
+    profileApi.get(controller.signal).then(profile => { if (!controller.signal.aborted) setNickname(profile.nickname); })
+      .catch(() => { if (!controller.signal.aborted) setNickname(null); });
+    return () => controller.abort();
+  }, [user?.id]);
 
   const title = publicPath ? path === '/register' ? '회원가입' : path === '/forgot-password' ? '비밀번호 찾기' : '로그인'
     : path === '/' ? user ? '대시보드' : '홈' : path === '/profile' ? '내 프로필' : path === '/states' ? '공통 상태 확인'
@@ -135,9 +143,12 @@ export function App() {
     sessionExpired={location === '/login?sessionExpired=1'}
     onLogin={value => { setUser(value); window.location.hash = '/'; }} />;
 
-  return <Layout title={title} path={path} user={user} onLogout={logout} loggingOut={loggingOut}>
+  return <Layout title={title} path={path} user={user} nickname={nickname} onLogout={logout} loggingOut={loggingOut}>
     {path === '/' ? <DashboardPage key={user.id} user={user} /> : path === '/profile' ? <div className="profile-page">
-      <ProfilePage key={`profile-${user.id}`} email={user.email} onEmailChange={email => setUser(current => current ? { ...current, email } : current)} />
+      <ProfilePage key={`profile-${user.id}`} email={user.email} onProfileSaved={profile => {
+        setNickname(profile.nickname);
+        setUser(current => current ? { ...current, email: profile.email } : current);
+      }} />
       <ProfileSkills key={`skills-${user.id}`} />
     </div> : path === '/projects' || path.startsWith('/projects/') ? <ProjectsPage key={`${user.id}:${path}`} location={location} />
       : path === '/todos' || path.startsWith('/todos/') ? <TodosPage key={`${user.id}:${path}`} location={location} />

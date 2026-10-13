@@ -44,7 +44,7 @@ await register(owner, email);
 assert.equal((await owner('/api/auth/me')).body.email, email);
 assert.equal((await owner('/api/me/profile')).status, 404);
 assert.equal((await owner('/api/me/profile', {
-  method: 'PUT', csrf: true, body: { email, name: 'S17 Tester', desiredRole: 'S17 Backend' },
+  method: 'PUT', csrf: true, body: { email, nickname: 'S17 Tester', desiredRole: 'S17 Backend' },
 })).status, 201);
 assert.equal((await owner('/api/me/profile')).body.desiredRole, 'S17 Backend');
 

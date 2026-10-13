@@ -15,13 +15,17 @@ import org.springframework.stereotype.Repository;
 public class JobMatchQueryRepository {
     private static final String RATES = """
             with owned as (
-              select skill_id from user_skill where user_id = :userId
+              select s.normalized_name as key from user_skill us join skill s on s.id=us.skill_id where us.user_id = :userId
               union
-              select ps.skill_id from project_skill ps join project p on p.id = ps.project_id where p.user_id = :userId
+              select s.normalized_name from project_skill ps join project p on p.id = ps.project_id
+                join skill s on s.id=ps.skill_id where p.user_id = :userId
+              union
+              select normalized_name from user_custom_skill where user_id=:userId
             ), rates as (
-              select js.job_posting_id, round(100.0 * count(o.skill_id) / count(*))::integer as rate
+              select js.job_posting_id, round(100.0 * count(o.key) / count(*))::integer as rate
               from job_skill js join ai_analysis a on a.job_posting_id = js.job_posting_id and a.status = 'COMPLETED'
-              left join owned o on o.skill_id = js.skill_id
+              join skill s on s.id=js.skill_id
+              left join owned o on o.key = s.normalized_name
               where exists (select 1 from owned)
               group by js.job_posting_id
             )

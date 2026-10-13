@@ -35,7 +35,7 @@ try {
     data: { email, password: 'password123' }, headers: { 'X-CSRF-TOKEN': await token() },
   })).status(), 200);
   assert.equal((await context.request.put(`${base}/api/me/profile`, {
-    data: { email, name: 'S17 Browser', desiredRole: 'S17 Backend' },
+    data: { email, nickname: 'S17 Browser', desiredRole: 'S17 Backend' },
     headers: { 'X-CSRF-TOKEN': await token() },
   })).status(), 201);
 

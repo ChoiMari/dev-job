@@ -70,12 +70,12 @@ S03 물리 매핑: `User`는 `users` 테이블로 구현한다. `id`는 BIGINT i
 
 B01에서는 `users.credential_version` BIGINT NOT NULL DEFAULT 0을 V12 migration으로 추가한다. 비밀번호 변경 트랜잭션에서 사용자 행을 잠그고 BCrypt 해시 갱신과 버전 증가를 함께 커밋한다. 로그인한 세션에는 당시 버전을 기록하며, 보호 API 요청마다 저장된 버전과 비교한다. 기존 세션에 버전 기록이 없으면 0으로 간주하므로 첫 변경 이후에는 거절된다. 세션 자체는 계속 메모리에 두며 별도 세션 테이블이나 비밀번호 이력은 만들지 않는다.
 
-S04 물리 매핑: `V3__create_profiles.sql`은 `profiles`를 새로 만들고 `user_id`의 FK·UNIQUE로 사용자당 0..1건을 보장한다. 이메일은 `users.email`에만 저장한다. 프로필은 `id` BIGINT identity, `name` VARCHAR(100) 필수, 희망 직무·경력·지역 각 VARCHAR(100), 자기소개 VARCHAR(2000), 학력·자격증 각 VARCHAR(1000), `updated_at` TIMESTAMP WITH TIME ZONE 필수다. 기존 테이블이나 데이터를 변경하지 않는다.
+S04 물리 매핑: `V3__create_profiles.sql`은 `profiles`를 새로 만들고 `user_id`의 FK·UNIQUE로 사용자당 0..1건을 보장한다. 이메일은 `users.email`에만 저장한다. 프로필은 `id` BIGINT identity, `name` VARCHAR(100) 필수(현재 API·Entity에서는 닉네임으로 사용), 희망 직무·경력·지역 각 VARCHAR(100), 자기소개 VARCHAR(2000), 학력·자격증 각 VARCHAR(1000), `updated_at` TIMESTAMP WITH TIME ZONE 필수다. 기존 테이블이나 데이터를 변경하지 않는다.
 
 | 엔티티 | 목적 | 주요 컬럼 및 키 | 핵심 제약 |
 | --- | --- | --- | --- |
 | `User` | 계정과 인증 주체 | `id` PK, `email`, `password_hash`, `created_at` | `email` 필수·유일, 비밀번호 원문 저장 금지 |
-| `Profile` | 사용자 취업 프로필 | `id` PK, `user_id` FK, `name`, `desired_role`, `career_level`, `desired_location`, `introduction`, `education`, `certifications`, `updated_at` | `user_id` 필수·유일; 초기 설정 전에는 행이 없어도 됨. 학력·자격증은 사용자 흐름의 선택 입력을 별도 엔티티 없이 담음 |
+| `Profile` | 사용자 취업 프로필 | `id` PK, `user_id` FK, `name`(닉네임), `desired_role`, `career_level`, `desired_location`, `introduction`, `education`, `certifications`, `updated_at` | `user_id` 필수·유일; 초기 설정 전에는 행이 없어도 됨. 학력·자격증은 사용자 흐름의 선택 입력을 별도 엔티티 없이 담음 |
 | `Skill` | 표준 기술명 | `id` PK, `name` | 정규화한 기술명 기준 유일 |
 | `SkillAlias` | 여러 입력 이름을 표준 기술에 연결 | `id` PK, `skill_id` FK, `alias_name` | `skill_id`, `alias_name` 필수; 정규화한 별칭은 하나의 `Skill`만 가리킴 |
 | `UserSkill` | 사용자가 보유한 기술 | `id` PK, `user_id` FK, `skill_id` FK, `created_at`, `proficiency_level`, `experience_months` | `(user_id, skill_id)` 유일; 숙련도 1~5 또는 null, 경험 개월 0~600 또는 null |
@@ -210,3 +210,15 @@ V15__create_interested_companies.sql은 interested_company만 추가한다. id B
 애플리케이션 서비스가 사용자 행을 잠그고 FK 자식부터 삭제한다. 직접 `user_id`를 가진 `semantic_recommendation`, `notification`, `notification_preference`, `interview_schedule`, `application`, `resume`, `cover_letter`, `personal_saved_job`, `project`, `bookmark`, `user_skill`, `profiles`, `personal_todo`, `interested_company`, `personal_company_tag`, `learning_goal`, `character_activity`, `character_reward`, `character_equipment` 및 최종 `users` 행을 제거한다. 간접 소유인 `document_analysis`, `resume_version`, `cover_letter_version`, `application_status_history`, `personal_saved_job_analysis`, `project_skill`, `interested_company_tag`도 부모를 통해 소유자를 한정해 먼저 제거한다. 총 27개 테이블이며 `deleted_at`이 있는 행도 제외하지 않는다. 영향 안내의 리소스 코드와 건수 조회는 이 삭제 대상 목록을 공유한다.
 
 모든 SQL은 하나의 DB 트랜잭션에서 실행되므로 중간 FK·DB 실패 시 전체 롤백한다. 삭제 성공 후 현재 세션은 종료하고, 다른 세션은 인증 필터가 `users` 행 부재를 확인해 무효화한다. 로그인은 사용자 행 잠금으로 삭제와 직렬화한다. 공용 `job_posting`·`company`·`job_source`·`job_collection_run`, `ai_analysis`·`job_skill`·공고 전형/첨부 메타데이터, `skill`·`skill_alias` 및 다른 사용자 행은 삭제하지 않는다. 운영 DB의 개인 기록은 즉시 제거하고 앱 내 복원 기능은 없다. DB 백업과 이미 전송된 AI 제공자 사본은 별도 보존 정책에 따르며 이 트랜잭션의 대상이 아니다.
+
+
+## V37 계정별 기술과 고정 목록
+
+`skill.is_system BOOLEAN NOT NULL DEFAULT FALSE`를 더하고 승인된 66개 이름을 insert/upsert하여 `TRUE`로 지정한다. V37 적용 단계에서는 기존 공용 행을 유지한다. 고정 기술 별칭은 충돌하지 않는 정규화 이름만 추가한다.
+
+`user_custom_skill(id, user_id, name, normalized_name, proficiency_level, created_at)`는 계정별 직접 등록 기술이다. `(user_id, normalized_name)` UNIQUE, 사용자 FK, 숙련도 1~5 CHECK를 둔다. 이름을 수정해도 `job_skill`의 과거 분석은 변경하지 않으며 비교 시 정규화 이름으로 일치시킨다.
+
+`user_ai_analysis_request(user_id, job_posting_id)`는 공용 공고 AI 분석을 명시적으로 요청한 계정을 기록한다. `user_ai_skill_candidate(id, user_id, name, normalized_name, source_job_posting_id, source_personal_saved_job_id, created_at)`는 분석에서 발견된 후보를 계정별로 저장한다. `(user_id, normalized_name)` UNIQUE이며 보유 기술과 별개다. 계정 삭제에서는 후보·요청·사용자 기술을 각각 삭제한다. 공고 출처 FK가 삭제되면 후보의 출처 연결만 비운다.
+`V38__custom_skill_legacy_experience.sql`은 계정별 기술에 nullable `experience_months`와 0~600 CHECK를 더한다. 기존 비고정 보유 기술을 소유자가 명시적으로 수정할 때 보유 관계의 숙련도와 과거 경험 개월 값을 계정별 기술로 복사한 후 원래 보유 관계를 제거한다. 전환은 한 트랜잭션에서 수행하며 기존 공고 분석 기록과 다른 사용자의 행은 유지한다.
+
+`V39__fixed_skill_catalog_only.sql`은 고정 기술이 정확히 66개인지 확인한 후 과거 비고정 `skill` 행과 연결 별칭·`job_skill`을 제거한다. 비고정 기술에 `user_skill`·`project_skill`·`learning_goal` 참조가 있으면 데이터 손실 방지를 위해 migration을 중단한다. `ai_analysis.result_json` 원문과 계정별 기술·AI 후보는 유지한다. DB 트리거는 이후 비고정 공용 기술의 삽입·갱신을 거부한다. 분석 중 고정 목록 밖에서 추출된 이름은 공용 `skill` 대신 분석 JSON과 요청자별 후보에만 남는다.

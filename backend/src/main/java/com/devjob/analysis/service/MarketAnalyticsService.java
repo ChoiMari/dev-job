@@ -15,6 +15,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +24,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class MarketAnalyticsService {
     private static final int MIN_SAMPLE = 10;
+    private static final Pattern YEAR_RANGE = Pattern.compile("(?<!\\d)(\\d{1,2})년?[~∼～\\-–](\\d{1,2})년");
+    private static final Pattern YEAR_COUNT = Pattern.compile("(?<!\\d)(\\d{1,2})년");
     private final EntityManager entities;
 
     public MarketAnalyticsService(EntityManager entities) { this.entities = entities; }
@@ -102,13 +106,36 @@ public class MarketAnalyticsService {
     }
 
     static String career(String raw) {
-        if (raw == null || raw.isBlank()) return "UNKNOWN";
-        String value = raw.toLowerCase(Locale.ROOT).replace(" ", "");
-        if (value.contains("미상") || value.contains("미정") || value.contains("정보없음")) return "UNKNOWN";
-        if (value.contains("무관") || value.contains("신입/경력") || value.contains("경력/신입")) return "ANY";
+        if (raw == null || raw.isBlank()) return "UNCLASSIFIED";
+        String value = raw.toLowerCase(Locale.ROOT).replaceAll("\\s+", "");
+        if (value.contains("무관") || value.contains("미상") || value.contains("미정")
+                || value.contains("정보없음") || value.contains("신입/경력") || value.contains("경력/신입")
+                || value.contains("신입및경력") || value.contains("신입·경력")
+                || value.contains("신입") && value.contains("경력")) return "UNCLASSIFIED";
+        Matcher range = YEAR_RANGE.matcher(value);
+        if (range.find()) {
+            int from = Integer.parseInt(range.group(1));
+            int to = Integer.parseInt(range.group(2));
+            return from <= to && band(from).equals(band(to)) ? band(from) : "UNCLASSIFIED";
+        }
+        Matcher years = YEAR_COUNT.matcher(value);
+        if (years.find()) {
+            int count = Integer.parseInt(years.group(1));
+            if (value.contains("이상") || value.contains("초과")) return count >= 8 ? "SENIOR" : "UNCLASSIFIED";
+            if (value.contains("이하") || value.contains("미만")) return "UNCLASSIFIED";
+            return value.contains("신입") && count > 0 ? "UNCLASSIFIED" : band(count);
+        }
         if (value.contains("신입")) return "ENTRY";
-        if (value.contains("경력") || value.matches(".*\\d+년.*")) return "EXPERIENCED";
-        return "OTHER";
+        if (value.contains("주니어")) return "JUNIOR";
+        if (value.contains("미들")) return "MIDDLE";
+        if (value.contains("시니어")) return "SENIOR";
+        return "UNCLASSIFIED";
+    }
+
+    private static String band(int years) {
+        if (years == 0) return "ENTRY";
+        if (years <= 3) return "JUNIOR";
+        return years <= 7 ? "MIDDLE" : "SENIOR";
     }
 
     static String location(String raw) {

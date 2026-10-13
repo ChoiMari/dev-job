@@ -66,6 +66,8 @@
 .saved-analysis--interactive:hover, .saved-analysis--interactive:focus-visible { border-color: #bcb9f5; background: linear-gradient(90deg, #ecf8f0, #f1eeff); }
 .saved-analysis-detail-hint { display: inline-flex; align-items: center; gap: 2px; color: #5541c0; font-size: .7rem; font-weight: 750; white-space: nowrap; }
 .saved-analysis-detail-hint .lucide-icon { width: 13px; height: 13px; }
+.saved-analysis-completed-actions { display: grid; justify-items: end; gap: 4px; }
+.saved-analysis-completed-actions small { color: #147b4d; font-size: .66rem; }
 .saved-analysis-copy { min-width: 0; }
 .saved-analysis-heading { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
 .saved-analysis-heading strong { color: #181a50; font-size: .8rem; }
@@ -128,7 +130,8 @@
   .jobs-page--saved > .saved-page-content { padding: 14px !important; }
   .saved-analysis { grid-template-columns: 50px minmax(0, 1fr); }
   .saved-analysis > img { width: 48px; height: 48px; }
-  .saved-analysis-action, .saved-analysis-detail-hint { grid-column: 2; justify-self: start; }
+  .saved-analysis-action, .saved-analysis-detail-hint, .saved-analysis-completed-actions { grid-column: 2; justify-self: start; }
+  .saved-analysis-completed-actions { justify-items: start; }
 }
 @media (max-width: 520px) {
   .saved-toolbar-search { grid-template-columns: auto minmax(0, 1fr); }

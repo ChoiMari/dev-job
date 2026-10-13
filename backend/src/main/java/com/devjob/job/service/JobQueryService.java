@@ -10,6 +10,7 @@ import com.devjob.job.repository.JobPostingRepository;
 import com.devjob.job.repository.JobMatchQueryRepository;
 import com.devjob.job.repository.JobRecruitmentDetailRepository;
 import com.devjob.analysis.entity.JobSkill;
+import com.devjob.skill.service.AccountSkillService;
 import com.devjob.application.entity.Application;
 import com.devjob.application.repository.ApplicationRepository;
 import com.devjob.application.service.ApplicationService;
@@ -35,12 +36,14 @@ public class JobQueryService {
     private final JobSkillRepository jobSkills;
     private final JobMatchQueryRepository matchQueries;
     private final JobRecruitmentDetailRepository recruitmentDetails;
+    private final AccountSkillService accountSkills;
     public JobQueryService(JobPostingRepository jobs, BookmarkRepository bookmarks, ApplicationRepository applications,
             AIAnalysisRepository analyses, JobSkillRepository jobSkills, JobMatchQueryRepository matchQueries,
-            JobRecruitmentDetailRepository recruitmentDetails) {
+            JobRecruitmentDetailRepository recruitmentDetails, AccountSkillService accountSkills) {
         this.jobs = jobs; this.bookmarks = bookmarks; this.applications = applications;
         this.analyses = analyses; this.jobSkills = jobSkills; this.matchQueries = matchQueries;
         this.recruitmentDetails = recruitmentDetails;
+        this.accountSkills = accountSkills;
     }
 
     public JobPage search(Long userId, JobQuery input) {
@@ -132,6 +135,7 @@ public class JobQueryService {
         var job = jobs.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         var owned = applications.findByUserIdAndJobIdInAndDeletedAtIsNull(userId, java.util.List.of(id));
         var analysis = analyses.findByJobId(id).orElse(null);
+        if (analysis != null && !accountSkills.hasRequestedAnalysis(userId, id)) analysis = null;
         return JobDetail.from(job, bookmarks.existsByUserIdAndJobId(userId, id),
                 owned.isEmpty() ? null : owned.get(0).getCurrentStatus().name(), analysis,
                 analysis != null && analysis.getStatus() == AIAnalysis.Status.COMPLETED ? jobSkills.findForJob(id) : java.util.List.of(),

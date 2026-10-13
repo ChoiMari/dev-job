@@ -27,16 +27,13 @@ public class ProfileService {
     @Transactional
     public SavedProfile put(Long userId, ProfileInput input) {
         var user = users.findById(userId).orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
-        if (!user.getEmail().equals(input.email()) && users.existsByEmail(input.email())) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT);
-        }
+        if (!user.getEmail().equals(input.email()))
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "이메일은 변경할 수 없습니다.");
         var existing = profiles.findByUserId(userId);
         var profile = existing.orElseGet(() -> new Profile(user));
-        profile.update(input.name(), input.desiredRole(), input.careerLevel(), input.desiredLocation(),
+        profile.update(input.nickname(), input.desiredRole(), input.careerLevel(), input.desiredLocation(),
                 input.introduction(), input.education(), input.certifications());
-        user.changeEmail(input.email());
         try {
-            users.saveAndFlush(user);
             profile = profiles.saveAndFlush(profile);
         } catch (DataIntegrityViolationException exception) {
             throw new ResponseStatusException(HttpStatus.CONFLICT);

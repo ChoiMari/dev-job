@@ -1,5 +1,5 @@
-.profile-skills { grid-column: 2; margin: 0; }
-.profile-skills__owned { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin: 0; padding: 0; list-style: none; }
+.profile-skills { display: flex; flex-direction: column; grid-column: 2; margin: 0; }
+.profile-skills__owned { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr)); gap: 6px; margin: 0; padding: 0; list-style: none; }
 .profile-skills__owned li { min-width: 0; padding: 7px; border: 1px solid #abc7f5; border-radius: 6px; background: #f8fbff; box-shadow: inset 1px 1px 0 #fff; }
 .profile-skills__owned-heading { display: flex; align-items: center; gap: 5px; min-width: 0; }
 .profile-skill-mark { display: grid; place-items: center; width: 30px; height: 30px; flex: none; border: 1px solid #aac5f3; border-radius: 5px; background: #e4ecff; color: #214ba5; font-size: .68rem; font-weight: 900; letter-spacing: -.05em; }
@@ -20,14 +20,13 @@
 .profile-skills__editor-actions { display: flex; flex-wrap: wrap; gap: 4px; }
 .profile-page .profile-skills__editor-actions button { min-height: 28px; padding: 3px 6px; }
 .profile-skills__delete-confirm { margin-top: 8px; }
-.profile-skills__delete-confirm p { margin: 0 0 6px; color: #8e3745; font-size: .7rem; overflow-wrap: anywhere; }
 .profile-page .profile-skills__delete-confirm button { min-height: 28px; margin: 0 4px 4px 0; padding: 3px 6px; }
 .profile-skill-search { grid-column: 1 / -1; }
 .profile-skills__search { margin: 0; }
 .profile-skills__search > div { display: flex; gap: 8px; }
 .profile-skills__search input { min-width: 0; min-height: 38px; flex: 1; padding: 8px 12px; border: 1px solid #9bbbee; border-radius: 5px; background: #fff; color: #172e67; font: inherit; font-size: .78rem; }
 .profile-skills__search input:focus { outline: 2px solid #4387fa; outline-offset: 1px; }
-.profile-page .profile-skills__search button { min-width: 68px; background: #2c79ec; color: #fff; border-color: #2c79ec; }
+.profile-page .profile-skills__search button { min-width: 68px; background: #6650ef; color: #fff; border-color: #6650ef; }
 .profile-skills__search p { margin: 6px 0 0; color: #6078ab; font-size: .7rem; }
 .profile-skill-suggestions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 8px; }
 .profile-skill-suggestions strong { margin-right: 2px; color: #2b4380; font-size: .7rem; }
@@ -39,4 +38,41 @@
 .profile-skills__pagination { display: flex; align-items: center; gap: 8px; margin: 10px 0; font-size: .72rem; }
 .profile-skill-search > p[role="status"] { margin: 8px 0 0; color: #5270a9; font-size: .72rem; }
 @media (max-width: 760px) { .profile-skills { grid-column: 1 / -1; } }
-@media (max-width: 480px) { .profile-skills__owned, .profile-skills__results { grid-template-columns: repeat(2, minmax(0, 1fr)); } .profile-skills__search > div { flex-wrap: wrap; } .profile-skills__search input { flex-basis: 100%; } }
+@media (max-width: 480px) { .profile-skills__results { grid-template-columns: repeat(2, minmax(0, 1fr)); } .profile-skills__search > div { flex-wrap: wrap; } .profile-skills__search input { flex-basis: 100%; } }
+.profile-skills__empty { display: grid; flex: 1; align-content: center; justify-items: center; gap: 4px; min-height: 260px; padding: 20px 12px 24px; text-align: center; }
+.profile-skills__empty img { width: 112px; height: 112px; object-fit: contain; }
+.profile-skills__empty strong { color: #181a50; font-size: 1rem; }
+.profile-skills__empty p { margin: 0; color: #69709b; font-size: .8rem; }
+.profile-skills__owned li, .profile-skills__results li { border-color: #e3e5f8; background: #fff; }
+.profile-skill-mark { border-color: #d8ddf5; background: #f1efff; color: #5541c0; }
+.profile-skill-summary strong { color: #23265a; }
+.profile-skill-summary small { color: #69709b; }
+.profile-skills__search input, .profile-skills__editor select { border-color: #d8ddf5; border-radius: 8px; color: #23265a; }
+.profile-skills__search input:focus { outline-color: #6650ef; }
+.profile-skills__editor select:focus { outline: none; box-shadow: none; border-color: #d8ddf5; }
+.profile-skill-dialog { width: min(360px, calc(100vw - 32px)); max-width: none; padding: 20px; border: 1px solid #d8ddf5; border-radius: 14px; background: #fff; color: #23265a; box-shadow: 0 18px 60px #181a5040; }
+.profile-skill-dialog::backdrop { background: #141b3d99; }
+.profile-skill-dialog form { display: grid; gap: 10px; }
+.profile-skill-dialog h2 { margin: 0; font-size: 1rem; }
+.profile-skill-dialog p { margin: 0; color: #69709b; font-size: .75rem; }
+.profile-skill-dialog label { margin-top: 4px; font-size: .76rem; font-weight: 700; }
+.profile-skill-dialog select { width: 100%; min-height: 40px; padding: 6px 10px; border: 1px solid #d8ddf5; border-radius: 8px; background: #fff; color: #23265a; font: inherit; }
+.profile-skill-dialog select:focus { outline: none; box-shadow: none; border-color: #d8ddf5; }
+.profile-skill-dialog__actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px; }
+.profile-page .profile-skill-dialog__actions button[type="submit"] { border-color: #6650ef; background: #6650ef; color: #fff; }
+.profile-page .profile-skill-suggestions button { border-color: #ded9fa; background: #f1efff; color: #5541c0; }
+.profile-custom-skills { margin-top: 16px; }
+.profile-custom-skills h3 { margin: 0 0 8px; color: #23265a; font-size: .84rem; }
+.profile-ai-candidates ul { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); gap: 7px; margin: 0; padding: 0; list-style: none; }
+.profile-ai-candidates li { display: flex; align-items: center; gap: 8px; min-width: 0; padding: 8px; border: 1px solid #e3e5f8; border-radius: 8px; }
+.profile-ai-candidates { grid-column: 1 / -1; min-width: 0; padding: 20px; border: 1px solid #e3e5f8; border-radius: 12px; background: #fff; box-shadow: 0 4px 17px #465bc50b; }
+.profile-ai-candidates > p { margin: 0 0 12px; color: #69709b; font-size: .78rem; }
+.profile-ai-candidates__empty { display: grid; justify-items: center; gap: 7px; padding: 20px; text-align: center; }
+.profile-ai-candidates__empty img { width: 112px; height: 112px; object-fit: contain; image-rendering: pixelated; }
+.profile-ai-candidates__empty strong { color: #23265a; font-size: .9rem; }
+.profile-ai-candidates__empty p { margin: 0; color: #69709b; font-size: .76rem; }
+.profile-ai-candidates li > span:nth-child(2) { flex: 1; min-width: 0; color: #23265a; font-size: .76rem; overflow-wrap: anywhere; }
+.profile-ai-badge { padding: 3px 6px; border-radius: 5px; background: #f1efff; color: #5541c0; font-size: .66rem; font-weight: 800; }
+.profile-page .profile-icon-button { display: inline-flex; align-items: center; justify-content: center; width: 30px; min-width: 30px; min-height: 30px; padding: 5px; }
+.profile-page .profile-icon-button .lucide-icon, .profile-page .profile-skills__results button .lucide-icon { width: 16px; height: 16px; }
+@media (max-width: 480px) { .profile-ai-candidates li { flex-wrap: wrap; } }

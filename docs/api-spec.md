@@ -43,9 +43,9 @@ S03 인증 계약:
 | 계정 삭제 영향 `GET /api/auth/me/deletion-impact` | 예 | 없음 | 없음 | `DeletionImpact` · `200` | 인증 없음 `401` |
 | 계정 삭제 `DELETE /api/auth/me` | 예 + CSRF | 없음 | `{ "currentPassword": "...", "confirmation": "계정 삭제" }` | 본문 없음 · `204`, 현재 세션 무효화 | 입력 오류 `400`, 재인증 실패 `401`, CSRF 오류 `403`, 처리 실패 `500`(전체 롤백) |
 | 내 프로필 조회 `GET /api/me/profile` | 예 | 없음 | 없음 | 아래 `Profile` · `200`; 프로필 미설정 시 `404` | 인증 없음 `401` |
-| 내 프로필 생성·수정 `PUT /api/me/profile` | 예 | 없음 | `Profile` 입력 필드 | 아래 `Profile` · 최초 `201`, 수정 `200` | 값 오류 `400`, 인증 없음 `401`, 이메일 중복·동시 생성 충돌 `409` |
+| 내 프로필 생성·수정 `PUT /api/me/profile` | 예 | 없음 | `Profile` 입력 필드 | 아래 `Profile` · 최초 `201`, 수정 `200` | 값 오류·계정 이메일 변경 시도 `400`, 인증 없음 `401`, 동시 생성 충돌 `409` |
 
-`Profile` 입력 필드: `email`, `name`, `desiredRole`, `careerLevel`, `desiredLocation`, `introduction`, `education`, `certifications`. `email`과 `name`은 필수, 나머지는 선택이다. 응답은 `{ "id": 1, "email": "user@example.com", "name": "홍길동", "desiredRole": "백엔드 개발자", "careerLevel": "신입", "desiredLocation": "서울", "introduction": null, "education": null, "certifications": null }` 형태다. 이메일은 `User.email`을 조회·갱신하고 `Profile`에 중복 저장하지 않는다. `PUT`은 같은 사용자 프로필 한 건을 생성 또는 교체하며, 선택 필드는 누락 시 `null`로 본다.
+`Profile` 입력 필드: `email`, `nickname`, `desiredRole`, `careerLevel`, `desiredLocation`, `introduction`, `education`, `certifications`. `email`과 `nickname`은 필수, 나머지는 선택이다. 응답은 `{ "id": 1, "email": "user@example.com", "nickname": "길동", "desiredRole": "백엔드 개발자", "careerLevel": "신입", "desiredLocation": "서울", "introduction": null, "education": null, "certifications": null }` 형태다. 기존 DB `profiles.name`은 닉네임 저장 컬럼으로 사용한다. 이메일은 로그인 ID인 `User.email`에서 읽고 `Profile`에 중복 저장하지 않는다. `PUT`의 이메일은 현재 로그인 계정의 이메일과 같아야 하며 변경은 `400`으로 거절한다. `PUT`은 같은 사용자 프로필 한 건을 생성 또는 교체하며, 선택 필드는 누락 시 `null`로 본다. 전환 기간의 프런트는 구버전 서버가 반환하는 `name`도 닉네임으로 읽고 저장 요청에 `name`을 함께 보내지만, 새 서버의 계약은 `nickname`이다. 화면에서는 자기소개를 한 줄·100자로 제한하고 자격증 태그를 줄바꿈으로 직렬화하지만 API의 기존 저장 길이는 유지한다.
 
 S04 구현: 이메일은 앞뒤 공백 제거·소문자 정규화 후 최대 254자와 이메일 형식을 검증한다. 이름은 공백을 제거한 필수값(최대 100자)이다. 선택 문자열은 공백뿐이면 `null`로 저장하며 희망 직무·경력 수준·희망 지역은 각 100자, 자기소개 2000자, 학력·자격증은 각 1000자까지 허용한다. 사용자 ID는 세션에서만 가져오며 요청에서 다른 사용자를 지정할 수 없다. `PUT`에도 `GET /api/auth/csrf`의 `X-CSRF-TOKEN`이 필요하다.
 
@@ -112,7 +112,7 @@ S05 구현 계약:
 
 공고 목록의 `minMatchRate`는 0~100이며 계산 가능한 공고에만 적용하고 분석 전 공고는 해당 필터에서 제외한다. `applicationStatus`는 현재 사용자의 지원 상태로 필터링한다. `sort=matchRate`에서도 계산할 수 없는 공고는 뒤에 둔다.
 
-`JobDetail`은 `JobSummary`의 필드에 `description`, `postedDate`, `sourceUrl`, `requiredSkills: JobSkill[]`, `preferredSkills: JobSkill[]`, `analysis: { "status": "PENDING|COMPLETED|FAILED" } | null`을 추가한다. 분석 전·실패 상태여도 원문과 기본 정보는 반환한다. `source`는 `JobSource.code`다.
+`JobDetail`은 `JobSummary`의 필드에 `description`, `postedDate`, `sourceUrl`, `requiredSkills: JobSkill[]`, `preferredSkills: JobSkill[]`, `analysis: { "status": "PENDING|COMPLETED|FAILED" } | null`을 추가한다. `analysis` 상태와 추출 기술은 현재 계정이 분석 POST를 요청한 공고에만 표시한다. 공용 완료 결과가 있어도 현재 계정이 아직 요청하지 않았다면 `analysis: null`과 빈 기술 배열을 반환한다. 분석 전·실패 상태여도 원문과 기본 정보는 반환한다. `source`는 `JobSource.code`다.
 
 청년일자리 출처(`source: "ALIO_RECRUITMENT"`)의 상세에는 `recruitment: { "steps": [{ "externalId": 1, "sortOrder": 1, "title": "서류", "openings": 2, "applicants": null, "competitionRate": null, "eventDate": null }], "attachments": [{ "externalId": 10, "sortOrder": 1, "name": "공고.pdf", "type": "A", "url": "https://..." }] }`가 추가된다. 전형 단계와 첨부파일 메타정보가 없는 ALIO 공고는 빈 배열이며 다른 출처는 `recruitment: null`이다. 첨부 URL은 HTTP(S)만 반환하고 별도 파일 다운로드 API는 없다.
 
@@ -122,6 +122,9 @@ B11 관리자 수동 배치는 `POST /api/admin/jobs/collections/alio`(본문 �
 ALIO 재수집으로 제목이나 분석 입력 텍스트가 달라지면 이전 완료 분석은 `FAILED`로 무효화되고 추출 기술은 삭제된다. 사용자가 기존 분석 POST를 다시 호출하면 변경된 공고를 재분석한다.
 
 `AIAnalysis`: `{ "status": "COMPLETED", "requiredSkills": [Skill], "preferredSkills": [Skill], "analyzedAt": "2026-10-05T10:00:00+09:00" }`. `PENDING`에는 기술 목록을 빈 배열로, `FAILED`에는 기술 목록을 빈 배열과 일반적인 `failureReason`을 반환한다. 검증되지 않은 LLM 원문이나 Secret은 반환하지 않는다. 이미 완료된 결과는 다시 호출하지 않고 재사용한다. 실패 상태에서 다시 POST하면 같은 분석 대상을 재시도한다.
+
+로그인 사용자가 본인 관심 공고에서 `AI 분석하기`를 눌러 POST하면, 이미 완료된 공용 분석이 있는 경우 저장된 결과를 `200`으로 재사용하고 기술을 그 계정의 AI 발견 기술 후보에 반영한다. 이 경우 외부 AI를 다시 호출하지 않는다. GET은 결과 조회만 하며 계정별 후보를 변경하지 않는다.
+관심 공고 목록의 수집 공고 `analysisStatus`도 현재 계정의 분석 요청 관계가 있을 때만 표시한다. 따라서 다른 계정의 완료 분석을 처음 보는 사용자는 평소와 같은 `AI 분석하기` 버튼을 보며, 클릭 후 완료 결과를 확인한다.
 
 S12 구현 계약: `POST`는 서버 세션·CSRF가 필요하며 작업을 비동기로 접수해 `202 PENDING`을 반환한다. 이미 진행 중인 요청도 같은 행의 `202 PENDING`, 완료 결과는 추가 호출 없이 `200 COMPLETED`다. `GET`은 행이 없으면 `404`; 실패 시 `FAILED`, 빈 기술 배열, 일반적인 `failureReason`을 반환한다. `analyzedAt`과 `failureReason`은 상태에 맞지 않으면 `null`이다. 5분 넘게 진행 중인 행은 다음 명시적 `POST`에서 재접수할 수 있다. 출력은 단일 `skills` 배열(JSON 객체)이며 항목은 기술명과 `REQUIRED`/`PREFERRED` 유형만 허용한다. 검증된 미등록 기술은 공통 Skill·표준명 별칭으로 생성하고 정규화된 ID를 저장한다. 같은 기술이 중복되면 `REQUIRED`가 우선한다. 분석 실패는 공고 상세·목록과 북마크·지원 API의 조회를 막지 않는다.
 
@@ -207,7 +210,7 @@ B06 면접 일정은 지원 건 연결이 선택인 별도 리소스다. [확장
 
 `SkillDemand`: `{ "skill": Skill, "jobCount": 136, "analyzedJobCount": 200, "ratio": 0.68 }`. 완료 분석 공고를 모수로 집계하고 표본 수를 함께 반환한다. S14 응답은 `{ "items": [SkillDemand], "page": 0, "size": 20, "totalElements": 12, "analyzedJobCount": 200 }`이며 기술 건수 내림차순, 기술명·ID 오름차순으로 정렬한다. `dateFrom`·`dateTo`는 공고 게시일의 양 끝을 포함하고, `desiredRole`은 공고 제목의 대소문자 무시 부분 일치 필터다. 날짜가 없는 공고는 기간 필터가 있을 때 제외한다. 필터는 선택 사항이며 `page`는 0부터, `size`는 기본 20·최대 100이다. 기간 역전·잘못된 날짜·페이지 값·200자를 넘는 직무명은 `400`이다. 조건에 맞는 분석이 없으면 `items: []`, `totalElements: 0`, `analyzedJobCount: 0`을 반환한다.
 
-B08은 별도 `GET /api/analytics/career-levels`, `/locations`, `/skills/trends`를 추가한다. 경력·지역 분포는 분석 여부와 무관한 공용 수집 공고 전체, 기술 추이는 게시일이 있는 완료 분석 공고가 모수다. 기존 `GET /api/analytics/skills` 계약은 유지한다. 필터, 미상·중복·출처와 비율 분모, 응답 예시는 [확장 API 명세 B08](extension-api-spec.md#b08--채용시장-확장-분석--ext-04-확정)을 따른다.
+B08은 별도 `GET /api/analytics/career-levels`, `/locations`, `/skills/trends`를 추가한다. 경력·지역 분포는 분석 여부와 무관한 공용 수집 공고 전체, 기술 추이는 게시일이 있는 완료 분석 공고가 모수다. 경력 분포 응답은 신입·주니어(1~3년)·미들(4~7년)·시니어(8년 이상)와 분류 불가를 구분한다. 기존 `GET /api/analytics/skills` 계약은 유지한다. 필터, 미상·중복·출처와 비율 분모, 응답 예시는 [확장 API 명세 B08](extension-api-spec.md#b08--채용시장-확장-분석--ext-04-확정)을 따른다.
 
 `SkillGap`: `{ "available": true, "desiredRole": "백엔드 개발자", "analyzedJobCount": 100, "provisional": false, "totalMissingSkills": 8, "items": [{ "skill": Skill, "demandJobCount": 82, "requiredJobCount": 74, "preferredJobCount": 8, "demandRatio": 0.82, "priorityScore": 78.0 }], "reason": null }`. 사용자·프로젝트 기술의 합집합에 없는 기술만 반환한다. `desiredRole` 요청값을 우선 사용하고 없으면 프로필 희망 직무를 사용한다. 둘 다 없으면 모든 완료 분석 공고를 비교한다. 직무명은 S14와 같이 공고 제목의 대소문자 무시 부분 일치이며 200자 초과는 `400`이다. `analyzedJobCount`는 해당 조건의 완료 분석 공고 수, `demandJobCount = requiredJobCount + preferredJobCount`, `demandRatio = demandJobCount / analyzedJobCount`, `priorityScore = 100 × (requiredJobCount + 0.5 × preferredJobCount) / analyzedJobCount`다. 점수 내림차순, 등장 건수 내림차순, 기술명·ID 오름차순으로 정렬한 부족 기술 상위 5개를 `items`에 반환하고 전체 부족 기술 수를 `totalMissingSkills`로 반환한다. 점수는 순위 계산용이며 화면에는 노출하지 않는다. 완료 분석 공고가 5건 미만이면 `available: false`, `items: []`, `reason: "INSUFFICIENT_SAMPLE"`로 순위를 보류한다. 5~19건이면 `provisional: true`로 표본 부족을 알리고 20건 이상이면 `false`다. 보유 기술이 없으면 `USER_SKILLS_EMPTY`, 비교 가능한 공고 기술이 없으면 `NO_JOB_SKILLS`를 `reason`으로 반환한다. 데이터 부족 시 `totalMissingSkills: 0`, `provisional: false`다. 등급·별도 결과 테이블·AI 추천 모델은 사용하지 않는다.
 
@@ -224,3 +227,14 @@ B07 학습 목표의 생성·목록·상세·수정·삭제·완료 상태 API�
 B09 캐릭터 카탈로그·슬롯별 장착 API와 B10 성장·EXP·퀘스트·보상 수령 API의 구현 계약은 [확장 API 명세 B09~B10](extension-api-spec.md#b09--슬롯별-꾸미기--ext-06-0102-확정)을 따른다. `GET /api/me/character`는 기존 외형 필드를 유지하고 `progress`를 추가한다. `GET /api/character/items`는 로그인 사용자의 획득 여부로 `available`을 계산한다. 개인 Todo 완료 API는 서버 검증된 최초 완료에만 B10 EXP 기록을 남기며 요청 본문에 EXP 수치를 받지 않는다.
 
 이력서·자기소개서 분석과 의미 기반 추천은 이 명세의 **MVP 엔드포인트**와 별도 확장 기능이다. B14 원문 기반 비교·추천 POST·GET의 요청/응답/오류는 [확장 API 명세 B14](extension-api-spec.md#b14--의미-기반-비교추천--ext-08-03)를 따른다. B14는 기존 4절 `matchRate`와 `GET /api/jobs/{jobId}/match`, 6절의 규칙 기반 대시보드 추천을 변경하지 않는다. B13 앱 내 알림 설정·목록·읽음 API는 [확장 API 명세 B13](extension-api-spec.md#b13--앱-내-알림--ext-01-04-확정)을 따른다. 개인 할 일 B03, 면접 일정 B06, 학습 목표 B07의 확정 계약은 [확장 API 명세](extension-api-spec.md)를 따른다. EXT-01~08 전체의 Backend 구현 순서는 [확장 Backend 로드맵](extension-backend-roadmap.md)을 따른다. 관리자 API는 B11 수동 배치 계약을 따른다. S03 인증 전달·로그아웃 계약은 2절에 반영했다.
+
+
+## 계정별 기술 분리 (V37)
+
+- `GET /api/skills`는 승인된 고정 시스템 기술 66개와 그 별칭만 검색한다. V39에서 과거 비고정 공용 기술과 연결 별칭·정규화된 공고 관계를 제거한다. AI 분석의 검증된 원문 JSON은 유지하며 이후 목록 밖 기술은 공용 `skill`로 생성하지 않는다.
+- `POST /api/me/skills`의 `skillId` 또는 `name`은 고정 기술만 등록한다. 고정 목록에 없는 이름은 `404`이며 클라이언트는 계정별 사용자 기술 API를 사용한다. 기존 보유 기술 행의 조회·숙련도 수정·삭제는 유지한다.
+- `GET /api/me/custom-skills`: `{ "items": [{ "id": 1, "name": "직접 입력 기술", "proficiencyLevel": null }] }`.
+- `POST /api/me/custom-skills`: `{ "name": "..." }` → 같은 항목 `201`. `PUT /api/me/custom-skills/{id}`: `{ "name": "...", "proficiencyLevel": 1..5|null }` → 수정 항목 `200`. `DELETE /api/me/custom-skills/{id}` → `204`. 이름은 계정 안에서 정규화 기준 유일하며 고정 기술명·별칭과 겹치면 `409`; 다른 계정의 ID는 `404`다.
+- `GET /api/me/ai-skill-candidates`: `{ "items": [{ "id": 1, "name": "기술명", "source": "AI" }] }`. `DELETE /api/me/ai-skill-candidates/{id}` → `204`; 다른 계정의 ID는 `404`다. 명시적 수집·개인 공고 AI 분석 완료 시 요청자 계정에만 후보를 추가하며 보유 기술에는 자동 등록하지 않는다. 기존 완료 분석을 POST로 다시 요청하면 저장된 결과로 그 계정의 후보를 채운다. 단순 GET은 후보를 추가하지 않는다.
+- 사용자 기술의 이름 수정은 이후 적합도·부족 기술 비교에서 새 정규화 이름을 사용한다. 기존 공고 분석 결과·기술명은 수정하지 않는다.
+- V39 이전에 공용 `skill`에 등록됐지만 고정 목록에 속하지 않는 내 보유 기술은 `GET /api/me/skills`에서 `system: false`로 구별한다. `POST /api/me/custom-skills/from-legacy/{skillId}`에 `{ "name": "...", "proficiencyLevel": 1..5|null }`를 보내면 소유권을 확인한 후 계정별 기술로 전환해 `201`로 반환한다. V39 적용 조건은 이러한 보유 관계가 남아 있지 않은 것이며, 적용 후 해당 전환 경로의 과거 ID는 `404`다.

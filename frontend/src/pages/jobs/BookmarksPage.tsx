@@ -178,6 +178,7 @@ type Preview = { status: string; requiredSkills: string[]; preferredSkills: stri
 function SavedAnalysis({ item, onUpdated }: { item: SavedJob; onUpdated: () => void }) {
   const [analysis, setAnalysis] = useState<Preview | null>(null);
   const [busy, setBusy] = useState(false);
+  const [linked, setLinked] = useState(false);
   const [error, setError] = useState('');
   const [showDetails, setShowDetails] = useState(false);
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -214,6 +215,7 @@ function SavedAnalysis({ item, onUpdated }: { item: SavedJob; onUpdated: () => v
         const value = await createAnalysisApi(apiRequest).request(item.jobId!);
         setAnalysis({ status: value.status, requiredSkills: value.requiredSkills.map(skill => skill.name),
           preferredSkills: value.preferredSkills.map(skill => skill.name), failureReason: value.failureReason });
+        setLinked(value.status === 'COMPLETED');
       }
       onUpdated();
     }
@@ -240,7 +242,13 @@ function SavedAnalysis({ item, onUpdated }: { item: SavedJob; onUpdated: () => v
       {skills.length > 0 && <div className="saved-analysis-skills">{skills.slice(0, 5).map((skill, index) => <span key={`${skill}-${index}`}>{skill}</span>)}
         {skills.length > 5 && <span>외 {skills.length - 5}개</span>}</div>}
       {error && <p className="saved-analysis-error" role="alert">{error}</p>}</div>
-    {completed ? <span className="saved-analysis-detail-hint">상세 보기 <LucideIcon name="chevronRight" /></span>
+    {completed ? <div className="saved-analysis-completed-actions">
+      {item.kind !== 'MANUAL' && <button className="saved-analysis-action" type="button" disabled={busy}
+        onClick={event => { event.stopPropagation(); void run(); }} onKeyDown={event => event.stopPropagation()}>
+        {busy ? '요청 중…' : 'AI 분석하기'}</button>}
+      <span className="saved-analysis-detail-hint">상세 보기 <LucideIcon name="chevronRight" /></span>
+      {linked && <small role="status">프로필 AI 후보에 반영됨</small>}
+    </div>
       : <button className="saved-analysis-action" type="button" disabled={busy || (item.kind === 'MANUAL' && !item.description) || status === 'PENDING'} onClick={run}>
         {busy || status === 'PENDING' ? '분석 중…' : status === 'FAILED' ? '다시 분석하기' : 'AI 분석하기'}</button>
     }

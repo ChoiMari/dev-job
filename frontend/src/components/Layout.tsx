@@ -47,8 +47,8 @@ function SidebarArrow({ direction }: { direction: 'left' | 'right' }) {
   </svg>;
 }
 
-export function Layout({ title, path, children, user, onLogout, loggingOut }: {
-  title: string; path: string; children: ReactNode; user: CurrentUser; onLogout: () => void; loggingOut: boolean;
+export function Layout({ title, path, children, user, nickname, onLogout, loggingOut }: {
+  title: string; path: string; children: ReactNode; user: CurrentUser; nickname: string | null; onLogout: () => void; loggingOut: boolean;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -78,7 +78,7 @@ export function Layout({ title, path, children, user, onLogout, loggingOut }: {
       <a className="brand" href="#/" aria-label="DevJob 대시보드"><img src={brandWordmark} alt="DevJob" /></a>
       <div className="account-controls">
         <a className={`account-avatar${bunnyOutfit ? ' is-bunny-outfit' : ''}`} href="#/character" aria-label="내 캐릭터 보기">{characterImage}</a>
-        <span className="account-email">{user.email}</span>
+        <span className="account-email">{nickname || user.email}</span>
         <button type="button" onClick={onLogout} disabled={loggingOut}>{loggingOut ? '로그아웃 중…' : '로그아웃'}</button>
       </div>
     </header>
@@ -112,7 +112,7 @@ export function Layout({ title, path, children, user, onLogout, loggingOut }: {
       </a>
     </aside>
     <main id="main-content" tabIndex={-1} className="main-content">
-      {path !== '/' && path !== '/profile' && !path.startsWith('/interviews/') && !path.startsWith('/jobs/')
+      {path !== '/' && path !== '/profile' && path !== '/analytics/skills' && !path.startsWith('/interviews/') && !path.startsWith('/jobs/')
         && <div className="page-heading"><span className="eyebrow">MY CAREER SPACE</span><h1>{title}</h1></div>}
       {children}
     </main>

@@ -7,6 +7,7 @@ import com.devjob.profile.repository.ProfileRepository;
 import com.devjob.project.repository.ProjectSkillRepository;
 import com.devjob.skill.dto.SkillResponse;
 import com.devjob.skill.repository.UserSkillRepository;
+import com.devjob.skill.service.AccountSkillService;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Locale;
@@ -27,13 +28,15 @@ public class SkillGapService {
     private final UserSkillRepository userSkills;
     private final ProjectSkillRepository projectSkills;
     private final NamedParameterJdbcTemplate jdbc;
+    private final AccountSkillService accountSkills;
 
     public SkillGapService(ProfileRepository profiles, UserSkillRepository userSkills,
-            ProjectSkillRepository projectSkills, NamedParameterJdbcTemplate jdbc) {
+            ProjectSkillRepository projectSkills, NamedParameterJdbcTemplate jdbc, AccountSkillService accountSkills) {
         this.profiles = profiles;
         this.userSkills = userSkills;
         this.projectSkills = projectSkills;
         this.jdbc = jdbc;
+        this.accountSkills = accountSkills;
     }
 
     public SkillGap find(Long userId, String requestedRole) {
@@ -48,7 +51,8 @@ public class SkillGapService {
         Set<Long> owned = new HashSet<>();
         userSkills.findSkills(userId).forEach(skill -> owned.add(skill.getId()));
         owned.addAll(projectSkills.findSkillIdsForUser(userId));
-        if (owned.isEmpty()) return SkillGap.unavailable(role, analyzed, "USER_SKILLS_EMPTY");
+        var customKeys = accountSkills.customKeys(userId);
+        if (owned.isEmpty() && customKeys.isEmpty()) return SkillGap.unavailable(role, analyzed, "USER_SKILLS_EMPTY");
         if (analyzed < 5) return SkillGap.unavailable(role, analyzed, "INSUFFICIENT_SAMPLE");
 
         var rows = jdbc.query("select s.id, s.name,"
@@ -68,7 +72,8 @@ public class SkillGapService {
                 });
         if (rows.isEmpty()) return SkillGap.unavailable(role, analyzed, "NO_JOB_SKILLS");
 
-        var missing = rows.stream().filter(item -> !owned.contains(item.skill().id()))
+        var missing = rows.stream().filter(item -> !owned.contains(item.skill().id())
+                        && !customKeys.contains(com.devjob.skill.service.SkillName.parse(item.skill().name()).key()))
                 .sorted(Comparator.comparingDouble(SkillGapItem::priorityScore).reversed()
                         .thenComparing(Comparator.comparingLong(SkillGapItem::demandJobCount).reversed())
                         .thenComparing(item -> item.skill().name())

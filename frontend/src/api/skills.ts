@@ -2,7 +2,9 @@ import { ApiError } from './client.ts';
 import type { createApiClient } from './client.ts';
 
 export type Skill = { id: number; name: string };
-export type OwnedSkill = Skill & { proficiencyLevel: number | null; experienceMonths: number | null };
+export type OwnedSkill = Skill & { proficiencyLevel: number | null; experienceMonths: number | null; system: boolean };
+export type CustomSkill = Skill & { proficiencyLevel: number | null };
+export type AiSkillCandidate = Skill & { source: 'AI' };
 export type SkillExperiencePatch = { proficiencyLevel?: number | null; experienceMonths?: number | null };
 export type SkillPage = { items: Skill[]; page: number; size: number; totalElements: number };
 type Request = ReturnType<typeof createApiClient>;
@@ -21,7 +23,25 @@ function ownedSkill(value: unknown): OwnedSkill {
   const months = value.experienceMonths;
   if (level !== null && (!Number.isInteger(level) || typeof level !== 'number' || level < 1 || level > 5)) return invalid();
   if (months !== null && (!Number.isInteger(months) || typeof months !== 'number' || months < 0 || months > 600)) return invalid();
-  return { ...base, proficiencyLevel: level as number | null, experienceMonths: months as number | null };
+  const system = 'system' in value ? value.system : true;
+  if (typeof system !== 'boolean') return invalid();
+  return { ...base, proficiencyLevel: level as number | null, experienceMonths: months as number | null, system };
+}
+function customSkill(value: unknown): CustomSkill {
+  const base = skill(value);
+  if (typeof value !== 'object' || value === null || !('proficiencyLevel' in value)) return invalid();
+  const level = value.proficiencyLevel;
+  if (level !== null && (typeof level !== 'number' || !Number.isInteger(level) || level < 1 || level > 5)) return invalid();
+  return { ...base, proficiencyLevel: level as number | null };
+}
+function candidate(value: unknown): AiSkillCandidate {
+  const base = skill(value);
+  if (typeof value !== 'object' || value === null || !('source' in value) || value.source !== 'AI') return invalid();
+  return { ...base, source: 'AI' };
+}
+function listOf<T>(value: unknown, parse: (item: unknown) => T): T[] {
+  if (typeof value !== 'object' || value === null || !('items' in value) || !Array.isArray(value.items)) return invalid();
+  return value.items.map(parse);
 }
 function items(value: unknown): Skill[] {
   if (typeof value !== 'object' || value === null || !('items' in value) || !Array.isArray(value.items)) return invalid();
@@ -30,7 +50,7 @@ function items(value: unknown): Skill[] {
   return result;
 }
 export function createSkillsApi(request: Request) {
-  async function mutation(path: string, method: 'POST' | 'PATCH' | 'DELETE', body?: unknown) {
+  async function mutation(path: string, method: 'POST' | 'PUT' | 'PATCH' | 'DELETE', body?: unknown) {
     const csrf = await request('/auth/csrf');
     if (typeof csrf !== 'object' || csrf === null || !('headerName' in csrf) || !('token' in csrf)
       || csrf.headerName !== 'X-CSRF-TOKEN' || typeof csrf.token !== 'string' || !csrf.token) return invalid();
@@ -69,6 +89,24 @@ export function createSkillsApi(request: Request) {
     remove: async (id: number) => {
       if (!Number.isSafeInteger(id) || id <= 0) throw new TypeError('기술 ID를 확인해 주세요.');
       const value = await mutation(`/me/skills/${id}`, 'DELETE');
+      if (value !== undefined) return invalid();
+    },
+    listCustom: async (signal?: AbortSignal): Promise<CustomSkill[]> =>
+      listOf(await request('/me/custom-skills', { signal }), customSkill),
+    createCustom: async (name: string): Promise<CustomSkill> =>
+      customSkill(await mutation('/me/custom-skills', 'POST', { name })),
+    updateCustom: async (id: number, name: string, proficiencyLevel: number | null): Promise<CustomSkill> =>
+      customSkill(await mutation(`/me/custom-skills/${id}`, 'PUT', { name, proficiencyLevel })),
+    convertLegacy: async (skillId: number, name: string, proficiencyLevel: number | null): Promise<CustomSkill> =>
+      customSkill(await mutation(`/me/custom-skills/from-legacy/${skillId}`, 'POST', { name, proficiencyLevel })),
+    removeCustom: async (id: number): Promise<void> => {
+      const value = await mutation(`/me/custom-skills/${id}`, 'DELETE');
+      if (value !== undefined) return invalid();
+    },
+    listCandidates: async (signal?: AbortSignal): Promise<AiSkillCandidate[]> =>
+      listOf(await request('/me/ai-skill-candidates', { signal }), candidate),
+    removeCandidate: async (id: number): Promise<void> => {
+      const value = await mutation(`/me/ai-skill-candidates/${id}`, 'DELETE');
       if (value !== undefined) return invalid();
     },
   };

@@ -5,6 +5,7 @@ import com.devjob.analysis.entity.JobSkill;
 import com.devjob.analysis.service.AnalysisOutputValidator;
 import com.devjob.savedjob.dto.PersonalJobAnalysisResponse;
 import com.devjob.skill.service.SkillName;
+import com.devjob.skill.service.AccountSkillService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.sql.Timestamp;
 import java.time.Instant;
@@ -23,9 +24,11 @@ public class PersonalJobAnalysisService {
     private final AnalysisGateway gateway;
     private final AnalysisOutputValidator validator;
     private final ObjectMapper mapper;
+    private final AccountSkillService accountSkills;
     public PersonalJobAnalysisService(NamedParameterJdbcTemplate jdbc, AnalysisGateway gateway,
-            AnalysisOutputValidator validator, ObjectMapper mapper) {
+            AnalysisOutputValidator validator, ObjectMapper mapper, AccountSkillService accountSkills) {
         this.jdbc = jdbc; this.gateway = gateway; this.validator = validator; this.mapper = mapper;
+        this.accountSkills = accountSkills;
     }
     public PersonalJobAnalysisResponse get(Long userId, long id) {
         owned(userId, id);
@@ -40,7 +43,11 @@ public class PersonalJobAnalysisService {
         var job = owned(userId, id);
         if (job.description() == null || job.description().isBlank())
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "공고 본문을 먼저 입력해 주세요.");
-        try { var previous = get(userId, id); if ("COMPLETED".equals(previous.status())) return previous; }
+        try { var previous = get(userId, id); if ("COMPLETED".equals(previous.status())) {
+            accountSkills.publishPersonal(userId, id, java.util.stream.Stream
+                    .concat(previous.requiredSkills().stream(), previous.preferredSkills().stream()).toList());
+            return previous;
+        } }
         catch (ResponseStatusException exception) { if (exception.getStatusCode() != HttpStatus.NOT_FOUND) throw exception; }
         if (!gateway.available()) throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "AI 분석 서버 키가 설정되지 않았습니다.");
         PersonalJobAnalysisResponse result;
@@ -79,6 +86,10 @@ public class PersonalJobAnalysisService {
                         analyzed_at=excluded.analyzed_at, updated_at=excluded.updated_at
                     """, args);
             if (saved == 0) throw new ResponseStatusException(HttpStatus.CONFLICT, "공고가 변경되었습니다. 다시 시도해 주세요.");
+            if ("COMPLETED".equals(result.status())) {
+                accountSkills.publishPersonal(userId, id, java.util.stream.Stream
+                        .concat(result.requiredSkills().stream(), result.preferredSkills().stream()).toList());
+            }
             return result;
         } catch (com.fasterxml.jackson.core.JsonProcessingException exception) {
             throw new IllegalStateException("Validated analysis could not be stored");

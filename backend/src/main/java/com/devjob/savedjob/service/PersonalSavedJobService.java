@@ -46,12 +46,16 @@ public class PersonalSavedJobService {
         long total = jdbc.queryForObject("select count(*) " + union, params, Long.class);
         var items = jdbc.query("""
                 select saved.*, a.current_status as application_status,
-                  case when saved.kind='COLLECTED' then ca.status else pa.status end as analysis_status
+                  case when saved.kind='COLLECTED' then
+                    case when ar.user_id is not null then ca.status else null end
+                    else pa.status end as analysis_status
                 """ + union + """
                 left join application a on a.user_id=:userId and a.deleted_at is null and
                   ((saved.kind='COLLECTED' and a.job_posting_id=saved.job_id) or
                    (saved.kind='MANUAL' and a.personal_saved_job_id=saved.id))
                 left join ai_analysis ca on saved.kind='COLLECTED' and ca.job_posting_id=saved.job_id
+                left join user_ai_analysis_request ar on saved.kind='COLLECTED'
+                  and ar.user_id=:userId and ar.job_posting_id=saved.job_id
                 left join personal_saved_job_analysis pa on saved.kind='MANUAL' and pa.personal_saved_job_id=saved.id
                 order by saved.created_at desc, saved.kind, saved.id desc limit :limit offset :offset
                 """, params, (row, i) -> new SavedJobPage.Item(row.getString("kind"), row.getLong("id"),

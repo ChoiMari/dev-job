@@ -10,8 +10,8 @@ import org.springframework.data.repository.query.Param;
 public interface SkillRepository extends JpaRepository<Skill, Long> {
     Optional<Skill> findByNormalizedName(String normalizedName);
 
-    @Query("select s from Skill s where :q = '' or locate(:q, s.normalizedName) > 0 "
-            + "or exists (select a.id from SkillAlias a where a.skill = s and locate(:q, a.normalizedName) > 0)")
+    @Query("select s from Skill s where s.system = true and (:q = '' or locate(:q, s.normalizedName) > 0 "
+            + "or exists (select a.id from SkillAlias a where a.skill = s and locate(:q, a.normalizedName) > 0))")
     Page<Skill> search(@Param("q") String query, Pageable pageable);
 
     @Modifying

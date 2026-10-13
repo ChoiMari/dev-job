@@ -12,8 +12,8 @@ public class Profile {
     @OneToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false, unique = true)
     private User user;
-    @Column(nullable = false, length = 100)
-    private String name;
+    @Column(name = "name", nullable = false, length = 100)
+    private String nickname;
     @Column(name = "desired_role", length = 100)
     private String desiredRole;
     @Column(name = "career_level", length = 100)
@@ -31,9 +31,9 @@ public class Profile {
 
     protected Profile() { }
     public Profile(User user) { this.user = user; }
-    public void update(String name, String desiredRole, String careerLevel, String desiredLocation,
+    public void update(String nickname, String desiredRole, String careerLevel, String desiredLocation,
             String introduction, String education, String certifications) {
-        this.name = name;
+        this.nickname = nickname;
         this.desiredRole = desiredRole;
         this.careerLevel = careerLevel;
         this.desiredLocation = desiredLocation;
@@ -43,7 +43,7 @@ public class Profile {
         this.updatedAt = Instant.now();
     }
     public Long getId() { return id; }
-    public String getName() { return name; }
+    public String getNickname() { return nickname; }
     public String getDesiredRole() { return desiredRole; }
     public String getCareerLevel() { return careerLevel; }
     public String getDesiredLocation() { return desiredLocation; }

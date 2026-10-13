@@ -22,33 +22,20 @@ public class SkillNormalizer {
         return find(SkillName.parse(input).key());
     }
 
-    /** Only an explicit user add may expand the catalog. Canonical names also reserve the alias namespace. */
-    @Transactional
+    /** User selection can resolve only curated system skills. */
+    @Transactional(readOnly = true)
     public Skill resolveForUser(String input) {
-        return resolveOrCreate(input);
+        return find(SkillName.parse(input).key()).filter(Skill::isSystem)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
     }
 
-    /** S12: validated AI skill names use the same canonical namespace as explicit user additions. */
-    @Transactional
-    public Skill resolveForAnalysis(String input) {
-        return resolveOrCreate(input);
-    }
-
-    private Skill resolveOrCreate(String input) {
-        var name = SkillName.parse(input);
-        var existing = find(name.key());
-        if (existing.isPresent()) return existing.get();
-        // ON CONFLICT waits for a concurrent creator without aborting this transaction.
-        skills.insertIfAbsent(name.display(), name.key());
-        var skill = skills.findByNormalizedName(name.key()).orElseThrow();
-        aliases.insertIfAbsent(skill.getId(), skill.getName(), name.key());
-        if (!aliases.resolve(name.key()).orElseThrow().getId().equals(skill.getId())) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT);
-        }
-        return skill;
+    /** AI names outside the fixed catalog remain in analysis JSON and user candidates. */
+    @Transactional(readOnly = true)
+    public Optional<Skill> resolveForAnalysis(String input) {
+        return find(SkillName.parse(input).key()).filter(Skill::isSystem);
     }
 
     private Optional<Skill> find(String key) {
-        return aliases.resolve(key).or(() -> skills.findByNormalizedName(key));
+        return skills.findByNormalizedName(key).or(() -> aliases.resolve(key));
     }
 }

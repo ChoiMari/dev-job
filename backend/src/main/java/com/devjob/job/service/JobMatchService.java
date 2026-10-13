@@ -9,6 +9,7 @@ import com.devjob.job.repository.JobPostingRepository;
 import com.devjob.project.repository.ProjectSkillRepository;
 import com.devjob.skill.dto.SkillResponse;
 import com.devjob.skill.repository.UserSkillRepository;
+import com.devjob.skill.service.AccountSkillService;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
@@ -25,11 +26,12 @@ public class JobMatchService {
     private final JobSkillRepository jobSkills;
     private final UserSkillRepository userSkills;
     private final ProjectSkillRepository projectSkills;
+    private final AccountSkillService accountSkills;
 
     public JobMatchService(JobPostingRepository jobs, AIAnalysisRepository analyses, JobSkillRepository jobSkills,
-            UserSkillRepository userSkills, ProjectSkillRepository projectSkills) {
+            UserSkillRepository userSkills, ProjectSkillRepository projectSkills, AccountSkillService accountSkills) {
         this.jobs = jobs; this.analyses = analyses; this.jobSkills = jobSkills;
-        this.userSkills = userSkills; this.projectSkills = projectSkills;
+        this.userSkills = userSkills; this.projectSkills = projectSkills; this.accountSkills = accountSkills;
     }
 
     public JobMatch match(Long userId, long jobId) {
@@ -43,15 +45,18 @@ public class JobMatchService {
         Set<Long> owned = new HashSet<>();
         userSkills.findSkills(userId).forEach(skill -> owned.add(skill.getId()));
         projectSkills.findSkillIdsForUser(userId).forEach(owned::add);
-        if (owned.isEmpty()) return JobMatch.unavailable("USER_SKILLS_EMPTY");
+        var customKeys = accountSkills.customKeys(userId);
+        if (owned.isEmpty() && customKeys.isEmpty()) return JobMatch.unavailable("USER_SKILLS_EMPTY");
         var requiredMatched = new ArrayList<SkillResponse>();
         var requiredMissing = new ArrayList<SkillResponse>();
         var preferredMatched = new ArrayList<SkillResponse>();
         var preferredMissing = new ArrayList<SkillResponse>();
         for (var requirement : requirements) {
+            boolean has = owned.contains(requirement.getSkill().getId())
+                    || customKeys.contains(requirement.getSkill().getNormalizedName());
             var target = requirement.getRequirementType() == JobSkill.RequirementType.REQUIRED
-                    ? (owned.contains(requirement.getSkill().getId()) ? requiredMatched : requiredMissing)
-                    : (owned.contains(requirement.getSkill().getId()) ? preferredMatched : preferredMissing);
+                    ? (has ? requiredMatched : requiredMissing)
+                    : (has ? preferredMatched : preferredMissing);
             target.add(SkillResponse.from(requirement.getSkill()));
         }
         int matched = requiredMatched.size() + preferredMatched.size();

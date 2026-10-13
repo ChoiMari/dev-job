@@ -39,8 +39,8 @@ class MarketAnalyticsDatabaseTest {
         assertThat(all.jobCount()).isEqualTo(5);
         assertThat(all.insufficientSample()).isTrue();
         Map<String, Long> careers = all.buckets().stream().collect(Collectors.toMap(b -> b.key(), b -> b.jobCount()));
-        assertThat(careers).containsEntry("ENTRY", 2L).containsEntry("EXPERIENCED", 1L)
-                .containsEntry("ANY", 1L).containsEntry("UNKNOWN", 1L);
+        assertThat(careers).containsEntry("ENTRY", 2L).containsEntry("JUNIOR", 1L)
+                .containsEntry("UNCLASSIFIED", 2L);
         assertThat(all.buckets()).allSatisfy(b -> assertThat(b.ratio()).isEqualTo(b.jobCount() / 5.0));
         assertThat(all.buckets().stream().mapToLong(b -> b.jobCount()).sum()).isEqualTo(all.jobCount());
         assertThat(all.buckets().stream().mapToDouble(b -> b.ratio()).sum()).isEqualTo(1.0);

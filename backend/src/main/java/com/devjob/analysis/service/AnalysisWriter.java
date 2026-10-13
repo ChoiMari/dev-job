@@ -6,6 +6,7 @@ import com.devjob.analysis.repository.AIAnalysisRepository;
 import com.devjob.analysis.repository.JobSkillRepository;
 import com.devjob.job.repository.JobPostingRepository;
 import com.devjob.skill.service.SkillNormalizer;
+import com.devjob.skill.service.AccountSkillService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Instant;
@@ -21,10 +22,12 @@ public class AnalysisWriter {
     private final AIAnalysisRepository analyses;
     private final JobSkillRepository jobSkills;
     private final SkillNormalizer normalizer;
+    private final AccountSkillService accountSkills;
     private final ObjectMapper mapper;
     public AnalysisWriter(JobPostingRepository jobs, AIAnalysisRepository analyses, JobSkillRepository jobSkills,
-            SkillNormalizer normalizer, ObjectMapper mapper) {
-        this.jobs = jobs; this.analyses = analyses; this.jobSkills = jobSkills; this.normalizer = normalizer; this.mapper = mapper;
+            SkillNormalizer normalizer, AccountSkillService accountSkills, ObjectMapper mapper) {
+        this.jobs = jobs; this.analyses = analyses; this.jobSkills = jobSkills;
+        this.normalizer = normalizer; this.accountSkills = accountSkills; this.mapper = mapper;
     }
     @Transactional
     public void complete(long jobId, Instant attempt, List<AnalysisOutputValidator.ExtractedSkill> extracted) {
@@ -33,18 +36,20 @@ public class AnalysisWriter {
         if (analysis.getStatus() != AIAnalysis.Status.PENDING || !analysis.getUpdatedAt().equals(attempt)) return;
         Map<Long, JobSkill> canonical = new LinkedHashMap<>();
         for (var item : extracted) {
-            var skill = normalizer.resolveForAnalysis(item.name());
-            var old = canonical.get(skill.getId());
-            if (old == null || item.type() == JobSkill.RequirementType.REQUIRED)
-                canonical.put(skill.getId(), new JobSkill(job, skill, item.type()));
+            normalizer.resolveForAnalysis(item.name()).ifPresent(skill -> {
+                var old = canonical.get(skill.getId());
+                if (old == null || item.type() == JobSkill.RequirementType.REQUIRED)
+                    canonical.put(skill.getId(), new JobSkill(job, skill, item.type()));
+            });
         }
-        var values = canonical.values().stream().map(s -> Map.of("name", s.getSkill().getName(),
-                "requirementType", s.getRequirementType().name())).toList();
+        var values = extracted.stream().map(item -> Map.of("name", item.name(),
+                "requirementType", item.type().name())).toList();
         try {
             String json = mapper.writeValueAsString(Map.of("skills", values));
             jobSkills.deleteForJob(jobId);
-            jobSkills.saveAll(canonical.values());
+            jobSkills.saveAllAndFlush(canonical.values());
             analysis.completed(json);
+            accountSkills.publishForRequesters(jobId, extracted.stream().map(AnalysisOutputValidator.ExtractedSkill::name).toList());
         } catch (JsonProcessingException exception) {
             throw new IllegalStateException("Failed to serialize validated analysis");
         }

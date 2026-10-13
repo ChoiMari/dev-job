@@ -215,7 +215,8 @@ body { background: var(--background); }
 .account-avatar img { position: absolute; top: -5px; left: 50%; display: block; width: 68px; height: 102px; max-width: none; transform: translateX(-50%); image-rendering: auto; }
 .account-avatar.is-bunny-outfit img { top: 0; width: 44px; height: 66px; }
 .account-avatar .pixel-icon { width: 20px; height: 20px; }
-.account-controls button { min-height: 44px; padding: 7px 12px; border-color: var(--border); background: #fff; font-size: .78rem; }
+.account-controls button { min-height: 44px; padding: 7px 12px; border: 1px solid #ded9fa; border-radius: 8px; background: #f1efff; color: #5541c0; font-size: .78rem; font-weight: 750; }
+.account-controls button:hover { background: #eeeaff; }
 .sidebar { position: sticky; top: 78px; height: calc(100vh - 78px); overflow-y: auto; display: flex; flex-direction: column; padding: 30px 15px 22px; background: var(--sidebar); border-color: var(--sidebar); color: var(--sidebar-text); }
 .sidebar nav { display: block; }
 .nav-group { display: grid; gap: 3px; margin-bottom: 26px; }

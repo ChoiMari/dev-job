@@ -3,7 +3,7 @@ import test from 'node:test';
 import { createApiClient } from '../src/api/client.ts';
 import { createProfileApi } from '../src/api/profile.ts';
 
-const profile = { id: 3, email: 'owner@example.com', name: 'Owner', desiredRole: null,
+const profile = { id: 3, email: 'owner@example.com', nickname: 'Owner', desiredRole: null,
   careerLevel: null, desiredLocation: null, introduction: null, education: null, certifications: null };
 const json = (value, status = 200) => new Response(JSON.stringify(value),
   { status, headers: { 'Content-Type': 'application/json' } });
@@ -17,6 +17,7 @@ test('missing profile is distinct from saved profile, PUT uses session CSRF', as
     if (options.method === 'PUT') {
       assert.equal(options.headers['X-CSRF-TOKEN'], 'csrf');
       assert.equal(JSON.parse(options.body).userId, undefined);
+      assert.equal(JSON.parse(options.body).name, profile.nickname);
       stored = { ...JSON.parse(options.body), id: 3 };
       return json(stored, 201);
     }
@@ -32,4 +33,9 @@ test('missing profile is distinct from saved profile, PUT uses session CSRF', as
 test('invalid profile response and CSRF are rejected', async () => {
   await assert.rejects(createProfileApi(async () => ({ id: 1, name: 'A' })).get(), { code: 'INVALID_RESPONSE' });
   await assert.rejects(createProfileApi(async () => ({ token: 'bad' })).put(profile), { code: 'INVALID_RESPONSE' });
+});
+
+test('legacy profile name response is normalized to nickname', async () => {
+  const api = createProfileApi(async () => ({ ...profile, nickname: undefined, name: 'Legacy' }));
+  assert.equal((await api.get()).nickname, 'Legacy');
 });

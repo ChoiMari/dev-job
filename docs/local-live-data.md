@@ -2,7 +2,9 @@
 
 로컬 앱의 지속 사용 DB는 Docker Compose 프로젝트 `devjob-live`, 컨테이너 `devjob-live-postgres-1`, DB `devjob_live`, 볼륨 `devjob-live_postgres-data`, 호스트 포트 `127.0.0.1:55450`이다. 테스트 DB와 기존 `devjob`·`devjob-s17-demo` 컨테이너는 별개다. 기존 데이터는 삭제하거나 이 DB로 복사하지 않았다.
 
-루트의 무시된 `.env.live`는 DB 접속 정보와 공공 API 키를 보관한다. Git에 추가하지 않는다. 이 파일의 `DB_NAME=devjob_live`, `DB_HOST=127.0.0.1`, `DB_PORT=55450`을 고정하고, Backend는 `scripts/start-live.ps1`로 기동한다. 시작 스크립트는 다른 DB 대상이면 실행을 거부한다. Backend JAR을 새로 빌드한 뒤 기존 API 프로세스를 종료하고 스크립트를 다시 실행한다. Frontend 개발 서버의 `/api` 프록시는 무시된 `frontend/.env.local`의 `VITE_API_PROXY_TARGET=http://127.0.0.1:8097`을 사용한다.
+2026-10-13 프로필 기술 화면 작업에서는 기존 8097 API를 유지한 채 이 작업 폴더의 Backend를 8098에 띄웠다. `http://127.0.0.1:5174` 개발 화면의 `/api` 프록시는 8098을 가리키며 두 API는 모두 같은 고정 DB `devjob_live:55450`을 사용한다. V37·V38에 이어 V39는 승인된 66개 외 공용 기술과 연결 별칭·공고 기술 관계를 제거한다. 분석 JSON과 계정별 기술은 유지한다. 8098 서버는 별도 메모리 세션을 사용하므로 기존 8097 로그인 세션은 공유되지 않는다.
+
+루트의 무시된 `.env.live`는 DB 접속 정보와 공공 API 키를 보관한다. Git에 추가하지 않는다. 이 파일의 `DB_NAME=devjob_live`, `DB_HOST=127.0.0.1`, `DB_PORT=55450`을 고정하고, Backend는 `scripts/start-live.ps1`로 기동한다. 시작 스크립트는 다른 DB 대상이면 실행을 거부한다. Backend JAR을 새로 빌드한 뒤 기존 API 프로세스를 종료하고 스크립트를 다시 실행한다. 현재 5174 Frontend의 `/api` 프록시는 무시된 `frontend/.env.local`에서 8098을 사용한다.
 
 AI 분석에는 별도의 `OPENAI_API_KEY`가 필요하다. 기본 체크아웃의 `.env`는 `scripts/start-live.ps1`이 읽지 않으므로, 실제 로컬 서버에서는 무시된 `.env.live`에 이 키를 설정하고 서버를 재시작해야 한다. 키 값은 문서나 Git에 기록하지 않는다.
 

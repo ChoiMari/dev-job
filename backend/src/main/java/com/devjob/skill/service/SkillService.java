@@ -43,6 +43,7 @@ public class SkillService {
         }
         var skill = input.skillId() == null ? normalizer.resolveForUser(input.name())
                 : skills.findById(input.skillId()).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        if (!skill.isSystem()) throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         if (owned.add(userId, skill.getId()) == 0) throw new ResponseStatusException(HttpStatus.CONFLICT);
         return SkillResponse.from(skill);
     }

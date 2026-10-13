@@ -7,6 +7,7 @@ import com.devjob.analysis.repository.AIAnalysisRepository;
 import com.devjob.analysis.repository.JobSkillRepository;
 import com.devjob.job.repository.JobPostingRepository;
 import com.devjob.bookmark.repository.BookmarkRepository;
+import com.devjob.skill.service.AccountSkillService;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.Executor;
@@ -30,10 +31,13 @@ public class AnalysisService {
     private final JobSkillRepository jobSkills;
     private final AnalysisRunner runner;
     private final AnalysisGateway gateway;
+    private final AccountSkillService accountSkills;
     private final Executor executor;
     public AnalysisService(JobPostingRepository jobs, BookmarkRepository bookmarks, AIAnalysisRepository analyses, JobSkillRepository jobSkills,
-            AnalysisRunner runner, AnalysisGateway gateway, @Qualifier("analysisExecutor") Executor analysisExecutor) {
-        this.jobs = jobs; this.bookmarks = bookmarks; this.analyses = analyses; this.jobSkills = jobSkills; this.runner = runner; this.gateway = gateway; this.executor = analysisExecutor;
+            AnalysisRunner runner, AnalysisGateway gateway, AccountSkillService accountSkills,
+            @Qualifier("analysisExecutor") Executor analysisExecutor) {
+        this.jobs = jobs; this.bookmarks = bookmarks; this.analyses = analyses; this.jobSkills = jobSkills;
+        this.runner = runner; this.gateway = gateway; this.accountSkills = accountSkills; this.executor = analysisExecutor;
     }
     @Transactional
     public RequestResult request(Long userId, long jobId) {
@@ -43,13 +47,19 @@ public class AnalysisService {
         var existing = analyses.findByJobId(jobId);
         if (existing.isPresent()) {
             var analysis = existing.get();
-            if (analysis.getStatus() == AIAnalysis.Status.COMPLETED)
+            if (analysis.getStatus() == AIAnalysis.Status.COMPLETED) {
+                accountSkills.recordAnalysisRequester(userId, jobId);
+                accountSkills.publishCompletedJob(userId, jobId);
                 return new RequestResult(AnalysisResponse.from(analysis, jobSkills.findForJob(jobId)), false);
+            }
             if (analysis.getStatus() == AIAnalysis.Status.PENDING
-                    && Duration.between(analysis.getUpdatedAt(), Instant.now()).compareTo(Duration.ofMinutes(5)) < 0)
+                    && Duration.between(analysis.getUpdatedAt(), Instant.now()).compareTo(Duration.ofMinutes(5)) < 0) {
+                accountSkills.recordAnalysisRequester(userId, jobId);
                 return new RequestResult(AnalysisResponse.from(analysis, java.util.List.of()), true);
+            }
         }
         if (!gateway.available()) throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "AI 분석 서버 키가 설정되지 않았습니다.");
+        accountSkills.recordAnalysisRequester(userId, jobId);
         var analysis = existing.orElseGet(() -> new AIAnalysis(job));
         if (existing.isPresent()) analysis.pending();
         analyses.saveAndFlush(analysis);

@@ -5,7 +5,7 @@ import java.util.Locale;
 
 public record ProfileInput(
         @NotBlank @Email @Size(max = 254) String email,
-        @NotBlank @Size(max = 100) String name,
+        @NotBlank @Size(max = 100) String nickname,
         @Size(max = 100) String desiredRole,
         @Size(max = 100) String careerLevel,
         @Size(max = 100) String desiredLocation,
@@ -14,7 +14,7 @@ public record ProfileInput(
         @Size(max = 1000) String certifications) {
     public ProfileInput {
         if (email != null) email = email.strip().toLowerCase(Locale.ROOT);
-        if (name != null) name = name.strip();
+        if (nickname != null) nickname = nickname.strip();
         desiredRole = optional(desiredRole);
         careerLevel = optional(careerLevel);
         desiredLocation = optional(desiredLocation);

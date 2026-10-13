@@ -33,8 +33,8 @@ class ProfileDatabaseTest {
         return UsernamePasswordAuthenticationToken.authenticated(
                 new CurrentUser(user.getId(), user.getEmail()), null, java.util.List.of());
     }
-    private String body(String email, String name) {
-        return "{\"email\":\"" + email + "\",\"name\":\"" + name + "\"}";
+    private String body(String email, String nickname) {
+        return "{\"email\":\"" + email + "\",\"nickname\":\"" + nickname + "\"}";
     }
     @Test void ownerCreatesUpdatesAndReadsOnlyOwnProfile() throws Exception {
         var first = users.saveAndFlush(new User("first-s04@example.com", "hash"));
@@ -45,20 +45,20 @@ class ProfileDatabaseTest {
                 .param("userId", second.getId().toString()).header("X-User-Id", second.getId())
                 .contentType("application/json").content(body(" First-S04@Example.com ", "첫 사용자")))
                 .andExpect(status().isCreated()).andExpect(jsonPath("$.email").value("first-s04@example.com"))
-                .andExpect(jsonPath("$.name").value("첫 사용자"))
+                .andExpect(jsonPath("$.nickname").value("첫 사용자"))
                 .andExpect(jsonPath("$.desiredRole").value(org.hamcrest.Matchers.nullValue()));
         mvc.perform(get("/api/me/profile").with(authentication(auth(second))))
                 .andExpect(status().isNotFound());
         mvc.perform(put("/api/me/profile").with(authentication(auth(first))).with(csrf())
                 .contentType("application/json").content(body("first-s04@example.com", "수정됨")))
-                .andExpect(status().isOk()).andExpect(jsonPath("$.name").value("수정됨"));
+                .andExpect(status().isOk()).andExpect(jsonPath("$.nickname").value("수정됨"));
         mvc.perform(get("/api/me/profile").with(authentication(auth(first))))
-                .andExpect(status().isOk()).andExpect(jsonPath("$.name").value("수정됨"));
+                .andExpect(status().isOk()).andExpect(jsonPath("$.nickname").value("수정됨"));
         assertThat(profiles.findByUserId(first.getId())).isPresent();
         assertThat(profiles.findByUserId(second.getId())).isEmpty();
         assertThat(users.findById(first.getId()).orElseThrow().getEmail()).isEqualTo("first-s04@example.com");
     }
-    @Test void validatesInputDuplicateAndCsrf() throws Exception {
+    @Test void validatesInputImmutableEmailAndCsrf() throws Exception {
         var first = users.saveAndFlush(new User("first-s04@example.com", "hash"));
         users.saveAndFlush(new User("second-s04@example.com", "hash"));
         mvc.perform(put("/api/me/profile").with(authentication(auth(first)))
@@ -66,7 +66,7 @@ class ProfileDatabaseTest {
                 .andExpect(status().isForbidden());
         mvc.perform(put("/api/me/profile").with(authentication(auth(first))).with(csrf())
                 .contentType("application/json").content(body("second-s04@example.com", "이름")))
-                .andExpect(status().isConflict());
+                .andExpect(status().isBadRequest());
         mvc.perform(put("/api/me/profile").with(authentication(auth(first))).with(csrf())
                 .contentType("application/json").content(body("first-s04@example.com", "   ")))
                 .andExpect(status().isBadRequest());
