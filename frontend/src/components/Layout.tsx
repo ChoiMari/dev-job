@@ -6,34 +6,35 @@ import { createCharacterApi } from '../api/character';
 import type { CharacterState } from '../api/character';
 import { characterAppearanceUrl } from './CharacterLayers';
 import { PixelIcon } from './PixelArt';
+import { LucideIcon } from './LucideIcon';
 import brandWordmark from '../assets/redesign/brand-devjob-wordmark-dark.png';
 
 const characters = createCharacterApi(apiRequest);
 
 const groups = [
   { label: '시작하기', links: [
-    { href: '#/', label: '대시보드', icon: 'home', active: (path: string) => path === '/' },
-    { href: '#/jobs', label: '채용공고', icon: 'jobs', active: (path: string) => path === '/jobs' || path.startsWith('/jobs/') },
+    { href: '#/', label: '대시보드', icon: 'layoutDashboard', active: (path: string) => path === '/' },
+    { href: '#/jobs', label: '채용공고', icon: 'briefcase', active: (path: string) => path === '/jobs' || path.startsWith('/jobs/') },
     { href: '#/bookmarks', label: '관심 공고', icon: 'bookmark', active: (path: string) => path.startsWith('/bookmarks') },
-    { href: '#/recommendations', label: '의미 기반 추천', icon: 'spark', active: (path: string) => path.startsWith('/recommendations') },
+    { href: '#/recommendations', label: '의미 기반 추천', icon: 'lightbulb', active: (path: string) => path.startsWith('/recommendations') },
   ] },
   { label: '나의 취업 준비', links: [
-    { href: '#/applications', label: '지원 관리', icon: 'calendar', active: (path: string) => path.startsWith('/applications') },
+    { href: '#/applications', label: '지원 관리', icon: 'clipboardList', active: (path: string) => path.startsWith('/applications') },
     { href: '#/interviews', label: '면접 일정', icon: 'calendar', active: (path: string) => path.startsWith('/interviews') },
-    { href: '#/todos', label: '내 할 일', icon: 'check', active: (path: string) => path.startsWith('/todos') },
-    { href: '#/companies', label: '기업 관리', icon: 'grid', active: (path: string) => path.startsWith('/companies') },
-    { href: '#/profile', label: '내 프로필', icon: 'profile', active: (path: string) => path === '/profile' },
-    { href: '#/projects', label: '프로젝트 관리', icon: 'folder', active: (path: string) => path.startsWith('/projects') },
-    { href: '#/resumes', label: '이력서', icon: 'folder', active: (path: string) => path.startsWith('/resumes') },
-    { href: '#/cover-letters', label: '자기소개서', icon: 'folder', active: (path: string) => path.startsWith('/cover-letters') },
+    { href: '#/todos', label: '내 할 일', icon: 'list', active: (path: string) => path.startsWith('/todos') },
+    { href: '#/companies', label: '기업 관리', icon: 'building', active: (path: string) => path.startsWith('/companies') },
+    { href: '#/profile', label: '내 프로필', icon: 'userRound', active: (path: string) => path === '/profile' },
+    { href: '#/projects', label: '프로젝트 관리', icon: 'folderKanban', active: (path: string) => path.startsWith('/projects') },
+    { href: '#/resumes', label: '이력서', icon: 'fileText', active: (path: string) => path.startsWith('/resumes') },
+    { href: '#/cover-letters', label: '자기소개서', icon: 'pencil', active: (path: string) => path.startsWith('/cover-letters') },
   ] },
   { label: '인사이트', links: [
-    { href: '#/skill-gap', label: '역량 분석', icon: 'spark', active: (path: string) => path === '/skill-gap' },
-    { href: '#/analytics/skills', label: '채용시장 분석', icon: 'chart', active: (path: string) => path === '/analytics/skills' },
-    { href: '#/learning-goals', label: '학습 목표', icon: 'check', active: (path: string) => path.startsWith('/learning-goals') },
-    { href: '#/character', label: '내 캐릭터', icon: 'grid', active: (path: string) => path === '/character' },
-    { href: '#/notifications', label: '알림', icon: 'calendar', active: (path: string) => path === '/notifications' },
-    { href: '#/settings', label: '설정', icon: 'profile', active: (path: string) => path === '/settings' },
+    { href: '#/skill-gap', label: '역량 분석', icon: 'target', active: (path: string) => path === '/skill-gap' },
+    { href: '#/analytics/skills', label: '채용시장 분석', icon: 'chartBar', active: (path: string) => path === '/analytics/skills' },
+    { href: '#/learning-goals', label: '학습 목표', icon: 'flag', active: (path: string) => path.startsWith('/learning-goals') },
+    { href: '#/character', label: '내 캐릭터', icon: 'smile', active: (path: string) => path === '/character' },
+    { href: '#/notifications', label: '알림', icon: 'bell', active: (path: string) => path === '/notifications' },
+    { href: '#/settings', label: '설정', icon: 'cog', active: (path: string) => path === '/settings' },
   ] },
 ] as const;
 
@@ -81,24 +82,25 @@ export function Layout({ title, path, children, user, onLogout, loggingOut }: {
         <button type="button" onClick={onLogout} disabled={loggingOut}>{loggingOut ? '로그아웃 중…' : '로그아웃'}</button>
       </div>
     </header>
-    <aside className="sidebar">
-      <div className="sidebar-toolbar">
-        <span className="sidebar-toolbar-title">메뉴</span>
-        <button className="sidebar-collapse-toggle" type="button" aria-expanded={!sidebarCollapsed}
+    <aside className="sidebar max-lg:py-2!">
+      <div className="sidebar-toolbar max-lg:mb-0! max-lg:min-h-12!">
+        <span className="sidebar-toolbar-title text-xs!">메뉴</span>
+        <button className="sidebar-collapse-toggle transition-colors! focus-visible:outline-2! focus-visible:outline-offset-2!" type="button" aria-expanded={!sidebarCollapsed}
           aria-controls="main-navigation" aria-label={sidebarCollapsed ? '사이드바 펼치기' : '사이드바 접기'}
           onClick={() => setSidebarCollapsed(value => !value)}>
           <SidebarArrow direction={sidebarCollapsed ? 'right' : 'left'} />
         </button>
-        <button className="menu-toggle" type="button" aria-expanded={menuOpen} aria-controls="main-navigation"
+        <button className="menu-toggle transition-colors! focus-visible:outline-2! focus-visible:outline-offset-2!" type="button" aria-expanded={menuOpen} aria-controls="main-navigation"
           aria-label={menuOpen ? '메뉴 닫기' : '메뉴 열기'} onClick={() => setMenuOpen(value => !value)}>
           <SidebarArrow direction={menuOpen ? 'left' : 'right'} />
         </button>
       </div>
-      <nav id="main-navigation" className={menuOpen ? 'is-open' : ''} aria-label="주요 메뉴">
-        {groups.map(group => <div className="nav-group" key={group.label}>
+      <nav id="main-navigation" className={`${menuOpen ? 'is-open' : ''} max-lg:pt-2!`} aria-label="주요 메뉴">
+        {groups.map(group => <div className="nav-group gap-1!" key={group.label}>
           {group.links.map(link => <a key={link.href} href={link.href} onClick={() => setMenuOpen(false)} aria-label={link.label}
-            title={sidebarCollapsed ? link.label : undefined} aria-current={link.active(path) ? 'page' : undefined}>
-            <PixelIcon name={link.icon} /><span className="sidebar-link-label">{link.label}</span>
+            title={sidebarCollapsed ? link.label : undefined} aria-current={link.active(path) ? 'page' : undefined}
+            className="rounded-[2px]! transition-[background-color,box-shadow,transform]! duration-150! hover:translate-x-0.5! active:translate-x-0! active:scale-[0.98]! active:bg-[#52618e]! active:shadow-[inset_0_0_0_2px_#d7bdff]! focus-visible:outline-2! focus-visible:outline-offset-2! focus-visible:outline-[var(--sidebar-highlight)]!">
+            <LucideIcon name={link.icon} className={`size-[18px]! flex-none! ${link.active(path) ? 'text-[#e2caff]!' : 'text-[#a8bdf0]!'}`} /><span className="sidebar-link-label">{link.label}</span>
           </a>)}
         </div>)}
       </nav>
