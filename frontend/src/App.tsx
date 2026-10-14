@@ -17,7 +17,6 @@ import { CompaniesPage } from './pages/companies/CompaniesPage';
 import { BookmarksPage } from './pages/jobs/BookmarksPage';
 import { ApplicationsPage, ApplicationDetailPage } from './pages/applications/ApplicationsPage';
 import { MarketAnalyticsPage } from './pages/analytics/MarketAnalyticsPage';
-import { SkillGapPage } from './pages/analytics/SkillGapPage';
 import { DashboardPage } from './pages/dashboard/DashboardPage';
 import { TodosPage } from './pages/todos/TodosPage';
 import { CharacterPage } from './pages/CharacterPage';
@@ -105,10 +104,10 @@ export function App() {
       : path === '/jobs' ? '채용공고' : path === '/bookmarks' || path.startsWith('/bookmarks/') ? '관심 공고'
       : path.startsWith('/jobs/') ? '공고 상세'
       : path === '/applications' || path.startsWith('/applications/') ? '지원 관리'
-      : path === '/analytics/skills' ? '채용시장 분석' : path === '/skill-gap' ? '역량 분석'
+      : path === '/analytics/skills' ? '채용시장 분석'
       : path === '/character' ? '내 캐릭터' : path === '/settings' ? '설정'
       : path === '/interviews' || path.startsWith('/interviews/') ? '면접 일정'
-      : path === '/learning-goals' || path.startsWith('/learning-goals/') ? '학습 목표'
+      : path === '/learning-goals' || path.startsWith('/learning-goals/') ? '역량 분석 기반 학습'
       : path === '/resumes' || path.startsWith('/resumes/') ? '이력서'
       : path === '/cover-letters' || path.startsWith('/cover-letters/') ? '자기소개서'
       : path === '/notifications' ? '알림'
@@ -158,10 +157,9 @@ export function App() {
       : path === '/bookmarks' ? <BookmarksPage location={location} />
       : path === '/bookmarks/new' || /^\/bookmarks\/[1-9]\d*\/edit$/.test(path) ? <ManualJobFormPage key={path} location={location} />
       : path.startsWith('/bookmarks/') ? <ManualJobDetailPage key={path} location={location} />
-      : path.startsWith('/jobs/') ? <JobDetailPage location={location} />
+      : path.startsWith('/jobs/') ? <JobDetailPage location={location} userId={user.id} />
       : path === '/applications' ? <ApplicationsPage location={location} />
       : path === '/analytics/skills' ? <MarketAnalyticsPage location={location} />
-      : path === '/skill-gap' ? <SkillGapPage location={location} />
       : path === '/learning-goals' || path.startsWith('/learning-goals/') ? <LearningGoalsPage key={path} location={location} />
       : path === '/interviews' || path.startsWith('/interviews/') ? <InterviewsPage key={path} location={location} />
       : path === '/resumes' || path.startsWith('/resumes/') ? <ResumesPage key={path} location={location} />

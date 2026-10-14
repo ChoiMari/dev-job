@@ -75,9 +75,10 @@ public class AnalysisService {
         return new RequestResult(AnalysisResponse.from(analysis, java.util.List.of()), true);
     }
     @Transactional(readOnly = true)
-    public AnalysisResponse get(long jobId) {
+    public AnalysisResponse get(long userId, long jobId) {
         if (jobId < 1) throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
         if (!jobs.existsById(jobId)) throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        if (!accountSkills.hasRequestedAnalysis(userId, jobId)) throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         var analysis = analyses.findByJobId(jobId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         return AnalysisResponse.from(analysis, analysis.getStatus() == AIAnalysis.Status.COMPLETED
                 ? jobSkills.findForJob(jobId) : java.util.List.of());

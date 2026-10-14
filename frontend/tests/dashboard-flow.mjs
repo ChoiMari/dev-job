@@ -32,7 +32,7 @@ try {
   await page.getByText('지원 준비하기 · 백엔드 개발자').waitFor();
   assert.equal(await page.locator('a[href="#/jobs/5"]').count(), 1);
   assert.equal(await page.locator('a[href="#/applications/9"]').count(), 1);
-  assert.equal(await page.locator('.dashboard-page a[href="#/skill-gap"]').count(), 1);
+  assert.equal(await page.locator('.dashboard-page a[href="#/learning-goals"]').count(), 2);
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
   state = 'error';
   await page.reload();

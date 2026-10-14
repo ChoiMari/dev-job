@@ -124,6 +124,55 @@ class LearningGoalDatabaseTest {
                 .andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("CONFLICT"));
     }
 
+    @Test void checklistCalculatesProgressAndKeepsGoalOwnership() throws Exception {
+        long id = create("{\"title\":\"체크목록 학습\",\"progressPercent\":70}");
+        String tasksPath = "/api/me/learning-goals/" + id + "/tasks";
+        var first = mvc.perform(post(tasksPath).with(as(owner)).with(csrf())
+                .contentType("application/json").content("{\"title\":\"기초 학습\"}"))
+                .andExpect(status().isCreated()).andReturn();
+        long firstId = json.readTree(first.getResponse().getContentAsString()).get("id").asLong();
+        mvc.perform(get("/api/me/learning-goals/" + id).with(as(owner)))
+                .andExpect(jsonPath("$.progressPercent").value(0));
+        var second = mvc.perform(post(tasksPath).with(as(owner)).with(csrf())
+                .contentType("application/json").content("{\"title\":\"프로젝트 적용\"}"))
+                .andExpect(status().isCreated()).andReturn();
+        long secondId = json.readTree(second.getResponse().getContentAsString()).get("id").asLong();
+        mvc.perform(patch(tasksPath + "/" + firstId).with(as(owner)).with(csrf())
+                .contentType("application/json").content("{\"completed\":true}"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.completed").value(true));
+        mvc.perform(get("/api/me/learning-goals/" + id).with(as(owner)))
+                .andExpect(jsonPath("$.progressPercent").value(50));
+        mvc.perform(patch("/api/me/learning-goals/" + id).with(as(owner)).with(csrf())
+                .contentType("application/json").content("{\"progressPercent\":100}"))
+                .andExpect(status().isConflict());
+        mvc.perform(patch(tasksPath + "/" + secondId).with(as(owner)).with(csrf())
+                .contentType("application/json").content("{\"completed\":true}"))
+                .andExpect(status().isOk());
+        mvc.perform(get("/api/me/learning-goals/" + id).with(as(owner)))
+                .andExpect(jsonPath("$.progressPercent").value(100));
+        mvc.perform(patch("/api/me/learning-goals/" + id + "/completion").with(as(owner)).with(csrf())
+                .contentType("application/json").content("{\"completed\":true}"))
+                .andExpect(status().isOk());
+        mvc.perform(delete(tasksPath + "/" + firstId).with(as(owner)).with(csrf()))
+                .andExpect(status().isConflict());
+        mvc.perform(patch("/api/me/learning-goals/" + id + "/completion").with(as(owner)).with(csrf())
+                .contentType("application/json").content("{\"completed\":false}"))
+                .andExpect(status().isOk());
+        mvc.perform(patch(tasksPath + "/" + secondId).with(as(owner)).with(csrf())
+                .contentType("application/json").content("{\"completed\":false}"))
+                .andExpect(status().isOk());
+        mvc.perform(get(tasksPath).with(as(other))).andExpect(status().isForbidden());
+        mvc.perform(patch(tasksPath + "/" + firstId).with(as(other)).with(csrf())
+                .contentType("application/json").content("{\"completed\":false}"))
+                .andExpect(status().isForbidden());
+        mvc.perform(delete(tasksPath + "/" + firstId).with(as(owner)).with(csrf()))
+                .andExpect(status().isNoContent());
+        mvc.perform(get("/api/me/learning-goals/" + id).with(as(owner)))
+                .andExpect(jsonPath("$.progressPercent").value(0));
+        assertThat(jdbc.queryForObject("select count(*) from learning_goal_task where goal_id=?", Long.class, id))
+                .isEqualTo(1);
+    }
+
     @Test void authValidationAndDuplicateKey() throws Exception {
         long id = create("{\"title\":\"Same   goal\"}");
         mvc.perform(get("/api/me/learning-goals")).andExpect(status().isUnauthorized());

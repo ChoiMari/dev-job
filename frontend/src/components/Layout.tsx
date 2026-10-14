@@ -29,9 +29,8 @@ const groups = [
     { href: '#/cover-letters', label: '자기소개서', icon: 'pencil', active: (path: string) => path.startsWith('/cover-letters') },
   ] },
   { label: '인사이트', links: [
-    { href: '#/skill-gap', label: '역량 분석', icon: 'target', active: (path: string) => path === '/skill-gap' },
     { href: '#/analytics/skills', label: '채용시장 분석', icon: 'chartBar', active: (path: string) => path === '/analytics/skills' },
-    { href: '#/learning-goals', label: '학습 목표', icon: 'flag', active: (path: string) => path.startsWith('/learning-goals') },
+    { href: '#/learning-goals', label: '역량 분석 기반 학습', icon: 'flag', active: (path: string) => path.startsWith('/learning-goals') },
     { href: '#/character', label: '내 캐릭터', icon: 'smile', active: (path: string) => path === '/character' },
     { href: '#/notifications', label: '알림', icon: 'bell', active: (path: string) => path === '/notifications' },
     { href: '#/settings', label: '설정', icon: 'cog', active: (path: string) => path === '/settings' },
@@ -112,7 +111,7 @@ export function Layout({ title, path, children, user, nickname, onLogout, loggin
       </a>
     </aside>
     <main id="main-content" tabIndex={-1} className="main-content">
-      {path !== '/' && path !== '/profile' && path !== '/analytics/skills' && !path.startsWith('/interviews/') && !path.startsWith('/jobs/')
+      {path !== '/' && path !== '/profile' && path !== '/analytics/skills' && !path.startsWith('/learning-goals') && !path.startsWith('/interviews/') && !path.startsWith('/jobs/')
         && <div className="page-heading"><span className="eyebrow">MY CAREER SPACE</span><h1>{title}</h1></div>}
       {children}
     </main>

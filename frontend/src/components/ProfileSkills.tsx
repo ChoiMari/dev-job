@@ -4,6 +4,7 @@ import { createSkillsApi } from '../api/skills';
 import { ApiError } from '../api/client';
 import type { AiSkillCandidate, CustomSkill, OwnedSkill, Skill, SkillPage } from '../api/skills';
 import { LucideIcon } from './LucideIcon';
+import { FixedSkillImage } from './FixedSkillImage';
 import { ErrorState, LoadingState } from './States';
 import { skillLevelLabel, skillLevelLabels } from './skillLevel';
 import skillsEmptyArt from '../assets/illustrations/profile-skills-empty.png';
@@ -180,7 +181,7 @@ export function ProfileSkills() {
       ? <ErrorState message={loadError} onRetry={() => setRetry(value => value + 1)} />
       : owned.length === 0 && custom.length === 0 ? <div className="profile-skills__empty" role="status"><img src={skillsEmptyArt} alt="" /><strong>등록한 기술이 없습니다.</strong><p>아래에서 첫 기술을 추가해 보세요.</p></div>
       : <><ul className="profile-skills__owned" aria-label="내 기술 목록">{owned.map(item => <li key={item.id}>
-        <div className="profile-skills__owned-heading"><span className="profile-skill-mark" aria-hidden="true">{item.name.slice(0, 2).toUpperCase()}</span>
+        <div className="profile-skills__owned-heading"><FixedSkillImage name={item.name} />
           <div className="profile-skill-summary"><strong>{item.name}</strong><small>숙련도: {skillLevelLabel(item.proficiencyLevel)}</small></div>
           <div className="profile-skill-actions"><button type="button" disabled={disabled} onClick={() => setMenuId(current => current === item.id ? null : item.id)} aria-label={`${item.name} 메뉴`} aria-expanded={menuId === item.id}><LucideIcon name="more" /></button>
             {menuId === item.id && <div className="profile-skill-menu"><button type="button" onClick={() => { startEditing(item); setMenuId(null); }}>수정</button>
@@ -205,7 +206,7 @@ export function ProfileSkills() {
         </div>}
       </li>)}</ul>
       {custom.length > 0 && <div className="profile-custom-skills"><h3>직접 등록한 기술</h3><ul className="profile-skills__owned">{custom.map(item => <li key={item.id}>
-        <div className="profile-skills__owned-heading"><span className="profile-skill-mark" aria-hidden="true">{item.name.slice(0, 2).toUpperCase()}</span>
+        <div className="profile-skills__owned-heading"><FixedSkillImage name={item.name} />
           <div className="profile-skill-summary"><strong>{item.name}</strong><small>숙련도: {skillLevelLabel(item.proficiencyLevel)}</small></div>
           <div className="profile-skill-actions"><button type="button" disabled={disabled} onClick={() => setCustomMenuId(current => current === item.id ? null : item.id)} aria-label={`${item.name} 메뉴`} aria-expanded={customMenuId === item.id}><LucideIcon name="more" /></button>
             {customMenuId === item.id && <div className="profile-skill-menu"><button type="button" onClick={() => {
@@ -238,11 +239,11 @@ export function ProfileSkills() {
     {searching ? <LoadingState message="표준 기술을 검색하고 있습니다." /> : searchError
       ? <ErrorState message={searchError} onRetry={() => setSearchRetry(value => value + 1)} /> : result && <>
         <p role="status">검색 결과 {result.totalElements}개</p>
-        {!searched && <div className="profile-skill-suggestions"><strong>기술 목록</strong>{result.items.slice(0, 10).map(item => <button type="button" key={item.id} onClick={() => { setQuery(item.name); setSearched(item.name); setPage(0); }}>{item.name}</button>)}</div>}
+        {!searched && <div className="profile-skill-suggestions"><strong>기술 목록</strong>{result.items.slice(0, 10).map(item => <button type="button" key={item.id} onClick={() => { setQuery(item.name); setSearched(item.name); setPage(0); }}><FixedSkillImage name={item.name} />{item.name}</button>)}</div>}
         {result.items.length === 0 ? <p>일치하는 표준 기술이 없습니다.</p> : <ul className="profile-skills__results" aria-label="기술 검색 결과">
           {result.items.map(item => {
             const has = owned.some(value => value.id === item.id);
-            return <li key={item.id}><span title={item.name}>{item.name}</span><button type="button" disabled={disabled || has}
+            return <li key={item.id}><FixedSkillImage name={item.name} /><span title={item.name}>{item.name}</span><button type="button" disabled={disabled || has}
               className="inline-flex! size-7! min-h-0! items-center! justify-center! p-1!"
               onClick={() => { setAdding(item); setAddLevel(''); }} aria-label={has ? `${item.name} 보유 중` : `${item.name} 추가`}
               title={has ? '보유 중' : '추가'}><LucideIcon name={has ? 'check' : 'plus'} /></button></li>;
@@ -268,8 +269,8 @@ export function ProfileSkills() {
       {loading ? <LoadingState message="AI 기술 후보를 불러오고 있습니다." /> : loadError
         ? <ErrorState message={loadError} onRetry={() => setRetry(value => value + 1)} />
         : candidates.length === 0 ? <div className="profile-ai-candidates__empty"><img src={aiCandidatesEmptyArt} alt="" /><strong>아직 AI 기술 후보가 없습니다.</strong><p>관심 공고에서 AI 분석하기를 누르면 이 계정의 후보 목록에 모입니다.</p></div>
-        : <ul>{candidates.map(item => <li key={item.id}><span className="profile-ai-badge">AI</span>
-          <span title={item.name}>{item.name}</span><button type="button" className="profile-icon-button" aria-label={`${item.name} 보유 기술로 추가`} title="보유 기술로 추가" disabled={disabled || owned.some(skill => skill.name.toLowerCase() === item.name.toLowerCase())
+        : <ul>{candidates.map(item => <li key={item.id}><span className="profile-ai-badge">AI</span><FixedSkillImage name={item.name} />
+          <span className="profile-ai-candidate-name" title={item.name}>{item.name}</span><button type="button" className="profile-icon-button" aria-label={`${item.name} 보유 기술로 추가`} title="보유 기술로 추가" disabled={disabled || owned.some(skill => skill.name.toLowerCase() === item.name.toLowerCase())
             || custom.some(skill => skill.name.toLowerCase() === item.name.toLowerCase())}
             onClick={() => { setAdding(item.name); setAddLevel(''); }}><LucideIcon name="plus" /></button>
           <button type="button" className="profile-icon-button" disabled={disabled} onClick={() => void removeCandidate(item.id)} aria-label={`${item.name} 후보 삭제`} title="삭제"><LucideIcon name="trash" /></button>

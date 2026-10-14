@@ -50,7 +50,7 @@ try {
   await visit('/bookmarks', '저장한 관심 공고가 없습니다.');
   await visit('/applications', '지원 기록이 없습니다.');
   await visit('/analytics/skills', '분석 공고 6건');
-  await visit('/skill-gap', '부족한 기술 TOP 5');
+  await visit('/learning-goals', '역량 분석 요약');
   assert.deepEqual(errors, []);
   console.log('S17 browser flow passed: auth redirect, nine real backend screens, refresh and 390px layout.');
 } finally {

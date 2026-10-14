@@ -12,7 +12,7 @@ export function JobAnalysis({ jobId, initialStatus, canRequest, onStatusChange }
   const [busy, setBusy] = useState(false);
   const [linked, setLinked] = useState(false);
   useEffect(() => {
-    if (!initialStatus) return;
+    if (!initialStatus) { setAnalysis(undefined); setLinked(false); setError(''); return; }
     const controller = new AbortController();
     api.get(jobId, controller.signal).then(value => { setAnalysis(value); onStatusChange?.(value.status); }).catch(failure => {
       if (!controller.signal.aborted) setError(failure instanceof Error ? failure.message : '분석을 불러오지 못했습니다.');
@@ -43,10 +43,8 @@ export function JobAnalysis({ jobId, initialStatus, canRequest, onStatusChange }
     {analysis?.status === 'FAILED' && <><p>{analysis.failureReason}</p>
       <button type="button" disabled={busy || !canRequest} onClick={run}>{busy ? '요청 중…' : '다시 분석하기'}</button></>}
     {analysis?.status === 'COMPLETED' && <>
-      <p>분석 완료</p>
       <h4>필수 기술</h4>{analysis.requiredSkills.length ? <ul>{analysis.requiredSkills.map(s => <li key={s.id}>{s.name}</li>)}</ul> : <p>추출된 기술이 없습니다.</p>}
       <h4>우대 기술</h4>{analysis.preferredSkills.length ? <ul>{analysis.preferredSkills.map(s => <li key={s.id}>{s.name}</li>)}</ul> : <p>추출된 기술이 없습니다.</p>}
-      {canRequest && <button type="button" className="button-primary" disabled={busy} onClick={run}>{busy ? '요청 중…' : 'AI 분석하기'}</button>}
       {linked && <p role="status">분석 기술을 내 프로필의 AI 후보에 반영했습니다.</p>}
     </>}
     {error && <ErrorState message={error} onRetry={() => {

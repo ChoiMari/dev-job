@@ -105,7 +105,7 @@ S05 구현 계약:
 | 공고 검색·필터 `GET /api/jobs` | 예 | Query: `q`, `company`, `role`, `skillId`, `careerLevel`, `careerBands`, `location`, `employmentType`, `deadlineBefore`, `minMatchRate`, `applicationStatus`, `itOnly`, `source`, `page`, `size`, `sort` | 없음 | `JobSummary` 목록 · `200` | 필터·정렬값 오류 `400` |
 | 공고 상세 `GET /api/jobs/{jobId}` | 예 | Path: `jobId` | 없음 | 아래 `JobDetail` · `200` | 공고 없음 `404` |
 | AI 분석 요청·재시도 `POST /api/jobs/{jobId}/analysis` | 예 | Path: `jobId` | 없음 | `AIAnalysis` · 새 요청/진행 중 `202`, 완료 결과 재사용 `200` | 본인 북마크 없음 `403`, 공고 없음 `404`, 분석 요청 접수 실패 `503` |
-| AI 분석 상태·결과 `GET /api/jobs/{jobId}/analysis` | 예 | Path: `jobId` | 없음 | 아래 `AIAnalysis` · `200` | 공고 또는 분석 행 없음 `404` |
+| AI 분석 상태·결과 `GET /api/jobs/{jobId}/analysis` | 예 | Path: `jobId` | 없음 | 현재 계정이 요청한 `AIAnalysis` · `200` | 공고·분석 행·현재 계정 요청 기록 없음 `404` |
 | 내 역량과 공고 비교 `GET /api/jobs/{jobId}/match` | 예 | Path: `jobId` | 없음 | 아래 `JobMatch` · `200` | 공고 없음 `404`, 분석 미완료 `409` |
 
 `JobSummary`: `{ "id": 10, "title": "백엔드 개발자", "company": { "id": 3, "name": "A기업" }, "source": "WORK24", "location": "서울", "careerRequirement": "신입", "employmentType": "정규직", "deadlineDate": "2026-12-31", "matchRate": null, "bookmarked": false, "applicationStatus": null, "role": "DEVELOPMENT" }`. `role`은 제목 기반 표시값이며 직무를 판별할 수 없으면 `null`이다. `matchRate`는 사용자 기술와 완료된 분석 결과가 있어 계산 가능할 때만 값이 있으며, 합격 확률이 아니다.
@@ -123,10 +123,10 @@ ALIO 재수집으로 제목이나 분석 입력 텍스트가 달라지면 이전
 
 `AIAnalysis`: `{ "status": "COMPLETED", "requiredSkills": [Skill], "preferredSkills": [Skill], "analyzedAt": "2026-10-05T10:00:00+09:00" }`. `PENDING`에는 기술 목록을 빈 배열로, `FAILED`에는 기술 목록을 빈 배열과 일반적인 `failureReason`을 반환한다. 검증되지 않은 LLM 원문이나 Secret은 반환하지 않는다. 이미 완료된 결과는 다시 호출하지 않고 재사용한다. 실패 상태에서 다시 POST하면 같은 분석 대상을 재시도한다.
 
-로그인 사용자가 본인 관심 공고에서 `AI 분석하기`를 눌러 POST하면, 이미 완료된 공용 분석이 있는 경우 저장된 결과를 `200`으로 재사용하고 기술을 그 계정의 AI 발견 기술 후보에 반영한다. 이 경우 외부 AI를 다시 호출하지 않는다. GET은 결과 조회만 하며 계정별 후보를 변경하지 않는다.
+로그인 사용자가 본인 관심 공고에서 `AI 분석하기`를 눌러 POST하면, 이미 완료된 공용 분석이 있는 경우 저장된 결과를 `200`으로 재사용하고 기술을 그 계정의 AI 발견 기술 후보에 반영한다. 이 경우 외부 AI를 다시 호출하지 않는다. GET은 현재 계정에 요청 기록이 있는 결과만 조회하며 계정별 후보를 변경하지 않는다.
 관심 공고 목록의 수집 공고 `analysisStatus`도 현재 계정의 분석 요청 관계가 있을 때만 표시한다. 따라서 다른 계정의 완료 분석을 처음 보는 사용자는 평소와 같은 `AI 분석하기` 버튼을 보며, 클릭 후 완료 결과를 확인한다.
 
-S12 구현 계약: `POST`는 서버 세션·CSRF가 필요하며 작업을 비동기로 접수해 `202 PENDING`을 반환한다. 이미 진행 중인 요청도 같은 행의 `202 PENDING`, 완료 결과는 추가 호출 없이 `200 COMPLETED`다. `GET`은 행이 없으면 `404`; 실패 시 `FAILED`, 빈 기술 배열, 일반적인 `failureReason`을 반환한다. `analyzedAt`과 `failureReason`은 상태에 맞지 않으면 `null`이다. 5분 넘게 진행 중인 행은 다음 명시적 `POST`에서 재접수할 수 있다. 출력은 단일 `skills` 배열(JSON 객체)이며 항목은 기술명과 `REQUIRED`/`PREFERRED` 유형만 허용한다. 검증된 미등록 기술은 공통 Skill·표준명 별칭으로 생성하고 정규화된 ID를 저장한다. 같은 기술이 중복되면 `REQUIRED`가 우선한다. 분석 실패는 공고 상세·목록과 북마크·지원 API의 조회를 막지 않는다.
+S12 구현 계약: `POST`는 서버 세션·CSRF가 필요하며 작업을 비동기로 접수해 `202 PENDING`을 반환한다. 이미 진행 중인 요청도 같은 행의 `202 PENDING`, 완료 결과는 추가 호출 없이 `200 COMPLETED`다. `GET`은 분석 행 또는 현재 계정의 요청 기록이 없으면 `404`; 실패 시 `FAILED`, 빈 기술 배열, 일반적인 `failureReason`을 반환한다. `analyzedAt`과 `failureReason`은 상태에 맞지 않으면 `null`이다. 5분 넘게 진행 중인 행은 다음 명시적 `POST`에서 재접수할 수 있다. 출력은 단일 `skills` 배열(JSON 객체)이며 항목은 기술명과 `REQUIRED`/`PREFERRED` 유형만 허용한다. 검증된 미등록 기술은 공통 Skill·표준명 별칭으로 생성하고 정규화된 ID를 저장한다. 같은 기술이 중복되면 `REQUIRED`가 우선한다. 분석 실패는 공고 상세·목록과 북마크·지원 API의 조회를 막지 않는다.
 
 `JobMatch`: `{ "available": true, "required": { "matched": [Skill], "missing": [Skill], "total": 4 }, "preferred": { "matched": [Skill], "missing": [Skill], "total": 2 }, "matchRate": 83 }`. `UserSkill`과 사용자의 `ProjectSkill`을 합친 기술 집합으로 비교한다. `matchRate`는 `(일치한 필수 + 일치한 우대) / (전체 필수 + 전체 우대) × 100`을 반올림한 0~100 값이다. 공고에 분석된 기술이 전혀 없거나 사용자·프로젝트 양쪽에 기술이 없으면 `available: false`, 각 목록은 빈 배열, `matchRate: null`, `reason: "NO_JOB_SKILLS"` 또는 `"USER_SKILLS_EMPTY"`로 응답한다.
 
@@ -222,7 +222,7 @@ B14 새 추천은 위 `Dashboard.recommendedJobs`에 자동 혼합하지 않는�
 
 ## 7. MVP 이후
 
-B07 학습 목표의 생성·목록·상세·수정·삭제·완료 상태 API는 [확장 API 명세 B07](extension-api-spec.md#b07--학습-목표--ext-05-04-확정)을 따른다. 저장 목표는 이 문서 6절의 읽기 전용 Skill Gap 결과와 분리되며 목표 완료가 UserSkill 숙련도·경험이나 Skill Gap 계산을 자동 변경하지 않는다.
+B07 학습 목표의 생성·목록·상세·수정·삭제·완료 상태와 목표별 체크목록 API는 [확장 API 명세 B07](extension-api-spec.md#b07--학습-목표--ext-05-04-확정)을 따른다. 저장 목표는 이 문서 6절의 읽기 전용 Skill Gap 결과와 분리되며 목표 완료가 UserSkill 숙련도·경험이나 Skill Gap 계산을 자동 변경하지 않는다.
 
 B09 캐릭터 카탈로그·슬롯별 장착 API와 B10 성장·EXP·퀘스트·보상 수령 API의 구현 계약은 [확장 API 명세 B09~B10](extension-api-spec.md#b09--슬롯별-꾸미기--ext-06-0102-확정)을 따른다. `GET /api/me/character`는 기존 외형 필드를 유지하고 `progress`를 추가한다. `GET /api/character/items`는 로그인 사용자의 획득 여부로 `available`을 계산한다. 개인 Todo 완료 API는 서버 검증된 최초 완료에만 B10 EXP 기록을 남기며 요청 본문에 EXP 수치를 받지 않는다.
 

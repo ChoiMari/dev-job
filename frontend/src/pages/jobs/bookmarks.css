@@ -3,7 +3,7 @@
 .jobs-page--saved .card, .saved-page-header { border: 1px solid #e3e5f8; border-radius: 12px; background: #fff; box-shadow: 0 4px 17px #465bc50b; }
 .saved-page-header { display: flex; align-items: center; flex-wrap: wrap; gap: 13px; padding: 18px 20px; }
 .saved-page-header > img { width: 46px; height: 46px; object-fit: contain; }
-.saved-page-header > img, .saved-total img, .saved-remove img, .saved-analysis > img, .saved-empty > img { image-rendering: pixelated; }
+.saved-page-header > img, .saved-total img, .saved-remove img, .saved-analysis-robot img, .saved-empty > img { image-rendering: pixelated; }
 .saved-page-heading { min-width: 0; flex: 1 1 220px; }
 .saved-page-heading h1 { margin: 0 0 4px; color: #15194b; font-size: clamp(1.3rem, 2.3vw, 1.65rem); }
 .saved-page-heading p { margin: 0; color: #69709b; font-size: .78rem; }
@@ -19,8 +19,8 @@
 .saved-tabs { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; }
 .saved-tabs button { flex: 0 0 auto; min-height: 38px; padding: 8px 12px; border: 1px solid #d8ddf5; border-radius: 8px; background: #f8f9ff; color: #5541c0; font-size: .76rem; font-weight: 750; }
 .saved-tabs button[aria-pressed="true"] { border-color: #6650ef; background: #6650ef; color: #fff; }
-.saved-toolbar-search { display: grid; grid-template-columns: auto minmax(0, 1fr) minmax(130px, 170px); align-items: center; gap: 8px; }
-.saved-toolbar-search > .lucide-icon { position: relative; z-index: 1; width: 17px; height: 17px; margin-right: -36px; margin-left: 12px; color: #6650ef; }
+.saved-toolbar-search { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) minmax(130px, 170px); align-items: center; gap: 8px; }
+.saved-toolbar-search > .lucide-icon { position: absolute; top: 12px; left: 12px; z-index: 1; width: 17px; height: 17px; color: #6650ef; }
 .saved-toolbar-search input, .saved-toolbar-search select { min-width: 0; min-height: 40px; padding: 8px 11px; border: 1px solid #d8ddf5; border-radius: 8px; background: #fff; color: #23265a; font: inherit; font-size: .78rem; }
 .saved-toolbar-search input { padding-left: 36px; }
 .saved-toolbar-search input::placeholder { color: #747ba8; }
@@ -36,12 +36,13 @@
 .saved-card-labels { display: flex; align-items: center; flex-wrap: wrap; gap: 5px 8px; }
 .saved-card-labels strong { color: #39459a; font-size: .8rem; }
 .saved-kind { padding: 3px 7px; border-radius: 5px; background: #eaf2ff; color: #285aa8; font-size: .68rem; font-weight: 750; }
-.saved-kind--manual { background: #ffe8f1; color: #b52b91; }
+.saved-kind--collected, .saved-kind--manual { padding: 0; border-radius: 0; background: transparent; color: #69709b; font-weight: 650; }
+.saved-kind--collected::before, .saved-kind--manual::before { content: '·'; margin-right: 6px; color: #9a9cba; }
+.saved-kind--manual { color: #7665a5; }
 .saved-kind--unbookmarked { background: #f4f2fb; color: #6f6a92; }
 .saved-kind--pending-unbookmark { background: #f1edff; color: #6651aa; }
 .saved-kind--pending { background: #fff0f2; color: #a23c57; }
-.saved-card-labels .badge { font-size: .68rem; }
-.saved-card-application-status--planned .badge { border-color: #c8d8fc; background: #eaf2ff; color: #285aa8; }
+.saved-card-labels .job-status-label { font-size: .68rem; }
 .saved-card h2 { margin: 5px 0; color: #15194b; font-size: .94rem; line-height: 1.4; }
 .saved-card h2 a { display: inline; color: #28317d; text-decoration: none; }
 .saved-card h2 a:hover { color: #5541d5; text-decoration: underline; }
@@ -60,21 +61,22 @@
 .saved-card--delete-pending { border-color: #e7b8c9 !important; }
 .saved-card--unbookmark-pending { border-color: #c9c2f5 !important; }
 .saved-remove .lucide-icon { width: 17px; height: 17px; }
-.saved-analysis { display: grid; grid-template-columns: 54px minmax(0, 1fr) auto; align-items: center; gap: 8px; margin-top: 12px; padding: 9px 12px; border: 1px solid #e0e8f4; border-radius: 8px; background: linear-gradient(90deg, #f2fbf5, #f8f7ff); }
-.saved-analysis > img { width: 52px; height: 52px; object-fit: contain; }
+.saved-analysis { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; align-items: center; gap: 11px; min-height: 44px; margin-top: 14px; padding: 0; border: 0; background: transparent; }
+.saved-analysis-robot { position: relative; display: block; width: 44px; height: 44px; overflow: hidden; }
+.saved-analysis-robot img { position: absolute; top: -16px; left: -16px; width: 64px; height: 64px; max-width: none; object-fit: contain; }
 .saved-analysis--interactive { cursor: pointer; }
-.saved-analysis--interactive:hover, .saved-analysis--interactive:focus-visible { border-color: #bcb9f5; background: linear-gradient(90deg, #ecf8f0, #f1eeff); }
-.saved-analysis-detail-hint { display: inline-flex; align-items: center; gap: 2px; color: #5541c0; font-size: .7rem; font-weight: 750; white-space: nowrap; }
-.saved-analysis-detail-hint .lucide-icon { width: 13px; height: 13px; }
+.saved-analysis--interactive:hover .saved-analysis-heading strong { text-decoration: underline; }
+.saved-analysis--interactive:focus-visible { outline: 2px solid #6650ef; outline-offset: 4px; }
 .saved-analysis-completed-actions { display: grid; justify-items: end; gap: 4px; }
 .saved-analysis-completed-actions small { color: #147b4d; font-size: .66rem; }
 .saved-analysis-copy { min-width: 0; }
 .saved-analysis-heading { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
 .saved-analysis-heading strong { color: #181a50; font-size: .8rem; }
-.saved-analysis-status { padding: 3px 7px; border-radius: 5px; background: #e9eafa; color: #69709b; font-size: .65rem; font-weight: 750; }
-.saved-analysis-status--completed { background: #e7f8ee; color: #147b4d; }
-.saved-analysis-status--failed { background: #ffedf1; color: #a23c57; }
-.saved-analysis-status--pending { background: #eaf2ff; color: #285aa8; }
+.saved-analysis-status { display: inline-flex; align-items: center; gap: 3px; color: #69709b; font-size: .68rem; font-weight: 650; white-space: nowrap; }
+.saved-analysis-status .lucide-icon { width: 13px; height: 13px; }
+.saved-analysis-status--completed { color: #417763; }
+.saved-analysis-status--failed { color: #a23c57; }
+.saved-analysis-status--pending { color: #285aa8; }
 .saved-analysis-copy p { margin: 2px 0 0; color: #69709b; font-size: .7rem; line-height: 1.4; }
 .saved-analysis-skills { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; }
 .saved-analysis-skills span { padding: 2px 5px; border-radius: 4px; background: #eaf2ff; color: #285aa8; font-size: .66rem; }
@@ -114,7 +116,7 @@
 .saved-unbookmark-confirm button { min-height: 31px; padding: 5px 9px; border: 1px solid #d0c7f4; border-radius: 6px; background: #fff; color: #5849a8; font-size: .71rem; font-weight: 750; }
 .saved-unbookmark-confirm .saved-unbookmark-commit { border-color: #6650ef; background: #6650ef; color: #fff; }
 .saved-unbookmark-confirm button:disabled { opacity: .55; cursor: wait; }
-.jobs-page--saved .job-pagination { padding-top: 14px; border-top: 1px solid #e7eafd; }
+.jobs-page--saved .job-pagination { padding-top: 14px; border-top: 0; }
 .jobs-page--saved .job-pagination button { border: 1px solid #ded9fa; background: #f1efff; color: #5541c0; font-size: .76rem; font-weight: 750; }
 .jobs-page--saved .job-pagination button:disabled { opacity: .55; }
 .saved-card-actions:has(.saved-card-application) .saved-card-edit { margin-left: 0; }
@@ -128,13 +130,12 @@
   .saved-page-header { padding: 15px; }
   .saved-page-heading-actions { width: 100%; justify-content: space-between; }
   .jobs-page--saved > .saved-page-content { padding: 14px !important; }
-  .saved-analysis { grid-template-columns: 50px minmax(0, 1fr); }
-  .saved-analysis > img { width: 48px; height: 48px; }
-  .saved-analysis-action, .saved-analysis-detail-hint, .saved-analysis-completed-actions { grid-column: 2; justify-self: start; }
+  .saved-analysis { grid-template-columns: 44px minmax(0, 1fr); }
+  .saved-analysis-action, .saved-analysis-completed-actions { grid-column: 2; justify-self: start; }
   .saved-analysis-completed-actions { justify-items: start; }
 }
 @media (max-width: 520px) {
-  .saved-toolbar-search { grid-template-columns: auto minmax(0, 1fr); }
+  .saved-toolbar-search { grid-template-columns: minmax(0, 1fr); }
   .saved-toolbar-search select { grid-column: 1 / -1; }
   .saved-card-top { grid-template-columns: 36px minmax(0, 1fr) 54px; gap: 8px; }
   .saved-company-icon { width: 36px; height: 36px; }

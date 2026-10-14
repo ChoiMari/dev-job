@@ -171,6 +171,8 @@ V15__create_interested_companies.sql은 interested_company만 추가한다. id B
 
 `V22__learning_goals.sql`은 `learning_goal`을 추가한다. BIGINT identity `id`, 필수 `user_id` FK, 선택 `skill_id` 공용 Skill FK, 필수 `title` VARCHAR(200), 선택 `description` VARCHAR(2000), 필수 `progress_percent` 0~100 정수, 선택 `completed_at`·`deleted_at`, 필수 `created_at`·`updated_at` TIMESTAMPTZ를 둔다. 완료 시 진행률 100을 CHECK로 보장한다. 활성 목표의 `(user_id, coalesce(skill_id,-1), title)` 부분 UNIQUE 인덱스로 동일 제목·기술의 동시 중복 요청을 막고, 사용자별 `(user_id, updated_at DESC, id DESC)` 부분 인덱스로 목록을 조회한다. 제목은 서비스에서 공백을 축약해 저장한다. 삭제 시각이 있는 행은 일반 조회에서 제외한다. UserSkill 관계를 삭제해도 공용 Skill FK는 유지된다. 목표와 Skill Gap 결과는 별도 데이터이며 완료·취소·삭제는 UserSkill의 숙련도·경험 또는 기존 분석 계산을 자동 변경하지 않는다.
 
+`V40__learning_goal_tasks.sql`은 `learning_goal_task`를 추가한다. BIGINT identity `id`, 필수 `goal_id` FK, 필수 `title` VARCHAR(200), 필수 `completed` boolean, 필수 `created_at`·`updated_at` TIMESTAMPTZ와 `(goal_id,id)` 인덱스를 둔다. 목표를 소프트 삭제해도 항목은 남지만 목표 소유권·활성 상태 검사로 일반 API에서는 조회되지 않는다. 항목 변경 시 완료 수와 전체 수를 집계해 부모 목표의 `progress_percent`를 갱신한다. 기존 목표의 저장 진행률은 첫 항목 추가 전까지 유지한다.
+
 ### B09 캐릭터 기본 상태·장착 확장
 
 `V19__character_equipment.sql`은 `character_equipment`만 추가한다. `user_id`는 `users.id`를 참조하는 PK이므로 사용자당 장착 행은 최대 한 건이다. `outfit_item_id`는 필수 `VARCHAR(40)`이며 V19 시점 저장 가능한 값은 `BASE`, `MINT`다. `updated_at`은 필수 `TIMESTAMPTZ`다. 신규·기존 사용자는 장착 행이 없을 때 `BASE` 상태로 조회되며 최초 장착 시 행을 만든다. 사용자 행 잠금 뒤 삽입·변경하므로 같은 사용자의 동시 장착이 직렬화된다. `PEACH`는 B10 보상 조건이 없어 카탈로그에 잠금 상태로만 나타나고 DB 저장을 허용하지 않는다. 카탈로그와 이미지 ID는 애플리케이션의 고정 값으로 관리하며 이 단계에서 보상·EXP·퀘스트 테이블을 추가하지 않는다.

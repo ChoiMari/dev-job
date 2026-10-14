@@ -45,6 +45,12 @@ public class LearningGoal {
         completedAt = completed ? now() : null;
         updatedAt = now();
     }
+    public void setTaskProgress(int progressPercent) {
+        if (completedAt != null && progressPercent < 100) throw new IllegalStateException("Completed goal requires 100% progress");
+        if (this.progressPercent == progressPercent) return;
+        this.progressPercent = progressPercent;
+        this.updatedAt = now();
+    }
     public void delete() { deletedAt = now(); updatedAt = deletedAt; }
     private static Instant now() { return Instant.now().truncatedTo(ChronoUnit.MICROS); }
     public Long getId() { return id; }

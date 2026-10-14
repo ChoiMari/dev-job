@@ -184,8 +184,8 @@
 .application-detail-modal-head h2 { margin: 0; font-size: 1.05rem; }
 .application-detail-modal-head p { margin: 3px 0 0; color: #687397; font-size: .75rem; }
 .application-detail-head-actions { display: inline-flex; align-items: center; justify-self: end; gap: 6px; width: max-content; }
-.application-detail-head-actions > a { display: grid; place-items: center; width: 30px; height: 30px; margin-left: 2px; color: #5541c0; text-decoration: none; }
-.application-detail-head-actions > a .lucide-icon { width: 20px; height: 20px; }
+.application-detail-head-actions > a, .application-detail-head-actions > .application-detail-close { display: grid; place-items: center; width: 30px; height: 30px; margin-left: 2px; padding: 0; border: 0; background: transparent; color: #5541c0; text-decoration: none; cursor: pointer; }
+.application-detail-head-actions > a .lucide-icon, .application-detail-head-actions > .application-detail-close .lucide-icon { width: 20px; height: 20px; }
 .application-detail-edit { display: inline-flex; align-items: center; gap: 4px; min-height: 30px; padding: 4px 9px; border: 1px solid #b8c7ff; border-radius: 6px; background: #f3f6ff; color: #374eb4; font: inherit; font-size: .72rem; font-weight: 700; cursor: pointer; }
 .application-detail-edit .lucide-icon { width: 14px; height: 14px; }
 .application-detail-delete { display: inline-flex; align-items: center; gap: 4px; min-height: 30px; padding: 4px 9px; border: 1px solid #f0c8d1; border-radius: 6px; background: #fff7f8; color: #ad3c5a; font: inherit; font-size: .72rem; font-weight: 700; cursor: pointer; }
@@ -193,21 +193,26 @@
 .application-detail-delete-backdrop { z-index: 120; }
 .application-detail-modal-body { min-height: 0; overflow-y: auto; padding: 18px 20px 22px; }
 .application-detail-job { padding-bottom: 14px; border-bottom: 1px solid #e3e7fa; }
+.application-detail-job-top { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 16px; }
 .application-detail-job .application-kind { padding: 2px 6px; border-radius: 4px; background: #eaf2ff; color: #285aa8; font-size: .67rem; }
 .application-detail-job .application-kind--manual { background: #ffe8f1; color: #b52b91; }
+.application-detail-job-top a { color: #5541c0; font-size: .75rem; font-weight: 700; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.application-detail-job-top a:hover { color: #4031a4; }
+.application-detail-job-top a:focus-visible { outline: 2px solid #6650ef; outline-offset: 3px; }
 .application-detail-job p { margin: 8px 0 4px; color: #59658a; font-size: .78rem; }
 .application-detail-job h3 { margin: 0; font-size: .95rem; line-height: 1.45; overflow-wrap: anywhere; }
 .application-detail-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; margin: 16px 0; }
 .application-detail-facts > div { display: grid; align-content: start; gap: 7px; min-width: 0; padding: 11px 12px; border: 1px solid #e3e7fa; border-radius: 8px; background: #f8f9ff; }
-.application-detail-facts span { display: inline-flex; align-items: center; gap: 5px; color: #687397; font-size: .72rem; font-weight: 700; }
-.application-detail-facts span .lucide-icon { width: 14px; height: 14px; color: #6650ef; }
+.application-detail-facts > div > span:first-child { display: inline-flex; align-items: center; gap: 5px; color: #687397; font-size: .72rem; font-weight: 700; }
+.application-detail-facts > div > span:first-child .lucide-icon { width: 14px; height: 14px; color: #6650ef; }
+.application-detail-facts .job-status-label { font-size: .8rem; }
+.application-detail-facts .job-status-label .lucide-icon { width: 16px; height: 16px; }
 .application-detail-facts strong { color: #182052; font-size: .8rem; font-weight: 650; white-space: pre-wrap; overflow-wrap: anywhere; }
 .application-detail-facts .application-detail-note { grid-column: 1 / -1; }
-.application-detail-links a { display: inline-flex; align-items: center; gap: 7px; min-height: 34px; padding: 7px 10px; border: 1px solid #cdc7fa; border-radius: 7px; background: #f7f5ff; color: #5541c0; font-size: .77rem; font-weight: 750; text-decoration: none; }
-.application-detail-links .lucide-icon, .application-detail-interviews .lucide-icon { width: 15px; height: 15px; }
+.application-detail-interviews .lucide-icon { width: 15px; height: 15px; }
 .application-detail-interviews { display: flex; flex-wrap: wrap; gap: 8px 16px; margin: 14px 0 0; }
 .application-detail-interviews a { display: inline-flex; align-items: center; gap: 5px; color: #5541c0; font-size: .75rem; font-weight: 700; text-decoration: none; }
-.application-detail-links a:hover, .application-detail-interviews a:hover { text-decoration: underline; }
+.application-detail-interviews a:hover { text-decoration: underline; }
 .application-detail-modal .application-editor { grid-template-columns: minmax(0, 1fr); gap: 14px; margin-top: 18px; border-top: 1px solid #e3e7fa; padding-top: 16px; }
 .application-detail-modal .application-form fieldset { gap: 10px; padding: 12px 14px 14px; border: 1px solid #e1e5fa; border-radius: 8px; background: #f8f9ff; }
 .application-detail-modal .application-form legend { color: #28317d; font-size: .82rem; }

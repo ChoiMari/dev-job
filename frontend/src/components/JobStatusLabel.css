@@ -1,0 +1,5 @@
+.job-status-label { display: inline-flex; align-items: center; gap: 5px; min-height: 18px; border: 0; background: transparent; color: #5a55a9; font-size: .7rem; font-weight: 700; line-height: 18px; white-space: nowrap; }
+.job-status-label .lucide-icon { width: 15px; height: 15px; flex: 0 0 auto; }
+.job-status-label--planned { color: #285aa8; }
+.job-status-label--applied, .job-status-label--document_passed, .job-status-label--final_passed { color: #147b4d; }
+.job-status-label--rejected, .job-status-label--withdrawn { color: #a23c57; }

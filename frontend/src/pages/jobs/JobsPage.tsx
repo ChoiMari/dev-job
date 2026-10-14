@@ -2,16 +2,14 @@ import { useEffect, useState } from 'react';
 import { apiRequest } from '../../api';
 import { createJobsApi } from '../../api/jobs';
 import type { JobPage } from '../../api/jobs';
-import { Badge } from '../../components/PixelArt';
 import { BookmarkButton } from '../../components/BookmarkButton';
 import { ErrorState, LoadingState } from '../../components/States';
 import { isApplicationStatus } from '../../api/application-status';
-import { ApplicationStatusBadge } from '../../components/ApplicationStatusBadge';
 import { LucideIcon } from '../../components/LucideIcon';
+import { JobStatusLabel } from '../../components/JobStatusLabel';
 import { createSkillsApi } from '../../api/skills';
 import type { SkillPage } from '../../api/skills';
 import './jobs.css';
-import jobResultsCompanion from '../../assets/redesign/cur-20-job-results-companion.png';
 import searchEmptyCat from '../../assets/jobs/search-empty-cat.png';
 
 const jobs = createJobsApi(apiRequest);
@@ -111,7 +109,7 @@ export function JobsPage({ location }: { location: string }) {
   const source = params.get('source') || '';
   const role = params.get('role') || '';
   const itOnly = params.get('itOnly') === 'true';
-  const legacyFilterApplied = Boolean(params.get('company') || params.get('careerLevel') || applicationStatus || source || params.has('itOnly') || params.has('sort') || params.has('size'));
+  const legacyFilterApplied = Boolean(params.get('company') || params.get('careerLevel') || applicationStatus || source || params.has('itOnly') || params.has('size'));
   const invalid = !Number.isSafeInteger(page) || page < 0 || !Number.isSafeInteger(size) || size < 1 || size > 100 || page * size > 2147483647 || !['latest', 'deadline', 'matchRate'].includes(sort)
     || (skillId !== null && (!/^[1-9]\d*$/.test(skillId) || !Number.isSafeInteger(Number(skillId))))
     || (minMatchRate !== null && (!/^\d{1,3}$/.test(minMatchRate) || Number(minMatchRate) > 100))
@@ -185,11 +183,12 @@ export function JobsPage({ location }: { location: string }) {
       </div>
     </form>
     <section className="card job-search-results" aria-label="공고 검색 결과" aria-busy={loading}>
-      <div className="job-search-heading job-hero job-results-hero"><div><p className="job-eyebrow">JOB EXPLORER</p><h2>채용공고 탐색</h2>
-        <p>저장된 공고에서 조건에 맞는 기회를 찾으세요.</p></div>
-        <img src={jobResultsCompanion} alt="" aria-hidden="true" /></div>
       {loading ? <LoadingState message="저장된 공고를 검색하고 있습니다." /> : error ? <ErrorState message={error} onRetry={() => setRetry(v => v + 1)} /> : data && <>
-        <p className="job-result-summary" role="status"><span>검색 결과 <strong>{data.totalElements}</strong>건</span><span>{data.page + 1}페이지 · {itOnly ? 'IT 직무' : '전체 저장 공고'}</span></p>
+        <div className="job-result-toolbar"><p className="job-result-summary" role="status">검색 결과 <strong>{data.totalElements}</strong>건</p>
+          <label className="job-result-sort" data-sort={sort}><span className="sr-only">정렬</span><select aria-label="채용공고 정렬" value={sort} onChange={event => {
+            const query = new URLSearchParams(search); query.set('sort', event.target.value); query.set('page', '0');
+            window.location.hash = `/jobs?${query}`;
+          }}><option value="latest">최신순</option><option value="deadline">마감일순</option><option value="matchRate">기술 일치도순</option></select><LucideIcon name="chevronDown" /></label></div>
         {data.items.length === 0 ? <><div className="job-empty-results" role="status">
           <img src={searchEmptyCat} alt="" aria-hidden="true" />
           <h3>검색 결과가 없습니다.</h3>
@@ -197,7 +196,7 @@ export function JobsPage({ location }: { location: string }) {
             <br />다른 키워드로 검색하거나, 필터 조건을 변경해보세요.</p>
         </div>
           {page > 0 && <button onClick={() => navigatePage(0)}>첫 페이지로</button>}</> : <ul className="job-list job-results-list">{data.items.map(job => <li key={job.id} className="job-card job-result-card">
-          <div className="job-result-main"><div className="job-card-top"><p className="job-company">{job.company.name}</p><Badge icon="grid">{sourceLabel(job.source)}</Badge>{job.applicationStatus && <span className={`job-list-application-status job-list-application-status--${job.applicationStatus.toLowerCase()}`}><ApplicationStatusBadge status={job.applicationStatus} /></span>}</div>
+          <div className="job-result-main"><div className="job-card-top"><p className="job-company">{job.company.name}</p><span className="job-source-label"><LucideIcon name={job.source === 'ALIO_RECRUITMENT' ? 'building' : 'briefcase'} />{sourceLabel(job.source)}</span>{job.applicationStatus && <JobStatusLabel status={job.applicationStatus} />}</div>
           <h2><a href={`#/jobs/${job.id}?${new URLSearchParams({ from: search })}`}>{job.title}</a></h2>
           <div className="job-result-facts">{job.role && <span>{roleLabels[job.role] || job.role}</span>}{job.location && <span>{job.location}</span>}{job.careerRequirement && <span>{job.careerRequirement}</span>}{job.employmentType && <span>{job.employmentType}</span>}{job.matchRate !== null && <span>기술 일치도 {job.matchRate}%</span>}</div></div>
           <div className="job-result-side">{job.deadlineDate && <span className="job-result-deadline">마감 {job.deadlineDate}</span>}

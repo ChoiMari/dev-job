@@ -18,5 +18,7 @@ public class AnalysisController {
         return ResponseEntity.status(result.accepted() ? 202 : 200).body(result.body());
     }
     @GetMapping
-    public AnalysisResponse get(@PathVariable long jobId) { return service.get(jobId); }
+    public AnalysisResponse get(@AuthenticationPrincipal CurrentUser user, @PathVariable long jobId) {
+        return service.get(user.id(), jobId);
+    }
 }

@@ -151,6 +151,21 @@ POST·PATCH의 필드 검증 실패는 `400`과 `INVALID_INPUT`으로 응답하�
 
 같은 사용자의 활성 목표에서 `(skillId 또는 null, 정리된 title)` 조합은 유일하다. 중복 생성·수정과 동시 충돌은 `409`이며 삭제된 목표와 같은 조합은 다시 만들 수 있다. 서로 다른 기술 또는 제목은 별도 목표다. 보유 기술을 삭제해도 공용 Skill과 목표 연결은 유지한다. 목표는 읽기 전용 `GET /api/me/skill-gap`의 분석 결과와 별도 저장되며, Skill Gap 결과가 바뀌어도 유지된다. 목표 완료·취소·삭제는 UserSkill 숙련도·경험, 프로젝트 기술, 기존 Skill Gap 계산을 자동 변경하지 않는다. 오류 본문은 공통 `{code,message}`다.
 
+#### B07 목표별 체크목록
+
+체크목록은 개인 할 일(B03)과 별도로 학습 목표 안에서 관리한다. 모든 경로는 인증이 필요하고 변경 요청에는 CSRF 토큰이 필요하다. `taskId`는 양의 정수다.
+
+| Method·URL | 요청 | 성공 |
+| --- | --- | --- |
+| `GET /api/me/learning-goals/{goalId}/tasks` | 없음 | `200` `LearningGoalTask[]` |
+| `POST /api/me/learning-goals/{goalId}/tasks` | `{"title":"기초 학습"}` | `201` 생성된 `LearningGoalTask` |
+| `PATCH /api/me/learning-goals/{goalId}/tasks/{taskId}` | `title`, `completed` 중 한 개 이상 | `200` 변경된 `LearningGoalTask` |
+| `DELETE /api/me/learning-goals/{goalId}/tasks/{taskId}` | 없음 | `204` 본문 없음 |
+
+`LearningGoalTask`는 `{id,title,completed,createdAt,updatedAt}`이다. 제목은 목표 제목과 같이 공백을 정리한 1~200자 문자열이다. POST는 제목만 받으며 완료 상태는 false로 시작한다. PATCH의 `completed`는 boolean이다. 알 수 없는 필드·빈 PATCH·잘못된 타입은 `400`이다. 목표 또는 항목이 없거나 목표가 삭제되었으면 `404`, 다른 사용자의 목표는 `403`이다.
+
+항목 생성·완료 변경·삭제 뒤 목표 진행률은 `floor(완료 항목 수 / 전체 항목 수 × 100)`으로 저장한다. 항목이 0개이면 0%다. 체크목록이 있는 목표의 진행률을 PATCH로 다른 값으로 바꾸면 `409`다. 기존에 수동 진행률을 저장한 목표는 첫 항목 추가 시 체크목록 기반 진행률로 전환하며, 항목이 없는 기존 목표의 저장값은 보존한다. 완료한 목표의 체크목록 변경은 `409`; 먼저 완료를 취소해야 한다. 목표의 최종 완료 확정은 기존 `completion` API를 사용한다. 학습 목표 화면에서는 진행률이 100%일 때 완료 버튼을 활성화하며, 체크목록이 있는 목표는 모든 항목 완료가 필요하다.
+
 ### B08 · 채용시장 확장 분석 — EXT-04 확정
 
 세 GET API 모두 로그인 세션이 필요하고 저장된 공용 공고만 읽는다. 외부 출처나 AI를 호출하지 않는다. `source`는 `JobSource.code`의 정확한 값(대문자·숫자·밑줄, 1~100자), `desiredRole`은 공고 제목의 대소문자 무시 부분 일치(최대 200자)다. 날짜는 게시일 `YYYY-MM-DD`의 양 끝을 포함한다. 날짜 역전·형식 오류·출처 형식 오류·잘못된 기술 ID·간격은 `400 INVALID_INPUT`, 인증 없음은 `401`이다. 존재하지 않는 출처 코드나 기술 ID는 빈 집계로 응답한다.

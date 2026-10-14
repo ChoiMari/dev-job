@@ -30,7 +30,7 @@ public record LearningGoalInput(boolean titlePresent, String title, boolean desc
         return value.booleanValue();
     }
 
-    private static String title(JsonNode value) {
+    public static String title(JsonNode value) {
         if (value == null || !value.isTextual()) throw invalid();
         String source = value.textValue();
         if (source.codePoints().anyMatch(Character::isISOControl)) throw invalid();

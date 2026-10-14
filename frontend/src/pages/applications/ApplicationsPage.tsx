@@ -5,7 +5,7 @@ import { createApplicationsApi } from '../../api/applications';
 import type { Application, ApplicationPage } from '../../api/applications';
 import { applicationStatuses, statusLabels, nextStatuses, statusChangeInput, localSchedule, scheduleInput } from '../../api/application-status';
 import type { ApplicationStatus } from '../../api/application-status';
-import { ApplicationStatusBadge } from '../../components/ApplicationStatusBadge';
+import { JobStatusLabel } from '../../components/JobStatusLabel';
 import { EmptyState, ErrorState, LoadingState, SuccessState } from '../../components/States';
 import './applications.css';
 import { AddApplicationModal } from './AddApplicationModal';
@@ -93,7 +93,9 @@ export function ApplicationsPage({ location }: { location: string }) {
   </div>;
 }
 
-export function ApplicationDetailPage({ location }: { location: string }) {
+export function ApplicationDetailPage({ location, modalOnly = false, onClose, onUpdated, onDeleted }: {
+  location: string; modalOnly?: boolean; onClose?: () => void; onUpdated?: (application: Application) => void; onDeleted?: () => void;
+}) {
   const path = location.split('?')[0];
   const id = Number(path.slice('/applications/'.length));
   const valid = /^\/applications\/[1-9]\d*$/.test(path) && Number.isSafeInteger(id);
@@ -124,26 +126,28 @@ export function ApplicationDetailPage({ location }: { location: string }) {
   async function save(action: () => Promise<Application>, message: string) {
     if (busy) return;
     setBusy(true); setSaveError(''); setSuccess('');
-    try { setData(await action()); setSuccess(message); }
+    try { const updated = await action(); setData(updated); onUpdated?.(updated); setSuccess(message); }
     catch (failure) { setSaveError(failure instanceof ApiError && failure.status === 409
       ? '상태가 변경되었거나 허용되지 않은 전이입니다. 최신 정보를 다시 확인해 주세요.' : failureMessage(failure)); }
     finally { setBusy(false); }
   }
   const boardHref = `#/applications${from ? `?${from}` : ''}`;
-  return <><ApplicationsPage location="/applications" /><div className="application-modal-backdrop application-detail-backdrop">
+  return <>{!modalOnly && <ApplicationsPage location="/applications" />}<div className="application-modal-backdrop application-detail-backdrop">
     <div className="application-detail-modal" role="dialog" aria-modal="true" aria-labelledby="application-detail-title">
-    <header className="application-detail-modal-head"><img src={applicationDetailArt} alt="" aria-hidden="true" /><div><h2 id="application-detail-title">지원 상세</h2><p>지원한 공고의 정보와 진행 상태를 확인하세요.</p></div><div className="application-detail-head-actions">{data && <><button type="button" className="application-detail-edit" onClick={() => setEditing(value => !value)}><LucideIcon name="pencil" /> {editing ? '보기' : '수정'}</button><button type="button" className="application-detail-delete" onClick={() => { setDeleteError(''); setDeleting(true); }}><LucideIcon name="trash" /> 삭제</button></>}<a href={boardHref} aria-label="닫기"><LucideIcon name="close" /></a></div></header>
+    <header className="application-detail-modal-head"><img src={applicationDetailArt} alt="" aria-hidden="true" /><div><h2 id="application-detail-title">지원 상세</h2><p>지원한 공고의 정보와 진행 상태를 확인하세요.</p></div><div className="application-detail-head-actions">{data && <><button type="button" className="application-detail-edit" onClick={() => setEditing(value => !value)}><LucideIcon name="pencil" /> {editing ? '보기' : '수정'}</button><button type="button" className="application-detail-delete" onClick={() => { setDeleteError(''); setDeleting(true); }}><LucideIcon name="trash" /> 삭제</button></>}{modalOnly ? <button type="button" className="application-detail-close" aria-label="닫기" onClick={onClose}><LucideIcon name="close" /></button> : <a href={boardHref} aria-label="닫기"><LucideIcon name="close" /></a>}</div></header>
     <div className="application-detail-modal-body" aria-busy={loading}>
       {loading ? <LoadingState message="지원 상세를 불러오고 있습니다." /> : missing ? <EmptyState title="지원 기록을 찾을 수 없습니다." message="목록에서 지원 기록을 다시 선택해 주세요." />
         : error ? <ErrorState message={error} onRetry={() => setRetry(value => value + 1)} /> : data && <>
-          <div className="application-detail-job"><span className={`application-kind application-kind--${data.job ? 'collected' : 'manual'}`}>{data.job ? '수집 공고' : '직접 등록'}</span><p>{data.job?.company.name ?? data.personalSavedJob?.companyName}</p><h3>{data.job?.title ?? data.personalSavedJob?.title}</h3></div>
-          <div className="application-detail-facts"><div><span><LucideIcon name="fileText" /> 진행 상태</span><ApplicationStatusBadge status={data.currentStatus} /></div><div><span><LucideIcon name="calendar" /> 지원일</span><strong>{data.appliedDate || '지원 전'}</strong></div>
+          <div className="application-detail-job"><div className="application-detail-job-top"><span className={`application-kind application-kind--${data.job ? 'collected' : 'manual'}`}>{data.job ? '수집 공고' : '직접 등록'}</span>
+            {data.job ? !modalOnly && <a href={`#/jobs/${data.job.id}`}>공고 상세 보기</a>
+              : data.personalSavedJob && <a href={data.personalSavedJob.url} target="_blank" rel="noopener noreferrer">외부 원문 열기</a>}</div>
+            <p>{data.job?.company.name ?? data.personalSavedJob?.companyName}</p><h3>{data.job?.title ?? data.personalSavedJob?.title}</h3></div>
+          <div className="application-detail-facts"><div><span><LucideIcon name="fileText" /> 진행 상태</span><JobStatusLabel status={data.currentStatus} /></div><div><span><LucideIcon name="calendar" /> 지원일</span><strong>{data.appliedDate || '지원 전'}</strong></div>
             {(data.job?.location || data.personalSavedJob?.location) && <div><span><LucideIcon name="building" /> 지역</span><strong>{data.job?.location ?? data.personalSavedJob?.location}</strong></div>}
             {data.nextScheduleAt && <div><span><LucideIcon name="clock" /> 다음 확인 일정</span><strong>{dateTime(data.nextScheduleAt)}</strong></div>}
             {data.note && <div className="application-detail-note"><span><LucideIcon name="message" /> 메모</span><strong>{data.note}</strong></div>}</div>
-          <div className="application-detail-links">{data.job ? <a href={`#/jobs/${data.job.id}`}><LucideIcon name="link" /> 공고 상세 보기 <LucideIcon name="arrowRight" /></a>
-            : data.personalSavedJob && <a href={data.personalSavedJob.url} target="_blank" rel="noopener noreferrer"><LucideIcon name="link" /> 외부 원문 열기 <LucideIcon name="arrowRight" /></a>}</div>
-          <div className="application-detail-interviews"><a href={`#/interviews/new?applicationId=${data.id}`}><LucideIcon name="calendar" /> 면접 일정 등록</a><a href="#/interviews">면접 일정 보기 <LucideIcon name="arrowRight" /></a></div>
+          {!['FINAL_PASSED', 'REJECTED', 'WITHDRAWN'].includes(data.currentStatus) &&
+            <div className="application-detail-interviews"><a href={`#/interviews/new?applicationId=${data.id}`}><LucideIcon name="calendar" /> 면접 일정 등록</a><a href="#/interviews">면접 일정 보기 <LucideIcon name="arrowRight" /></a></div>}
           {success && <SuccessState message={success} compact />}
           {saveError && <><ErrorState message={saveError} /><button type="button" disabled={busy} onClick={() => {
             setRetry(value => value + 1); setSaveError(''); setSuccess('');
@@ -151,7 +155,7 @@ export function ApplicationDetailPage({ location }: { location: string }) {
           {editing && <ApplicationEditor key={data.id} data={data} busy={busy} save={save} />}
         </>}
     </div></div></div>
-    {deleting && <div className="application-modal-backdrop application-detail-delete-backdrop"><section className="application-confirm" role="dialog" aria-modal="true" aria-labelledby="application-detail-delete-title"><header className="application-confirm-head"><span className="application-confirm-icon application-confirm-icon--danger"><LucideIcon name="trash" /></span><div><h2 id="application-detail-delete-title">지원 내역을 삭제할까요?</h2><p>삭제한 내역은 지원 관리에서 보이지 않습니다.</p></div></header><div className="application-confirm-content"><strong>{data?.job?.title ?? data?.personalSavedJob?.title}</strong>{deleteError && <p className="application-modal-error" role="alert">{deleteError}</p>}</div><footer className="application-confirm-actions"><button type="button" disabled={busy} onClick={() => setDeleting(false)}>취소</button><button type="button" className="application-danger-button" disabled={busy || !data} onClick={async () => { if (!data) return; setBusy(true); setDeleteError(''); try { await api.delete(data.id); window.location.hash = boardHref.slice(1); } catch (failure) { setDeleteError(failureMessage(failure)); } finally { setBusy(false); } }}>삭제</button></footer></section></div>}
+    {deleting && <div className="application-modal-backdrop application-detail-delete-backdrop"><section className="application-confirm" role="dialog" aria-modal="true" aria-labelledby="application-detail-delete-title"><header className="application-confirm-head"><span className="application-confirm-icon application-confirm-icon--danger"><LucideIcon name="trash" /></span><div><h2 id="application-detail-delete-title">지원 내역을 삭제할까요?</h2><p>삭제한 내역은 지원 관리에서 보이지 않습니다.</p></div></header><div className="application-confirm-content"><strong>{data?.job?.title ?? data?.personalSavedJob?.title}</strong>{deleteError && <p className="application-modal-error" role="alert">{deleteError}</p>}</div><footer className="application-confirm-actions"><button type="button" disabled={busy} onClick={() => setDeleting(false)}>취소</button><button type="button" className="application-danger-button" disabled={busy || !data} onClick={async () => { if (!data) return; setBusy(true); setDeleteError(''); try { await api.delete(data.id); if (modalOnly) { onDeleted?.(); onClose?.(); } else window.location.hash = boardHref.slice(1); } catch (failure) { setDeleteError(failureMessage(failure)); } finally { setBusy(false); } }}>삭제</button></footer></section></div>}
   </>;
 }
 

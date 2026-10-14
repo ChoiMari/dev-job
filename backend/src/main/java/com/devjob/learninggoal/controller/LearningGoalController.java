@@ -3,6 +3,8 @@ package com.devjob.learninggoal.controller;
 import com.devjob.auth.dto.CurrentUser;
 import com.devjob.learninggoal.dto.LearningGoalInput;
 import com.devjob.learninggoal.dto.LearningGoalResponse;
+import com.devjob.learninggoal.dto.LearningGoalTaskInput;
+import com.devjob.learninggoal.dto.LearningGoalTaskResponse;
 import com.devjob.learninggoal.service.LearningGoalService;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.util.List;
@@ -61,6 +63,28 @@ public class LearningGoalController {
     @DeleteMapping("/{goalId}") @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@AuthenticationPrincipal CurrentUser user, @PathVariable Long goalId) {
         service.delete(user.id(), goalId);
+    }
+
+    @GetMapping("/{goalId}/tasks")
+    public List<LearningGoalTaskResponse> tasks(@AuthenticationPrincipal CurrentUser user, @PathVariable Long goalId) {
+        return service.listTasks(user.id(), goalId);
+    }
+
+    @PostMapping("/{goalId}/tasks") @ResponseStatus(HttpStatus.CREATED)
+    public LearningGoalTaskResponse addTask(@AuthenticationPrincipal CurrentUser user, @PathVariable Long goalId,
+            @RequestBody JsonNode body) {
+        return service.addTask(user.id(), goalId, LearningGoalTaskInput.from(body, true));
+    }
+
+    @PatchMapping("/{goalId}/tasks/{taskId}")
+    public LearningGoalTaskResponse updateTask(@AuthenticationPrincipal CurrentUser user, @PathVariable Long goalId,
+            @PathVariable Long taskId, @RequestBody JsonNode body) {
+        return service.updateTask(user.id(), goalId, taskId, LearningGoalTaskInput.from(body, false));
+    }
+
+    @DeleteMapping("/{goalId}/tasks/{taskId}") @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteTask(@AuthenticationPrincipal CurrentUser user, @PathVariable Long goalId, @PathVariable Long taskId) {
+        service.deleteTask(user.id(), goalId, taskId);
     }
 
     private static RuntimeException duplicateOrOriginal(DataIntegrityViolationException exception) {

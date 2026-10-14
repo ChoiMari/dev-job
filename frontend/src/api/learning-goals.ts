@@ -7,11 +7,17 @@ export type LearningGoal = { id: number; title: string; description: string | nu
 export type LearningGoalPage = { items: LearningGoal[]; page: number; size: number; totalElements: number };
 export type GoalInput = { title: string; description?: string | null; skillId?: number | null; progressPercent?: number };
 export type GoalPatch = Partial<GoalInput>;
+export type GoalTask = { id: number; title: string; completed: boolean; createdAt: string; updatedAt: string };
 type Request = ReturnType<typeof createApiClient>;
 const obj = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null;
 const id = (v: unknown): v is number => typeof v === 'number' && Number.isSafeInteger(v) && v > 0;
 const nonnegative = (v: unknown): v is number => typeof v === 'number' && Number.isSafeInteger(v) && v >= 0;
 const timestamp = (v: unknown): v is string => typeof v === 'string' && !Number.isNaN(Date.parse(v));
+function isGoalTask(v: unknown): v is GoalTask {
+  return obj(v) && id(v.id) && typeof v.title === 'string' && !!v.title.trim() && v.title.length <= 200
+    && typeof v.completed === 'boolean' && timestamp(v.createdAt) && timestamp(v.updatedAt);
+}
+function task(v: unknown): GoalTask { if (!isGoalTask(v)) return invalid(); return v; }
 export function isLearningGoal(v: unknown): v is LearningGoal {
   return obj(v) && id(v.id) && typeof v.title === 'string' && !!v.title.trim() && v.title.length <= 200
     && (v.description === null || typeof v.description === 'string' && v.description.length <= 2000)
@@ -52,5 +58,23 @@ export function createLearningGoalsApi(request: Request) {
     async update(goalId: number, patch: GoalPatch) { checkId(goalId); checkInput(patch, false); return goal(await mutate(`/me/learning-goals/${goalId}`, 'PATCH', patch)); },
     async completion(goalId: number, completed: boolean) { checkId(goalId); return goal(await mutate(`/me/learning-goals/${goalId}/completion`, 'PATCH', { completed })); },
     async remove(goalId: number) { checkId(goalId); if (await mutate(`/me/learning-goals/${goalId}`, 'DELETE') !== undefined) return invalid(); },
+    async listTasks(goalId: number, signal?: AbortSignal): Promise<GoalTask[]> {
+      checkId(goalId);
+      const value = await request(`/me/learning-goals/${goalId}/tasks`, { signal });
+      if (!Array.isArray(value) || !value.every(isGoalTask)) return invalid();
+      return value;
+    },
+    async addTask(goalId: number, title: string): Promise<GoalTask> {
+      checkId(goalId);
+      return task(await mutate(`/me/learning-goals/${goalId}/tasks`, 'POST', { title }));
+    },
+    async updateTask(goalId: number, taskId: number, patch: { title?: string; completed?: boolean }): Promise<GoalTask> {
+      checkId(goalId); checkId(taskId);
+      return task(await mutate(`/me/learning-goals/${goalId}/tasks/${taskId}`, 'PATCH', patch));
+    },
+    async removeTask(goalId: number, taskId: number): Promise<void> {
+      checkId(goalId); checkId(taskId);
+      if (await mutate(`/me/learning-goals/${goalId}/tasks/${taskId}`, 'DELETE') !== undefined) return invalid();
+    },
   };
 }

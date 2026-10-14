@@ -85,6 +85,29 @@ class AnalysisDatabaseTest {
                 .isEqualTo(1);
         verify(gateway, times(1)).analyze(anyString(), anyString());
     }
+    @Test void anotherAccountSeesUnanalyzedStateUntilRequestAndThenReusesResult() throws Exception {
+        when(gateway.analyze(anyString(), anyString())).thenReturn("{\"skills\":[]}");
+        request().andExpect(status().isAccepted());
+        await("COMPLETED");
+        var other = users.saveAndFlush(new User("s12-reuse-" + java.util.UUID.randomUUID() + "@example.com", "hash"));
+        var otherPrincipal = UsernamePasswordAuthenticationToken.authenticated(
+                new CurrentUser(other.getId(), other.getEmail()), null, List.of());
+        mvc.perform(post("/api/bookmarks").with(authentication(otherPrincipal)).with(csrf())
+                .contentType("application/json").content("{\"jobId\":" + jobId + "}"))
+                .andExpect(status().isCreated());
+        mvc.perform(get("/api/jobs/" + jobId).with(authentication(otherPrincipal)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.analysis").doesNotExist());
+        mvc.perform(get("/api/jobs/" + jobId + "/analysis").with(authentication(otherPrincipal)))
+                .andExpect(status().isNotFound());
+        mvc.perform(post("/api/jobs/" + jobId + "/analysis")
+                .with(authentication(otherPrincipal)).with(csrf()))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("COMPLETED"));
+        mvc.perform(get("/api/jobs/" + jobId + "/analysis").with(authentication(otherPrincipal)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("COMPLETED"));
+        mvc.perform(get("/api/jobs/" + jobId).with(authentication(otherPrincipal)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.analysis.status").value("COMPLETED"));
+        verify(gateway, times(1)).analyze(anyString(), anyString());
+    }
     @Test void malformedOutputFailsWithoutSkillsAndRetrySucceeds() throws Exception {
         when(gateway.analyze(anyString(), anyString())).thenReturn("{\"skills\":\"Java\"}")
                 .thenReturn("{\"skills\":[{\"name\":\"Java\",\"requirementType\":\"REQUIRED\"}]}");

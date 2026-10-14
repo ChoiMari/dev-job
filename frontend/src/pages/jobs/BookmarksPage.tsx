@@ -6,7 +6,7 @@ import { createBookmarksApi } from '../../api/bookmarks';
 import { createAnalysisApi } from '../../api/analysis';
 import { ApiError } from '../../api/client';
 import { ApplicationRegistration } from '../../components/ApplicationRegistration';
-import { ApplicationStatusBadge } from '../../components/ApplicationStatusBadge';
+import { JobStatusLabel } from '../../components/JobStatusLabel';
 import { ErrorState, LoadingState } from '../../components/States';
 import { LucideIcon } from '../../components/LucideIcon';
 import './jobs.css';
@@ -17,7 +17,7 @@ import cardBookmarkArt from '../../assets/jobs/saved-card-bookmark-filled.png';
 import emptyBookmarkArt from '../../assets/jobs/saved-card-bookmark-outline.png';
 import savedTrashArt from '../../assets/jobs/saved-trash-pixel.png';
 import savedHeartArt from '../../assets/jobs/saved-heart.png';
-import analysisRobot from '../../assets/jobs/saved-analysis-robot-v3.png';
+import analysisRobot from '../../assets/jobs/saved-analysis-robot-cute.png';
 import savedEmptyCat from '../../assets/jobs/saved-empty-cat.png';
 
 const savedJobs = createSavedJobsApi(apiRequest);
@@ -96,7 +96,7 @@ export function BookmarksPage({ location }: { location: string }) {
             <div className="saved-card-top"><span className="saved-company-icon"><LucideIcon name="building" /></span>
               <div className="saved-card-copy"><div className="saved-card-labels"><strong>{item.companyName}</strong>
                 <span className={`saved-kind saved-kind--${pendingDeleteIds.includes(item.id) && item.kind === 'MANUAL' ? 'pending' : item.kind === 'COLLECTED' && pendingUnbookmarkIds.includes(item.jobId!) ? 'pending-unbookmark' : isUnbookmarked(item) ? 'unbookmarked' : item.kind.toLowerCase()}`}>{pendingDeleteIds.includes(item.id) && item.kind === 'MANUAL' ? '삭제 예정' : item.kind === 'COLLECTED' && pendingUnbookmarkIds.includes(item.jobId!) ? '관심 해제 예정' : isUnbookmarked(item) ? '관심 해제됨' : item.kind === 'MANUAL' ? '직접 등록' : '저장한 공고'}</span>
-                {item.applicationStatus && <span className={`saved-card-application-status--${item.applicationStatus.toLowerCase()}`}><ApplicationStatusBadge status={item.applicationStatus} /></span>}</div>
+                {item.applicationStatus && <JobStatusLabel status={item.applicationStatus} />}</div>
                 <h2>{item.kind === 'COLLECTED' && item.jobId
                   ? <a href={`#/jobs/${item.jobId}?origin=bookmarks`}>{item.title} <LucideIcon name="chevronRight" /></a>
                   : <a href={`#/bookmarks/${item.id}`}>{item.title} <LucideIcon name="chevronRight" /></a>}</h2>
@@ -230,11 +230,12 @@ function SavedAnalysis({ item, onUpdated }: { item: SavedJob; onUpdated: () => v
   const detailsId = `saved-analysis-details-${item.kind.toLowerCase()}-${item.id}`;
   return <><div className={`saved-analysis${completed ? ' saved-analysis--interactive' : ''}`} aria-live="polite"
     role={completed ? 'button' : undefined} tabIndex={completed ? 0 : undefined}
-    aria-haspopup={completed ? 'dialog' : undefined} aria-label={completed ? `${item.companyName} AI 분석 상세 보기` : undefined}
+    aria-haspopup={completed ? 'dialog' : undefined} aria-label={completed ? `${item.companyName} AI 분석 결과 보기` : undefined}
     onClick={completed ? () => setShowDetails(true) : undefined}
     onKeyDown={completed ? event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); setShowDetails(true); } } : undefined}>
-    <img src={analysisRobot} alt="" aria-hidden="true" />
+    <span className="saved-analysis-robot"><img src={analysisRobot} alt="" aria-hidden="true" /></span>
     <div className="saved-analysis-copy"><div className="saved-analysis-heading"><strong>AI 분석</strong><span className={`saved-analysis-status saved-analysis-status--${(status || 'NONE').toLowerCase()}`}>
+      {status === 'COMPLETED' && <LucideIcon name="check" />}
       {status === 'COMPLETED' ? '분석 완료' : status === 'PENDING' ? '분석 중' : status === 'FAILED' ? '분석 실패' : '미분석'}</span></div>
       <p>{status === 'COMPLETED' ? !analysis ? '분석 결과를 불러오는 중입니다.' : skills.length ? `추출된 기술 ${skills.length}개` : '추출된 기술이 없습니다.'
         : status === 'PENDING' ? '공고를 분석하고 있습니다.' : status === 'FAILED' ? analysis?.failureReason || '분석을 다시 시도해 주세요.'
@@ -246,7 +247,6 @@ function SavedAnalysis({ item, onUpdated }: { item: SavedJob; onUpdated: () => v
       {item.kind !== 'MANUAL' && <button className="saved-analysis-action" type="button" disabled={busy}
         onClick={event => { event.stopPropagation(); void run(); }} onKeyDown={event => event.stopPropagation()}>
         {busy ? '요청 중…' : 'AI 분석하기'}</button>}
-      <span className="saved-analysis-detail-hint">상세 보기 <LucideIcon name="chevronRight" /></span>
       {linked && <small role="status">프로필 AI 후보에 반영됨</small>}
     </div>
       : <button className="saved-analysis-action" type="button" disabled={busy || (item.kind === 'MANUAL' && !item.description) || status === 'PENDING'} onClick={run}>

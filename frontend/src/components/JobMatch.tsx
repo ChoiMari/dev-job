@@ -24,6 +24,12 @@ export function JobMatch({ jobId, analysisStatus }: { jobId: number; analysisSta
     }).finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
   }, [jobId, analysisStatus, retry]);
+  useEffect(() => {
+    if (analysisStatus !== 'COMPLETED') return;
+    const refresh = () => setRetry(value => value + 1);
+    window.addEventListener('focus', refresh);
+    return () => window.removeEventListener('focus', refresh);
+  }, [analysisStatus]);
   return <section className="job-analysis" aria-label="내 역량 비교">
     <h3>내 역량 비교</h3>
     {analysisStatus !== 'COMPLETED' ? <p>공고 분석이 완료되면 비교 결과를 확인할 수 있습니다.</p>

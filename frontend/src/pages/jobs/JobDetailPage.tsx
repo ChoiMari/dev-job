@@ -5,11 +5,12 @@ import { createJobsApi } from '../../api/jobs';
 import { createApplicationsApi } from '../../api/applications';
 import type { Application } from '../../api/applications';
 import type { JobDetail } from '../../api/jobs';
-import { ApplicationStatusBadge } from '../../components/ApplicationStatusBadge';
+import { JobStatusLabel } from '../../components/JobStatusLabel';
 import { ApplicationRegistration } from '../../components/ApplicationRegistration';
 import { BookmarkButton } from '../../components/BookmarkButton';
 import { JobAnalysis } from '../../components/JobAnalysis';
 import { JobMatch } from '../../components/JobMatch';
+import { ApplicationDetailPage } from '../applications/ApplicationsPage';
 import { LucideIcon } from '../../components/LucideIcon';
 import { EmptyState, ErrorState, LoadingState } from '../../components/States';
 import jobDetailSkyline from '../../assets/redesign/job-detail-skyline.png';
@@ -19,6 +20,15 @@ import './job-detail.css';
 
 const jobs = createJobsApi(apiRequest);
 const applications = createApplicationsApi(apiRequest);
+const matchViewedKey = (userId: number, jobId: number) => `devjob:match-viewed:${userId}:${jobId}`;
+function hasViewedMatch(userId: number, jobId: number) {
+  try { return window.localStorage.getItem(matchViewedKey(userId, jobId)) === '1'; }
+  catch { return false; }
+}
+function rememberViewedMatch(userId: number, jobId: number) {
+  try { window.localStorage.setItem(matchViewedKey(userId, jobId), '1'); }
+  catch { /* Comparison remains available for this visit if storage is disabled. */ }
+}
 type DetailTab = 'description' | 'application';
 const tabs: { value: DetailTab; label: string }[] = [
   { value: 'description', label: '상세 내용' },
@@ -32,20 +42,18 @@ const alioHeadings = new Set(['지원 자격', '우대 내용', '우대 조건',
 const sourceLabel = (source: string) => source === 'ALIO_RECRUITMENT' ? '공공기관 채용'
   : source === 'WORK24_OPEN_RECRUITMENT' ? '고용24' : source;
 const detailHeading = (source: string) => source === 'ALIO_RECRUITMENT' ? '제공된 채용 내용' : '채용공고 원문';
-function JobApplicationPanel({ application }: { application: Application }) {
+function JobApplicationPanel({ application, onViewDetail }: { application: Application; onViewDetail: () => void }) {
   const status = application.currentStatus;
   const schedule = application.nextScheduleAt ? new Date(application.nextScheduleAt).toLocaleString('ko-KR') : null;
   return <section className="job-detail-application" aria-label="내 지원 현황">
-    <header><LucideIcon name="briefcase" /><h3>내 지원 현황</h3></header>
+    <header><LucideIcon name="briefcase" /><h3>내 지원 현황</h3>
+      <button type="button" className="job-detail-application-link" onClick={onViewDetail}>지원 상세 보기</button></header>
     <dl className="job-detail-application-facts">
-      <div><dt><LucideIcon name="fileText" /> 진행 상태</dt><dd><span className={`job-detail-status job-detail-status--${status.toLowerCase()}`}><ApplicationStatusBadge status={status} /></span></dd></div>
+      <div><dt><LucideIcon name="fileText" /> 진행 상태</dt><dd><span className={`job-detail-status job-detail-status--${status.toLowerCase()}`}><JobStatusLabel status={status} /></span></dd></div>
       {application.appliedDate && <div><dt><LucideIcon name="calendar" /> 지원일</dt><dd>{application.appliedDate}</dd></div>}
       {schedule && <div><dt><LucideIcon name="clock" /> 다음 확인 일정</dt><dd>{schedule}</dd></div>}
       {application.note && <div className="job-detail-application-note"><dt><LucideIcon name="message" /> 메모</dt><dd>{application.note}</dd></div>}
     </dl>
-    <div className="job-detail-application-footer">
-      <a className="button-link" href={`#/applications/${application.id}`}>지원 상세 보기 <LucideIcon name="arrowRight" /></a>
-    </div>
   </section>;
 }
 
@@ -93,7 +101,7 @@ function Description({ job }: { job: JobDetail }) {
   </div>;
 }
 
-export function JobDetailPage({ location }: { location: string }) {
+export function JobDetailPage({ location, userId }: { location: string; userId: number }) {
   const path = location.split('?')[0];
   const id = Number(path.slice('/jobs/'.length));
   const valid = /^\/jobs\/[1-9]\d*$/.test(path) && Number.isSafeInteger(id);
@@ -108,14 +116,15 @@ export function JobDetailPage({ location }: { location: string }) {
   const [retry, setRetry] = useState(0);
   const [analysisStatus, setAnalysisStatus] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<DetailTab>('description');
-  const [showMatch, setShowMatch] = useState(false);
+  const [showMatch, setShowMatch] = useState(() => hasViewedMatch(userId, id));
   const [application, setApplication] = useState<Application>();
   const [applicationError, setApplicationError] = useState('');
   const [applicationRetry, setApplicationRetry] = useState(0);
+  const [applicationDetailId, setApplicationDetailId] = useState<number | null>(null);
   useEffect(() => {
     const controller = new AbortController();
-    setLoading(true); setError(''); setMissing(false); setData(undefined); setActiveTab('description'); setShowMatch(false);
-    setApplication(undefined); setApplicationError('');
+    setLoading(true); setError(''); setMissing(false); setData(undefined); setAnalysisStatus(null); setActiveTab('description'); setShowMatch(hasViewedMatch(userId, id));
+    setApplication(undefined); setApplicationError(''); setApplicationDetailId(null);
     if (!valid) { setError('공고 주소를 확인해 주세요.'); setLoading(false); return; }
     jobs.detail(id, controller.signal).then(value => {
       if (!controller.signal.aborted) {
@@ -128,7 +137,7 @@ export function JobDetailPage({ location }: { location: string }) {
       else setError(failure instanceof Error ? failure.message : '공고를 불러오지 못했습니다.');
     }).finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
-  }, [id, valid, retry]);
+  }, [id, userId, valid, retry]);
   useEffect(() => {
     if (activeTab !== 'application' || !data?.applicationStatus) return;
     const controller = new AbortController();
@@ -168,7 +177,7 @@ export function JobDetailPage({ location }: { location: string }) {
               {data.employmentType && <span>{data.employmentType}</span>}
               {data.location && <span>{data.location}</span>}
               {data.applicationStatus && <span className={`job-detail-status job-detail-status--${data.applicationStatus.toLowerCase()}`}>
-                <ApplicationStatusBadge status={data.applicationStatus} />
+                <JobStatusLabel status={data.applicationStatus} />
               </span>}
             </div>
             <dl className="job-detail-dates">
@@ -190,7 +199,7 @@ export function JobDetailPage({ location }: { location: string }) {
               {activeTab === 'description' && <Description job={data} />}
               {activeTab === 'application' && (data.applicationStatus
                 ? applicationError ? <ErrorState message={applicationError} onRetry={() => setApplicationRetry(value => value + 1)} />
-                  : application ? <JobApplicationPanel application={application} />
+                  : application ? <JobApplicationPanel application={application} onViewDetail={() => setApplicationDetailId(application.id)} />
                     : <LoadingState message="내 지원 기록을 불러오고 있습니다." />
                 : <ApplicationRegistration key={data.id} jobId={data.id} status={null} onCreated={applicationStatus =>
                   setData(current => current?.id === id ? { ...current, applicationStatus } : current)} />)}
@@ -206,19 +215,33 @@ export function JobDetailPage({ location }: { location: string }) {
               {data.location && <div><dt>근무 지역</dt><dd>{data.location}</dd></div>}
               {data.employmentType && <div><dt>고용 형태</dt><dd>{data.employmentType}</dd></div>}</dl>
           </section>
-          <section className="card job-detail-side-card">
-            <header><LucideIcon name="fileText" /><h3>AI 분석</h3></header>
+          <section className="card job-detail-side-card job-detail-ai-card">
+            <header><LucideIcon name="fileText" /><h3>AI 분석</h3>
+              {analysisStatus === 'COMPLETED' && <span className="job-detail-analysis-state" role="status"><LucideIcon name="check" />분석 완료</span>}</header>
             <JobAnalysis key={data.id} jobId={data.id} canRequest={data.bookmarked}
               initialStatus={analysisStatus} onStatusChange={setAnalysisStatus} />
           </section>
-          <section className="card job-detail-side-card">
+          <section className="card job-detail-side-card job-detail-match-card">
             <header><LucideIcon name="sliders" /><h3>내 기술 매칭</h3></header>
             {showMatch ? <JobMatch key={data.id} jobId={data.id} analysisStatus={analysisStatus} />
               : <><p>{analysisStatus === 'COMPLETED' ? 'AI가 추출한 공고 기술과 등록한 보유·프로젝트 기술을 비교합니다.'
                 : 'AI 분석이 완료되면 비교할 수 있습니다.'}</p>
-                <button type="button" disabled={analysisStatus !== 'COMPLETED'} onClick={() => setShowMatch(true)}>기술 비교하기</button></>}
+                <button type="button" disabled={analysisStatus !== 'COMPLETED'} onClick={() => {
+                  rememberViewedMatch(userId, data.id);
+                  setShowMatch(true);
+                }}>기술 비교하기</button></>}
           </section>
         </aside>
       </div>}
+    {applicationDetailId !== null && <ApplicationDetailPage location={`/applications/${applicationDetailId}`} modalOnly
+      onClose={() => setApplicationDetailId(null)}
+      onUpdated={updated => {
+        setApplication(updated);
+        setData(current => current?.id === id ? { ...current, applicationStatus: updated.currentStatus } : current);
+      }}
+      onDeleted={() => {
+        setApplication(undefined);
+        setData(current => current?.id === id ? { ...current, applicationStatus: null } : current);
+      }} />}
   </div>;
 }
