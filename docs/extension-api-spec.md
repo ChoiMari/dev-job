@@ -265,8 +265,8 @@ POST는 정확한 동의 본문을 매번 요구하고 지정 버전만 비동�
 
 | Method·URL | 요청 | 성공 응답 | 오류 |
 | --- | --- | --- | --- |
-| `GET /api/me/notification-preferences` | 없음 | `{ "interviewReminder": true, "todoReminder": true }` · `200` | 미인증 `401` |
-| `PUT /api/me/notification-preferences` | 두 필수 Boolean 필드를 모두 담은 위 형태; 미지·추가 필드 거절 | 저장된 두 값 · `200` | 잘못된 입력 `400`, 미인증 `401`, CSRF 실패 `403` |
+| `GET /api/me/notification-preferences` | 없음 | `interviewReminder`, `todoReminder`, `newJob`, `aiJobRecommendation`, `savedJobUpdate`, `documentAnalysis`, `matchAnalysis`, `semanticRecommendation`, `learningGoalReminder`, `characterActivity`, `serviceNotice`의 Boolean 객체 · `200`; 미설정 항목은 기본 `true`, 단 `savedJobUpdate`, `semanticRecommendation`, `serviceNotice`는 기본 `false` | 미인증 `401` |
+| `PUT /api/me/notification-preferences` | `interviewReminder`, `todoReminder` 필수 Boolean. 나머지 9개 Boolean은 선택 항목으로 제공된 값만 변경한다. 미지 필드와 Boolean 외 값 거절 | 저장 후 위 11개 값을 반환 · `200` | 잘못된 입력 `400`, 미인증 `401`, CSRF 실패 `403` |
 | `GET /api/me/notifications?page=0&size=20` | 0 이상 page, 1~100 size | `{ "items": [{ "id": 1, "type": "TODO_REMINDER", "sourceId": 2, "scheduledAt": "2026-10-10T09:00:00Z", "subject": "지원서 검토", "createdAt": "2026-10-09T09:00:00Z", "readAt": null }], "page": 0, "size": 20, "totalElements": 1 }` · `200`; 생성 시각·ID 내림차순 | 잘못된 페이지 `400`, 미인증 `401` |
 | `PATCH /api/me/notifications/{id}/read` | 본인 알림 ID, 본문 없음 | 읽음 시각을 최초 한 번만 기록; 반복 호출도 `204` | 잘못된 ID `400`, 미인증 `401`, 타인 또는 없는 ID `404`, CSRF 실패 `403` |
 

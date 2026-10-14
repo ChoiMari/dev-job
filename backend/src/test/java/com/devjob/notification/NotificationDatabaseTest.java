@@ -66,11 +66,15 @@ class NotificationDatabaseTest {
         todo(at);
         mvc.perform(get("/api/me/notification-preferences").with(as(owner)))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.interviewReminder").value(true))
-                .andExpect(jsonPath("$.todoReminder").value(true));
+                .andExpect(jsonPath("$.todoReminder").value(true))
+                .andExpect(jsonPath("$.newJob").value(true));
         mvc.perform(put("/api/me/notification-preferences").with(as(owner)).with(csrf())
                 .contentType("application/json")
-                .content("{\"interviewReminder\":false,\"todoReminder\":true}"))
-                .andExpect(status().isOk()).andExpect(jsonPath("$.interviewReminder").value(false));
+                .content("{\"interviewReminder\":false,\"todoReminder\":true,\"newJob\":false}"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.interviewReminder").value(false))
+                .andExpect(jsonPath("$.newJob").value(false));
+        mvc.perform(get("/api/me/notification-preferences").with(as(owner)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.newJob").value(false));
         service.deliverDue();
         service.deliverDue();
         assertThat(jdbc.queryForObject("select count(*) from notification where user_id=?", Long.class, owner))

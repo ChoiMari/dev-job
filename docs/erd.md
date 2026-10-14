@@ -199,7 +199,7 @@ V15__create_interested_companies.sql은 interested_company만 추가한다. id B
 
 ### B13 앱 내 알림
 
-`V25__notifications.sql`은 `notification_preference`와 `notification`을 추가한다. 전자는 `(user_id, type)` PK와 필수 `enabled`를 갖고, 행이 없으면 기본값 `true`로 읽는다. 후자는 BIGINT identity `id`, 필수 `user_id` FK, `type`·`source_id`·`scheduled_at`·`subject`·`created_at`, 선택 `read_at`을 갖는다. 종류는 `INTERVIEW_REMINDER`와 `TODO_REMINDER`만 허용한다. `(user_id, type, source_id, scheduled_at)` UNIQUE가 일정 시각별 중복을 막는다. `source_id`는 종류에 따라 `interview_schedule.id` 또는 `personal_todo.id`이며 두 테이블을 가리키므로 FK로 강제하지 않는다. 사용자·생성 시각·ID 목록 인덱스와 활성 일정 스캔용 부분 인덱스를 둔다. 기존 면접·할 일 행과 V1~V21은 변경하지 않는다.
+`V25__notifications.sql`은 `notification_preference`와 `notification`을 추가한다. 전자는 `(user_id, type)` PK와 필수 `enabled`를 갖고, 행이 없으면 기본값 `true`로 읽되 `SAVED_JOB_UPDATE`, `SEMANTIC_RECOMMENDATION`, `SERVICE_NOTICE`는 `false`로 읽는다. `V41__expand_notification_preferences.sql`은 설정 종류에 채용공고·분석 결과·학습·캐릭터·서비스 공지 9종을 추가한다. 이 9종은 수신 설정만 저장하며 실제 알림 생성은 기존 `INTERVIEW_REMINDER`와 `TODO_REMINDER` 두 종류에 한정한다. 후자는 BIGINT identity `id`, 필수 `user_id` FK, `type`·`source_id`·`scheduled_at`·`subject`·`created_at`, 선택 `read_at`을 갖는다. 알림 행의 종류는 `INTERVIEW_REMINDER`와 `TODO_REMINDER`만 허용한다. `(user_id, type, source_id, scheduled_at)` UNIQUE가 일정 시각별 중복을 막는다. `source_id`는 종류에 따라 `interview_schedule.id` 또는 `personal_todo.id`이며 두 테이블을 가리키므로 FK로 강제하지 않는다. 사용자·생성 시각·ID 목록 인덱스와 활성 일정 스캔용 부분 인덱스를 둔다. 기존 면접·할 일 행과 V1~V21은 변경하지 않는다.
 
 ### B14 의미 기반 비교·추천
 

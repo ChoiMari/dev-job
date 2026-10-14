@@ -41,6 +41,8 @@ const paths = {
   hair: <><path d="M4 14V9a8 8 0 0 1 16 0v5M4 14l2-3 2 2 2-3 2 2 2-2 2 3 2-2 2 3" /><path d="M7 15v4m10-4v4" /></>,
   glasses: <><circle cx="6.5" cy="13" r="4" /><circle cx="17.5" cy="13" r="4" /><path d="M10.5 13c1-1 2-1 3 0M2 11l-1-1m21 1 1-1" /></>,
   lock: <><rect x="4" y="10" width="16" height="12" rx="2" /><path d="M8 10V7a4 4 0 0 1 8 0v3" /></>,
+  eye: <><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6Z" /><circle cx="12" cy="12" r="3" /></>,
+  eyeOff: <><path d="m3 3 18 18M10.6 6.1A10.8 10.8 0 0 1 12 6c6.5 0 10 6 10 6a16 16 0 0 1-3 3.5M6.5 6.5C3.5 8.3 2 12 2 12s3.5 6 10 6a10.7 10.7 0 0 0 4-.8" /><path d="M10 10a3 3 0 0 0 4 4" /></>,
   briefcase: <><rect x="2" y="7" width="20" height="14" rx="2" /><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M2 12h20M10 12v2h4v-2" /></>,
   sliders: <><path d="M4 7h9M17 7h3M4 17h3M11 17h9" /><circle cx="15" cy="7" r="2" /><circle cx="9" cy="17" r="2" /></>,
   monitor: <><rect x="2" y="3" width="20" height="15" rx="2" /><path d="M8 22h8M12 18v4" /></>,

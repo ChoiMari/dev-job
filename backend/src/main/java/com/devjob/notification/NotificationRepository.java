@@ -39,7 +39,9 @@ public class NotificationRepository {
     public boolean enabled(long userId, NotificationType type) {
         Boolean stored = jdbc.query("select enabled from notification_preference where user_id=? and type=?",
                 rs -> rs.next() ? rs.getBoolean(1) : null, userId, type.name());
-        return stored == null || stored;
+        return stored == null ? type != NotificationType.SAVED_JOB_UPDATE
+                && type != NotificationType.SEMANTIC_RECOMMENDATION
+                && type != NotificationType.SERVICE_NOTICE : stored;
     }
     public void savePreference(long userId, NotificationType type, boolean enabled) {
         jdbc.update("insert into notification_preference(user_id,type,enabled) values (?,?,?) "

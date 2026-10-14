@@ -1,15 +1,18 @@
 import { ApiError } from './client.ts';
 import type { createApiClient } from './client.ts';
 
-export type NotificationPreferences = { interviewReminder: boolean; todoReminder: boolean };
+export const preferenceKeys = ['interviewReminder', 'todoReminder', 'newJob', 'aiJobRecommendation',
+  'savedJobUpdate', 'documentAnalysis', 'matchAnalysis', 'semanticRecommendation',
+  'learningGoalReminder', 'characterActivity', 'serviceNotice'] as const;
+export type NotificationPreferenceKey = typeof preferenceKeys[number];
+export type NotificationPreferences = Record<NotificationPreferenceKey, boolean>;
 const valid = (value: unknown): value is NotificationPreferences => typeof value === 'object' && value !== null
-  && 'interviewReminder' in value && typeof value.interviewReminder === 'boolean'
-  && 'todoReminder' in value && typeof value.todoReminder === 'boolean';
+  && preferenceKeys.every(key => key in value && typeof (value as Record<string, unknown>)[key] === 'boolean');
 
 export function createNotificationPreferencesApi(request: ReturnType<typeof createApiClient>) {
   const parse = (value: unknown): NotificationPreferences => {
     if (!valid(value)) throw new ApiError('알림 설정 응답을 확인할 수 없습니다.', 200, 'INVALID_RESPONSE');
-    return { interviewReminder: value.interviewReminder, todoReminder: value.todoReminder };
+    return Object.fromEntries(preferenceKeys.map(key => [key, value[key]])) as NotificationPreferences;
   };
   return {
     get: async (signal?: AbortSignal) => parse(await request('/me/notification-preferences', { signal })),

@@ -27,17 +27,21 @@ class NotificationServiceTest {
     @Test void defaultPreferencesAndStrictWholeUpdate() throws Exception {
         when(repository.enabled(7L, NotificationType.INTERVIEW_REMINDER)).thenReturn(true);
         when(repository.enabled(7L, NotificationType.TODO_REMINDER)).thenReturn(true);
-        assertThat(service.preferences(7L)).isEqualTo(new NotificationPreferences(true, true));
+        assertThat(service.preferences(7L).interviewReminder()).isTrue();
+        assertThat(service.preferences(7L).todoReminder()).isTrue();
         var json = new ObjectMapper();
         assertThatThrownBy(() -> service.savePreferences(7L,
                 json.readTree("{\"interviewReminder\":false}")))
                 .isInstanceOf(ResponseStatusException.class);
         verify(repository, never()).savePreference(anyLong(), any(), anyBoolean());
-        assertThat(service.savePreferences(7L, json.readTree(
-                "{\"interviewReminder\":false,\"todoReminder\":true}")))
-                .isEqualTo(new NotificationPreferences(false, true));
+        assertThatThrownBy(() -> service.savePreferences(7L,
+                json.readTree("{\"interviewReminder\":true,\"todoReminder\":true,\"unknown\":false}")))
+                .isInstanceOf(ResponseStatusException.class);
+        service.savePreferences(7L, json.readTree(
+                "{\"interviewReminder\":false,\"todoReminder\":true,\"newJob\":false}"));
         verify(repository).savePreference(7L, NotificationType.INTERVIEW_REMINDER, false);
         verify(repository).savePreference(7L, NotificationType.TODO_REMINDER, true);
+        verify(repository).savePreference(7L, NotificationType.NEW_JOB, false);
     }
 
     @Test void optedOutAndFailedEventDoNotBlockOtherCandidates() {

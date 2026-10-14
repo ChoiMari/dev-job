@@ -1,20 +1,92 @@
-.f02-settings .f02-settings-intro { display: flex; align-items: center; justify-content: space-between; gap: 18px; background: linear-gradient(110deg, #f4edfc, #fff8f3); }
-.f02-settings .f02-settings-intro p { margin-bottom: 0; }
-.f02-settings .f02-settings-intro img { width: 120px; height: 120px; object-fit: contain; image-rendering: pixelated; flex: 0 0 auto; }
-.f02-settings .f02-preferences-form, .f02-settings .f02-deletion-form fieldset { display: grid; gap: 14px; max-width: 520px; }
-.f02-settings .f02-preferences-form label { display: flex; align-items: center; gap: 12px; min-height: 44px; }
-.f02-settings .f02-preferences-form input { width: 22px; height: 22px; flex: 0 0 auto; }
-.f02-settings .f02-preferences-form button, .f02-settings .f02-deletion-form button { justify-self: start; }
-.f02-settings .f02-danger { border-color: #dcafb7; }
-.f02-settings .f02-impact { margin: 20px 0; padding: 20px; background: #fff7f7; border-radius: 12px; }
-.f02-settings .f02-impact ul { padding-left: 22px; }
-.f02-settings .f02-impact li { padding: 4px 0; overflow-wrap: anywhere; }
+#main-content .settings-page { width: min(100%, 900px); max-width: 900px; gap: 0; color: #071657; }
+.f02-settings .lucide-icon { display: block; width: 1.2em; height: 1.2em; }
+.f02-settings .settings-heading { display: flex; align-items: center; gap: 14px; padding: 0 6px 16px; }
+.f02-settings .settings-heading-icon { display: grid; place-items: center; width: 42px; height: 42px; color: #075eff; filter: drop-shadow(1px 1px 0 #96a1ff); }
+.f02-settings .settings-heading-icon .lucide-icon { width: 34px; height: 34px; stroke-width: 2.25; }
+.f02-settings .settings-heading h1 { margin: 0 0 2px; font-size: 1.55rem; letter-spacing: -.05em; line-height: 1.2; }
+.f02-settings .settings-heading p { margin: 0; color: #5369a0; font-size: .84rem; }
+.f02-settings .settings-tabs { display: flex; gap: 0; min-height: 43px; margin-bottom: 10px; border-bottom: 1px solid #e6ecfc; }
+.f02-settings .settings-tabs button { flex: 0 0 auto; min-width: 112px; padding: 10px 16px; border: 0; border-bottom: 2px solid transparent; border-radius: 0; background: transparent; color: #6878aa; font-size: .85rem; font-weight: 700; cursor: pointer; }
+.f02-settings .settings-tabs button[aria-selected="true"] { border-bottom-color: #287cff; color: #1065f9; }
+#main-content .f02-settings .settings-panel[class] { display: block; padding: 22px; border: 1px solid #e2ecff; border-radius: 12px; background: #fff; box-shadow: 0 3px 18px #769bd311; }
+.f02-settings .settings-panel-title { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 16px; color: #081a91; }
+.f02-settings .settings-panel-title > .lucide-icon { flex: 0 0 auto; width: 25px; height: 25px; margin-top: 1px; stroke-width: 2.2; }
+.f02-settings .settings-panel-title h2 { margin: 0 0 3px; font-size: 1.08rem; line-height: 1.3; }
+.f02-settings .settings-panel-title p { margin: 0; color: #687eae; font-size: .75rem; }
+.f02-settings .settings-preference-groups { display: grid; gap: 12px; }
+.f02-settings .settings-preference-group { overflow: hidden; border: 1px solid #e4edff; border-radius: 9px; background: #f8fbff; }
+.f02-settings .settings-preference-group h3 { display: flex; align-items: center; gap: 8px; min-height: 39px; margin: 0; padding: 9px 12px; color: #0a287f; font-size: .84rem; }
+.f02-settings .settings-preference-group h3 .lucide-icon { width: 17px; height: 17px; color: #1768ff; }
+.f02-settings .settings-preference-row { display: flex; align-items: center; gap: 10px; min-height: 58px; padding: 8px 12px; background: #fff; cursor: pointer; }
+.f02-settings .settings-preference-row + .settings-preference-row { border-top: 1px solid #edf2ff; }
+.f02-settings .settings-preference-icon { display: grid; place-items: center; width: 32px; height: 32px; flex: 0 0 auto; border-radius: 9px; color: #176bff; background: #e7f0ff; }
+.f02-settings .settings-preference-icon.tone-orange { color: #ff8216; background: #fff3e8; }
+.f02-settings .settings-preference-icon.tone-amber { color: #ffaf00; background: #fff9dd; }
+.f02-settings .settings-preference-icon.tone-pink { color: #ff3d70; background: #fff0f5; }
+.f02-settings .settings-preference-icon.tone-purple { color: #804eff; background: #f3edff; }
+.f02-settings .settings-preference-icon.tone-rose { color: #ff315b; background: #fff0f3; }
+.f02-settings .settings-preference-icon.tone-mint { color: #00b998; background: #e8fff8; }
+.f02-settings .settings-preference-icon.tone-indigo { color: #6571ff; background: #edf0ff; }
+.f02-settings .settings-preference-copy { display: grid; gap: 2px; min-width: 0; flex: 1; }
+.f02-settings .settings-preference-copy strong { color: #09266d; font-size: .77rem; line-height: 1.3; }
+.f02-settings .settings-preference-copy small { color: #8190b5; font-size: .67rem; line-height: 1.35; }
+.f02-settings .settings-switch { appearance: none; position: relative; width: 31px; height: 18px; flex: 0 0 auto; margin: 0; border: 0; border-radius: 20px; background: #bcc7de; cursor: pointer; transition: background .15s; }
+.f02-settings .settings-switch:checked { background: #1274ff; }
+.f02-settings .settings-switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px #001c5040; transition: transform .15s; }
+.f02-settings .settings-switch:checked::after { transform: translateX(13px); }
+.f02-settings .settings-switch:focus-visible { outline: 3px solid #9dc4ff; outline-offset: 2px; }
+.f02-settings .settings-switch:disabled { cursor: wait; opacity: .65; }
+.f02-settings .settings-status { margin: 12px 0 0; color: #0b8b62; font-size: .75rem; }
+.f02-settings .settings-delivery-note { margin: 12px 0 0; color: #7386b6; font-size: .7rem; }
+.f02-settings .settings-notification-link { display: inline-flex; align-items: center; gap: 5px; margin-top: 16px; color: #1767eb; font-size: .76rem; font-weight: 700; text-decoration: none; }
+.f02-settings .settings-notification-link .lucide-icon { width: 14px; height: 14px; }
+#main-content .f02-settings .settings-panel--compact[class] { max-width: 720px; }
+.f02-settings .settings-password-form { max-width: none; }
+.f02-settings .settings-password-form fieldset { gap: 12px; }
+.f02-settings .settings-field { display: grid; gap: 5px; }
+.f02-settings .settings-field label { color: #132b80; font-size: .76rem; font-weight: 700; }
+.f02-settings .settings-field label span { color: #f53b55; }
+.f02-settings .settings-password-input { position: relative; }
+.f02-settings .settings-password-input input { width: 100%; min-height: 41px; padding-right: 45px; border-color: #cfdfff; border-radius: 7px; font-size: .76rem; }
+.f02-settings .settings-password-input input::placeholder { color: #9aadd5; }
+.f02-settings .settings-visibility { position: absolute; top: 0; right: 0; display: grid; place-items: center; width: 42px; height: 41px; padding: 0; border: 0; background: transparent; color: #7c90c0; }
+.f02-settings .settings-visibility .lucide-icon { width: 17px; height: 17px; }
+.f02-settings .settings-password-rules { display: grid; gap: 3px; margin: -5px 0 0; padding: 0; list-style: none; color: #788ab7; font-size: .72rem; }
+.f02-settings .settings-password-rules li { display: flex; align-items: center; gap: 5px; }
+.f02-settings .settings-password-rules .lucide-icon { width: 13px; height: 13px; }
+.f02-settings .settings-password-rules .is-met { color: #159b73; }
+.f02-settings .settings-security-note { margin: 0; color: #7386b6; font-size: .72rem; }
+.f02-settings .settings-submit { justify-self: end; min-width: 180px; min-height: 42px; border-radius: 7px; background: #086bff; }
+.f02-settings .settings-danger-notice { display: flex; gap: 10px; align-items: flex-start; padding: 12px; border: 1px solid #ffd4dc; border-radius: 7px; background: #fff0f3; color: #f22b52; }
+.f02-settings .settings-danger-notice > .lucide-icon { width: 20px; height: 20px; flex: 0 0 auto; }
+.f02-settings .settings-danger-notice div { display: grid; gap: 2px; }
+.f02-settings .settings-danger-notice strong { font-size: .76rem; }
+.f02-settings .settings-danger-notice span { font-size: .7rem; }
+.f02-settings .settings-account-row { display: flex; align-items: center; gap: 11px; min-height: 61px; border-bottom: 1px solid #edf1f9; }
+.f02-settings .settings-step { display: grid; place-items: center; width: 23px; height: 23px; flex: 0 0 auto; border-radius: 50%; background: #e9efff; color: #315cbb; font-size: .75rem; font-weight: 700; }
+.f02-settings .settings-account-row > div { display: grid; gap: 3px; min-width: 0; flex: 1; }
+.f02-settings .settings-account-row strong { font-size: .76rem; }
+.f02-settings .settings-account-row small { color: #7f8fb3; font-size: .67rem; }
+.f02-settings .settings-account-row button { flex: 0 0 auto; min-height: 32px; padding: 5px 10px; border: 1px solid #9dc2ff; border-radius: 6px; background: #fff; color: #176aff; font-size: .72rem; font-weight: 700; }
+.f02-settings .settings-account-row .settings-danger-button { border-color: #ff3158; background: #ff3158; color: #fff; }
+.f02-settings .settings-account-links { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 22px; padding-top: 16px; border-top: 1px solid #edf1f9; font-size: .73rem; }
+.f02-settings .settings-account-links span { overflow-wrap: anywhere; color: #6375a2; }
+.f02-settings .settings-account-links a, .f02-settings .settings-account-links button, .f02-settings .settings-record-links a { color: #176aff; font-size: .72rem; font-weight: 700; text-decoration: none; }
+.f02-settings .settings-account-links button { min-height: 30px; padding: 4px 10px; background: #fff; border: 1px solid #cbdcff; }
+.f02-settings .settings-record-links { display: flex; flex-wrap: wrap; gap: 15px; margin-top: 14px; }
+.f02-settings .settings-deletion-details { margin-top: 15px; }
+.f02-settings .f02-impact { margin: 14px 0; padding: 16px; border-radius: 8px; background: #fff8f9; }
 .f02-settings .f02-impact li:has(strong) { display: flex; justify-content: space-between; gap: 10px; }
-.f02-settings .f02-impact strong { white-space: nowrap; }
-.f02-settings .f02-deletion-form fieldset { border: 0; padding: 0; }
-.f02-settings .f02-deletion-form legend { font-weight: 700; padding: 0 0 12px; }
-.f02-settings .f02-deletion-form label { font-weight: 650; }
-.f02-settings .f02-deletion-form input { width: 100%; min-width: 0; min-height: 44px; padding: 10px 12px; font: inherit; border: 1px solid var(--input-border); border-radius: 8px; }
-.f02-settings .f02-delete-button { color: white; background: #a93247; border-color: #a93247; }
-.f02-settings .f02-delete-button:disabled { opacity: .55; }
-@media (max-width: 390px) { .f02-settings .f02-settings-intro img { width: 74px; height: 74px; } .f02-settings .f02-impact { padding: 14px; } }
+.f02-settings .f02-deletion-form fieldset { display: grid; gap: 10px; border: 0; padding: 0; }
+.f02-settings .f02-deletion-form input { width: 100%; min-height: 40px; padding: 8px 10px; border: 1px solid #cbdcff; border-radius: 7px; }
+.f02-settings .f02-delete-button { justify-self: start; background: #ed3154; color: white; border-color: #ed3154; }
+@media (max-width: 600px) {
+  #main-content .f02-settings .settings-panel[class] { padding: 14px; }
+  .f02-settings .settings-heading { padding-left: 0; }
+  .f02-settings .settings-tabs { justify-content: space-between; }
+  .f02-settings .settings-tabs button { flex: 1; min-width: 0; padding: 10px 4px; font-size: .75rem; }
+  .f02-settings .settings-preference-row { gap: 8px; padding: 8px; }
+  .f02-settings .settings-preference-copy small { font-size: .62rem; }
+  .f02-settings .settings-account-row { gap: 7px; }
+  .f02-settings .settings-account-row button { padding: 5px 7px; font-size: .67rem; }
+}

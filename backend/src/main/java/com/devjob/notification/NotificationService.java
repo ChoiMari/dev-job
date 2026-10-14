@@ -3,7 +3,7 @@ package com.devjob.notification;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Set;
+import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -16,7 +16,18 @@ import org.springframework.web.server.ResponseStatusException;
 @Service
 public class NotificationService {
     private static final Logger log = LoggerFactory.getLogger(NotificationService.class);
-    private static final Set<String> PREFERENCE_FIELDS = Set.of("interviewReminder", "todoReminder");
+    private static final Map<String, NotificationType> PREFERENCE_TYPES = Map.ofEntries(
+            Map.entry("interviewReminder", NotificationType.INTERVIEW_REMINDER),
+            Map.entry("todoReminder", NotificationType.TODO_REMINDER),
+            Map.entry("newJob", NotificationType.NEW_JOB),
+            Map.entry("aiJobRecommendation", NotificationType.AI_JOB_RECOMMENDATION),
+            Map.entry("savedJobUpdate", NotificationType.SAVED_JOB_UPDATE),
+            Map.entry("documentAnalysis", NotificationType.DOCUMENT_ANALYSIS),
+            Map.entry("matchAnalysis", NotificationType.MATCH_ANALYSIS),
+            Map.entry("semanticRecommendation", NotificationType.SEMANTIC_RECOMMENDATION),
+            Map.entry("learningGoalReminder", NotificationType.LEARNING_GOAL_REMINDER),
+            Map.entry("characterActivity", NotificationType.CHARACTER_ACTIVITY),
+            Map.entry("serviceNotice", NotificationType.SERVICE_NOTICE));
     private final NotificationRepository repository;
     private final TransactionTemplate transaction;
 
@@ -30,23 +41,36 @@ public class NotificationService {
 
     @Transactional(readOnly = true)
     public NotificationPreferences preferences(long userId) {
-        return new NotificationPreferences(repository.enabled(userId, NotificationType.INTERVIEW_REMINDER),
-                repository.enabled(userId, NotificationType.TODO_REMINDER));
+        return new NotificationPreferences(
+                repository.enabled(userId, NotificationType.INTERVIEW_REMINDER),
+                repository.enabled(userId, NotificationType.TODO_REMINDER),
+                repository.enabled(userId, NotificationType.NEW_JOB),
+                repository.enabled(userId, NotificationType.AI_JOB_RECOMMENDATION),
+                repository.enabled(userId, NotificationType.SAVED_JOB_UPDATE),
+                repository.enabled(userId, NotificationType.DOCUMENT_ANALYSIS),
+                repository.enabled(userId, NotificationType.MATCH_ANALYSIS),
+                repository.enabled(userId, NotificationType.SEMANTIC_RECOMMENDATION),
+                repository.enabled(userId, NotificationType.LEARNING_GOAL_REMINDER),
+                repository.enabled(userId, NotificationType.CHARACTER_ACTIVITY),
+                repository.enabled(userId, NotificationType.SERVICE_NOTICE));
     }
 
     @Transactional
     public NotificationPreferences savePreferences(long userId, JsonNode input) {
-        if (input == null || !input.isObject() || input.size() != 2
+        if (input == null || !input.isObject()
                 || !input.has("interviewReminder") || !input.has("todoReminder")
                 || !input.get("interviewReminder").isBoolean() || !input.get("todoReminder").isBoolean()) {
             throw badInput();
         }
-        input.fieldNames().forEachRemaining(name -> { if (!PREFERENCE_FIELDS.contains(name)) throw badInput(); });
-        boolean interview = input.get("interviewReminder").booleanValue();
-        boolean todo = input.get("todoReminder").booleanValue();
-        repository.savePreference(userId, NotificationType.INTERVIEW_REMINDER, interview);
-        repository.savePreference(userId, NotificationType.TODO_REMINDER, todo);
-        return new NotificationPreferences(interview, todo);
+        input.fields().forEachRemaining(field -> {
+            NotificationType type = PREFERENCE_TYPES.get(field.getKey());
+            if (type == null || !field.getValue().isBoolean()) throw badInput();
+        });
+        input.fields().forEachRemaining(field -> {
+            NotificationType type = PREFERENCE_TYPES.get(field.getKey());
+            repository.savePreference(userId, type, field.getValue().booleanValue());
+        });
+        return preferences(userId);
     }
 
     @Transactional(readOnly = true)
