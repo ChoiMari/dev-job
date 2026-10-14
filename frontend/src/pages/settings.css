@@ -1,13 +1,13 @@
 #main-content .settings-page { width: min(100%, 900px); max-width: 900px; gap: 0; color: #071657; }
 .f02-settings .lucide-icon { display: block; width: 1.2em; height: 1.2em; }
 .f02-settings .settings-heading { display: flex; align-items: center; gap: 14px; padding: 0 6px 16px; }
-.f02-settings .settings-heading-icon { display: grid; place-items: center; width: 42px; height: 42px; color: #075eff; filter: drop-shadow(1px 1px 0 #96a1ff); }
+.f02-settings .settings-heading-icon { display: grid; place-items: center; width: 42px; height: 42px; color: #6650ef; filter: drop-shadow(1px 1px 0 #b8a9ff); }
 .f02-settings .settings-heading-icon .lucide-icon { width: 34px; height: 34px; stroke-width: 2.25; }
 .f02-settings .settings-heading h1 { margin: 0 0 2px; font-size: 1.55rem; letter-spacing: -.05em; line-height: 1.2; }
 .f02-settings .settings-heading p { margin: 0; color: #5369a0; font-size: .84rem; }
 .f02-settings .settings-tabs { display: flex; gap: 0; min-height: 43px; margin-bottom: 10px; border-bottom: 1px solid #e3e6fb; }
 .f02-settings .settings-tabs button { flex: 0 0 auto; min-width: 112px; padding: 10px 16px; border: 0; border-bottom: 2px solid transparent; border-radius: 0; background: transparent; color: #6970aa; font-size: .85rem; font-weight: 700; cursor: pointer; }
-.f02-settings .settings-tabs button[aria-selected="true"] { border-bottom-color: #644df2; color: #513ee2; }
+.f02-settings .settings-tabs button[aria-selected="true"] { border-bottom-color: #6650ef; color: #6650ef; }
 #main-content .f02-settings .settings-panel[class] { display: block; padding: 22px; border: 1px solid #e2ecff; border-radius: 12px; background: #fff; box-shadow: 0 3px 18px #769bd311; }
 .f02-settings .settings-panel-title { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 16px; color: #081a91; }
 .f02-settings .settings-panel-title > .lucide-icon { flex: 0 0 auto; width: 25px; height: 25px; margin-top: 1px; stroke-width: 2.2; }
@@ -15,7 +15,7 @@
 .f02-settings .settings-panel-title p { margin: 0; color: #687eae; font-size: .75rem; }
 .f02-settings .settings-preference-groups { display: grid; gap: 12px; }
 .f02-settings .settings-preference-group { overflow: hidden; border: 1px solid #e4edff; border-radius: 9px; background: #f8fbff; }
-.f02-settings .settings-preference-group h3 { display: flex; align-items: center; gap: 8px; min-height: 39px; margin: 0; padding: 9px 12px; color: #0a287f; font-size: .84rem; }
+.f02-settings .settings-preference-group h3 { display: flex; align-items: center; gap: 8px; min-height: 39px; margin: 0; padding: 9px 12px; background: #f8f5ff; color: #0a287f; font-size: .84rem; }
 .f02-settings .settings-preference-group h3 .lucide-icon { width: 17px; height: 17px; color: #1768ff; }
 .f02-settings .settings-preference-row { display: flex; align-items: center; gap: 10px; min-height: 58px; padding: 8px 12px; background: #fff; cursor: pointer; }
 .f02-settings .settings-preference-row + .settings-preference-row { border-top: 1px solid #edf2ff; }
@@ -31,10 +31,10 @@
 .f02-settings .settings-preference-copy strong { color: #09266d; font-size: .77rem; line-height: 1.3; }
 .f02-settings .settings-preference-copy small { color: #8190b5; font-size: .67rem; line-height: 1.35; }
 .f02-settings .settings-switch { appearance: none; position: relative; width: 31px; height: 18px; flex: 0 0 auto; margin: 0; border: 0; border-radius: 20px; background: #bcc7de; cursor: pointer; transition: background .15s; }
-.f02-settings .settings-switch:checked { background: #1274ff; }
+.f02-settings .settings-switch:checked { background: #6650ef; }
 .f02-settings .settings-switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px #001c5040; transition: transform .15s; }
 .f02-settings .settings-switch:checked::after { transform: translateX(13px); }
-.f02-settings .settings-switch:focus-visible { outline: 3px solid #9dc4ff; outline-offset: 2px; }
+.f02-settings .settings-switch:focus-visible { outline: 3px solid #b8a9ff; outline-offset: 2px; }
 .f02-settings .settings-switch:disabled { cursor: wait; opacity: .65; }
 .f02-settings .settings-status { margin: 12px 0 0; color: #0b8b62; font-size: .75rem; }
 #main-content .f02-settings .settings-panel--compact[class] { max-width: 720px; }
