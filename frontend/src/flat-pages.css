@@ -60,6 +60,12 @@ body, #root, .app-layout, #main-content, .public-home, .auth-page { @apply bg-wh
 #main-content .jobs-page--saved .saved-analysis,
 #main-content .jobs-page--saved .saved-card,
 #main-content .jobs-page--saved > .saved-page-content { border-bottom: 0; }
+#main-content .jobs-page--saved > .saved-page-header {
+  border: 0;
+  border-radius: 0;
+  background: #f8f5ff;
+  box-shadow: none;
+}
 #main-content .jobs-page--saved .saved-card + .saved-card { border-top: 1px solid #e3e7fa; }
 
 #main-content :is(.profile-banner, .learning-banner, .public-home-art,
@@ -115,6 +121,14 @@ body, #root, .app-layout, #main-content, .public-home, .auth-page { @apply bg-wh
 #main-content .interview-overview-view[class],
 #main-content .interviews-editor-hero[class],
 #main-content .todos-dashboard-header[class] { border: 0; }
+#main-content .applications-page--board .application-board-header,
+#main-content .todos-dashboard-header[class] {
+  border: 0;
+  border-bottom: 1px dashed #d8d9eb;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
 #main-content .interview-overview-stats > div,
 #main-content .interview-overview-calendar[class],
 #main-content .interview-overview-day[class],
@@ -133,6 +147,7 @@ body, #root, .app-layout, #main-content, .public-home, .auth-page { @apply bg-wh
 #main-content .profile-skill-search[class],
 #main-content .profile-ai-candidates[class] { border: 1px solid #e3e7fa; border-radius: 0; background: #fff; }
 #main-content .market-dashboard { border: 1px solid #dce3f0; border-radius: 0; background: #fff; box-shadow: none; }
+#main-content .market-page > .market-filter-panel { border: 0; }
 #main-content .company-grid > li.company-card { border: 1px solid #dce3f0; border-radius: 9px; background: #fff; box-shadow: 0 2px 10px #465bc508; }
 #main-content .company-grid > li.company-card:hover { border-color: #c8c6f6; }
 #main-content .job-detail-sidebar > .job-detail-ai-card { border-bottom: 1px solid #e3e7fa; }

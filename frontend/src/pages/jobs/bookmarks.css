@@ -62,9 +62,8 @@
 .saved-card--unbookmark-pending { border-color: #c9c2f5 !important; }
 .saved-remove .lucide-icon { width: 17px; height: 17px; }
 .saved-analysis { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; align-items: center; gap: 11px; min-height: 52px; margin-top: 14px; padding: 0; border: 0; background: transparent; }
-.saved-analysis-robot { position: relative; display: block; width: 52px; height: 52px; flex: 0 0 52px; overflow: hidden; }
-.saved-analysis-robot img { position: absolute; top: -22px; left: -22px; width: 78px; height: 78px; max-width: none; object-fit: contain; image-rendering: auto; }
-.saved-analysis .saved-analysis-robot img { image-rendering: auto; }
+.saved-analysis-robot { display: flex; align-items: center; justify-content: center; width: 52px; height: 52px; flex: 0 0 52px; overflow: hidden; }
+.saved-analysis-robot img { display: block; width: 78px; height: 78px; max-width: none; flex: none; object-fit: contain; image-rendering: auto; filter: contrast(1.12); }
 .saved-analysis--interactive { cursor: pointer; }
 .saved-analysis--interactive:hover .saved-analysis-heading strong { text-decoration: underline; }
 .saved-analysis--interactive:focus-visible { outline: 2px solid #6650ef; outline-offset: 4px; }
