@@ -144,7 +144,7 @@ export function App() {
 
   return <Layout title={title} path={path} user={user} nickname={nickname} onLogout={logout} loggingOut={loggingOut}>
     {path === '/' ? <DashboardPage key={user.id} user={user} /> : path === '/profile' ? <div className="profile-page">
-      <ProfilePage key={`profile-${user.id}`} email={user.email} onProfileSaved={profile => {
+      <ProfilePage key={`profile-${user.id}`} userId={user.id} email={user.email} onProfileSaved={profile => {
         setNickname(profile.nickname);
         setUser(current => current ? { ...current, email: profile.email } : current);
       }} />
@@ -167,7 +167,7 @@ export function App() {
       : path === '/notifications' ? <NotificationsPage />
       : path === '/recommendations' || path.startsWith('/recommendations/') ? <RecommendationsPage key={path} location={location} />
       : path === '/admin/alio' ? <AlioBatchPage />
-      : path === '/character' ? <CharacterPage />
+      : path === '/character' ? <CharacterPage userId={user.id} />
       : path === '/settings' ? <SettingsPage user={user} onLogout={logout} loggingOut={loggingOut}
         onPasswordChanged={() => { setUser(null); window.location.hash = '/login?passwordChanged=1'; }}
         onSessionExpired={() => { setUser(null); window.location.hash = '/login?sessionExpired=1'; }} />

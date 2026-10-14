@@ -8,5 +8,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface CharacterRewardRepository extends JpaRepository<CharacterReward, Long> {
     List<CharacterReward> findByUserId(Long userId);
     Optional<CharacterReward> findByUserIdAndQuestId(Long userId, String questId);
+    Optional<CharacterReward> findByUserIdAndItemId(Long userId, String itemId);
     boolean existsByUserIdAndItemId(Long userId, String itemId);
 }

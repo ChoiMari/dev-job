@@ -5,6 +5,7 @@ import com.devjob.character.entity.CharacterActivity;
 import com.devjob.character.entity.CharacterReward;
 import com.devjob.character.repository.CharacterActivityRepository;
 import com.devjob.character.repository.CharacterRewardRepository;
+import com.devjob.character.repository.CharacterQuestProgressRepository;
 import com.devjob.character.service.CharacterGrowthService;
 import com.devjob.todo.entity.PersonalTodo;
 import com.devjob.user.entity.User;
@@ -20,8 +21,9 @@ import static org.mockito.Mockito.*;
 class CharacterGrowthServiceTest {
     private final CharacterActivityRepository activities = mock(CharacterActivityRepository.class);
     private final CharacterRewardRepository rewards = mock(CharacterRewardRepository.class);
+    private final CharacterQuestProgressRepository questProgress = mock(CharacterQuestProgressRepository.class);
     private final UserRepository users = mock(UserRepository.class);
-    private final CharacterGrowthService growth = new CharacterGrowthService(activities, rewards, users);
+    private final CharacterGrowthService growth = new CharacterGrowthService(activities, rewards, questProgress, users);
 
     @Test void levelBoundariesUseAccumulatedVerifiedExp() {
         assertThat(CharacterProgress.from(0)).isEqualTo(new CharacterProgress(1, 0, 0, 100));
@@ -62,5 +64,25 @@ class CharacterGrowthServiceTest {
         verify(rewards, times(1)).saveAndFlush(any());
         assertThatThrownBy(() -> growth.claim(1L, "UNKNOWN"))
                 .isInstanceOf(ResponseStatusException.class).hasMessageContaining("404");
+    }
+
+    @Test void questsUseDistinctVerifiedActivitiesAndPreserveLegacyRewards() {
+        User user = mock(User.class);
+        when(activities.countByUserIdAndActivityType(1L, "TODO_COMPLETED")).thenReturn(1L);
+        when(questProgress.bookmarkCount(1L)).thenReturn(2L);
+        when(questProgress.resumeCount(1L)).thenReturn(1L);
+        when(questProgress.applicationCount(1L)).thenReturn(0L);
+        when(questProgress.completedLearningGoalCount(1L)).thenReturn(1L);
+        when(questProgress.documentAnalysisCount(1L)).thenReturn(0L);
+        CharacterReward legacy = new CharacterReward(user, "TODO_5", "HOMEBODY", Instant.parse("2026-10-09T00:00:00Z"));
+        when(rewards.findByUserId(1L)).thenReturn(java.util.List.of(legacy));
+        var quests = growth.quests(1L);
+        assertThat(quests).extracting(q -> q.id()).containsExactly(
+                "TODO_1", "BOOKMARK_3", "RESUME_1", "APPLICATION_1", "LEARNING_1", "ANALYSIS_1");
+        assertThat(quests.get(1).progressCount()).isEqualTo(2);
+        assertThat(quests.get(1).completed()).isFalse();
+        assertThat(quests.get(2).claimed()).isTrue();
+        assertThat(quests.get(2).completed()).isTrue();
+        assertThat(quests.get(2).progressCount()).isEqualTo(1);
     }
 }

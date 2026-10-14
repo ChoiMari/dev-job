@@ -8,6 +8,7 @@ import { ErrorState, LoadingState } from '../components/States';
 import { LucideIcon } from '../components/LucideIcon';
 import { PixelCharacter } from '../components/PixelArt';
 import { characterAppearanceUrl } from '../components/CharacterLayers';
+import { characterThemeImage, savedCharacterTheme } from '../components/characterThemes';
 import profileHeader from '../assets/illustrations/profile-cat-header.png';
 import './profile.css';
 
@@ -22,7 +23,7 @@ const locationOptions = ['서울', '경기', '인천', '부산', '대구', '대�
 const certificateItems = (value: string | null) => (value ?? '').split(/[,\n]/).map(item => item.trim()).filter(Boolean);
 const characterApi = createCharacterApi(apiRequest);
 
-export function ProfilePage({ email, onProfileSaved }: { email: string; onProfileSaved: (profile: Profile) => void }) {
+export function ProfilePage({ userId, email, onProfileSaved }: { userId: number; email: string; onProfileSaved: (profile: Profile) => void }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [form, setForm] = useState<ProfileInput>(() => blank(email));
   const [loading, setLoading] = useState(true);
@@ -117,7 +118,7 @@ export function ProfilePage({ email, onProfileSaved }: { email: string; onProfil
     {loading ? <div className="profile-full-state"><LoadingState message="프로필을 불러오고 있습니다." /></div> : loadError
       ? <div className="profile-full-state"><ErrorState message={loadError} onRetry={() => setRetry(value => value + 1)} /></div>
       : <>
-        {profile ? <section className="profile-banner" aria-label="프로필 요약">
+        {profile ? <section className="profile-banner" aria-label="프로필 요약" style={{ backgroundImage: `url(${characterThemeImage(savedCharacterTheme(userId))})` }}>
           <span className="profile-banner-avatar">{appearance
             ? <img src={appearance} alt="" /> : <PixelCharacter />}</span>
           <div className="profile-banner-copy"><h2>{profile.nickname}</h2>

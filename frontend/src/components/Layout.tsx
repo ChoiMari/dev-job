@@ -80,7 +80,7 @@ export function Layout({ title, path, children, user, nickname, onLogout, loggin
         <a className={`account-avatar${bunnyOutfit ? ' is-bunny-outfit' : ''}`} href="#/character" aria-label="내 캐릭터 보기">{characterImage}</a>
         <span className="account-email">{nickname || user.email}</span>
         <a className="account-notifications" href="#/notifications" aria-label="알림"><LucideIcon name="bell" /></a>
-        <button type="button" onClick={onLogout} disabled={loggingOut}>{loggingOut ? '로그아웃 중…' : '로그아웃'}</button>
+        <button className="account-logout" type="button" onClick={onLogout} disabled={loggingOut}>{loggingOut ? '로그아웃 중…' : '로그아웃'}</button>
       </div>
     </header>
     <aside className="sidebar max-lg:py-2!">
@@ -113,7 +113,7 @@ export function Layout({ title, path, children, user, nickname, onLogout, loggin
       </a>
     </aside>
     <main id="main-content" tabIndex={-1} className="main-content">
-      {path !== '/' && path !== '/profile' && path !== '/analytics/skills' && !path.startsWith('/learning-goals') && !path.startsWith('/interviews/') && !path.startsWith('/jobs/')
+      {path !== '/' && path !== '/profile' && path !== '/character' && path !== '/analytics/skills' && !path.startsWith('/learning-goals') && !path.startsWith('/interviews/') && !path.startsWith('/jobs/')
         && <div className="page-heading"><span className="eyebrow">MY CAREER SPACE</span><h1>{title}</h1>{path === '/jobs' && <img className="job-search-banner-cat" src={jobDetailCat} alt="" aria-hidden="true" />}</div>}
       {children}
     </main>

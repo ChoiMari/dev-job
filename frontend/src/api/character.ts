@@ -117,7 +117,7 @@ export function createCharacterApi(request: ReturnType<typeof createApiClient>) 
       return value;
     },
     claim: async (questId: string): Promise<CharacterClaim> => {
-      if (!/^TODO_(1|3|5|10|20|30)$/.test(questId)) throw new TypeError('퀘스트를 확인해 주세요.');
+      if (!/^(TODO_1|BOOKMARK_3|RESUME_1|APPLICATION_1|LEARNING_1|ANALYSIS_1)$/.test(questId)) throw new TypeError('퀘스트를 확인해 주세요.');
       const value = await request(`/me/character/quests/${questId}/claim`, { method: 'POST', csrfToken: await csrf() });
       if (!object(value) || value.questId !== questId || typeof value.itemId !== 'string'
         || typeof value.claimedAt !== 'string' || !isCharacterProgress(value.progress)) return invalid();

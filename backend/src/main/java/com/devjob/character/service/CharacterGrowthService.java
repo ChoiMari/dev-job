@@ -19,15 +19,19 @@ public class CharacterGrowthService {
     public static final String TODO_COMPLETED = "TODO_COMPLETED";
     private static final int TODO_EXP = 10;
     private static final List<Quest> QUESTS = List.of(
-            new Quest("TODO_1", 1, "PEACH"), new Quest("TODO_3", 3, "BEAR"),
-            new Quest("TODO_5", 5, "HOMEBODY"), new Quest("TODO_10", 10, "INTERVIEW"),
-            new Quest("TODO_20", 20, "RAINCOAT"), new Quest("TODO_30", 30, "ASTRONAUT"));
+            new Quest("TODO_1", TODO_COMPLETED, 1, "PEACH"),
+            new Quest("BOOKMARK_3", "BOOKMARK_SAVED", 3, "BEAR"),
+            new Quest("RESUME_1", "RESUME_CREATED", 1, "HOMEBODY"),
+            new Quest("APPLICATION_1", "APPLICATION_CREATED", 1, "INTERVIEW"),
+            new Quest("LEARNING_1", "LEARNING_GOAL_COMPLETED", 1, "RAINCOAT"),
+            new Quest("ANALYSIS_1", "DOCUMENT_ANALYSIS_REQUESTED", 1, "ASTRONAUT"));
     private final CharacterActivityRepository activities;
     private final CharacterRewardRepository rewards;
+    private final CharacterQuestProgressRepository questProgress;
     private final UserRepository users;
     public CharacterGrowthService(CharacterActivityRepository activities, CharacterRewardRepository rewards,
-            UserRepository users) {
-        this.activities = activities; this.rewards = rewards; this.users = users;
+            CharacterQuestProgressRepository questProgress, UserRepository users) {
+        this.activities = activities; this.rewards = rewards; this.questProgress = questProgress; this.users = users;
     }
 
     // Called only after TodoService has locked and verified the owner's completion transition.
@@ -54,21 +58,20 @@ public class CharacterGrowthService {
 
     @Transactional(readOnly = true)
     public List<CharacterQuestResponse> quests(Long userId) {
-        long count = activities.countByUserIdAndActivityType(userId, TODO_COMPLETED);
         var claimed = rewards.findByUserId(userId).stream().collect(java.util.stream.Collectors.toMap(
-                CharacterReward::getQuestId, reward -> reward));
+                CharacterReward::getItemId, reward -> reward));
         return QUESTS.stream().map(quest -> {
-            var reward = claimed.get(quest.id());
-            return new CharacterQuestResponse(quest.id(), TODO_COMPLETED, quest.count(),
-                    Math.min(count, quest.count()), quest.itemId(), count >= quest.count(), reward != null,
+            long count = progressFor(userId, quest);
+            var reward = claimed.get(quest.itemId());
+            return new CharacterQuestResponse(quest.id(), quest.activityType(), quest.count(),
+                    reward == null ? Math.min(count, quest.count()) : quest.count(),
+                    quest.itemId(), count >= quest.count() || reward != null, reward != null,
                     reward == null ? null : reward.getClaimedAt());
         }).toList();
     }
 
     @Transactional
     public CharacterClaimResponse claim(Long userId, String questId) {
-        Quest quest = QUESTS.stream().filter(candidate -> candidate.id().equals(questId)).findFirst()
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         // The same owner lock is used by equipment changes, so claim and equip cannot pass each other.
         var user = users.findByIdForUpdate(userId).orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
         var existing = rewards.findByUserIdAndQuestId(userId, questId);
@@ -76,11 +79,30 @@ public class CharacterGrowthService {
             var reward = existing.get();
             return new CharacterClaimResponse(questId, reward.getItemId(), reward.getClaimedAt(), progress(userId));
         }
-        if (activities.countByUserIdAndActivityType(userId, TODO_COMPLETED) < quest.count())
+        Quest quest = QUESTS.stream().filter(candidate -> candidate.id().equals(questId)).findFirst()
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        // Old TODO quests may already have awarded this same item. Keep that entitlement and timestamp.
+        var itemReward = rewards.findByUserIdAndItemId(userId, quest.itemId());
+        if (itemReward.isPresent()) {
+            var reward = itemReward.get();
+            return new CharacterClaimResponse(questId, reward.getItemId(), reward.getClaimedAt(), progress(userId));
+        }
+        if (progressFor(userId, quest) < quest.count())
             throw new ResponseStatusException(HttpStatus.CONFLICT, "퀘스트 달성 조건을 충족하지 않았습니다.");
         var reward = rewards.saveAndFlush(new CharacterReward(user, questId, quest.itemId(),
                 Instant.now().truncatedTo(ChronoUnit.MICROS)));
         return new CharacterClaimResponse(questId, reward.getItemId(), reward.getClaimedAt(), progress(userId));
     }
-    private record Quest(String id, long count, String itemId) { }
+    private long progressFor(Long userId, Quest quest) {
+        return switch (quest.activityType()) {
+            case TODO_COMPLETED -> activities.countByUserIdAndActivityType(userId, TODO_COMPLETED);
+            case "BOOKMARK_SAVED" -> questProgress.bookmarkCount(userId);
+            case "RESUME_CREATED" -> questProgress.resumeCount(userId);
+            case "APPLICATION_CREATED" -> questProgress.applicationCount(userId);
+            case "LEARNING_GOAL_COMPLETED" -> questProgress.completedLearningGoalCount(userId);
+            case "DOCUMENT_ANALYSIS_REQUESTED" -> questProgress.documentAnalysisCount(userId);
+            default -> throw new IllegalStateException("Unknown quest activity type");
+        };
+    }
+    private record Quest(String id, String activityType, long count, String itemId) { }
 }

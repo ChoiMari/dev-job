@@ -221,6 +221,8 @@ body { background: var(--background); }
 .account-notifications:hover { background: #eeeaff; }
 .account-notifications:focus-visible { outline: 2px solid #6650ef; outline-offset: 2px; }
 .account-notifications .lucide-icon { width: 18px; height: 18px; }
+.account-controls .account-logout { min-height: 36px; padding: 4px 2px; border: 0; border-radius: 0; background: transparent; box-shadow: none; color: #5541c0; text-decoration: none; }
+.account-controls .account-logout:hover { background: transparent; color: #392a91; text-decoration: none; }
 .sidebar { position: sticky; top: 78px; height: calc(100vh - 78px); overflow-y: auto; display: flex; flex-direction: column; padding: 30px 15px 22px; background: var(--sidebar); border-color: var(--sidebar); color: var(--sidebar-text); }
 .sidebar nav { display: block; }
 .nav-group { display: grid; gap: 3px; margin-bottom: 26px; }
@@ -288,7 +290,6 @@ input, select, textarea { accent-color: var(--primary); }
 .character-item img { width: 76px; height: 76px; object-fit: contain; }
 .character-item span { font-weight: 700; text-align: center; }
   .character-item small { color: var(--muted); text-align: center; }
-  .character-slot-note { margin: 0 0 10px; color: var(--muted); font-size: .88rem; }
 .character-item.is-selected, .character-item.is-selected:hover { border-color: var(--primary); background: #f4eefb; color: var(--text); }
 .character-item:disabled { cursor: not-allowed; opacity: .72; }
 .character-item:focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; }
