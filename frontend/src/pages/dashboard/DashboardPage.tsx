@@ -55,7 +55,6 @@ export function DashboardPage({ user }: { user: CurrentUser }) {
     <section className="dashboard-hero">
       <img className="dashboard-hero-art" src={dashboardScene} alt="" aria-hidden="true" />
       <div className="dashboard-hero-copy">
-        <span className="eyebrow">MY CAREER SPACE</span>
         <h1>나의 취업 준비 현황</h1>
         <div className="dashboard-hero-metrics" aria-label="나의 취업 준비 현황">
           <a href="#/applications" className="dashboard-hero-metric"><span>진행 중인 지원</span><strong>{activeApplications}<small>건</small></strong><small>서류 접수·서류 합격·면접</small></a>

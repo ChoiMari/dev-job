@@ -80,9 +80,7 @@ export function ManualJobFormPage({ location }: { location: string }) {
             } finally { setSaving(false); }
           }}>
             <fieldset disabled={saving}>
-              <section className="manual-job-section"><div className="manual-job-section-heading"><LucideIcon name="fileText" /><div>
-                <h2>기본 정보</h2><p>공고의 기본 정보를 입력해주세요.</p>
-              </div></div>
+              <section className="manual-job-section">
                 <div className="manual-job-fields">
                   <label>공고 제목 <em>*</em><input name="title" required maxLength={300} defaultValue={job?.title || ''} placeholder="예) 백엔드 개발자 (Java/Spring)" /></label>
                   <label>회사명 <em>*</em><input name="companyName" required maxLength={200} defaultValue={job?.companyName || ''} placeholder="예) 회사명을 입력하세요" /></label>
@@ -107,7 +105,7 @@ export function ManualJobFormPage({ location }: { location: string }) {
               </section>
             </fieldset>
             {formError && <ErrorState message={formError} />}
-            <div className="manual-job-actions"><a href={cancelHref}>취소</a><button type="submit" disabled={saving}><img src={savedBookmarkArt} alt="" aria-hidden="true" />{saving ? '저장 중…' : editing ? '수정 내용 저장' : '관심 공고로 등록'}</button></div>
+            <div className="manual-job-actions"><a href={cancelHref}>취소</a><button type="submit" disabled={saving}><img src={savedBookmarkArt} alt="" aria-hidden="true" />{saving ? '저장 중…' : editing ? '저장' : '등록'}</button></div>
           </form>}
     <datalist id="manual-job-locations"><option value="서울" /><option value="경기" /><option value="인천" /><option value="부산" /><option value="대구" /><option value="대전" /><option value="광주" /><option value="전국" /><option value="원격" /></datalist>
     <datalist id="manual-job-employment"><option value="정규직" /><option value="계약직" /><option value="인턴" /><option value="프리랜서" /></datalist>

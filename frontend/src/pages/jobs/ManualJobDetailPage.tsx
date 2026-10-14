@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { apiRequest } from '../../api';
 import { ApiError } from '../../api/client';
 import { createSavedJobsApi } from '../../api/saved-jobs';
+import { createSkillsApi } from '../../api/skills';
 import type { ManualSavedJob } from '../../api/saved-jobs';
 import { ApplicationRegistration } from '../../components/ApplicationRegistration';
 import { ApplicationStatusBadge } from '../../components/ApplicationStatusBadge';
@@ -16,6 +17,17 @@ import './job-detail.css';
 import './manual-job-detail.css';
 
 const savedJobs = createSavedJobsApi(apiRequest);
+const skillsApi = createSkillsApi(apiRequest);
+const normalizeSkill = (name: string) => name.trim().toLocaleLowerCase().replace(/\s+/g, '');
+const matchViewedKey = (userId: number, jobId: number) => `devjob:manual-match-viewed:${userId}:${jobId}`;
+function hasViewedMatch(userId: number, jobId: number) {
+  try { return window.localStorage.getItem(matchViewedKey(userId, jobId)) === '1'; }
+  catch { return false; }
+}
+function rememberViewedMatch(userId: number, jobId: number) {
+  try { window.localStorage.setItem(matchViewedKey(userId, jobId), '1'); }
+  catch { /* The comparison remains visible during this visit. */ }
+}
 type Analysis = { status: 'COMPLETED' | 'FAILED'; requiredSkills: string[]; preferredSkills: string[]; failureReason: string | null };
 function readAnalysis(value: unknown): Analysis {
   if (!value || typeof value !== 'object') throw new Error('분석 응답을 확인할 수 없습니다.');
@@ -26,8 +38,8 @@ function readAnalysis(value: unknown): Analysis {
   return result as Analysis;
 }
 
-export function ManualJobDetailPage({ location, onBack, initialApplicationStatus = null }: {
-  location: string; onBack?: () => void; initialApplicationStatus?: ApplicationStatus | null;
+export function ManualJobDetailPage({ location, userId, onBack, initialApplicationStatus = null }: {
+  location: string; userId: number; onBack?: () => void; initialApplicationStatus?: ApplicationStatus | null;
 }) {
   const path = location.split('?')[0];
   const id = Number(path.slice('/bookmarks/'.length));
@@ -37,6 +49,11 @@ export function ManualJobDetailPage({ location, onBack, initialApplicationStatus
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [analysisError, setAnalysisError] = useState('');
+  const [ownedNames, setOwnedNames] = useState<string[] | null>(null);
+  const [matchError, setMatchError] = useState('');
+  const [matchBusy, setMatchBusy] = useState(false);
+  const [showMatch, setShowMatch] = useState(() => hasViewedMatch(userId, id));
+  const [matchRetry, setMatchRetry] = useState(0);
   const [busy, setBusy] = useState(false);
   const [applicationStatus, setApplicationStatus] = useState<ApplicationStatus | null>(initialApplicationStatus);
   const [retry, setRetry] = useState(0);
@@ -58,6 +75,20 @@ export function ManualJobDetailPage({ location, onBack, initialApplicationStatus
         setAnalysisError(failure instanceof Error ? failure.message : '분석을 불러오지 못했습니다.'); });
     return () => { active = false; };
   }, [id, job?.updatedAt]);
+  useEffect(() => {
+    setShowMatch(hasViewedMatch(userId, id));
+    setOwnedNames(null); setMatchError('');
+  }, [id, userId]);
+  useEffect(() => {
+    if (!showMatch || analysis?.status !== 'COMPLETED') return;
+    let active = true;
+    setMatchBusy(true); setMatchError('');
+    Promise.all([skillsApi.list(), skillsApi.listCustom()])
+      .then(([owned, custom]) => { if (active) setOwnedNames([...new Set([...owned, ...custom].map(skill => skill.name))]); })
+      .catch(failure => { if (active) setMatchError(failure instanceof Error ? failure.message : '보유 기술을 불러오지 못했습니다.'); })
+      .finally(() => { if (active) setMatchBusy(false); });
+    return () => { active = false; };
+  }, [showMatch, analysis?.status, id, userId, matchRetry]);
   async function analyze() {
     setBusy(true); setAnalysisError('');
     try { setAnalysis(readAnalysis(await savedJobs.requestAnalysis(id))); }
@@ -66,6 +97,12 @@ export function ManualJobDetailPage({ location, onBack, initialApplicationStatus
         : failure instanceof Error ? failure.message : '분석에 실패했습니다.'); }
     finally { setBusy(false); }
   }
+  const required = analysis?.status === 'COMPLETED' ? analysis.requiredSkills : [];
+  const preferred = analysis?.status === 'COMPLETED' ? analysis.preferredSkills : [];
+  const advertisedSkills = [...new Set([...required, ...preferred].map(skill => skill.trim()).filter(Boolean))];
+  const ownedSet = new Set((ownedNames || []).map(normalizeSkill));
+  const matched = advertisedSkills.filter(skill => ownedSet.has(normalizeSkill(skill)));
+  const missing = advertisedSkills.filter(skill => !ownedSet.has(normalizeSkill(skill)));
   return <div className="jobs-page job-detail-page manual-job-detail-page">
     <header className="job-detail-banner" style={{ backgroundImage: `url(${jobDetailSkyline})` }}>
       {onBack ? <button type="button" className="job-detail-back" onClick={onBack} aria-label="관심 공고 목록으로"><LucideIcon name="arrowLeft" /></button>
@@ -126,6 +163,16 @@ export function ManualJobDetailPage({ location, onBack, initialApplicationStatus
                   {analysis?.status === 'FAILED' && <p>{analysis.failureReason || '분석에 실패했습니다.'}</p>}
                   {analysisError && <ErrorState message={analysisError} onRetry={() => setRetry(value => value + 1)} />}
                 </div>
+              </section>
+              <section className="card job-detail-side-card job-detail-match-card"><header><LucideIcon name="sliders" /><h3>내 기술 매칭</h3></header>
+                {analysis?.status === 'COMPLETED' ? !showMatch
+                  ? <><p>AI가 추출한 기술과 등록한 보유 기술을 비교합니다.</p><button type="button" onClick={() => { rememberViewedMatch(userId, id); setShowMatch(true); }}>기술 비교하기</button></>
+                  : matchBusy || ownedNames === null && !matchError ? <LoadingState message="보유 기술을 비교하고 있습니다." />
+                  : matchError ? <ErrorState message={matchError} onRetry={() => setMatchRetry(value => value + 1)} />
+                  : <div className="job-analysis"><p>공고 기술 {advertisedSkills.length}개 중 이름이 일치하는 보유 기술 {matched.length}개</p>
+                    <h4>일치하는 기술</h4><p>{matched.length ? matched.join(', ') : '일치하는 기술이 없습니다.'}</p>
+                    <h4>아직 등록하지 않은 기술</h4><p>{missing.length ? missing.join(', ') : '없습니다.'}</p></div>
+                  : <p>AI 분석이 완료되면 비교할 수 있습니다.</p>}
               </section>
             </aside>
           </div>}

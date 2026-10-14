@@ -129,7 +129,6 @@ export function BookmarksPage({ location }: { location: string }) {
             <SavedAnalysis item={item} onUpdated={() => { if (!isUnbookmarked(item)) setRetry(value => value + 1); }} />
             <div className="saved-card-actions"><a href={item.url} target="_blank" rel="noopener noreferrer">외부 원문 열기 <LucideIcon name="arrowRight" /></a>
               {(item.applicationStatus || registeredKeys.includes(`${item.kind}-${item.id}`)) && <a href="#/applications">지원관리 <LucideIcon name="arrowRight" /></a>}
-              {item.kind === 'MANUAL' && <a className="saved-card-edit" href={`#/bookmarks/${item.id}/edit`}>공고 수정</a>}
               {!item.applicationStatus && !registeredKeys.includes(`${item.kind}-${item.id}`) && <div className="job-detail-tab-panel saved-card-application"><ApplicationRegistration
                 jobId={item.kind === 'COLLECTED' ? item.jobId ?? undefined : undefined}
                 personalSavedJobId={item.kind === 'MANUAL' ? item.id : undefined} status={item.applicationStatus} compact

@@ -82,6 +82,9 @@
 .application-kanban-card h3 { font-size: .88rem; margin: 5px 0; line-height: 1.4; overflow-wrap: anywhere; }
 .application-kanban-card h3 a { color: #28317d; text-decoration: none; }
 .application-kanban-card h3 a:hover { color: #5541d5; text-decoration: underline; }
+.application-kanban-title { padding: 0; border: 0; background: transparent; color: #28317d; text-align: left; font: inherit; font-weight: inherit; cursor: pointer; }
+.application-kanban-title:hover { color: #5541d5; text-decoration: underline; }
+#add-application-form .application-modal-fields label:first-child > .application-field-title { color: #263454; }
 .application-kanban-card p { margin: 5px 0; }
 .application-kanban-card .application-kind { border-radius: 4px; padding: 2px 5px; font-size: .66rem; font-weight: 750; line-height: 1.25; }
 .application-kanban-card .application-kind--collected { background: #eaf2ff; color: #285aa8; }
@@ -190,6 +193,7 @@
 .application-detail-edit .lucide-icon { width: 14px; height: 14px; }
 .application-detail-delete { display: inline-flex; align-items: center; gap: 4px; min-height: 30px; padding: 4px 9px; border: 1px solid #f0c8d1; border-radius: 6px; background: #fff7f8; color: #ad3c5a; font: inherit; font-size: .72rem; font-weight: 700; cursor: pointer; }
 .application-detail-delete .lucide-icon { width: 14px; height: 14px; }
+.application-detail-footer-actions { display: flex; justify-content: flex-end; gap: 6px; padding: 0 20px 16px; background: #fff; }
 .application-detail-delete-backdrop { z-index: 120; }
 .application-detail-modal-body { min-height: 0; overflow-y: auto; padding: 18px 20px 22px; }
 .application-detail-job { padding-bottom: 14px; border-bottom: 1px solid #e3e7fa; }
@@ -203,6 +207,7 @@
 .application-detail-job h3 { margin: 0; font-size: .95rem; line-height: 1.45; overflow-wrap: anywhere; }
 .application-detail-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; margin: 16px 0; }
 .application-detail-facts > div { display: grid; align-content: start; gap: 7px; min-width: 0; padding: 11px 12px; border: 1px solid #e3e7fa; border-radius: 8px; background: #f8f9ff; }
+#main-content .application-detail-modal .application-detail-facts > div { border: 0; border-radius: 0; background: transparent; box-shadow: none; }
 .application-detail-facts > div > span:first-child { display: inline-flex; align-items: center; gap: 5px; color: #687397; font-size: .72rem; font-weight: 700; }
 .application-detail-facts > div > span:first-child .lucide-icon { width: 14px; height: 14px; color: #6650ef; }
 .application-detail-facts .job-status-label { font-size: .8rem; }
@@ -222,7 +227,7 @@
 .application-detail-modal .application-form fieldset > button { justify-self: end; width: auto; min-height: 35px; padding: 7px 13px; border: 1px solid #6650ef; border-radius: 7px; background: #6650ef; color: #fff; font: inherit; font-size: .77rem; font-weight: 750; cursor: pointer; }
 .application-detail-modal .application-form fieldset > button:hover:not(:disabled) { background: #5541d5; }
 .application-detail-modal .application-form fieldset > p { margin: 0; color: #855a30; font-size: .73rem; }
-@media (max-width: 500px) { .application-detail-modal-head { grid-template-columns: 40px minmax(0, 1fr); padding: 12px 14px; } .application-detail-head-actions { grid-column: 1 / -1; width: 100%; justify-content: flex-end; } .application-detail-facts { grid-template-columns: 1fr; } .application-detail-modal-body { padding: 14px; } }
+@media (max-width: 500px) { .application-detail-modal-head { grid-template-columns: 40px minmax(0, 1fr) auto; padding: 12px 14px; } .application-detail-facts { grid-template-columns: 1fr; } .application-detail-modal-body { padding: 14px; } .application-detail-footer-actions { padding: 0 14px 14px; } }
 @container (max-width: 1120px) { .application-kanban { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @container (max-width: 700px) { .application-kanban { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @container (max-width: 470px) { .application-kanban { grid-template-columns: minmax(0, 1fr); } .application-board-header-actions { width: 100%; justify-content: space-between; } }

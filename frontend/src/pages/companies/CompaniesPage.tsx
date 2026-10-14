@@ -5,7 +5,7 @@ import { companyLink, createCompaniesApi } from '../../api/companies';
 import type { CompanyFilters, CompanyInput, CompanyPage, CompanySize, CompanyStatus, CompanyTag,
   InterestLevel, InterestedCompany } from '../../api/companies';
 import { LucideIcon } from '../../components/LucideIcon';
-import { EmptyState, ErrorState, LoadingState, SuccessState } from '../../components/States';
+import { EmptyState, ErrorState, LoadingState } from '../../components/States';
 import buildingIcon from '../../assets/redesign/company-building-new.png';
 import detailBuildingIcon from '../../assets/redesign/company-detail-building.png';
 import detailIcons from '../../assets/redesign/company-detail-icons.png';
@@ -23,7 +23,7 @@ const regions = ['서울', '경기', '인천', '부산', '대전', '대구', '�
 const tagColors = ['blue', 'green', 'pink', 'yellow', 'purple', 'sky', 'orange', 'red', 'mint', 'gray'] as const;
 const tagColorLabels: Record<string, string> = { blue: '파랑', green: '초록', pink: '핑크', yellow: '노랑',
   purple: '보라', sky: '하늘', orange: '주황', red: '빨강', mint: '민트', gray: '회색' };
-const desktopFilterClass = 'lg:min-h-11! lg:text-sm!';
+const desktopFilterClass = 'lg:min-h-9! lg:text-[13px]!';
 const desktopTagClass = 'lg:min-h-9! lg:px-3! lg:text-sm!';
 const message = (error: unknown) => error instanceof Error ? error.message : '기업 기록을 처리하지 못했습니다.';
 const tagMessage = (error: unknown) => error instanceof ApiError && error.status === 404
@@ -104,7 +104,7 @@ function CompanyList() {
   return <section className="companies-page" aria-label="기업 관리">
     <header className="company-page-header"><div className="company-page-title"><img src={buildingIcon} alt="" /><div><h1 className="lg:text-[1.75rem]!">기업 관리</h1><p className="lg:text-sm!">관심 있는 기업을 등록하고 관리하세요.</p></div></div>
       <a className="company-primary lg:min-h-11! lg:px-5! lg:text-sm!" href="#/companies/new"><LucideIcon name="plus" /> 관심 기업 등록</a></header>
-    <div className="company-search"><LucideIcon name="search" /><input type="search" className="lg:min-h-12! lg:text-base!" value={query} onChange={event => setQuery(event.target.value)} placeholder="기업명, 키워드, 태그로 검색하세요." aria-label="기업 검색" /></div>
+    <div className="company-search"><LucideIcon name="search" /><input type="search" className="lg:min-h-10! lg:text-sm!" value={query} onChange={event => setQuery(event.target.value)} placeholder="기업명, 키워드, 태그로 검색하세요." aria-label="기업 검색" /></div>
     <div className="company-filters"><select className={desktopFilterClass} aria-label="산업 분야" value={filters.industry ?? ''} onChange={event => choose({ industry: event.target.value || undefined })}><option value="">산업 분야</option>{industries.map(value => <option key={value}>{value}</option>)}</select>
       <select className={desktopFilterClass} aria-label="기업 규모" value={filters.companySize ?? ''} onChange={event => choose({ companySize: event.target.value as CompanySize || undefined })}><option value="">기업 규모</option>{Object.entries(sizeLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
       <select className={desktopFilterClass} aria-label="지역" value={filters.region ?? ''} onChange={event => choose({ region: event.target.value || undefined })}><option value="">지역</option>{regions.map(value => <option key={value}>{value}</option>)}</select>
@@ -112,7 +112,7 @@ function CompanyList() {
       <select className={desktopFilterClass} aria-label="정렬" value={filters.order ?? 'latest'} onChange={event => choose({ order: event.target.value as CompanyFilters['order'] })}><option value="latest">최신순</option><option value="oldest">오래된순</option><option value="name">이름순</option></select></div>
     <div className="company-tag-heading"><strong className="lg:text-base!">태그로 검색</strong><button type="button" onClick={() => setTagDialog(true)} aria-label="태그 관리" title="태그 관리"><LucideIcon name="settings" /></button></div>
     <div className="company-tag-filters"><button type="button" className={`${filters.tag ? '' : 'is-active'} ${desktopTagClass}`} onClick={() => choose({ tag: undefined })}>전체</button>{shownTags.map(tag => <button type="button" key={tag} className={`${tagClass(tag, customTags)}${filters.tag === tag ? ' is-active' : ''} ${desktopTagClass}`} onClick={() => choose({ tag: filters.tag === tag ? undefined : tag })}>{tag}</button>)}
-      {tags.length > 7 && <button type="button" className={desktopTagClass} aria-label={showAllTags ? '접기' : undefined} onClick={() => setShowAllTags(value => !value)}>{showAllTags ? <LucideIcon name="chevronUp" /> : '더보기'}</button>}</div>
+      {tags.length > 7 && <button type="button" className={desktopTagClass} onClick={() => setShowAllTags(value => !value)}>{showAllTags ? '접기' : '더보기'}</button>}</div>
     {actionError && <p className="mt-3! inline-flex items-center gap-2 rounded-md bg-amber-50 px-3 py-2 text-xs! text-amber-800!" role="alert"><LucideIcon name="info" className="size-4 shrink-0" />{actionError}</p>}
     <div className="company-count lg:text-sm!">목록 {result?.totalElements ?? '—'}개</div>
     {loading ? <LoadingState message="기업 목록을 불러오고 있습니다." /> : error ? <ErrorState message={error} onRetry={() => setRetry(value => value + 1)} />
@@ -206,7 +206,6 @@ function CompanyEditor({ id, initialEdit = false }: { id?: number; initialEdit?:
   const [retry, setRetry] = useState(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
   const [confirmDelete, setConfirmDelete] = useState(false);
   const inFlight = useRef(false);
   const mounted = useRef(true);
@@ -227,7 +226,7 @@ function CompanyEditor({ id, initialEdit = false }: { id?: number; initialEdit?:
   }
   async function save(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault(); if (inFlight.current) return;
-    setError(''); setSuccess('');
+    setError('');
     const name = form.name.trim(); if (!name) { setError('기업명을 입력해 주세요.'); setTab('basic'); return; }
     const websiteUrl = form.websiteUrl?.trim() || null;
     if (websiteUrl && !companyLink(websiteUrl)) { setError('웹사이트 주소를 확인해 주세요.'); setTab('basic'); return; }
@@ -237,7 +236,7 @@ function CompanyEditor({ id, initialEdit = false }: { id?: number; initialEdit?:
       const value = id ? await companies.update(id, input) : await companies.create(input);
       if (!mounted.current) return;
       if (!id) window.location.hash = `/companies/${value.id}`;
-      else { setCompany(value); setForm(inputFrom(value)); setEditing(false); setSuccess('기업 기록을 저장했습니다.'); }
+      else { setCompany(value); setForm(inputFrom(value)); setEditing(false); }
     } catch (failure) { if (mounted.current) setError(failure instanceof ApiError && failure.status === 409
       ? '이 웹사이트는 내 관심 기업에 이미 등록되어 있습니다.' : message(failure)); }
     finally { inFlight.current = false; if (mounted.current) setBusy(false); }
@@ -250,11 +249,11 @@ function CompanyEditor({ id, initialEdit = false }: { id?: number; initialEdit?:
     finally { inFlight.current = false; if (mounted.current) setBusy(false); }
   }
   const allTags = [...new Set([...tags.map(value => value.name), ...(form.tags ?? [])])];
-  return <section className={`company-editor${editing ? '' : ' w-[min(100%,760px)]!'}`} role="dialog" aria-modal="true" aria-labelledby="company-editor-title">{editing
+  return <><section className={`company-editor${editing ? '' : ' w-[min(100%,760px)]!'}`} role="dialog" aria-modal="true" aria-labelledby="company-editor-title">{editing
     ? <header className="company-editor-header"><img src={buildingIcon} alt="" /><div><h2 id="company-editor-title">{id ? '기업 수정' : '기업 추가'}</h2><p>{id ? '기업 기록을 수정하세요.' : '관심 있는 기업을 등록하세요.'}</p></div><a href="#/companies" aria-label="닫기">×</a></header>
     : <header className="flex items-center gap-3 px-4 py-3 sm:px-5"><img src={detailBuildingIcon} alt="" className="h-10 w-10 object-contain" /><div className="min-w-0 flex-1"><h2 id="company-editor-title" className="text-lg! font-extrabold text-[#141b50]">기업 상세</h2><p className="mt-0.5! text-xs! text-[#66739b] sm:text-sm!">관심 기업 기록을 확인하고 관리하세요.</p></div><a href="#/companies" aria-label="닫기" className="grid size-8 place-items-center rounded-lg border border-[#e1e6f5] bg-[#f6f8fc] text-[#536389] hover:bg-[#ecf0fa]"><LucideIcon name="close" className="size-4" /></a></header>}
     {loading ? <LoadingState message="기업 기록을 불러오고 있습니다." /> : loadError ? <ErrorState message={loadError} onRetry={() => setRetry(value => value + 1)} /> : <>
-      {success && <SuccessState title={success} compact />}{error && <p className="mx-4! my-3! inline-flex items-center gap-2 rounded-md bg-amber-50 px-3 py-2 text-xs! text-amber-800!" role="alert"><LucideIcon name="info" className="size-4 shrink-0" />{error}</p>}
+      {error && !confirmDelete && <p className="mx-4! my-3! inline-flex items-center gap-2 rounded-md bg-amber-50 px-3 py-2 text-xs! text-amber-800!" role="alert"><LucideIcon name="info" className="size-4 shrink-0" />{error}</p>}
       {editing ? <form className="company-form" onSubmit={save}><div className="company-form-tabs" role="tablist" aria-label="기업 입력 단계"><button type="button" role="tab" aria-selected={tab === 'basic'} onClick={() => setTab('basic')}>기본 정보</button><button type="button" role="tab" aria-selected={tab === 'extra'} onClick={() => setTab('extra')}>추가 정보</button></div>
         <fieldset disabled={busy || tab !== 'basic'} hidden={tab !== 'basic'}><label><span className="inline-flex items-center gap-0.5">기업명 <em>*</em></span><input required={tab === 'basic'} maxLength={200} value={form.name} onChange={event => change('name', event.target.value)} placeholder="예) 네이버" /></label>
           <label>기업 URL<input type="url" maxLength={2048} value={form.websiteUrl ?? ''} onChange={event => change('websiteUrl', event.target.value || null)} placeholder="https://" /></label>
@@ -278,11 +277,19 @@ function CompanyEditor({ id, initialEdit = false }: { id?: number; initialEdit?:
             [4, '관리 상태', statusLabels[company.status], 'bg-[#edf3ff]'],
             [5, '수정일', displayDate(company.updatedAt), 'bg-[#f4efff]'],
           ] as const).map(([icon, label, value, tone]) => <div key={label} className={`flex min-h-16 items-center gap-1.5 rounded-lg p-2.5 ${tone}`}><span className="grid size-10 shrink-0 place-items-center rounded-lg bg-white/70"><DetailSprite index={icon} className="size-8" /></span><div className="min-w-0"><dt className="text-[11px] text-[#6b789e]">{label}</dt><dd className="m-0! mt-0.5! break-words text-left! text-sm font-bold text-[#172052]">{value}</dd></div></div>)}</dl>
-          <section className="mt-4 rounded-lg border border-[#e3e8f4] bg-[#fbfcff] p-3"><div className="flex items-center justify-between gap-2"><h4 className="m-0 inline-flex items-center gap-1.5 text-sm font-bold text-[#192453]"><DetailSprite index={6} className="size-5" />메모</h4>{!company.note && <button type="button" className="inline-flex h-8! min-h-0! items-center gap-1 rounded-md border border-[#dbe3f5] bg-white px-2! py-0! text-xs! font-semibold text-[#4d58aa] shadow-sm" onClick={() => { setTab('basic'); setEditing(true); }}><DetailSprite index={7} className="size-5" />메모 추가</button>}</div>{company.note ? <p className="mt-2! whitespace-pre-wrap break-words rounded-md border border-[#e4e9f6] bg-white p-3 text-sm! text-[#37446f]!">{company.note}</p> : <div className="mt-2 grid min-h-22 place-items-center rounded-md border border-dashed border-[#d5dff1] bg-white text-center text-xs text-[#7180a7]"><div className="flex flex-col items-center justify-center gap-1"><DetailSprite index={6} className="size-7" /><span>등록된 메모가 없습니다.</span></div></div>}</section>
-          <footer className="mt-3 flex justify-end gap-2"><button type="button" className="h-8! min-h-0! rounded-md border border-[#dbe3f5] bg-white px-2.5! py-0! text-xs! font-semibold text-[#4d58aa]" onClick={() => setEditing(true)}>수정</button><button type="button" className="h-8! min-h-0! rounded-md border border-[#f2dce4] bg-white px-2.5! py-0! text-xs! font-semibold text-[#b54f6c]" onClick={() => setConfirmDelete(true)}>삭제</button></footer>{confirmDelete && <div className="mt-3 rounded-lg border border-[#f2dce4] bg-[#fff8fa] p-3"><p className="text-sm! text-[#813d56]!">“{company.name}” 기록을 삭제할까요? 채용공고와 지원 기록은 유지됩니다.</p><div className="mt-2 flex justify-end gap-2"><button type="button" className="rounded-md border border-[#dbe3f5] bg-white px-3 py-2 text-xs" disabled={busy} onClick={() => setConfirmDelete(false)}>취소</button><button type="button" className="rounded-md bg-[#bf4869] px-3 py-2 text-xs font-bold text-white" disabled={busy} onClick={() => void remove()}>{busy ? '삭제 중…' : '삭제 확인'}</button></div></div>}</div>}
+          <section className="mt-4 rounded-lg border border-[#e3e8f4] bg-[#fbfcff] p-3"><div className="flex items-center justify-between gap-2"><h4 className="m-0 inline-flex items-center gap-1.5 text-sm font-bold text-[#192453]"><DetailSprite index={6} className="size-5" />메모</h4>{!company.note && <button type="button" className="inline-flex h-8! min-h-0! items-center gap-1 rounded-md border border-[#dbe3f5] bg-white px-2! py-0! text-xs! font-semibold text-[#4d58aa] shadow-sm" onClick={() => { setTab('basic'); setEditing(true); }}><DetailSprite index={7} className="size-6 [image-rendering:pixelated]" />메모 추가</button>}</div>{company.note ? <p className="mt-2! whitespace-pre-wrap break-words rounded-md border border-[#e4e9f6] bg-white p-3 text-sm! text-[#37446f]!">{company.note}</p> : <div className="mt-2 grid min-h-22 place-items-center rounded-md border border-dashed border-[#d5dff1] bg-white text-center text-xs text-[#7180a7]"><div className="flex flex-col items-center justify-center gap-1"><DetailSprite index={6} className="size-7" /><span>등록된 메모가 없습니다.</span></div></div>}</section>
+          <footer className="mt-3 flex justify-end gap-2"><button type="button" className="h-8! min-h-0! rounded-md border border-[#dbe3f5] bg-white px-2.5! py-0! text-xs! font-semibold text-[#4d58aa]" onClick={() => setEditing(true)}>수정</button><button type="button" className="h-8! min-h-0! rounded-md border border-[#f2dce4] bg-white px-2.5! py-0! text-xs! font-semibold text-[#b54f6c]" onClick={() => { setError(''); setConfirmDelete(true); }}>삭제</button></footer></div>}
     </>}
     {tagDialog && <TagManager onClose={() => { setTagDialog(false); companies.listTags().then(value => {
       setTags(value); setForm(current => ({ ...current, tags: current.tags?.filter(tag => value.some(option => option.name === tag)) }));
     }).catch(failure => setError(tagMessage(failure))); }} />}
-  </section>;
+  </section>
+    {confirmDelete && company && <div className="company-confirm-backdrop company-detail-confirm-backdrop" onClick={event => { if (event.target === event.currentTarget && !busy) setConfirmDelete(false); }}>
+      <div className="company-delete-dialog" role="dialog" aria-modal="true" aria-labelledby="company-detail-delete-title">
+        <header><span className="company-delete-icon"><LucideIcon name="trash" /></span><div><h2 id="company-detail-delete-title">기업 기록을 삭제할까요?</h2><p>채용공고와 지원 기록은 유지됩니다.</p></div></header>
+        <div className="company-delete-content"><strong>{company.name}</strong>{error && <p role="alert">{error}</p>}</div>
+        <footer><button type="button" disabled={busy} onClick={() => setConfirmDelete(false)}>취소</button><button type="button" className="company-delete-confirm" disabled={busy} onClick={() => void remove()}>{busy ? '삭제 중…' : '삭제'}</button></footer>
+      </div>
+    </div>}
+  </>;
 }

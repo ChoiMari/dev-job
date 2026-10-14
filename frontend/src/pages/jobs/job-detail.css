@@ -106,6 +106,7 @@
 .job-detail-match-card .job-analysis h4 { margin: 16px 0 7px; color: #39459a; font-size: .78rem; font-weight: 700; line-height: 1.4; }
 .job-detail-match-card .job-analysis h4 + p { margin-bottom: 5px; }
 .job-detail-side-card .job-analysis > button { width: 100%; min-height: 38px; border: 0; border-radius: 7px; background: #eeeaff; color: #5541d5; font-size: .76rem; font-weight: 800; }
+.manual-job-detail-page .job-detail-match-card > button { width: 100%; min-height: 38px; border: 0; border-radius: 7px; background: #eeeaff; color: #5541d5; font-size: .76rem; font-weight: 800; cursor: pointer; }
 .job-detail-side-card .job-analysis--completed > h4 { margin: 0 0 8px; color: #39459a; font-size: .8rem; line-height: 1.4; }
 .job-detail-side-card .job-analysis--completed > h4:not(:first-of-type) { margin-top: 17px; }
 .job-detail-side-card .job-analysis--completed > h4 + p { margin: 0; padding: 10px 11px; border: 1px dashed #e3e7fa; border-radius: 8px; background: #f8f9ff; color: #69709b; font-size: .75rem; }

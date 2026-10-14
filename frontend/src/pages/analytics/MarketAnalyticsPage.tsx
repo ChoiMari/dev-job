@@ -105,7 +105,6 @@ export function MarketAnalyticsPage({ location }: { location: string }) {
   const [skillError, setSkillError] = useState('');
   const [listQuery, setListQuery] = useState('');
   const [infoOpen, setInfoOpen] = useState(false);
-  const [activeSection, setActiveSection] = useState('skills');
   const [seriesCount, setSeriesCount] = useState(5);
   const [retry, setRetry] = useState(0);
 
@@ -214,10 +213,6 @@ export function MarketAnalyticsPage({ location }: { location: string }) {
   const topRegions = orderedRegions.slice(0, 5);
   const restCount = orderedRegions.slice(5).reduce((sum, bucket) => sum + bucket.jobCount, 0);
   if (restCount && regions.data) topRegions.push({ key: 'REST', jobCount: restCount, ratio: restCount / regions.data.jobCount });
-  const nav = (section: string) => {
-    setActiveSection(section);
-    document.getElementById('market-' + section)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  };
 
   return <div className="market-page">
     <header className="market-header">
@@ -230,12 +225,6 @@ export function MarketAnalyticsPage({ location }: { location: string }) {
       <strong>데이터 기준</strong>
       <p>전체 공고·경력·지역은 저장된 공용 채용공고 기준입니다. 기술 수요와 추이는 AI 분석이 완료된 공고 기준이며 두 집계의 표본은 다릅니다. 증감률은 선택 기간과 직전 같은 길이의 기간을 비교합니다. 기술 수요에는 출처 필터가 적용되지 않습니다.</p>
     </aside>}
-    <nav className="market-tabs" aria-label="채용시장 분석 항목">
-      {[
-        ['skills', '기술 수요'], ['career', '경력 수준'], ['regions', '지역 분포'], ['trends', '기술 추세'],
-      ].map(([key, label]) => <button key={key} type="button" className={activeSection === key ? 'is-active' : ''}
-        aria-current={activeSection === key ? 'page' : undefined} onClick={() => nav(key)}>{label}</button>)}
-    </nav>
     <details className="market-filter-panel">
       <summary><LucideIcon name="sliders" />조건 설정
         {(applied.dateFrom || applied.dateTo || applied.desiredRole || applied.source || applied.skillId) && <span>적용 중</span>}</summary>

@@ -150,9 +150,10 @@
 .jobs-page--search .job-pagination button:disabled { opacity: .55; }
 
 /* Give the whole search route the detail page's banner, cards, and type scale. */
-.main-content:has(> .jobs-page--search) > .page-heading { position: relative; overflow: hidden; min-height: 112px; padding: 22px 24px; border: 1px solid #dcddff; border-radius: 15px; background: linear-gradient(90deg, #f8f8fffa 0%, #f8f8fff2 42%, #f8f8ffbd 68%, transparent), url('../../assets/redesign/job-detail-skyline.png') center 59% / cover; }
-.main-content:has(> .jobs-page--search) > .page-heading .eyebrow { color: #5541c0; }
-.main-content:has(> .jobs-page--search) > .page-heading h1 { color: #17164e; }
+.main-content:has(> .jobs-page--search) > .page-heading { position: relative; display: flex; align-items: center; overflow: hidden; min-height: 112px; padding: 22px 24px; border: 1px solid #dcddff; border-radius: 15px; background: linear-gradient(90deg, #f8f8fffa 0%, #f8f8fff2 34%, #f8f8ffbd 52%, transparent 78%), url('../../assets/redesign/job-detail-skyline.png') center 59% / cover #eeedff; }
+.main-content:has(> .jobs-page--search) > .page-heading .eyebrow { display: none; }
+.main-content:has(> .jobs-page--search) > .page-heading h1 { margin: 0; color: #17164e; text-align: left; }
+.main-content:has(> .jobs-page--search) > .page-heading .job-search-banner-cat { position: absolute; right: 18px; bottom: -11px; width: 123px; height: 123px; object-fit: contain; filter: drop-shadow(0 5px 4px #5b62ac30); }
 .jobs-page--search > .job-search { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; padding: 0 !important; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
 .jobs-page--search .job-quick-search { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 9px; padding: 14px; border: 1px solid #e3e5f8; border-radius: 12px; background: #fff; box-shadow: 0 4px 17px #465bc50b; }
 .jobs-page--search .job-quick-search label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
@@ -202,6 +203,7 @@
 .jobs-page--search .job-pagination button { min-height: 40px; padding: 8px 14px; font-size: .78rem; }
 @media (max-width: 600px) {
   .main-content:has(> .jobs-page--search) > .page-heading { min-height: 96px; padding: 17px 18px; }
+  .main-content:has(> .jobs-page--search) > .page-heading .job-search-banner-cat { right: 4px; bottom: -7px; width: 95px; height: 95px; }
   .jobs-page--search .job-quick-search { padding: 10px; }
   .jobs-page--search .job-quick-submit { padding: 9px 12px; }
   .jobs-page--search .job-filter-heading { padding: 8px 14px; }

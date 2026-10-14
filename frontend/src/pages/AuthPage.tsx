@@ -20,8 +20,8 @@ function FieldIcon({ name }: { name: 'mail' | 'lock' | 'eye' | 'eyeOff' }) {
   </svg>;
 }
 
-export function AuthPage({ register, forgotPassword, registered, passwordChanged, sessionExpired, onLogin }: {
-  register: boolean; forgotPassword: boolean; registered: boolean; passwordChanged: boolean; sessionExpired: boolean;
+export function AuthPage({ register, forgotPassword, passwordChanged, sessionExpired, onLogin }: {
+  register: boolean; forgotPassword: boolean; passwordChanged: boolean; sessionExpired: boolean;
   onLogin: (user: CurrentUser) => void;
 }) {
   const [email, setEmail] = useState('');
@@ -45,7 +45,7 @@ export function AuthPage({ register, forgotPassword, registered, passwordChanged
     try {
       if (register) {
         await authApi.register(email, password);
-        window.location.hash = '/login?registered=1';
+        window.location.hash = '/login';
       } else onLogin(await authApi.login(email, password));
       setPassword(''); setConfirmation('');
     } catch (failure) {
@@ -70,7 +70,6 @@ export function AuthPage({ register, forgotPassword, registered, passwordChanged
       <a className="f02-auth-brand" href="#/"><img src={brandWordmark} alt="DevJob 홈" width="236" height="79" /></a>
       <h1 id="auth-title">{forgotPassword ? '비밀번호 찾기' : register ? '새로운 여정을 시작해요!' : '다시 만나서 반가워요!'}</h1>
       <p className="auth-intro">{forgotPassword ? '비밀번호 재설정 안내를 준비하고 있어요.' : register ? '취업 준비를 함께할 공간을 만들어 보세요.' : '오늘의 한 걸음도 DevJob과 함께해요.'}</p>
-      {!register && registered && <SuccessState compact title="가입이 완료되었습니다." message="로그인해 주세요." />}
       {!register && passwordChanged && <SuccessState compact title="비밀번호가 변경되었습니다." message="새 비밀번호로 다시 로그인해 주세요." />}
       {!register && window.location.hash.includes('accountDeleted=1') && <SuccessState compact title="계정이 삭제되었습니다." message="개인 기록은 삭제되었으며 이전 계정으로 로그인할 수 없습니다." />}
       {!register && sessionExpired && <p className="form-error" role="alert">로그인이 만료되었습니다. 다시 로그인해 주세요.</p>}

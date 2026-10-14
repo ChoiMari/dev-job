@@ -138,7 +138,7 @@ export function App() {
   if (!user && anonymousRoute(path) === 'home') return <PublicHome />;
   if (!user && anonymousRoute(path) === 'login') return <main id="main-content" className="auth-page"><LoadingState message="로그인 화면으로 이동하고 있습니다." /></main>;
   if (!user) return <AuthPage key={path} register={path === '/register'} forgotPassword={path === '/forgot-password'}
-    registered={location === '/login?registered=1'} passwordChanged={location === '/login?passwordChanged=1'}
+    passwordChanged={location === '/login?passwordChanged=1'}
     sessionExpired={location === '/login?sessionExpired=1'}
     onLogin={value => { setUser(value); window.location.hash = '/'; }} />;
 
@@ -156,7 +156,7 @@ export function App() {
       : path === '/states' ? <StatePreview /> : path === '/jobs' ? <JobsPage location={location} />
       : path === '/bookmarks' ? <BookmarksPage location={location} />
       : path === '/bookmarks/new' || /^\/bookmarks\/[1-9]\d*\/edit$/.test(path) ? <ManualJobFormPage key={path} location={location} />
-      : path.startsWith('/bookmarks/') ? <ManualJobDetailPage key={path} location={location} />
+      : path.startsWith('/bookmarks/') ? <ManualJobDetailPage key={`${user.id}:${path}`} location={location} userId={user.id} />
       : path.startsWith('/jobs/') ? <JobDetailPage location={location} userId={user.id} />
       : path === '/applications' ? <ApplicationsPage location={location} />
       : path === '/analytics/skills' ? <MarketAnalyticsPage location={location} />

@@ -6,7 +6,7 @@ import type { Application, ApplicationPage } from '../../api/applications';
 import { applicationStatuses, statusLabels, nextStatuses, statusChangeInput, localSchedule, scheduleInput } from '../../api/application-status';
 import type { ApplicationStatus } from '../../api/application-status';
 import { JobStatusLabel } from '../../components/JobStatusLabel';
-import { EmptyState, ErrorState, LoadingState, SuccessState } from '../../components/States';
+import { EmptyState, ErrorState, LoadingState } from '../../components/States';
 import './applications.css';
 import { AddApplicationModal } from './AddApplicationModal';
 import { LucideIcon } from '../../components/LucideIcon';
@@ -25,6 +25,7 @@ export function ApplicationsPage({ location }: { location: string }) {
   const [moveError, setMoveError] = useState('');
   const [retry, setRetry] = useState(0);
   const [adding, setAdding] = useState(false);
+  const [detailId, setDetailId] = useState<number | null>(null);
   const [menu, setMenu] = useState<number | null>(null);
   const [deleting, setDeleting] = useState<Application | null>(null);
   const [moving, setMoving] = useState<{ item: Application; target: ApplicationStatus; chooseOther: boolean } | null>(null);
@@ -71,13 +72,14 @@ export function ApplicationsPage({ location }: { location: string }) {
       return <section key={group.key} className={`application-kanban-column application-kanban-column--${group.key}`} aria-label={`${group.label} ${count}건`} onDragOver={event => event.preventDefault()} onDrop={event => { if (!event.dataTransfer.types.includes('application/x-devjob')) return; event.preventDefault(); const id = Number(event.dataTransfer.getData('application/x-devjob')); const item = boardStatuses.flatMap(status => data[status].items).find(value => value.id === id); if (item) requestMove(item, group.key === 'other' && item.currentStatus === 'PLANNED' ? 'WITHDRAWN' : group.target, group.key === 'other'); }}>
         <h2>{group.label}<span>{count}</span></h2><div className="application-kanban-cards">{items.map(item => <article key={item.id} className={`application-kanban-card${group.key === 'other' ? ` application-kanban-card--${item.currentStatus.toLowerCase()}` : ''}`} draggable onDragStart={event => event.dataTransfer.setData('application/x-devjob', String(item.id))}>
           <div className="application-kanban-card-top"><div className="application-kanban-labels"><span className={`application-kind application-kind--${item.job ? 'collected' : 'manual'}`}>{item.job ? '수집 공고' : '직접 등록'}</span>{group.key === 'other' && <span className={`application-other-status application-other-status--${item.currentStatus.toLowerCase()}`}>{statusLabels[item.currentStatus]}</span>}</div><div className="application-card-menu-wrap"><button type="button" className="application-icon-button" aria-label={`${item.job?.title ?? item.personalSavedJob?.title} 메뉴`} aria-expanded={menu === item.id} onClick={() => setMenu(menu === item.id ? null : item.id)}>···</button>{menu === item.id && <div className="application-card-menu"><a href={`#/applications/${item.id}?${backQuery}&edit=1`}><LucideIcon name="pencil" /><span>수정</span></a><button type="button" onClick={() => { setDeleting(item); setMenu(null); }}><LucideIcon name="trash" /><span>삭제</span></button></div>}</div></div>
-          <strong>{item.job?.company.name ?? item.personalSavedJob?.companyName}</strong><h3><a href={`#/applications/${item.id}?${backQuery}`}>{item.job?.title ?? item.personalSavedJob?.title}</a></h3><p className="application-kanban-meta">{item.job?.location ?? item.personalSavedJob?.location ?? '지역 미정'}</p>
+          <strong>{item.job?.company.name ?? item.personalSavedJob?.companyName}</strong><h3><button type="button" className="application-kanban-title" onClick={() => setDetailId(item.id)}>{item.job?.title ?? item.personalSavedJob?.title}</button></h3><p className="application-kanban-meta">{item.job?.location ?? item.personalSavedJob?.location ?? '지역 미정'}</p>
           {item.appliedDate && <p className="application-kanban-date"><LucideIcon name="calendar" /> 지원일 {item.appliedDate}</p>}{item.nextScheduleAt && <p className="application-kanban-schedule"><LucideIcon name="clock" /> 다음 일정 {dateTime(item.nextScheduleAt)}</p>}{item.note && <p className="application-kanban-note">{item.note}</p>}
         </article>)}{items.length === 0 && <p className="application-kanban-empty">아직 지원 내역이 없습니다.</p>}
         {group.statuses.filter(status => data[status].items.length < data[status].totalElements).map(status => <button key={status} type="button" className="application-more" disabled={moreBusy} onClick={() => loadMore(status)}>{group.statuses.length > 1 ? `${statusLabels[status]} 더 보기` : '더 보기'}</button>)}</div>
       </section>;
     })}</div></div>}
     {adding && <AddApplicationModal onClose={() => setAdding(false)} onAdded={() => { setAdding(false); setRetry(value => value + 1); }} />}
+    {detailId !== null && <ApplicationDetailPage location={`/applications/${detailId}?${backQuery}`} modalOnly onClose={() => setDetailId(null)} onUpdated={() => setRetry(value => value + 1)} onDeleted={() => setRetry(value => value + 1)} />}
     {deleting && <div className="application-modal-backdrop"><section className="application-confirm" role="dialog" aria-modal="true" aria-labelledby="application-delete-title"><header className="application-confirm-head"><span className="application-confirm-icon application-confirm-icon--danger"><LucideIcon name="trash" /></span><div><h2 id="application-delete-title">지원 내역을 삭제할까요?</h2><p>삭제한 내역은 지원 관리에서 보이지 않습니다.</p></div></header><div className="application-confirm-content"><strong>{deleting.job?.title ?? deleting.personalSavedJob?.title}</strong></div><footer className="application-confirm-actions"><button type="button" disabled={busy} onClick={() => setDeleting(null)}>취소</button><button type="button" className="application-danger-button" disabled={busy} onClick={async () => { setBusy(true); try { await api.delete(deleting.id); setDeleting(null); setRetry(value => value + 1); } catch (failure) { setError(failureMessage(failure)); } finally { setBusy(false); } }}>삭제</button></footer></section></div>}
     {moving && <div className="application-modal-backdrop"><form className="application-confirm" role="dialog" aria-modal="true" aria-labelledby="application-move-title" onSubmit={async event => {
       event.preventDefault(); const values = new FormData(event.currentTarget); setBusy(true);
@@ -108,7 +110,6 @@ export function ApplicationDetailPage({ location, modalOnly = false, onClose, on
   const [retry, setRetry] = useState(0);
   const [busy, setBusy] = useState(false);
   const [saveError, setSaveError] = useState('');
-  const [success, setSuccess] = useState('');
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
   useEffect(() => {
@@ -123,10 +124,10 @@ export function ApplicationDetailPage({ location, modalOnly = false, onClose, on
       }).finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
   }, [id, valid, retry]);
-  async function save(action: () => Promise<Application>, message: string) {
+  async function save(action: () => Promise<Application>) {
     if (busy) return;
-    setBusy(true); setSaveError(''); setSuccess('');
-    try { const updated = await action(); setData(updated); onUpdated?.(updated); setSuccess(message); }
+    setBusy(true); setSaveError('');
+    try { const updated = await action(); setData(updated); setEditing(false); onUpdated?.(updated); }
     catch (failure) { setSaveError(failure instanceof ApiError && failure.status === 409
       ? '상태가 변경되었거나 허용되지 않은 전이입니다. 최신 정보를 다시 확인해 주세요.' : failureMessage(failure)); }
     finally { setBusy(false); }
@@ -134,7 +135,7 @@ export function ApplicationDetailPage({ location, modalOnly = false, onClose, on
   const boardHref = `#/applications${from ? `?${from}` : ''}`;
   return <>{!modalOnly && <ApplicationsPage location="/applications" />}<div className="application-modal-backdrop application-detail-backdrop">
     <div className="application-detail-modal" role="dialog" aria-modal="true" aria-labelledby="application-detail-title">
-    <header className="application-detail-modal-head"><img src={applicationDetailArt} alt="" aria-hidden="true" /><div><h2 id="application-detail-title">지원 상세</h2><p>지원한 공고의 정보와 진행 상태를 확인하세요.</p></div><div className="application-detail-head-actions">{data && <><button type="button" className="application-detail-edit" onClick={() => setEditing(value => !value)}><LucideIcon name="pencil" /> {editing ? '보기' : '수정'}</button><button type="button" className="application-detail-delete" onClick={() => { setDeleteError(''); setDeleting(true); }}><LucideIcon name="trash" /> 삭제</button></>}{modalOnly ? <button type="button" className="application-detail-close" aria-label="닫기" onClick={onClose}><LucideIcon name="close" /></button> : <a href={boardHref} aria-label="닫기"><LucideIcon name="close" /></a>}</div></header>
+    <header className="application-detail-modal-head"><img src={applicationDetailArt} alt="" aria-hidden="true" /><div><h2 id="application-detail-title">지원 상세</h2><p>지원한 공고의 정보와 진행 상태를 확인하세요.</p></div><div className="application-detail-head-actions">{modalOnly ? <button type="button" className="application-detail-close" aria-label="닫기" onClick={onClose}><LucideIcon name="close" /></button> : <a href={boardHref} aria-label="닫기"><LucideIcon name="close" /></a>}</div></header>
     <div className="application-detail-modal-body" aria-busy={loading}>
       {loading ? <LoadingState message="지원 상세를 불러오고 있습니다." /> : missing ? <EmptyState title="지원 기록을 찾을 수 없습니다." message="목록에서 지원 기록을 다시 선택해 주세요." />
         : error ? <ErrorState message={error} onRetry={() => setRetry(value => value + 1)} /> : data && <>
@@ -148,19 +149,18 @@ export function ApplicationDetailPage({ location, modalOnly = false, onClose, on
             {data.note && <div className="application-detail-note"><span><LucideIcon name="message" /> 메모</span><strong>{data.note}</strong></div>}</div>
           {!['FINAL_PASSED', 'REJECTED', 'WITHDRAWN'].includes(data.currentStatus) &&
             <div className="application-detail-interviews"><a href={`#/interviews/new?applicationId=${data.id}`}><LucideIcon name="calendar" /> 면접 일정 등록</a><a href="#/interviews">면접 일정 보기 <LucideIcon name="arrowRight" /></a></div>}
-          {success && <SuccessState message={success} compact />}
           {saveError && <><ErrorState message={saveError} /><button type="button" disabled={busy} onClick={() => {
-            setRetry(value => value + 1); setSaveError(''); setSuccess('');
+            setRetry(value => value + 1); setSaveError('');
           }}>최신 지원 정보 불러오기</button></>}
           {editing && <ApplicationEditor key={data.id} data={data} busy={busy} save={save} />}
         </>}
-    </div></div></div>
+    </div>{data && <footer className="application-detail-footer-actions"><button type="button" className="application-detail-edit" onClick={() => setEditing(value => !value)}><LucideIcon name="pencil" /> {editing ? '보기' : '수정'}</button><button type="button" className="application-detail-delete" onClick={() => { setDeleteError(''); setDeleting(true); }}><LucideIcon name="trash" /> 삭제</button></footer>}</div></div>
     {deleting && <div className="application-modal-backdrop application-detail-delete-backdrop"><section className="application-confirm" role="dialog" aria-modal="true" aria-labelledby="application-detail-delete-title"><header className="application-confirm-head"><span className="application-confirm-icon application-confirm-icon--danger"><LucideIcon name="trash" /></span><div><h2 id="application-detail-delete-title">지원 내역을 삭제할까요?</h2><p>삭제한 내역은 지원 관리에서 보이지 않습니다.</p></div></header><div className="application-confirm-content"><strong>{data?.job?.title ?? data?.personalSavedJob?.title}</strong>{deleteError && <p className="application-modal-error" role="alert">{deleteError}</p>}</div><footer className="application-confirm-actions"><button type="button" disabled={busy} onClick={() => setDeleting(false)}>취소</button><button type="button" className="application-danger-button" disabled={busy || !data} onClick={async () => { if (!data) return; setBusy(true); setDeleteError(''); try { await api.delete(data.id); if (modalOnly) { onDeleted?.(); onClose?.(); } else window.location.hash = boardHref.slice(1); } catch (failure) { setDeleteError(failureMessage(failure)); } finally { setBusy(false); } }}>삭제</button></footer></section></div>}
   </>;
 }
 
 function ApplicationEditor({ data, busy, save }: {
-  data: Application; busy: boolean; save: (action: () => Promise<Application>, message: string) => Promise<void>;
+  data: Application; busy: boolean; save: (action: () => Promise<Application>) => Promise<void>;
 }) {
   const allowed = nextStatuses[data.currentStatus];
   const [next, setNext] = useState<ApplicationStatus | ''>('');
@@ -173,7 +173,7 @@ function ApplicationEditor({ data, busy, save }: {
       const schedule = String(values.get('nextScheduleAt') || '');
       const input = { note: String(values.get('note') || '') || null,
         ...(schedule !== localSchedule(data.nextScheduleAt) ? { nextScheduleAt: scheduleInput(schedule) } : {}) };
-      void save(() => api.update(data.id, input), '메모와 일정을 저장했습니다.');
+      void save(() => api.update(data.id, input));
     }}>
       <fieldset disabled={busy}><legend>메모·일정 수정</legend>
         <label>다음 일정 (내 시간대)<input name="nextScheduleAt" type="datetime-local" defaultValue={localSchedule(data.nextScheduleAt)} /></label>
@@ -185,7 +185,7 @@ function ApplicationEditor({ data, busy, save }: {
     <form className="application-form" onSubmit={event => {
       event.preventDefault(); if (!selected) return;
       const values = new FormData(event.currentTarget);
-      void save(() => api.changeStatus(data.id, statusChangeInput(selected, data.appliedDate, String(values.get('appliedDate') || ''))), '지원 상태를 변경했습니다.');
+      void save(() => api.changeStatus(data.id, statusChangeInput(selected, data.appliedDate, String(values.get('appliedDate') || ''))));
     }}>
       <fieldset disabled={busy || !selected}><legend>지원 상태 변경</legend>
         {selected ? <><label>다음 상태<select value={selected} onChange={event => setNext(event.target.value as ApplicationStatus)}>

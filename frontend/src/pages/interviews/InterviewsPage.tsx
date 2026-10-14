@@ -11,6 +11,7 @@ import { LucideIcon } from '../../components/LucideIcon';
 import { scheduleFromLocal, scheduleLabel, zonedLocalInput } from './interviewTime';
 import interviewPlannerCat from '../../assets/redesign/interview-planner-cat.png';
 import interviewBuilding from '../../assets/redesign/interview-building.png';
+import interviewCalendarPixel from '../../assets/redesign/interview-calendar-pixel.png';
 import { InterviewOverview } from './InterviewOverview';
 import './interviews.css';
 
@@ -34,7 +35,11 @@ function fieldForError(error: string): InterviewField | null {
 }
 export function InterviewsPage({ location }: { location: string }) {
   const path = location.split('?')[0];
-  if (path === '/interviews') return <InterviewOverview />;
+  if (path === '/interviews') {
+    const requestedId = new URLSearchParams(location.split('?')[1] || '').get('detail');
+    const detailId = requestedId && /^[1-9]\d*$/.test(requestedId) && Number.isSafeInteger(Number(requestedId)) ? Number(requestedId) : null;
+    return <InterviewBoard initialDetailId={detailId} />;
+  }
   if (path === '/interviews/new') {
     const requestedId = new URLSearchParams(location.split('?')[1] || '').get('applicationId');
     const applicationId = requestedId && /^[1-9]\d*$/.test(requestedId) && Number.isSafeInteger(Number(requestedId)) ? requestedId : '';
@@ -42,12 +47,42 @@ export function InterviewsPage({ location }: { location: string }) {
   }
   const match = /^\/interviews\/([1-9]\d*)$/.exec(path);
   const id = match ? Number(match[1]) : 0;
-  return Number.isSafeInteger(id) && id > 0 ? <InterviewEditor id={id} /> : <section className="card">
+  return Number.isSafeInteger(id) && id > 0 ? <InterviewEditor id={id} startEditing={new URLSearchParams(location.split('?')[1] || '').get('edit') === '1'} /> : <section className="card">
     <EmptyState title="면접 일정 주소를 확인해 주세요." /><a className="button-link" href="#/interviews">목록으로</a>
   </section>;
 }
 
-function InterviewEditor({ id, initialApplicationId = '' }: { id?: number; initialApplicationId?: string }) {
+function InterviewBoard({ initialDetailId }: { initialDetailId: number | null }) {
+  const [detailId, setDetailId] = useState<number | null>(initialDetailId);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const closeRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => { setDetailId(initialDetailId); }, [initialDetailId]);
+  function closeDetail() {
+    setDetailId(null);
+    if (window.location.hash.startsWith('#/interviews?detail=')) window.location.hash = '/interviews';
+  }
+  useEffect(() => {
+    if (detailId === null) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    closeRef.current?.focus();
+    const closeOnEscape = (event: KeyboardEvent) => { if (event.key === 'Escape') closeDetail(); };
+    window.addEventListener('keydown', closeOnEscape);
+    return () => { document.body.style.overflow = previousOverflow; window.removeEventListener('keydown', closeOnEscape); };
+  }, [detailId]);
+  return <><InterviewOverview onOpenDetail={setDetailId} refreshKey={refreshKey} />
+    {detailId !== null && <div className="interview-detail-modal-backdrop" onMouseDown={event => { if (event.target === event.currentTarget) closeDetail(); }}>
+      <div className="interview-detail-modal" role="dialog" aria-modal="true" aria-labelledby="interview-detail-modal-title">
+        <header className="interview-detail-modal-toolbar"><span className="interview-detail-modal-icon"><img src={interviewCalendarPixel} alt="" aria-hidden="true" /></span><div><h2 id="interview-detail-modal-title">면접 일정 상세</h2><p>면접 일정과 연결된 지원 정보를 확인하세요.</p></div><button ref={closeRef} type="button" onClick={closeDetail} aria-label="면접 일정 상세 닫기"><LucideIcon name="close" /></button></header>
+        <InterviewEditor key={detailId} id={detailId} onClose={closeDetail} onUpdated={() => setRefreshKey(value => value + 1)} />
+      </div>
+    </div>}
+  </>;
+}
+
+function InterviewEditor({ id, initialApplicationId = '', startEditing = false, onClose, onUpdated }: {
+  id?: number; initialApplicationId?: string; startEditing?: boolean; onClose?: () => void; onUpdated?: () => void;
+}) {
   const [item, setItem] = useState<Interview>();
   const [title, setTitle] = useState('');
   const [localTime, setLocalTime] = useState('');
@@ -65,7 +100,7 @@ function InterviewEditor({ id, initialApplicationId = '' }: { id?: number; initi
   const [applicationsLoading, setApplicationsLoading] = useState(false);
   const [applicationsError, setApplicationsError] = useState('');
   const [applicationsRetry, setApplicationsRetry] = useState(0);
-  const [editing, setEditing] = useState(!id);
+  const [editing, setEditing] = useState(!id || startEditing);
   const [loading, setLoading] = useState(!!id);
   const [loadError, setLoadError] = useState('');
   const [loadStatus, setLoadStatus] = useState(0);
@@ -139,8 +174,8 @@ function InterviewEditor({ id, initialApplicationId = '' }: { id?: number; initi
       const input = { applicationId: linked, title: title.trim(), stage, interviewMethod, memo: memo.trim() || null, ...schedule };
       const value = id ? await interviews.update(id, input) : await interviews.create(input);
       if (!mounted.current) return;
-      if (!id) window.location.hash = `/interviews/${value.id}`;
-      else { accept(await interviews.get(id)); setEditing(false); setSuccess('면접 일정을 저장했습니다.'); }
+      if (!id) window.location.hash = `/interviews?detail=${value.id}`;
+      else { accept(await interviews.get(id)); setEditing(false); setSuccess('면접 일정을 저장했습니다.'); onUpdated?.(); if (startEditing) window.location.hash = `/interviews/${id}`; }
     } catch (failure) { if (mounted.current) { const detail = message(failure); setError(detail); setInvalidField(fieldForError(detail)); } }
     finally { inFlight.current = false; if (mounted.current) setBusy(false); }
   }
@@ -149,7 +184,7 @@ function InterviewEditor({ id, initialApplicationId = '' }: { id?: number; initi
     inFlight.current = true; setBusy(true); setError(''); setSuccess('');
     try {
       const value = action === 'cancel' ? await interviews.cancel(id) : action === 'complete' ? await interviews.complete(id) : await interviews.reactivate(id);
-      if (mounted.current) { accept(value); setSuccess(value.status === 'CANCELLED' ? '면접 일정을 취소했습니다.' : value.status === 'COMPLETED' ? '면접 일정을 완료했습니다.' : '면접 일정을 다시 활성화했습니다.'); }
+      if (mounted.current) { accept(value); setSuccess(value.status === 'CANCELLED' ? '면접 일정을 취소했습니다.' : value.status === 'COMPLETED' ? '면접 일정을 완료했습니다.' : '면접 일정을 다시 활성화했습니다.'); onUpdated?.(); }
     } catch (failure) { if (mounted.current) setError(message(failure)); }
     finally { inFlight.current = false; if (mounted.current) setBusy(false); }
   }
@@ -165,18 +200,18 @@ function InterviewEditor({ id, initialApplicationId = '' }: { id?: number; initi
   const previewTime = localTime && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(localTime)
     ? new Date(localTime).toLocaleString('ko-KR', { dateStyle: 'full', timeStyle: 'short' }) : '날짜와 시간을 선택해 주세요';
   return <div className={`interviews-editor-page${id ? '' : ' interviews-editor-page--new'}`}>
-    <section className="interviews-editor-hero">
+    {!onClose && <section className="interviews-editor-hero">
       <a className="interviews-back" href="#/interviews" aria-label="면접 일정 목록으로"><LucideIcon name="arrowLeft" /></a>
       <div><h2>{id ? '면접 일정 상세' : '면접 일정 등록'}</h2>
         <p>지원한 기업의 면접 일정을 쉽고 빠르게 기록하세요.</p></div>
       <p className="interviews-hero-bubble" aria-hidden="true">좋은 준비가<br />좋은 결과를 만들어요!<br />화이팅! ✨</p>
       <img src={interviewPlannerCat} alt="" aria-hidden="true" />
-    </section>
+    </section>}
     {loading ? <section className="card"><LoadingState message="면접 일정을 불러오고 있습니다." /></section> : loadError
       ? <section className="card">{loadStatus === 404 || loadStatus === 403
         ? <EmptyState title={loadStatus === 404 ? '면접 일정을 찾을 수 없습니다.' : '접근 권한이 없습니다.'} message={loadError} />
         : <ErrorState message={loadError} onRetry={() => setRetry(value => value + 1)} />}</section> : <>
-        {success && <SuccessState compact title={success} />}
+        {success && !onClose && <SuccessState compact title={success} />}
         {error && <p className="form-error" role="alert">{error}</p>}
         {editing ? <div className="interviews-editor-grid">
           <form className="card interviews-editor-form" onSubmit={save}>
@@ -243,7 +278,7 @@ function InterviewEditor({ id, initialApplicationId = '' }: { id?: number; initi
                 <small className="interviews-memo-count">{memo.length} / 500</small>
               </div>
             </fieldset>
-            <div className="interviews-actions">{id ? <button type="button" disabled={busy} onClick={() => { if (item) accept(item); setEditing(false); setError(''); }}>취소</button>
+            <div className="interviews-actions">{id ? <button type="button" disabled={busy} onClick={() => { if (item) accept(item); setEditing(false); setError(''); if (startEditing) window.location.hash = `/interviews/${id}`; }}>취소</button>
               : <a className="button-link" href="#/interviews">취소</a>}
               <button className="button-primary" disabled={busy} type="submit"><LucideIcon name="calendar" /> {busy ? '저장 중…' : '일정 저장'}</button></div>
           </form>
@@ -274,9 +309,9 @@ function InterviewEditor({ id, initialApplicationId = '' }: { id?: number; initi
             {item.memo && <div className="interviews-detail-memo"><dt><LucideIcon name="fileText" /> 메모</dt><dd>{item.memo}</dd></div>}
             {item.cancelledAt && <div><dt><LucideIcon name="clock" /> 취소 시각</dt><dd>{scheduleLabel(item.cancelledAt, item.timeZone)}</dd></div>}
             {item.completedAt && <div><dt><LucideIcon name="clock" /> 완료 시각</dt><dd>{scheduleLabel(item.completedAt, item.timeZone)}</dd></div>}</dl>
-          <div className="interviews-actions"><button type="button" disabled={busy} onClick={() => { setEditing(true); setSuccess(''); }}><LucideIcon name="pencil" /> 수정</button>
+          <div className="interviews-actions"><button type="button" disabled={busy} onClick={() => { if (onClose) window.location.hash = `/interviews/${id}?edit=1`; else { setEditing(true); setSuccess(''); } }}><LucideIcon name="pencil" /> 수정</button>
             {item.status === 'SCHEDULED' ? <><button className="interviews-detail-complete" type="button" disabled={busy} onClick={() => void changeStatus('complete')}><LucideIcon name="check" /> 완료</button><button className="interviews-detail-cancel" type="button" disabled={busy} onClick={() => void changeStatus('cancel')}>일정 취소</button></>
-              : <button type="button" disabled={busy} onClick={() => void changeStatus('reactivate')}>{busy ? '처리 중…' : '예정으로 되돌리기'}</button>}</div>
+              : <button className="interviews-detail-reactivate" type="button" disabled={busy} onClick={() => void changeStatus('reactivate')}>{busy ? '처리 중…' : '예정으로 되돌리기'}</button>}</div>
         </section>}
       </>}
   </div>;

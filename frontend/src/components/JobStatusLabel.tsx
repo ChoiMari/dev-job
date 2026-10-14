@@ -6,7 +6,7 @@ import './JobStatusLabel.css';
 
 const icons: Record<ApplicationStatus, LucideIconName> = {
   INTERESTED: 'bookmark', PLANNED: 'clock', APPLIED: 'fileText', DOCUMENT_PASSED: 'check',
-  INTERVIEW: 'message', FINAL_PASSED: 'star', REJECTED: 'close', WITHDRAWN: 'arrowLeft',
+  INTERVIEW: 'message', FINAL_PASSED: 'star', REJECTED: 'close', WITHDRAWN: 'rotateCcw',
 };
 
 export function JobStatusLabel({ status }: { status: ApplicationStatus }) {

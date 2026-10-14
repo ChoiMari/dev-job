@@ -6,7 +6,7 @@ import type { Todo, TodoCategory, TodoInput } from '../../api/todos';
 import { LucideIcon } from '../../components/LucideIcon';
 import clipboardPlus from '../../assets/redesign/todo-clipboard-check.png';
 import bellIcon from '../../assets/redesign/todo-bell-icon.png';
-import { EmptyState, ErrorState, LoadingState, SuccessState } from '../../components/States';
+import { EmptyState, ErrorState, LoadingState } from '../../components/States';
 import { deviceZone, dueFromLocal, localDueInput } from './todoTime';
 import { TodoCalendar } from './TodoCalendar';
 import { CategoryImage, categoryIconChoices } from './todoIcons';
@@ -59,7 +59,6 @@ function TodoEditor({ id, initialEdit = false, initialManage = false }: { id?: n
   const [retry, setRetry] = useState(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
   const [confirmDelete, setConfirmDelete] = useState(false);
   const inFlight = useRef(false);
   const mounted = useRef(true);
@@ -91,11 +90,12 @@ function TodoEditor({ id, initialEdit = false, initialManage = false }: { id?: n
         if (initialManage) window.location.hash = '/todos';
         else setCategoryDialog(null);
       }
+      else if (confirmDelete) { if (!busy) setConfirmDelete(false); }
       else window.location.hash = '/todos';
     };
     document.addEventListener('keydown', close);
     return () => document.removeEventListener('keydown', close);
-  }, [categoryDialog, initialManage]);
+  }, [categoryDialog, confirmDelete, busy, initialManage]);
   function closeCategoryDialog() {
     if (initialManage) window.location.hash = '/todos';
     else setCategoryDialog(null);
@@ -151,7 +151,7 @@ function TodoEditor({ id, initialEdit = false, initialManage = false }: { id?: n
   }
   async function save(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault(); if (inFlight.current) return;
-    setError(''); setSuccess('');
+    setError('');
     if (!title.trim()) { setError('제목을 입력해 주세요.'); return; }
     let due: Pick<TodoInput, 'dueAt' | 'dueTimeZone'>;
     try {
@@ -166,14 +166,14 @@ function TodoEditor({ id, initialEdit = false, initialManage = false }: { id?: n
       await (id ? todos.update(id, input) : todos.create(input));
       if (!mounted.current) return;
       if (!id) window.location.hash = '/todos';
-      else { accept(await todos.get(id)); setEditing(false); setSuccess('할 일을 저장했습니다.'); }
+      else { accept(await todos.get(id)); setEditing(false); }
     } catch (failure) { if (mounted.current) setError(message(failure)); }
     finally { inFlight.current = false; if (mounted.current) setBusy(false); }
   }
   async function toggle() {
     if (!id || !todo || inFlight.current) return;
-    inFlight.current = true; setBusy(true); setError(''); setSuccess('');
-    try { await todos.complete(id, !todo.completed); if (mounted.current) { accept(await todos.get(id)); setSuccess(todo.completed ? '완료를 취소했습니다.' : '할 일을 완료했습니다.'); } }
+    inFlight.current = true; setBusy(true); setError('');
+    try { await todos.complete(id, !todo.completed); if (mounted.current) accept(await todos.get(id)); }
     catch (failure) { if (mounted.current) setError(message(failure)); }
     finally { inFlight.current = false; if (mounted.current) setBusy(false); }
   }
@@ -193,8 +193,7 @@ function TodoEditor({ id, initialEdit = false, initialManage = false }: { id?: n
       ? loadStatus === 404 || loadStatus === 403 ? <EmptyState title={loadStatus === 404 ? '할 일을 찾을 수 없습니다.' : '접근 권한이 없습니다.'} message={loadError} />
         : <ErrorState message={loadError} onRetry={() => setRetry(value => value + 1)} />
       : <>
-        {success && <SuccessState title={success} compact />}
-        {error && <p role="alert" className="form-error">{error}</p>}
+        {error && !confirmDelete && <p role="alert" className="form-error">{error}</p>}
         {editing ? <form className="todos-form" onSubmit={save}><fieldset disabled={busy}>
           <label><span className="todos-field-label">제목 <em>*</em></span><input required maxLength={200} placeholder="할 일 제목을 입력하세요." value={title} onChange={event => setTitle(event.target.value)} /></label>
           <div className="todos-category-field"><div className="todos-category-field-heading"><strong>카테고리 <em>*</em></strong><button type="button" onClick={() => setCategoryDialog('manage')}>카테고리 관리</button></div><div className="todos-category-choices">{categoryOptions.map(item => <button type="button" key={item.id} className={`todo-category todo-tone-${item.colorKey}`} aria-pressed={category === item.name} onClick={() => setCategory(item.name)}><CategoryImage name={item.name} iconKey={item.iconKey} size={24} />{item.name}</button>)}
@@ -215,14 +214,18 @@ function TodoEditor({ id, initialEdit = false, initialManage = false }: { id?: n
             </div>
             <div className="todo-detail-meta"><span className={`todo-detail-status${todo.completed ? ' is-done' : ''}`}><i aria-hidden="true" />{todo.completed ? '완료' : '진행 중'}</span><span className={`todo-category todo-tone-${customCategories.find(item => item.name === todo.category)?.colorKey ?? 'gray'}`}><CategoryImage name={todo.category} iconKey={customCategories.find(item => item.name === todo.category)?.iconKey} />{todo.category}</span></div>
             <div className="todo-actions"><button type="button" disabled={busy} onClick={() => void toggle()}>{busy ? '처리 중…' : todo.completed ? '완료 취소' : '완료'}</button>
-              <button type="button" disabled={busy} onClick={() => { setEditing(true); setConfirmDelete(false); setSuccess(''); setError(''); }}>수정</button>
+              <button type="button" disabled={busy} onClick={() => { setEditing(true); setConfirmDelete(false); setError(''); }}>수정</button>
               <button type="button" disabled={busy} onClick={() => setConfirmDelete(true)}>삭제</button></div>
-            {confirmDelete && <div className="todo-delete" role="group" aria-label="할 일 삭제 확인"><p>“{todo.title}” 할 일을 목록에서 삭제할까요? 삭제 후 다시 볼 수 없습니다.</p>
-              <div className="todo-actions"><button type="button" disabled={busy} onClick={() => void remove()}>{busy ? '삭제 중…' : '삭제 확인'}</button>
-                <button type="button" disabled={busy} onClick={() => setConfirmDelete(false)}>삭제 취소</button></div></div>}
           </div>}
       </>}
     </section>
+    {confirmDelete && todo && <div className="todo-delete-backdrop" onClick={event => { if (event.target === event.currentTarget && !busy) setConfirmDelete(false); }}>
+      <section className="todo-delete" role="dialog" aria-modal="true" aria-labelledby="todo-delete-title">
+        <header><span className="todo-delete-icon"><LucideIcon name="trash" /></span><div><h2 id="todo-delete-title">할 일을 삭제할까요?</h2><p>삭제한 할 일은 목록에서 다시 볼 수 없습니다.</p></div></header>
+        {error && <p className="todo-delete-error form-error" role="alert">{error}</p>}
+        <footer><button type="button" autoFocus disabled={busy} onClick={() => { setConfirmDelete(false); setError(''); }}>취소</button><button className="todo-delete-confirm" type="button" disabled={busy} onClick={() => void remove()}>{busy ? '삭제 중…' : '삭제'}</button></footer>
+      </section>
+    </div>}
     {categoryDialog && <div className="todos-category-dialog-backdrop" onClick={event => { if (event.target === event.currentTarget) closeCategoryDialog(); }}>
       <section className="todos-category-dialog" role="dialog" aria-modal="true" aria-labelledby="todos-category-dialog-title">
         <header><div><h2 id="todos-category-dialog-title">{categoryDialog === 'manage' ? '카테고리 관리' : editingCategory ? '카테고리 수정' : '카테고리 추가'}</h2>

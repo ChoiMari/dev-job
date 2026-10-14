@@ -20,5 +20,5 @@ export function scheduleFromLocal(value: string): { startsAt: string; timeZone: 
 }
 
 export function scheduleLabel(value: string, timeZone: string): string {
-  return `${new Intl.DateTimeFormat('ko-KR', { dateStyle: 'medium', timeStyle: 'short', timeZone }).format(new Date(value))} · ${timeZone}`;
+  return new Intl.DateTimeFormat('ko-KR', { dateStyle: 'medium', timeStyle: 'short', timeZone }).format(new Date(value));
 }

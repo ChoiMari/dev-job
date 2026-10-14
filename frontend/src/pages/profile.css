@@ -77,6 +77,8 @@
 .profile-page .profile-certificate-tags button { min-height: 22px; padding: 0 5px; border: 0; background: transparent; font-size: .9rem; }
 .profile-page .profile-form-actions .button-primary { border-color: #6650ef; background: #6650ef; }
 .profile-banner { border: 1px solid #dcddff; border-radius: 12px; background: #bce6ff url('../assets/illustrations/profile-banner-sky.png') center 85% / cover no-repeat; box-shadow: none; }
+.profile-banner { background-size: 100% 100%; background-position: center; }
+.profile-banner-copy { padding: 6px 10px; background: #ffffffcf; }
 .profile-banner-avatar { border-color: #d8ddf5; background: #fff; box-shadow: none; }
 .profile-banner-copy { text-shadow: none; }
 .profile-banner-copy h2 { color: #17164e; }

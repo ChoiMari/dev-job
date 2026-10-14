@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { apiRequest } from '../../api';
 import { createInterviewsApi } from '../../api/interviews';
 import type { Interview } from '../../api/interviews';
@@ -49,7 +49,7 @@ async function loadApplications(signal: AbortSignal): Promise<Application[]> {
   return [first, ...rest].flatMap(page => page.items);
 }
 
-export function InterviewOverview() {
+export function InterviewOverview({ onOpenDetail, refreshKey = 0 }: { onOpenDetail: (id: number) => void; refreshKey?: number }) {
   const [view, setView] = useState<View>('calendar');
   const [filter, setFilter] = useState<Filter>('all');
   const [search, setSearch] = useState('');
@@ -62,7 +62,17 @@ export function InterviewOverview() {
   const [error, setError] = useState('');
   const [actionError, setActionError] = useState('');
   const [busyId, setBusyId] = useState<number | null>(null);
+  const [cancelTarget, setCancelTarget] = useState<Interview | null>(null);
+  const cancelDismissRef = useRef<HTMLButtonElement>(null);
   const [retry, setRetry] = useState(0);
+
+  useEffect(() => {
+    if (!cancelTarget) return;
+    cancelDismissRef.current?.focus();
+    const dismissOnEscape = (event: KeyboardEvent) => { if (event.key === 'Escape' && busyId === null) setCancelTarget(null); };
+    window.addEventListener('keydown', dismissOnEscape);
+    return () => window.removeEventListener('keydown', dismissOnEscape);
+  }, [cancelTarget, busyId]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -78,7 +88,7 @@ export function InterviewOverview() {
       setLoading(false);
     });
     return () => controller.abort();
-  }, [retry]);
+  }, [retry, refreshKey]);
 
   const monthKey = `${month.getFullYear()}-${two(month.getMonth() + 1)}`;
   const now = Date.now();
@@ -119,12 +129,14 @@ export function InterviewOverview() {
     const nextMonth = new Date(month.getFullYear(), month.getMonth() + delta, 1);
     setMonth(nextMonth); setSelected(keyOf(nextMonth));
   }
-  async function cancel(item: Interview) {
-    if (!window.confirm(`‘${item.title}’ 일정을 취소할까요? 취소 후 상세에서 다시 활성화할 수 있습니다.`)) return;
+  async function confirmCancel() {
+    if (!cancelTarget || busyId !== null) return;
+    const item = cancelTarget;
     setActionError(''); setBusyId(item.id);
     try {
       const changed = await interviews.cancel(item.id);
       setItems(current => current.map(value => value.id === changed.id ? changed : value));
+      setCancelTarget(null);
     } catch (failure) { setActionError(failure instanceof Error ? failure.message : '일정을 취소하지 못했습니다.'); }
     finally { setBusyId(null); }
   }
@@ -141,17 +153,17 @@ export function InterviewOverview() {
     const app = item.applicationId ? applicationMap.get(item.applicationId) : undefined;
     return <article className="interview-overview-detail" key={item.id}>
       <div className="interview-overview-detail-head"><span className="interview-overview-building"><img src={building} alt="" /></span>
-        <div><h4><a href={`#/interviews/${item.id}`}>{item.title}</a></h4><p>{app ? `${companyOf(app)} · ${roleOf(app)}` : item.applicationId ? `연결된 지원 #${item.applicationId}` : '연결된 지원 없음'}</p></div>
+        <div><h4><a href={`#/interviews/${item.id}`} onClick={event => { event.preventDefault(); onOpenDetail(item.id); }}>{item.title}</a></h4><p>{app ? `${companyOf(app)} · ${roleOf(app)}` : item.applicationId ? `연결된 지원 #${item.applicationId}` : '연결된 지원 없음'}</p></div>
         <span className={`interview-overview-status is-${statusOf(item)}`}>{statusText[statusOf(item)]}</span></div>
-      <dl><div><dt><LucideIcon name="clock" /> 일시</dt><dd>{dateOf(item)} {timeOf(item)} · {item.timeZone}</dd></div>
+      <dl><div><dt><LucideIcon name="clock" /> 일시</dt><dd>{dateOf(item)} {timeOf(item)}</dd></div>
         <div><dt><LucideIcon name="briefcase" /> 면접 단계</dt><dd>{item.stage ? stageText[item.stage] : '미지정'}</dd></div>
         <div><dt><LucideIcon name="monitor" /> 면접 방식</dt><dd>{item.interviewMethod ? methodText[item.interviewMethod] : '미지정'}</dd></div>
         {item.applicationId && <div><dt><LucideIcon name="link" /> 지원 이력</dt><dd><a href={`#/applications/${item.applicationId}`}>{companyOf(app)} · 지원 #{item.applicationId}</a></dd></div>}
         {app?.appliedDate && <div><dt><LucideIcon name="fileText" /> 지원일</dt><dd>{app.appliedDate}</dd></div>}
         {app && <div><dt><LucideIcon name="info" /> 지원 상태</dt><dd>{statusLabels[app.currentStatus]}</dd></div>}
         {item.memo && <div><dt><LucideIcon name="message" /> 메모</dt><dd>{item.memo}</dd></div>}</dl>
-      <div className="interview-overview-detail-actions"><a href={`#/interviews/${item.id}`}>일정 상세 <LucideIcon name="arrowRight" /></a>
-        {item.status === 'SCHEDULED' && <><button className="is-complete-action" type="button" disabled={busyId === item.id} onClick={() => void complete(item)} aria-label={`${item.title} 일정 완료`}><LucideIcon name="check" /></button><button type="button" disabled={busyId === item.id} onClick={() => void cancel(item)} aria-label={`${item.title} 일정 취소`}><LucideIcon name="trash" /></button></>}</div>
+      <div className="interview-overview-detail-actions"><a href={`#/interviews/${item.id}`} onClick={event => { event.preventDefault(); onOpenDetail(item.id); }}>일정 상세 <LucideIcon name="arrowRight" /></a>
+        {item.status === 'SCHEDULED' && <><button className="is-complete-action" type="button" disabled={busyId === item.id} onClick={() => void complete(item)} aria-label={`${item.title} 일정 완료`}><LucideIcon name="check" /></button><button type="button" disabled={busyId === item.id} onClick={() => { setActionError(''); setCancelTarget(item); }} aria-label={`${item.title} 일정 취소`}><LucideIcon name="trash" /></button></>}</div>
     </article>;
   }
 
@@ -177,15 +189,20 @@ export function InterviewOverview() {
       </div>
       {view === 'calendar' ? <div className="interview-overview-calendar-layout"><section className="card interview-overview-calendar"><h3><LucideIcon name="calendar" /> {month.getFullYear()}년 {month.getMonth() + 1}월</h3><div className="interview-overview-weekdays">{weekdays.map(day => <span key={day}>{day}</span>)}</div><div className="interview-overview-grid">{cells.map(cell => {
         const dayItems = monthItems.filter(item => dateOf(item) === cell.key);
-        return <button key={cell.key} type="button" className={`${cell.inMonth ? '' : 'is-outside'} ${selected === cell.key ? 'is-selected' : ''} ${cell.key === keyOf(new Date()) ? 'is-today' : ''}`} onClick={() => { setSelected(cell.key); if (!cell.inMonth) setMonth(new Date(cell.date.getFullYear(), cell.date.getMonth(), 1)); }} aria-label={`${cell.key}, 면접 일정 ${dayItems.length}건`}><span className="day-number">{cell.date.getDate()}</span>{dayItems.slice(0, 2).map(item => <span key={item.id} className={`calendar-event is-${statusOf(item)}`}><span>{timeOf(item)}</span> {item.title}</span>)}{dayItems.length > 2 && <small>+{dayItems.length - 2}건</small>}</button>;
+        return <button key={cell.key} type="button" className={`${cell.inMonth ? '' : 'is-outside'} ${selected === cell.key ? 'is-selected' : ''} ${cell.key === keyOf(new Date()) ? 'is-today' : ''} ${cell.date.getDay() === 0 ? 'is-sunday' : cell.date.getDay() === 6 ? 'is-saturday' : ''}`} onClick={() => { setSelected(cell.key); if (!cell.inMonth) setMonth(new Date(cell.date.getFullYear(), cell.date.getMonth(), 1)); }} aria-label={`${cell.key}, 면접 일정 ${dayItems.length}건`}><span className="day-number">{cell.date.getDate()}</span>{dayItems.slice(0, 2).map(item => <span key={item.id} className={`calendar-event is-${statusOf(item)}`}><span>{timeOf(item)}</span> {item.title}</span>)}{dayItems.length > 2 && <small>+{dayItems.length - 2}건</small>}</button>;
       })}</div><div className="interview-overview-legend"><span><i className="is-upcoming" />예정</span><span><i className="is-past" />지난 일정</span><span><i className="is-completed" />완료</span><span><i className="is-cancelled" />취소</span></div></section>
       <section className="card interview-overview-day"><h3><LucideIcon name="calendar" /> {selected} <small>{selectedItems.length}건</small></h3>{selectedItems.length ? selectedItems.map(details) : <div className="interview-overview-day-empty" role="status"><img src={emptyArt} alt="" aria-hidden="true" /><strong>선택한 날짜에 면접 일정이 없습니다.</strong><p>다른 날짜를 선택하거나<br />새로운 면접 일정을 추가해보세요.</p></div>}</section></div> : <>
-      <section className="card interview-overview-next"><h3><LucideIcon name="calendar" /> 다가오는 면접 일정</h3>{next ? <a href={`#/interviews/${next.id}`}><strong>{dateOf(next)} · {timeOf(next)}</strong><span className="interview-overview-building"><img src={building} alt="" /></span><span>{next.title}<small>{next.applicationId ? companyOf(applicationMap.get(next.applicationId)) : '연결된 지원 없음'}</small></span><LucideIcon name="chevronRight" /></a> : <p>다가오는 면접 일정이 없습니다.</p>}</section>
+      <section className="card interview-overview-next"><h3><LucideIcon name="calendar" /> 다가오는 면접 일정</h3>{next ? <a href={`#/interviews/${next.id}`} onClick={event => { event.preventDefault(); onOpenDetail(next.id); }}><strong>{dateOf(next)} · {timeOf(next)}</strong><span className="interview-overview-building"><img src={building} alt="" /></span><span>{next.title}<small>{next.applicationId ? companyOf(applicationMap.get(next.applicationId)) : '연결된 지원 없음'}</small></span><LucideIcon name="chevronRight" /></a> : <p>다가오는 면접 일정이 없습니다.</p>}</section>
       <section className="card interview-overview-table-card"><div className="interview-overview-list-tools"><div role="group" aria-label="면접 일정 필터">{([['all', '전체', listCounts.all], ['upcoming', '예정', listCounts.upcoming], ['past', '지난 일정', listCounts.past], ['completed', '완료', listCounts.completed], ['cancelled', '취소', listCounts.cancelled]] as const).map(([value, label, count]) => <button key={value} type="button" className={filter === value ? 'is-active' : ''} aria-pressed={filter === value} onClick={() => setFilter(value)}>{label} <span>{count}</span></button>)}</div><label><LucideIcon name="search" /><input type="search" value={search} onChange={event => setSearch(event.target.value)} placeholder="기업명, 직무, 제목 검색" aria-label="면접 일정 검색" /></label></div>
         {monthItems.length ? <div className="interview-overview-table-wrap"><table><thead><tr><th>일정 일시</th><th>면접 제목</th><th>기업명</th><th>지원 직무</th><th>면접 단계</th><th>진행 상태</th><th>지원 이력</th><th>장소/방식</th><th>메모</th><th>관리</th></tr></thead><tbody>{monthItems.map(item => {
           const app = item.applicationId ? applicationMap.get(item.applicationId) : undefined;
-          return <tr key={item.id}><td>{dateOf(item)}<small>{timeOf(item)} · {item.timeZone}</small></td><td><a href={`#/interviews/${item.id}`}>{item.title}</a></td><td>{app && <span className="interview-overview-building"><img src={building} alt="" /></span>}{app ? companyOf(app) : '—'}</td><td>{app ? roleOf(app) : '—'}</td><td>{item.stage ? stageText[item.stage] : '—'}</td><td><span className={`interview-overview-status is-${statusOf(item)}`}>{statusText[statusOf(item)]}</span></td><td>{item.applicationId ? <a href={`#/applications/${item.applicationId}`}>#{item.applicationId}</a> : '—'}</td><td>{item.interviewMethod ? methodText[item.interviewMethod] : '—'}</td><td className="memo-cell">{item.memo || '—'}</td><td><div className="row-actions"><a href={`#/interviews/${item.id}`} aria-label={`${item.title} 상세 및 수정`}><LucideIcon name="pencil" /></a>{item.status === 'SCHEDULED' && <><button className="is-complete-action" type="button" disabled={busyId === item.id} onClick={() => void complete(item)} aria-label={`${item.title} 일정 완료`}><LucideIcon name="check" /></button><button type="button" disabled={busyId === item.id} onClick={() => void cancel(item)} aria-label={`${item.title} 일정 취소`}><LucideIcon name="trash" /></button></>}</div></td></tr>;
+          return <tr key={item.id}><td>{dateOf(item)}<small>{timeOf(item)}</small></td><td><a href={`#/interviews/${item.id}`} onClick={event => { event.preventDefault(); onOpenDetail(item.id); }}>{item.title}</a></td><td>{app && <span className="interview-overview-building"><img src={building} alt="" /></span>}{app ? companyOf(app) : '—'}</td><td>{app ? roleOf(app) : '—'}</td><td>{item.stage ? stageText[item.stage] : '—'}</td><td><span className={`interview-overview-status is-${statusOf(item)}`}>{statusText[statusOf(item)]}</span></td><td>{item.applicationId ? <a href={`#/applications/${item.applicationId}`}>#{item.applicationId}</a> : '—'}</td><td>{item.interviewMethod ? methodText[item.interviewMethod] : '—'}</td><td className="memo-cell">{item.memo || '—'}</td><td><div className="row-actions"><a href={`#/interviews/${item.id}`} onClick={event => { event.preventDefault(); onOpenDetail(item.id); }} aria-label={`${item.title} 상세 및 수정`}><LucideIcon name="pencil" /></a>{item.status === 'SCHEDULED' && <><button className="is-complete-action" type="button" disabled={busyId === item.id} onClick={() => void complete(item)} aria-label={`${item.title} 일정 완료`}><LucideIcon name="check" /></button><button type="button" disabled={busyId === item.id} onClick={() => { setActionError(''); setCancelTarget(item); }} aria-label={`${item.title} 일정 취소`}><LucideIcon name="trash" /></button></>}</div></td></tr>;
         })}</tbody></table></div> : <div className="interview-overview-list-empty" role="status"><img src={listEmptyArt} alt="" aria-hidden="true" /><strong>{listEmptyTitle}</strong><p>{listEmptyMessage}</p></div>}</section></>}
     </>}
+    {cancelTarget && <div className="interview-cancel-backdrop"><div className="interview-cancel-modal" role="dialog" aria-modal="true" aria-labelledby="interview-cancel-title" aria-describedby="interview-cancel-description">
+      <header className="interview-cancel-head"><span className="interview-cancel-icon"><LucideIcon name="trash" /></span><div><h2 id="interview-cancel-title">면접 일정을 취소할까요?</h2><p id="interview-cancel-description">취소한 일정은 상세에서 다시 활성화할 수 있습니다.</p></div></header>
+      <div className="interview-cancel-content"><strong>{cancelTarget.title}</strong>{actionError && <p role="alert">{actionError}</p>}</div>
+      <footer className="interview-cancel-actions"><button ref={cancelDismissRef} type="button" disabled={busyId !== null} onClick={() => setCancelTarget(null)}>취소</button><button className="interview-cancel-confirm" type="button" disabled={busyId !== null} onClick={() => void confirmCancel()}>{busyId === cancelTarget.id ? '처리 중…' : '일정 취소'}</button></footer>
+    </div></div>}
   </div>;
 }

@@ -8,7 +8,6 @@ import clipboardCheck from '../../assets/redesign/todo-clipboard-check.png';
 import calendarIcon from '../../assets/redesign/todo-calendar-icon.png';
 import checklistIcon from '../../assets/redesign/todo-checklist-icon.png';
 import emptyCalendar from '../../assets/redesign/todo-empty-cat-calendar.png';
-import bellIcon from '../../assets/redesign/todo-bell-icon.png';
 import { CategoryImage } from './todoIcons';
 import { deviceZone, localDueInput } from './todoTime';
 
@@ -123,9 +122,10 @@ export function TodoCalendar() {
     <input type="checkbox" aria-label={`${todo.title} 완료`} checked={todo.completed} disabled={busyId !== undefined} onChange={() => void toggle(todo)} />
     <span className={`todos-task-category ${categoryClass(todo.category)}`}><CategoryImage name={todo.category} iconKey={iconFor(todo.category)} size={24} />{todo.category}</span>
     <div className="todos-task-copy"><a href={`#/todos/${todo.id}`}>{todo.title}</a>
-      <small>{todo.dueAt ? compact ? dueTime(todo) : `${dueKey(todo)} ${dueTime(todo)}` : '기한 없음'}</small></div>
+      <small>{todo.dueAt ? compact ? dueTime(todo) : `${dueKey(todo)} ${dueTime(todo)}` : '기한 없음'}
+        {todo.dueAt && todo.reminderMinutes !== -1 && <span className="todos-task-reminder" title="알림 설정됨" aria-label="알림 설정됨"><LucideIcon name="bell" /></span>}
+      </small></div>
     <div className="todos-task-actions">
-      {todo.dueAt && todo.reminderMinutes !== -1 && <span className="todos-task-reminder" title="알림 설정됨"><img src={bellIcon} alt="알림 설정됨" /></span>}
       <button className="todos-task-more" type="button" aria-label={`${todo.title} 메뉴`} aria-expanded={menuTodoId === todo.id} onClick={() => { setMenuTodoId(menuTodoId === todo.id ? undefined : todo.id); setDeleteTodoId(undefined); }}>⋯</button></div>
     {menuTodoId === todo.id && <div className="todos-task-menu">{deleteTodoId === todo.id ? <><span>삭제할까요?</span><button type="button" disabled={busyId !== undefined} onClick={() => void deleteFromList(todo)}>삭제 확인</button><button type="button" onClick={() => setDeleteTodoId(undefined)}>취소</button></>
       : <><a href={`#/todos/${todo.id}?edit=1`}><LucideIcon name="pencil" />수정</a><button type="button" onClick={() => setDeleteTodoId(todo.id)}><LucideIcon name="trash" />삭제</button></>}</div>}
@@ -139,9 +139,9 @@ export function TodoCalendar() {
     {loading ? <LoadingState message="할 일을 불러오고 있습니다." /> : error ? <ErrorState message={error} onRetry={() => setRetry(value => value + 1)} />
       : <div className="todos-dashboard-grid">
         <section className="card todos-dashboard-calendar"><h3><img src={calendarIcon} alt="" /> 할 일 달력</h3>
-          <div className="todos-calendar-controls"><button type="button" onClick={() => { const now = new Date(); setAnchor(now); setSelected(keyOf(now)); }}>오늘</button>
-            <div className="todos-calendar-period"><button className="todos-calendar-arrow" type="button" onClick={() => move(-1)} aria-label="이전 기간">‹</button>
+          <div className="todos-calendar-controls"><div className="todos-calendar-period"><button className="todos-calendar-arrow" type="button" onClick={() => move(-1)} aria-label="이전 기간">‹</button>
               <strong>{anchor.getFullYear()}년 {anchor.getMonth() + 1}월</strong><button className="todos-calendar-arrow" type="button" onClick={() => move(1)} aria-label="다음 기간">›</button></div>
+            <button type="button" onClick={() => { const now = new Date(); setAnchor(now); setSelected(keyOf(now)); }}>오늘</button>
             <div className="todos-view-switch" role="group" aria-label="달력 보기">{(['month', 'week', 'day'] as const).map(value => <button key={value} type="button" aria-pressed={view === value} onClick={() => setView(value)}>{value === 'month' ? '월' : value === 'week' ? '주' : '일'}</button>)}</div></div>
           <div className={`todos-dashboard-calendar-grid is-${view}`}>{view !== 'day' && weekdays.map(day => <span key={day} className="todos-dashboard-weekday">{day}</span>)}
             {cells.map(date => { const key = keyOf(date); const dayItems = dated.get(key) ?? [];
