@@ -14,14 +14,16 @@ import static org.mockito.Mockito.*;
 
 class NotificationServiceTest {
     NotificationRepository repository;
+    ExtendedNotificationRepository expanded;
     NotificationService service;
     PlatformTransactionManager manager;
 
     @BeforeEach void setup() {
         repository = mock(NotificationRepository.class);
+        expanded = mock(ExtendedNotificationRepository.class);
         manager = mock(PlatformTransactionManager.class);
         when(manager.getTransaction(any())).thenReturn(mock(TransactionStatus.class));
-        service = new NotificationService(repository, manager);
+        service = new NotificationService(repository, expanded, manager);
     }
 
     @Test void defaultPreferencesAndStrictWholeUpdate() throws Exception {
@@ -66,6 +68,19 @@ class NotificationServiceTest {
         verify(repository, never()).create(eq(7L), any(), any());
         verify(repository).create(eq(9L), eq(NotificationType.INTERVIEW_REMINDER), any());
         verify(manager, times(3)).getTransaction(any());
+    }
+
+    @Test void expandedEventIsDeliveredOnceAndRespectsPreference() {
+        var event = new NotificationRepository.DueEvent(18, 7, Instant.now(), "새 공고");
+        var outbox = new ExtendedNotificationRepository.Outbox(4, NotificationType.NEW_JOB, 18, event.at());
+        when(expanded.pendingOutboxIds()).thenReturn(List.of(4L));
+        when(expanded.lockOutbox(4)).thenReturn(outbox, (ExtendedNotificationRepository.Outbox) null);
+        when(expanded.forEvent(outbox)).thenReturn(List.of(event));
+        when(repository.enabled(7, NotificationType.NEW_JOB)).thenReturn(true);
+        service.deliverDue();
+        service.deliverDue();
+        verify(repository, times(1)).create(7, NotificationType.NEW_JOB, event);
+        verify(expanded).markProcessed(4);
     }
 
     @Test void readIsOwnerScopedAndIdempotentAtServiceBoundary() {

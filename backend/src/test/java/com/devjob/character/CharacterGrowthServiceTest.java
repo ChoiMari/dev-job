@@ -10,6 +10,7 @@ import com.devjob.character.service.CharacterGrowthService;
 import com.devjob.todo.entity.PersonalTodo;
 import com.devjob.user.entity.User;
 import com.devjob.user.repository.UserRepository;
+import com.devjob.notification.NotificationEventRecorder;
 import java.time.Instant;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
@@ -23,7 +24,8 @@ class CharacterGrowthServiceTest {
     private final CharacterRewardRepository rewards = mock(CharacterRewardRepository.class);
     private final CharacterQuestProgressRepository questProgress = mock(CharacterQuestProgressRepository.class);
     private final UserRepository users = mock(UserRepository.class);
-    private final CharacterGrowthService growth = new CharacterGrowthService(activities, rewards, questProgress, users);
+    private final CharacterGrowthService growth = new CharacterGrowthService(activities, rewards, questProgress, users,
+            mock(NotificationEventRecorder.class));
 
     @Test void levelBoundariesUseAccumulatedVerifiedExp() {
         assertThat(CharacterProgress.from(0)).isEqualTo(new CharacterProgress(1, 0, 0, 100));
@@ -39,6 +41,10 @@ class CharacterGrowthServiceTest {
         PersonalTodo todo = new PersonalTodo(user, "Finish", null, null, null);
         todo.setCompleted(true);
         when(users.findById(1L)).thenReturn(Optional.of(user));
+        CharacterActivity saved = mock(CharacterActivity.class);
+        when(saved.getId()).thenReturn(2L);
+        when(saved.getEarnedAt()).thenReturn(Instant.now());
+        when(activities.saveAndFlush(any())).thenReturn(saved);
         growth.awardTodoCompletion(todo);
         verify(activities).saveAndFlush(any(CharacterActivity.class));
         reset(activities);
@@ -56,6 +62,7 @@ class CharacterGrowthServiceTest {
         verify(rewards, never()).saveAndFlush(any());
         when(activities.countByUserIdAndActivityType(1L, "TODO_COMPLETED")).thenReturn(1L);
         CharacterReward reward = new CharacterReward(user, "TODO_1", "PEACH", Instant.parse("2026-10-09T00:00:00Z"));
+        org.springframework.test.util.ReflectionTestUtils.setField(reward, "id", 3L);
         when(rewards.saveAndFlush(any())).thenReturn(reward);
         var first = growth.claim(1L, "TODO_1");
         when(rewards.findByUserIdAndQuestId(1L, "TODO_1")).thenReturn(Optional.of(reward));

@@ -11,6 +11,8 @@ import com.devjob.job.repository.JobSourceRepository;
 import com.devjob.job.repository.JobRecruitmentDetailRepository;
 import com.devjob.analysis.repository.AIAnalysisRepository;
 import com.devjob.analysis.repository.JobSkillRepository;
+import com.devjob.notification.NotificationEventRecorder;
+import com.devjob.notification.NotificationType;
 import java.util.Objects;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -26,10 +28,11 @@ public class JobPostingWriter {
     private final JobRecruitmentDetailRepository details;
     private final AIAnalysisRepository analyses;
     private final JobSkillRepository jobSkills;
+    private final NotificationEventRecorder notifications;
 
     public JobPostingWriter(JdbcTemplate jdbc, JobSourceRepository sources,
             CompanyRepository companies, JobPostingRepository postings, JobRecruitmentDetailRepository details,
-            AIAnalysisRepository analyses, JobSkillRepository jobSkills) {
+            AIAnalysisRepository analyses, JobSkillRepository jobSkills, NotificationEventRecorder notifications) {
         this.jdbc = jdbc;
         this.sources = sources;
         this.companies = companies;
@@ -37,6 +40,7 @@ public class JobPostingWriter {
         this.details = details;
         this.analyses = analyses;
         this.jobSkills = jobSkills;
+        this.notifications = notifications;
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -58,12 +62,23 @@ public class JobPostingWriter {
         if (existing.isPresent()) {
             if ("ALIO_RECRUITMENT".equals(sourceCode)) {
                 var job = postings.lockById(existing.get().getId()).orElseThrow();
+                boolean noticeChanged = !Objects.equals(job.getTitle(), input.title())
+                        || !Objects.equals(job.getDeadlineDate(), input.deadlineDate())
+                        || (recruitmentDetails != null && !Objects.equals(job.getDescription(), input.description()));
                 boolean analysisStale = !Objects.equals(job.getTitle(), input.title())
                         || (recruitmentDetails != null && !Objects.equals(job.getDescription(), input.description()));
                 var company = job.getCompany().getName().equals(input.companyName())
                         ? job.getCompany() : companies.save(new Company(input.companyName()));
                 job.update(company, input, recruitmentDetails != null);
                 postings.saveAndFlush(job);
+                if (noticeChanged) {
+                    String subject = "관심 공고가 변경되었습니다: " + job.getTitle();
+                    long updateId = jdbc.queryForObject("insert into notification_job_update"
+                            + "(job_posting_id,occurred_at,subject) values (?,?,?) returning id", Long.class,
+                            job.getId(), java.sql.Timestamp.from(job.getUpdatedAt()),
+                            subject.substring(0, Math.min(200, subject.length())));
+                    notifications.record(NotificationType.SAVED_JOB_UPDATE, updateId, job.getUpdatedAt());
+                }
                 if (recruitmentDetails != null) details.replace(job.getId(), recruitmentDetails);
                 if (analysisStale) analyses.findByJobId(job.getId()).ifPresent(analysis -> {
                     jobSkills.deleteForJob(job.getId());

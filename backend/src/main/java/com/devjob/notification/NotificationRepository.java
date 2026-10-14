@@ -44,8 +44,12 @@ public class NotificationRepository {
                 && type != NotificationType.SERVICE_NOTICE : stored;
     }
     public void savePreference(long userId, NotificationType type, boolean enabled) {
-        jdbc.update("insert into notification_preference(user_id,type,enabled) values (?,?,?) "
-                + "on conflict (user_id,type) do update set enabled=excluded.enabled", userId, type.name(), enabled);
+        jdbc.update("insert into notification_preference(user_id,type,enabled,changed_at) "
+                + "values (?,?,?,current_timestamp) on conflict (user_id,type) "
+                + "do update set enabled=excluded.enabled,changed_at=case "
+                + "when notification_preference.enabled is distinct from excluded.enabled "
+                + "then current_timestamp else notification_preference.changed_at end",
+                userId, type.name(), enabled);
     }
     public void create(long userId, NotificationType type, DueEvent event) {
         jdbc.update("insert into notification(user_id,type,source_id,scheduled_at,subject,created_at) "

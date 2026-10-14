@@ -5,9 +5,9 @@
 .f02-settings .settings-heading-icon .lucide-icon { width: 34px; height: 34px; stroke-width: 2.25; }
 .f02-settings .settings-heading h1 { margin: 0 0 2px; font-size: 1.55rem; letter-spacing: -.05em; line-height: 1.2; }
 .f02-settings .settings-heading p { margin: 0; color: #5369a0; font-size: .84rem; }
-.f02-settings .settings-tabs { display: flex; gap: 0; min-height: 43px; margin-bottom: 10px; border-bottom: 1px solid #e6ecfc; }
-.f02-settings .settings-tabs button { flex: 0 0 auto; min-width: 112px; padding: 10px 16px; border: 0; border-bottom: 2px solid transparent; border-radius: 0; background: transparent; color: #6878aa; font-size: .85rem; font-weight: 700; cursor: pointer; }
-.f02-settings .settings-tabs button[aria-selected="true"] { border-bottom-color: #287cff; color: #1065f9; }
+.f02-settings .settings-tabs { display: flex; gap: 0; min-height: 43px; margin-bottom: 10px; border-bottom: 1px solid #e3e6fb; }
+.f02-settings .settings-tabs button { flex: 0 0 auto; min-width: 112px; padding: 10px 16px; border: 0; border-bottom: 2px solid transparent; border-radius: 0; background: transparent; color: #6970aa; font-size: .85rem; font-weight: 700; cursor: pointer; }
+.f02-settings .settings-tabs button[aria-selected="true"] { border-bottom-color: #644df2; color: #513ee2; }
 #main-content .f02-settings .settings-panel[class] { display: block; padding: 22px; border: 1px solid #e2ecff; border-radius: 12px; background: #fff; box-shadow: 0 3px 18px #769bd311; }
 .f02-settings .settings-panel-title { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 16px; color: #081a91; }
 .f02-settings .settings-panel-title > .lucide-icon { flex: 0 0 auto; width: 25px; height: 25px; margin-top: 1px; stroke-width: 2.2; }
@@ -37,10 +37,8 @@
 .f02-settings .settings-switch:focus-visible { outline: 3px solid #9dc4ff; outline-offset: 2px; }
 .f02-settings .settings-switch:disabled { cursor: wait; opacity: .65; }
 .f02-settings .settings-status { margin: 12px 0 0; color: #0b8b62; font-size: .75rem; }
-.f02-settings .settings-delivery-note { margin: 12px 0 0; color: #7386b6; font-size: .7rem; }
-.f02-settings .settings-notification-link { display: inline-flex; align-items: center; gap: 5px; margin-top: 16px; color: #1767eb; font-size: .76rem; font-weight: 700; text-decoration: none; }
-.f02-settings .settings-notification-link .lucide-icon { width: 14px; height: 14px; }
 #main-content .f02-settings .settings-panel--compact[class] { max-width: 720px; }
+#main-content .f02-settings .settings-panel--deletion-open[class] { max-width: 900px; }
 .f02-settings .settings-password-form { max-width: none; }
 .f02-settings .settings-password-form fieldset { gap: 12px; }
 .f02-settings .settings-field { display: grid; gap: 5px; }
@@ -56,7 +54,8 @@
 .f02-settings .settings-password-rules .lucide-icon { width: 13px; height: 13px; }
 .f02-settings .settings-password-rules .is-met { color: #159b73; }
 .f02-settings .settings-security-note { margin: 0; color: #7386b6; font-size: .72rem; }
-.f02-settings .settings-submit { justify-self: end; min-width: 180px; min-height: 42px; border-radius: 7px; background: #086bff; }
+.f02-settings .settings-submit { justify-self: end; min-width: 180px; min-height: 42px; border-radius: 7px; border-color: #6650ef; background: #6650ef; }
+.f02-settings .settings-submit:hover:not(:disabled) { border-color: #5541d5; background: #5541d5; }
 .f02-settings .settings-danger-notice { display: flex; gap: 10px; align-items: flex-start; padding: 12px; border: 1px solid #ffd4dc; border-radius: 7px; background: #fff0f3; color: #f22b52; }
 .f02-settings .settings-danger-notice > .lucide-icon { width: 20px; height: 20px; flex: 0 0 auto; }
 .f02-settings .settings-danger-notice div { display: grid; gap: 2px; }
@@ -67,19 +66,57 @@
 .f02-settings .settings-account-row > div { display: grid; gap: 3px; min-width: 0; flex: 1; }
 .f02-settings .settings-account-row strong { font-size: .76rem; }
 .f02-settings .settings-account-row small { color: #7f8fb3; font-size: .67rem; }
-.f02-settings .settings-account-row button { flex: 0 0 auto; min-height: 32px; padding: 5px 10px; border: 1px solid #9dc2ff; border-radius: 6px; background: #fff; color: #176aff; font-size: .72rem; font-weight: 700; }
-.f02-settings .settings-account-row .settings-danger-button { border-color: #ff3158; background: #ff3158; color: #fff; }
-.f02-settings .settings-account-links { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 22px; padding-top: 16px; border-top: 1px solid #edf1f9; font-size: .73rem; }
+.f02-settings .settings-account-row .settings-danger-button { flex: 0 0 auto; min-height: 32px; padding: 5px 10px; border: 1px solid #ff3158; border-radius: 6px; background: #ff3158; color: #fff; font-size: .72rem; font-weight: 700; }
+.f02-settings .settings-account-links { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 22px; font-size: .73rem; }
 .f02-settings .settings-account-links span { overflow-wrap: anywhere; color: #6375a2; }
-.f02-settings .settings-account-links a, .f02-settings .settings-account-links button, .f02-settings .settings-record-links a { color: #176aff; font-size: .72rem; font-weight: 700; text-decoration: none; }
-.f02-settings .settings-account-links button { min-height: 30px; padding: 4px 10px; background: #fff; border: 1px solid #cbdcff; }
-.f02-settings .settings-record-links { display: flex; flex-wrap: wrap; gap: 15px; margin-top: 14px; }
-.f02-settings .settings-deletion-details { margin-top: 15px; }
-.f02-settings .f02-impact { margin: 14px 0; padding: 16px; border-radius: 8px; background: #fff8f9; }
-.f02-settings .f02-impact li:has(strong) { display: flex; justify-content: space-between; gap: 10px; }
-.f02-settings .f02-deletion-form fieldset { display: grid; gap: 10px; border: 0; padding: 0; }
-.f02-settings .f02-deletion-form input { width: 100%; min-height: 40px; padding: 8px 10px; border: 1px solid #cbdcff; border-radius: 7px; }
-.f02-settings .f02-delete-button { justify-self: start; background: #ed3154; color: white; border-color: #ed3154; }
+.f02-settings .settings-deletion-details { display: grid; gap: 18px; margin-top: 20px; padding-top: 16px; border-top: 1px solid #edf1f9; }
+.f02-settings .settings-deletion-hero { display: flex; align-items: center; gap: 32px; min-height: 170px; padding: 18px 30px; overflow: hidden; border: 1px solid #ffe1e8; border-radius: 13px; background: linear-gradient(110deg, #fff0f4, #fff9fb 55%, #fff0f5); }
+.f02-settings .settings-deletion-hero img { width: 245px; height: 138px; flex: 0 0 auto; object-fit: contain; }
+.f02-settings .settings-deletion-hero h3 { margin: 0 0 10px; color: #071657; font-size: clamp(1.25rem, 2.6vw, 1.7rem); line-height: 1.25; letter-spacing: -.04em; }
+.f02-settings .settings-deletion-hero h3 em { color: #f52957; font-style: normal; }
+.f02-settings .settings-deletion-hero p { margin: 0; color: #667bb1; font-size: .85rem; line-height: 1.55; }
+.f02-settings .f02-impact { padding: 12px; border: 1px solid #e6edff; border-radius: 12px; background: #fff; }
+.f02-settings .f02-impact-heading { display: flex; align-items: center; gap: 12px; padding: 4px 6px 12px; }
+.f02-settings .f02-impact-heading-icon { display: grid; place-items: center; width: 42px; height: 42px; flex: 0 0 auto; border-radius: 9px; background: #fff0f4; color: #ff3165; }
+.f02-settings .f02-impact-heading-icon .lucide-icon { width: 24px; height: 24px; }
+.f02-settings .f02-impact-heading h3 { margin: 0 0 2px; font-size: 1.07rem; }
+.f02-settings .f02-impact-heading p { margin: 0; color: #788abd; font-size: .73rem; }
+.f02-settings .f02-impact-heading > strong { margin-left: auto; padding: 7px 12px; border-radius: 8px; background: #ffe5eb; color: #ff315c; font-size: .74rem; white-space: nowrap; }
+.f02-settings .f02-impact-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.f02-settings .f02-impact-grid ul { display: grid; align-content: start; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.f02-settings .f02-impact-grid li { display: flex; align-items: center; gap: 7px; min-height: 42px; padding: 4px 7px; border: 1px solid #e8efff; border-radius: 8px; color: #233674; font-size: .7rem; font-weight: 700; }
+.f02-settings .f02-impact-grid li > span:nth-child(2) { min-width: 0; overflow-wrap: anywhere; }
+.f02-settings .f02-impact-grid li > strong { margin-left: auto; color: #687dc0; font-size: .7rem; white-space: nowrap; }
+.f02-settings .f02-impact-icon { display: grid; place-items: center; width: 30px; height: 30px; flex: 0 0 auto; border-radius: 8px; background: #edf4ff; color: #247bfb; }
+.f02-settings .f02-impact-icon .lucide-icon { width: 17px; height: 17px; }
+.f02-settings .f02-impact-icon.tone-purple { background: #f1edff; color: #7146ff; }
+.f02-settings .f02-impact-icon.tone-orange { background: #fff6ea; color: #ff971c; }
+.f02-settings .f02-impact-icon.tone-pink { background: #fff0f5; color: #ff3c70; }
+.f02-settings .f02-impact-icon.tone-mint { background: #e9fcf6; color: #0db998; }
+.f02-settings .settings-deletion-warning { padding: 15px 20px; border: 1px solid #ffdce5; border-radius: 12px; background: linear-gradient(100deg, #fff0f4, #fff8fa); }
+.f02-settings .settings-deletion-warning h3 { display: flex; align-items: center; gap: 10px; margin: 0 0 9px; color: #f52957; font-size: 1.05rem; }
+.f02-settings .settings-deletion-warning h3 .lucide-icon { width: 25px; height: 25px; }
+.f02-settings .settings-deletion-warning > strong { display: block; padding: 7px 11px; border-radius: 6px; background: #ffe4eb; color: #f52957; font-size: .77rem; }
+.f02-settings .settings-deletion-warning p { margin: 9px 0 0; color: #6c79ac; font-size: .74rem; line-height: 1.5; }
+.f02-settings .f02-deletion-form { padding: 17px; border: 1px solid #dcedff; border-radius: 12px; background: #f4fbff; }
+.f02-settings .f02-deletion-form fieldset { display: grid; gap: 16px; margin: 0; border: 0; padding: 0; }
+.f02-settings .f02-deletion-form-heading { display: flex; align-items: center; gap: 12px; min-height: 65px; }
+.f02-settings .f02-deletion-form-heading > span { display: grid; place-items: center; width: 43px; height: 43px; flex: 0 0 auto; border-radius: 50%; background: #e6f0ff; color: #295de4; }
+.f02-settings .f02-deletion-form-heading > span .lucide-icon { width: 26px; height: 26px; }
+.f02-settings .f02-deletion-form-heading h3 { margin: 0 0 3px; font-size: 1.07rem; }
+.f02-settings .f02-deletion-form-heading p { margin: 0; color: #6e82b6; font-size: .74rem; }
+.f02-settings .f02-deletion-form-heading img { width: 105px; height: 70px; margin-left: auto; object-fit: contain; }
+.f02-settings .f02-deletion-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; padding: 14px; border: 1px solid #e6efff; border-radius: 9px; background: #fff; }
+.f02-settings .f02-deletion-fields .settings-field label { font-size: .76rem; }
+.f02-settings .f02-deletion-fields .settings-field label small { margin-left: 7px; color: #7586b8; font-size: .67rem; font-weight: 400; }
+.f02-settings .f02-deletion-form input { width: 100%; min-height: 41px; padding: 8px 12px; border: 1px solid #cbdcff; border-radius: 7px; background: #fff; font-size: .76rem; }
+.f02-settings .f02-deletion-form input::placeholder { color: #a2afd0; }
+.f02-settings .f02-deletion-form .settings-password-input input { padding-right: 45px; }
+.f02-settings .f02-deletion-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 3px; }
+.f02-settings .f02-deletion-actions button { min-height: 42px; padding: 9px 15px; border-radius: 8px; font-size: .76rem; font-weight: 700; }
+.f02-settings .f02-deletion-cancel { border: 1px solid #cbd6f3; background: #fff; color: #6675ad; }
+.f02-settings .f02-delete-button { border: 1px solid #ff3158; background: #ff3158; color: #fff; }
+.f02-settings .f02-delete-button:hover:not(:disabled) { border-color: #e82049; background: #e82049; }
 @media (max-width: 600px) {
   #main-content .f02-settings .settings-panel[class] { padding: 14px; }
   .f02-settings .settings-heading { padding-left: 0; }
@@ -89,4 +126,10 @@
   .f02-settings .settings-preference-copy small { font-size: .62rem; }
   .f02-settings .settings-account-row { gap: 7px; }
   .f02-settings .settings-account-row button { padding: 5px 7px; font-size: .67rem; }
+  .f02-settings .settings-deletion-hero { flex-direction: column; gap: 4px; padding: 16px; text-align: center; }
+  .f02-settings .settings-deletion-hero img { width: 210px; height: 115px; }
+  .f02-settings .settings-deletion-hero p br { display: none; }
+  .f02-settings .f02-impact-grid { grid-template-columns: 1fr; }
+  .f02-settings .f02-deletion-fields { grid-template-columns: 1fr; }
+  .f02-settings .f02-deletion-form-heading img { width: 72px; height: 60px; }
 }

@@ -9,7 +9,19 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 public class NotificationController {
     private final NotificationService service;
-    public NotificationController(NotificationService service) { this.service = service; }
+    private final ServiceNoticeService notices;
+    public NotificationController(NotificationService service, ServiceNoticeService notices) {
+        this.service = service; this.notices = notices;
+    }
+
+    public record PublishNoticeRequest(String title) { }
+
+    @PostMapping("/api/admin/notifications/service-notices")
+    @ResponseStatus(HttpStatus.CREATED)
+    public ServiceNoticeService.Notice publishNotice(@AuthenticationPrincipal CurrentUser user,
+            @RequestBody PublishNoticeRequest input) {
+        return notices.publish(user, input == null ? null : input.title());
+    }
 
     @GetMapping("/api/me/notification-preferences")
     public NotificationPreferences preferences(@AuthenticationPrincipal CurrentUser user) {

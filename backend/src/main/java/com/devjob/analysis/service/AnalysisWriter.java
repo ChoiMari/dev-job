@@ -7,6 +7,8 @@ import com.devjob.analysis.repository.JobSkillRepository;
 import com.devjob.job.repository.JobPostingRepository;
 import com.devjob.skill.service.SkillNormalizer;
 import com.devjob.skill.service.AccountSkillService;
+import com.devjob.notification.NotificationEventRecorder;
+import com.devjob.notification.NotificationType;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Instant;
@@ -24,10 +26,13 @@ public class AnalysisWriter {
     private final SkillNormalizer normalizer;
     private final AccountSkillService accountSkills;
     private final ObjectMapper mapper;
+    private final NotificationEventRecorder notifications;
     public AnalysisWriter(JobPostingRepository jobs, AIAnalysisRepository analyses, JobSkillRepository jobSkills,
-            SkillNormalizer normalizer, AccountSkillService accountSkills, ObjectMapper mapper) {
+            SkillNormalizer normalizer, AccountSkillService accountSkills, ObjectMapper mapper,
+            NotificationEventRecorder notifications) {
         this.jobs = jobs; this.analyses = analyses; this.jobSkills = jobSkills;
         this.normalizer = normalizer; this.accountSkills = accountSkills; this.mapper = mapper;
+        this.notifications = notifications;
     }
     @Transactional
     public void complete(long jobId, Instant attempt, List<AnalysisOutputValidator.ExtractedSkill> extracted) {
@@ -50,6 +55,9 @@ public class AnalysisWriter {
             jobSkills.saveAllAndFlush(canonical.values());
             analysis.completed(json);
             accountSkills.publishForRequesters(jobId, extracted.stream().map(AnalysisOutputValidator.ExtractedSkill::name).toList());
+            notifications.record(NotificationType.NEW_JOB, jobId, job.getCreatedAt());
+            notifications.record(NotificationType.AI_JOB_RECOMMENDATION, jobId, analysis.getAnalyzedAt());
+            notifications.record(NotificationType.MATCH_ANALYSIS, jobId, analysis.getAnalyzedAt());
         } catch (JsonProcessingException exception) {
             throw new IllegalStateException("Failed to serialize validated analysis");
         }

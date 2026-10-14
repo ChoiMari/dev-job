@@ -1,6 +1,7 @@
 package com.devjob.recommendation;
 
 import com.devjob.documentanalysis.service.DocumentRedactor;
+import com.devjob.notification.NotificationEventRecorder;
 import com.devjob.recommendation.RecommendationService.Candidate;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Instant;
@@ -12,7 +13,8 @@ import static org.mockito.Mockito.*;
 
 class RecommendationRunnerTest {
     private final RecommendationRunner runner = new RecommendationRunner(mock(RecommendationGateway.class),
-            mock(RecommendationCipher.class), new DocumentRedactor(), mock(JdbcTemplate.class), new ObjectMapper());
+            mock(RecommendationCipher.class), new DocumentRedactor(), mock(JdbcTemplate.class), new ObjectMapper(),
+            mock(NotificationEventRecorder.class));
     private final Candidate job = new Candidate("MANUAL", 7, "백엔드", "Java 서버 운영", Instant.now(),
             null, false, "READY", null);
 

@@ -16,6 +16,7 @@ public class CharacterReward {
         this.user = user; this.questId = questId; this.itemId = itemId; this.claimedAt = claimedAt;
     }
     public String getQuestId() { return questId; }
+    public Long getId() { return id; }
     public String getItemId() { return itemId; }
     public Instant getClaimedAt() { return claimedAt; }
 }

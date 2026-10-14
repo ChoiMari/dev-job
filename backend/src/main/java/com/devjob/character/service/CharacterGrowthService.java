@@ -4,6 +4,8 @@ import com.devjob.character.dto.*;
 import com.devjob.character.entity.*;
 import com.devjob.character.repository.*;
 import com.devjob.todo.entity.PersonalTodo;
+import com.devjob.notification.NotificationEventRecorder;
+import com.devjob.notification.NotificationType;
 import com.devjob.user.repository.UserRepository;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -29,9 +31,12 @@ public class CharacterGrowthService {
     private final CharacterRewardRepository rewards;
     private final CharacterQuestProgressRepository questProgress;
     private final UserRepository users;
+    private final NotificationEventRecorder notifications;
     public CharacterGrowthService(CharacterActivityRepository activities, CharacterRewardRepository rewards,
-            CharacterQuestProgressRepository questProgress, UserRepository users) {
+            CharacterQuestProgressRepository questProgress, UserRepository users,
+            NotificationEventRecorder notifications) {
         this.activities = activities; this.rewards = rewards; this.questProgress = questProgress; this.users = users;
+        this.notifications = notifications;
     }
 
     // Called only after TodoService has locked and verified the owner's completion transition.
@@ -40,8 +45,9 @@ public class CharacterGrowthService {
         if (!todo.isRewardEligible() || todo.getCompletedAt() == null) return;
         if (activities.existsByUserIdAndActivityTypeAndActivityId(todo.getUserId(), TODO_COMPLETED, todo.getId())) return;
         var user = users.findById(todo.getUserId()).orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
-        activities.saveAndFlush(new CharacterActivity(user, TODO_COMPLETED, todo.getId(), TODO_EXP,
+        var activity = activities.saveAndFlush(new CharacterActivity(user, TODO_COMPLETED, todo.getId(), TODO_EXP,
                 Instant.now().truncatedTo(ChronoUnit.MICROS)));
+        notifications.record(NotificationType.CHARACTER_ACTIVITY, activity.getId() * 2, activity.getEarnedAt());
     }
 
     @Transactional(readOnly = true)
@@ -91,6 +97,7 @@ public class CharacterGrowthService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "퀘스트 달성 조건을 충족하지 않았습니다.");
         var reward = rewards.saveAndFlush(new CharacterReward(user, questId, quest.itemId(),
                 Instant.now().truncatedTo(ChronoUnit.MICROS)));
+        notifications.record(NotificationType.CHARACTER_ACTIVITY, reward.getId() * 2 + 1, reward.getClaimedAt());
         return new CharacterClaimResponse(questId, reward.getItemId(), reward.getClaimedAt(), progress(userId));
     }
     private long progressFor(Long userId, Quest quest) {

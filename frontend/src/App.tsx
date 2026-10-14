@@ -168,7 +168,7 @@ export function App() {
       : path === '/recommendations' || path.startsWith('/recommendations/') ? <RecommendationsPage key={path} location={location} />
       : path === '/admin/alio' ? <AlioBatchPage />
       : path === '/character' ? <CharacterPage userId={user.id} />
-      : path === '/settings' ? <SettingsPage user={user} onLogout={logout} loggingOut={loggingOut}
+      : path === '/settings' ? <SettingsPage user={user} loggingOut={loggingOut}
         onPasswordChanged={() => { setUser(null); window.location.hash = '/login?passwordChanged=1'; }}
         onSessionExpired={() => { setUser(null); window.location.hash = '/login?sessionExpired=1'; }} />
       : path.startsWith('/applications/') ? <ApplicationDetailPage key={path} location={location} /> : <section className="card">

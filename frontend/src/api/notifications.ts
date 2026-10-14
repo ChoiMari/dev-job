@@ -2,9 +2,13 @@ import { ApiError } from './client.ts';
 import type { createApiClient } from './client.ts';
 
 export type NotificationItem = {
-  id: number; type: 'INTERVIEW_REMINDER' | 'TODO_REMINDER'; sourceId: number;
+  id: number; type: NotificationType; sourceId: number;
   scheduledAt: string; subject: string; createdAt: string; readAt: string | null;
 };
+export const notificationTypes = ['INTERVIEW_REMINDER', 'TODO_REMINDER', 'NEW_JOB', 'AI_JOB_RECOMMENDATION',
+  'SAVED_JOB_UPDATE', 'DOCUMENT_ANALYSIS', 'MATCH_ANALYSIS', 'SEMANTIC_RECOMMENDATION',
+  'LEARNING_GOAL_REMINDER', 'CHARACTER_ACTIVITY', 'SERVICE_NOTICE'] as const;
+export type NotificationType = typeof notificationTypes[number];
 export type NotificationPage = { items: NotificationItem[]; page: number; size: number; totalElements: number };
 const positive = (value: unknown): value is number => Number.isSafeInteger(value) && Number(value) > 0;
 const instant = (value: unknown): value is string => typeof value === 'string' && /(?:Z|[+-]\d{2}:\d{2})$/.test(value) && Number.isFinite(Date.parse(value));
@@ -13,12 +17,22 @@ export function isNotification(value: unknown): value is NotificationItem {
   if (!value || typeof value !== 'object') return false;
   const item = value as Record<string, unknown>;
   return positive(item.id) && positive(item.sourceId)
-    && (item.type === 'INTERVIEW_REMINDER' || item.type === 'TODO_REMINDER')
+    && notificationTypes.some(type => type === item.type)
     && instant(item.scheduledAt) && typeof item.subject === 'string' && instant(item.createdAt)
     && (item.readAt === null || instant(item.readAt));
 }
 export function notificationSource(item: NotificationItem) {
-  return item.type === 'INTERVIEW_REMINDER' ? `#/interviews/${item.sourceId}` : `#/todos/${item.sourceId}`;
+  switch (item.type) {
+    case 'INTERVIEW_REMINDER': return `#/interviews/${item.sourceId}`;
+    case 'TODO_REMINDER': return `#/todos/${item.sourceId}`;
+    case 'NEW_JOB': case 'AI_JOB_RECOMMENDATION': case 'MATCH_ANALYSIS': return `#/jobs/${item.sourceId}`;
+    case 'SAVED_JOB_UPDATE': return '#/bookmarks';
+    case 'DOCUMENT_ANALYSIS': return item.subject.startsWith('이력서') ? '#/resumes' : '#/cover-letters';
+    case 'SEMANTIC_RECOMMENDATION': return `#/recommendations/${item.sourceId}`;
+    case 'LEARNING_GOAL_REMINDER': return `#/learning-goals/${item.sourceId}`;
+    case 'CHARACTER_ACTIVITY': return '#/character';
+    case 'SERVICE_NOTICE': return '#/notifications';
+  }
 }
 export function createNotificationsApi(request: ReturnType<typeof createApiClient>) {
   return {

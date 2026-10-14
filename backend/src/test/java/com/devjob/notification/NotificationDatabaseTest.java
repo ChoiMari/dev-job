@@ -11,6 +11,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
@@ -26,6 +28,8 @@ class NotificationDatabaseTest {
     @Autowired JdbcTemplate jdbc;
     @Autowired MockMvc mvc;
     @Autowired NotificationService service;
+    @Autowired NotificationEventRecorder recorder;
+    @Autowired PlatformTransactionManager transactionManager;
     long owner, other;
 
     @BeforeEach void setup() {
@@ -116,6 +120,33 @@ class NotificationDatabaseTest {
         todo(Instant.now().minusSeconds(1));
         service.deliverDue();
         assertThat(jdbc.queryForObject("select count(*) from notification where user_id=?", Long.class, owner)).isZero();
+    }
+
+    @Test void publishedNoticeReachesOnlyOptedInAccountsOnce() {
+        jdbc.update("insert into notification_preference(user_id,type,enabled) values (?,'SERVICE_NOTICE',true)", owner);
+        long noticeId = new TransactionTemplate(transactionManager).execute(status -> {
+            long id = jdbc.queryForObject("insert into service_notice(published_by,title) "
+                    + "values (?,?) returning id", Long.class, owner, "Test service notice");
+            Instant published = jdbc.queryForObject("select published_at from service_notice where id=?",
+                    Timestamp.class, id).toInstant();
+            recorder.record(NotificationType.SERVICE_NOTICE, id, published);
+            return id;
+        });
+        try {
+            assertThat(jdbc.queryForObject("select count(*) from notification where user_id=? "
+                    + "and type='SERVICE_NOTICE' and source_id=?", Long.class, owner, noticeId)).isEqualTo(1);
+            assertThat(jdbc.queryForObject("select processed_at is not null from notification_outbox "
+                    + "where type='SERVICE_NOTICE' and source_id=?", Boolean.class, noticeId)).isTrue();
+            service.deliverDue();
+            assertThat(jdbc.queryForObject("select count(*) from notification where user_id=? "
+                    + "and type='SERVICE_NOTICE' and source_id=?", Long.class, owner, noticeId)).isEqualTo(1);
+            assertThat(jdbc.queryForObject("select count(*) from notification where user_id=? "
+                    + "and type='SERVICE_NOTICE' and source_id=?", Long.class, other, noticeId)).isZero();
+        } finally {
+            jdbc.update("delete from notification where type='SERVICE_NOTICE' and source_id=?", noticeId);
+            jdbc.update("delete from notification_outbox where type='SERVICE_NOTICE' and source_id=?", noticeId);
+            jdbc.update("delete from service_notice where id=?", noticeId);
+        }
     }
 
     @Test void todoReminderRespectsSelectedLeadTimeAndDisabledValue() {

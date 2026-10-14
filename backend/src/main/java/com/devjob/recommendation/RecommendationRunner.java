@@ -1,6 +1,8 @@
 package com.devjob.recommendation;
 
 import com.devjob.documentanalysis.service.DocumentRedactor;
+import com.devjob.notification.NotificationEventRecorder;
+import com.devjob.notification.NotificationType;
 import com.devjob.recommendation.RecommendationService.Candidate;
 import com.devjob.recommendation.RecommendationService.Document;
 import com.devjob.recommendation.RecommendationService.Evidence;
@@ -27,9 +29,11 @@ public class RecommendationRunner {
     private final DocumentRedactor redactor;
     private final JdbcTemplate jdbc;
     private final ObjectMapper mapper;
+    private final NotificationEventRecorder notifications;
     public RecommendationRunner(RecommendationGateway gateway, RecommendationCipher cipher, DocumentRedactor redactor,
-            JdbcTemplate jdbc, ObjectMapper mapper) {
+            JdbcTemplate jdbc, ObjectMapper mapper, NotificationEventRecorder notifications) {
         this.gateway = gateway; this.cipher = cipher; this.redactor = redactor; this.jdbc = jdbc; this.mapper = mapper;
+        this.notifications = notifications;
     }
     public void run(long id, Instant attempt, List<Document> documents, List<Candidate> candidates) {
         try {
@@ -118,10 +122,12 @@ public class RecommendationRunner {
     public void complete(long id, Instant attempt, List<Item> items) throws Exception {
         String json = mapper.writeValueAsString(items);
         var encrypted = cipher.encrypt(id, json);
-        jdbc.update("update semantic_recommendation set status='COMPLETED',result_ciphertext=?,result_nonce=?,"
+        Instant completedAt = Instant.now();
+        int updated = jdbc.update("update semantic_recommendation set status='COMPLETED',result_ciphertext=?,result_nonce=?,"
                 + "failure_reason=null,analyzed_at=?,updated_at=? where id=? and status='PENDING' and updated_at=?",
-                encrypted.ciphertext(), encrypted.nonce(), Timestamp.from(Instant.now()), Timestamp.from(Instant.now()),
+                encrypted.ciphertext(), encrypted.nonce(), Timestamp.from(completedAt), Timestamp.from(completedAt),
                 id, Timestamp.from(attempt));
+        if (updated == 1) notifications.record(NotificationType.SEMANTIC_RECOMMENDATION, id, completedAt);
     }
     @Transactional
     public void fail(long id, Instant attempt) {

@@ -199,7 +199,11 @@ V15__create_interested_companies.sql은 interested_company만 추가한다. id B
 
 ### B13 앱 내 알림
 
-`V25__notifications.sql`은 `notification_preference`와 `notification`을 추가한다. 전자는 `(user_id, type)` PK와 필수 `enabled`를 갖고, 행이 없으면 기본값 `true`로 읽되 `SAVED_JOB_UPDATE`, `SEMANTIC_RECOMMENDATION`, `SERVICE_NOTICE`는 `false`로 읽는다. `V41__expand_notification_preferences.sql`은 설정 종류에 채용공고·분석 결과·학습·캐릭터·서비스 공지 9종을 추가한다. 이 9종은 수신 설정만 저장하며 실제 알림 생성은 기존 `INTERVIEW_REMINDER`와 `TODO_REMINDER` 두 종류에 한정한다. 후자는 BIGINT identity `id`, 필수 `user_id` FK, `type`·`source_id`·`scheduled_at`·`subject`·`created_at`, 선택 `read_at`을 갖는다. 알림 행의 종류는 `INTERVIEW_REMINDER`와 `TODO_REMINDER`만 허용한다. `(user_id, type, source_id, scheduled_at)` UNIQUE가 일정 시각별 중복을 막는다. `source_id`는 종류에 따라 `interview_schedule.id` 또는 `personal_todo.id`이며 두 테이블을 가리키므로 FK로 강제하지 않는다. 사용자·생성 시각·ID 목록 인덱스와 활성 일정 스캔용 부분 인덱스를 둔다. 기존 면접·할 일 행과 V1~V21은 변경하지 않는다.
+`V25__notifications.sql`은 `notification_preference`와 `notification`을 추가한다. 전자는 `(user_id, type)` PK와 필수 `enabled`를 갖고, 행이 없으면 기본값 `true`로 읽되 `SAVED_JOB_UPDATE`, `SEMANTIC_RECOMMENDATION`, `SERVICE_NOTICE`는 `false`로 읽는다. `V41__expand_notification_preferences.sql`은 설정 종류에 채용공고·분석 결과·학습·캐릭터·서비스 공지 9종을 추가한다. V41 단계에서는 9종의 수신 설정만 저장했으며 V42에서 실제 앱 내 알림 생성을 연결한다. 후자는 BIGINT identity `id`, 필수 `user_id` FK, `type`·`source_id`·`scheduled_at`·`subject`·`created_at`, 선택 `read_at`을 갖는다. V25에서는 면접·할 일 2종만 허용했고 V42에서 확장 9종을 추가한다. `(user_id, type, source_id, scheduled_at)` UNIQUE가 이벤트별 중복을 막는다. `source_id`는 종류별 원본 ID이며 서로 다른 테이블을 가리키므로 FK로 강제하지 않는다. 사용자·생성 시각·ID 목록 인덱스와 활성 일정 스캔용 부분 인덱스를 둔다. 기존 면접·할 일 행과 V1~V21은 변경하지 않는다.
+
+`V42__deliver_extended_notifications.sql`은 `notification.type` 허용 범위를 확장하고, `notification_preference.changed_at`으로 수신 설정 변경 시각을 기록한다. `notification_delivery_start`는 확장 알림의 최초 적용 시각 한 건, `notification_job_update`는 수집 공고의 제목·마감일·본문 변경 이벤트, `service_notice`는 관리자 게시 공지를 저장한다. `notification`의 `source_id`는 종류별 원본 ID이며 확장 종류도 기존 UNIQUE 키로 중복을 막는다. 서비스 공지 작성 계정이 삭제되면 `published_by`만 NULL로 바뀌고 공지는 공용 기록으로 유지된다.
+
+`V43__notification_outbox.sql`은 즉시 발생하는 확장 알림 8종의 `(type, source_id, occurred_at)` 이벤트를 저장한다. `processed_at`이 NULL인 행만 실패 재시도 대상으로 조회하며 조합 UNIQUE가 동일 이벤트의 재기록을 막는다. V42 적용 이후의 이벤트를 최초 한 번 이관하고, 처리 시 수신 설정·적용 시작 시각·기존 `notification` 유일 키를 확인한다. 학습 목표·면접·할 일 알림은 outbox 대상이 아니다.
 
 ### B14 의미 기반 비교·추천
 

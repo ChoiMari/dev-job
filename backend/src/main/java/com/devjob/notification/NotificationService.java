@@ -29,11 +29,13 @@ public class NotificationService {
             Map.entry("characterActivity", NotificationType.CHARACTER_ACTIVITY),
             Map.entry("serviceNotice", NotificationType.SERVICE_NOTICE));
     private final NotificationRepository repository;
+    private final ExtendedNotificationRepository expanded;
     private final TransactionTemplate transaction;
 
-    public NotificationService(NotificationRepository repository,
+    public NotificationService(NotificationRepository repository, ExtendedNotificationRepository expanded,
             org.springframework.transaction.PlatformTransactionManager manager) {
         this.repository = repository;
+        this.expanded = expanded;
         this.transaction = new TransactionTemplate(manager);
         this.transaction.setPropagationBehavior(
                 org.springframework.transaction.TransactionDefinition.PROPAGATION_REQUIRES_NEW);
@@ -99,6 +101,42 @@ public class NotificationService {
         } catch (RuntimeException failure) {
             log.warn("Notification scan failed; next scan will retry", failure);
         }
+        try {
+            for (var event : expanded.pendingLearningGoals()) {
+                try {
+                    transaction.executeWithoutResult(status -> {
+                        if (repository.enabled(event.userId(), NotificationType.LEARNING_GOAL_REMINDER))
+                            repository.create(event.userId(), NotificationType.LEARNING_GOAL_REMINDER, event);
+                    });
+                } catch (RuntimeException failure) {
+                    log.warn("Learning goal reminder {} will be retried", event.id(), failure);
+                }
+            }
+        } catch (RuntimeException failure) {
+            log.warn("Learning goal reminder scan failed", failure);
+        }
+        try {
+            for (long id : expanded.pendingOutboxIds()) {
+                try { dispatch(id); }
+                catch (RuntimeException failure) {
+                    log.warn("Notification outbox event {} will be retried", id, failure);
+                }
+            }
+        } catch (RuntimeException failure) {
+            log.warn("Notification outbox scan failed", failure);
+        }
+    }
+
+    public void dispatch(long outboxId) {
+        transaction.executeWithoutResult(status -> {
+            var event = expanded.lockOutbox(outboxId);
+            if (event == null) return;
+            for (var recipient : expanded.forEvent(event)) {
+                if (repository.enabled(recipient.userId(), event.type()))
+                    repository.create(recipient.userId(), event.type(), recipient);
+            }
+            expanded.markProcessed(outboxId);
+        });
     }
 
     private void attempt(NotificationType type, NotificationRepository.Candidate candidate) {
