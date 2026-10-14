@@ -16,5 +16,10 @@
 .market-trend-visual{display:block}.market-trend-visual svg{display:block;width:100%;height:auto;overflow:visible}.market-trend-visual text{fill:#7990bb;font-size:9px}.market-trend-legend span{display:flex;align-items:center;gap:4px}
 .market-korea-map{display:block;object-fit:contain}
 .market-unclassified{margin:0 0 2px;color:#8799b9;font-size:10px;text-align:center}
+.market-header{margin-bottom:24px}
+.market-filter-panel summary{justify-content:flex-end}
+.market-apply-button{grid-column:1/-1;justify-self:end}
+#main-content .market-page > .market-dashboard{border:1px solid #dce3f0;border-radius:10px;background:#fff;box-shadow:none}
+#main-content .market-page .market-metric{border:0;border-radius:8px;background:#f5f8ff;box-shadow:none}
 .market-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0;border:1px solid #cbdcf8;border-radius:6px;overflow:hidden;background:#f6f9ff}.market-tabs button{min-width:0;width:100%;padding:11px 8px;border:0;border-radius:0;background:transparent;color:#5974a9;text-align:center;white-space:nowrap}.market-tabs button+button{border-left:1px solid #dce8fb}.market-tabs button.is-active{background:#e7f1ff;color:#1767d5;box-shadow:inset 0 0 0 2px #3e86f5}.market-tabs button:focus-visible{outline:2px solid #174aa4;outline-offset:-4px}
 @media(max-width:550px){.market-tabs{justify-content:initial}.market-tabs button{padding:10px 3px;font-size:11px}}

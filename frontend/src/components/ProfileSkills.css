@@ -68,6 +68,8 @@
 .profile-custom-skills h3 { margin: 0 0 8px; color: #23265a; font-size: .84rem; }
 .profile-ai-candidates ul { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); gap: 7px; margin: 0; padding: 0; list-style: none; }
 .profile-ai-candidates li { display: flex; align-items: center; gap: 8px; min-width: 0; padding: 8px; border: 1px solid #e3e5f8; border-radius: 8px; }
+#main-content .profile-page .profile-skills__results > li,
+#main-content .profile-page .profile-ai-candidates li { border: 0; border-bottom: 1px dashed #dbe3f3; border-radius: 0; }
 .profile-ai-candidates li .fixed-skill-image { width: 26px; height: 26px; }
 .profile-ai-candidates { grid-column: 1 / -1; min-width: 0; padding: 20px; border: 1px solid #e3e5f8; border-radius: 12px; background: #fff; box-shadow: 0 4px 17px #465bc50b; }
 .profile-ai-candidates > p { margin: 0 0 12px; color: #69709b; font-size: .78rem; }

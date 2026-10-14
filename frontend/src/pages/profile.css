@@ -54,7 +54,7 @@
 .profile-page .profile-main-edit { margin-left: 0; border: 1px solid #6650ef; border-radius: 8px; background: #6650ef; box-shadow: none; }
 .profile-page .profile-main-edit:hover { background: #5541d5; }
 .profile-info-card, .profile-skills, .profile-skill-search { padding: 20px; border: 1px solid #e3e5f8; border-radius: 12px; background: #fff; box-shadow: 0 4px 17px #465bc50b; }
-.profile-section-head { margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid #e7eafd; }
+.profile-section-head { margin-bottom: 14px; padding-bottom: 12px; border-bottom: 0; }
 .profile-section-head h2 { color: #15194b; }
 .profile-section-head h2 .lucide-icon { color: #6650ef; }
 .profile-page button { border-color: #ded9fa; border-radius: 8px; background: #f1efff; color: #5541c0; }
@@ -76,8 +76,7 @@
 .profile-certificate-tags > span { display: inline-flex; align-items: center; gap: 5px; padding: 3px 5px 3px 9px; border: 1px solid #ded9fa; border-radius: 7px; background: #f1efff; color: #5541c0; font-size: .72rem; overflow-wrap: anywhere; }
 .profile-page .profile-certificate-tags button { min-height: 22px; padding: 0 5px; border: 0; background: transparent; font-size: .9rem; }
 .profile-page .profile-form-actions .button-primary { border-color: #6650ef; background: #6650ef; }
-.profile-banner { border: 1px solid #dcddff; border-radius: 12px; background: #bce6ff url('../assets/illustrations/profile-banner-sky.png') center 85% / cover no-repeat; box-shadow: none; }
-.profile-banner { background-size: 100% 100%; background-position: center; }
+.profile-banner { width: 100%; min-height: 180px; justify-content: flex-start; border: 1px solid #dcddff; border-radius: 0; background: #bce6ff url('../assets/illustrations/profile-banner-pixel-mint.png') center bottom / cover no-repeat; image-rendering: pixelated; box-shadow: none; }
 .profile-banner-copy { padding: 6px 10px; background: #ffffffcf; }
 .profile-banner-avatar { border-color: #d8ddf5; background: #fff; box-shadow: none; }
 .profile-banner-copy { text-shadow: none; }
@@ -91,4 +90,4 @@
 @media (max-width: 900px) { .profile-page { grid-template-columns: minmax(0, 1fr); } .profile-info-card, .profile-skills { grid-column: 1 / -1; } }
 @media (max-width: 600px) { .profile-page-header { min-height: 58px; padding: 0 4px; } .profile-page-header-art { width: 64px; height: 58px; } .profile-info-card, .profile-skills, .profile-skill-search { padding: 16px; } }
 @media (max-width: 480px) { .profile-page .profile-grid { grid-template-columns: minmax(0, 1fr); } }
-@media (max-width: 600px) { .profile-banner { background-position: 72% bottom; } }
+@media (max-width: 600px) { .profile-banner { background-position: center bottom; } }

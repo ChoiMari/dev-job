@@ -10,7 +10,7 @@ import type { OwnedSkill, Skill } from '../../api/skills';
 import { EmptyState, ErrorState, LoadingState } from '../../components/States';
 import { PixelIcon } from '../../components/PixelArt';
 import { FixedSkillImage } from '../../components/FixedSkillImage';
-import sky from '../../assets/redesign/learning-goals-sky-banner.png';
+import { skillLevelLabel } from '../../components/skillLevel';
 import './learning-goals.css';
 
 const goals = createLearningGoalsApi(apiRequest), gapApi = createSkillGapApi(apiRequest), skills = createSkillsApi(apiRequest);
@@ -126,9 +126,7 @@ export function LearningGoalsPage({ location }: { location: string }) {
 
   return <div className="learning-page">
     <header className="learning-banner">
-      <img className="learning-banner__art" src={sky} alt="" aria-hidden="true" />
-      <div className="learning-banner__copy"><span className="learning-banner__eyebrow">GROW YOUR CAREER</span>
-        <h1>역량 분석 &amp; 학습 목표</h1><p>내 기술과 채용공고를 비교하고, 부족한 기술을 학습 목표로 이어가세요.</p></div>
+      <div className="learning-banner__copy"><h1>역량 분석 &amp; 학습 목표</h1><p>내 기술과 채용공고를 비교하고, 부족한 기술을 학습 목표로 이어가세요.</p></div>
     </header>
     <section className="learning-stage" id="learning-analysis" aria-label="역량 분석 요약">
       <div className="learning-stage__head"><div><span className="learning-stage__number">1</span><h2>역량 분석 요약</h2>
@@ -161,7 +159,7 @@ export function LearningGoalsPage({ location }: { location: string }) {
         <div className="learning-analysis-grid learning-analysis-grid--lower">
           <article className="learning-panel"><h3><PixelIcon name="spark" /> 기술별 상세 분석</h3>
             {owned.length ? <ul className="learning-owned-list">{owned.slice(0, 6).map(skill => <li key={skill.id}>
-              <strong className="learning-skill-name"><FixedSkillImage name={skill.name} />{skill.name}</strong><span>{skill.proficiencyLevel === null ? '숙련도 정보 없음' : `숙련도 ${skill.proficiencyLevel}/5`}</span>
+              <strong className="learning-skill-name"><FixedSkillImage name={skill.name} />{skill.name}</strong><span>숙련도 {skillLevelLabel(skill.proficiencyLevel)}</span>
               {skill.proficiencyLevel !== null && <div className="learning-meter"><span style={{ width: `${skill.proficiencyLevel * 20}%` }} /></div>}</li>)}</ul>
               : <p className="learning-muted">보유 기술을 등록하면 여기에 표시됩니다.</p>}
           </article>

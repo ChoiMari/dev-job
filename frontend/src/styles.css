@@ -217,6 +217,10 @@ body { background: var(--background); }
 .account-avatar .pixel-icon { width: 20px; height: 20px; }
 .account-controls button { min-height: 44px; padding: 7px 12px; border: 1px solid #ded9fa; border-radius: 8px; background: #f1efff; color: #5541c0; font-size: .78rem; font-weight: 750; }
 .account-controls button:hover { background: #eeeaff; }
+.account-notifications { display: grid; place-items: center; flex: 0 0 36px; width: 36px; height: 36px; border: 1px solid #ded9fa; border-radius: 8px; background: #f1efff; color: #6650ef; text-decoration: none; }
+.account-notifications:hover { background: #eeeaff; }
+.account-notifications:focus-visible { outline: 2px solid #6650ef; outline-offset: 2px; }
+.account-notifications .lucide-icon { width: 18px; height: 18px; }
 .sidebar { position: sticky; top: 78px; height: calc(100vh - 78px); overflow-y: auto; display: flex; flex-direction: column; padding: 30px 15px 22px; background: var(--sidebar); border-color: var(--sidebar); color: var(--sidebar-text); }
 .sidebar nav { display: block; }
 .nav-group { display: grid; gap: 3px; margin-bottom: 26px; }

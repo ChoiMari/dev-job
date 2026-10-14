@@ -53,7 +53,7 @@ main#main-content:has(> .todos-calendar-page) > .page-heading { display: none; }
 .todos-dashboard-header { display: flex; align-items: center; gap: 14px; min-height: 76px; padding: 14px 20px; border: 1px solid #d5e2ff; border-radius: 13px; background: linear-gradient(90deg, #eff6ff, #fff); }
 .todos-dashboard-icon { display: grid; place-items: center; width: 42px; height: 42px; flex: 0 0 auto; border-radius: 9px; background: #e5edff; color: #365df0; }
 .todos-dashboard-icon .pixel-icon { width: 28px; height: 28px; }
-.todos-dashboard-header h2 { margin: 0; font-size: 1.12rem; color: #111c5d; }
+.todos-dashboard-header h2 { margin: 0; font-size: clamp(1.4rem, 2.3vw, 1.75rem); color: #111c5d; }
 .todos-dashboard-header p { margin: 3px 0 0; color: #6273a5; font-size: .77rem; }
 .todos-dashboard-header > a { margin-left: auto; white-space: nowrap; border-color: #345df5; background: #345df5; color: #fff; font-size: .82rem; }
 .todos-dashboard-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-items: stretch; }
