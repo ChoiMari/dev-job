@@ -46,6 +46,9 @@ public class CoverLetterService {
         String title = text(body.get("title"), 200);
         String content = text(body.get("content"), 100_000);
         var user = users.findById(userId).orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+        jdbc.queryForObject("select id from users where id=? for update", Long.class, userId);
+        if (jdbc.queryForObject("select count(*) from cover_letter where user_id=? and deleted_at is null", Long.class, userId) >= 20)
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "자기소개서는 최대 20개까지 등록할 수 있습니다.");
         var coverLetter = coverLetters.saveAndFlush(new CoverLetter(user, title));
         var encrypted = cipher.encrypt(coverLetter.getId(), 1, content);
         var version = versions.saveAndFlush(new CoverLetterVersion(coverLetter, 1, encrypted.ciphertext(), encrypted.nonce()));

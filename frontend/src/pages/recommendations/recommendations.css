@@ -45,3 +45,165 @@
 @media (max-width: 760px) { .recommendations-document-grid, .recommendations-candidate-grid { grid-template-columns: 1fr; } }
 @media (max-width: 560px) { .recommendations-hero img { width: 90px; height: 90px; } .recommendations-submit img { display: none; } }
 @media (max-width: 360px) { .recommendations-hero img { display: none; } .recommendations-search { flex-wrap: wrap; } }
+
+/* AI 공고 비교 4단계 화면 */
+.recommendations-page { --comparison-blue: #1267f6; --comparison-navy: #101d56; max-width: 1160px; gap: 12px; color: var(--comparison-navy); }
+.recommendations-hero { min-height: 92px; padding: 12px 22px; border-radius: 14px; background: linear-gradient(100deg, #f4faff 0%, #fff 58%, #effbf9 100%); overflow: hidden; }
+.recommendations-hero h1 { margin: 0 0 5px; font-size: clamp(22px, 2.7vw, 30px); line-height: 1.2; }
+.recommendations-hero p { margin: 0; color: #58669f; font-size: 13px; }
+.recommendations-hero img { width: min(44%, 430px); height: 98px; object-fit: contain; object-position: right center; }
+.recommendations-stepper { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); background: #fff; border: 1px solid #e6edfa; border-radius: 12px; overflow: hidden; }
+.recommendations-step { min-width: 0; display: flex; gap: 10px; align-items: flex-start; padding: 15px 12px; color: #777fa7; border-right: 1px solid #e6edfa; }
+.recommendations-step:last-child { border-right: 0; }
+.recommendations-step.is-active { color: var(--comparison-navy); background: #f8fbff; box-shadow: inset 0 -3px var(--comparison-blue); }
+.recommendations-step.is-done { color: #586bc3; }
+.recommendations-step-number { flex: none; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: #aab3cd; color: #fff; font-size: 13px; font-weight: 800; }
+.recommendations-step.is-active .recommendations-step-number { background: var(--comparison-blue); }
+.recommendations-step.is-done .recommendations-step-number { background: #75a7ff; }
+.recommendations-step strong, .recommendations-step small { display: block; }
+.recommendations-step strong { font-size: 13px; }
+.recommendations-step small { margin-top: 7px; color: #8993bb; font-size: 11px; line-height: 1.35; }
+.recommendations-stage { min-width: 0; }
+.recommendations-stage-heading { margin: 6px 2px 15px; }
+.recommendations-stage-heading h2 { margin: 0 0 5px; font-size: 18px; }
+.recommendations-stage-heading p { margin: 0; color: #7180ae; font-size: 13px; }
+.recommendations-document-grid { gap: 10px; }
+.recommendations-picker, .recommendations-review-card, .recommendations-consent { border: 1px solid #e1eafa; border-radius: 10px; padding: 14px; background: #fff; }
+.recommendations-picker > p { margin: 3px 0 12px; color: #7180ae; font-size: 12px; }
+.recommendations-picker-heading { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.recommendations-picker-heading h3 { display: inline-flex; align-items: center; gap: 7px; margin: 0; font-size: 15px; }
+.recommendations-picker-heading h3 .lucide-icon { flex: none; width: 18px; height: 18px; color: #6650ef; }
+.recommendations-picker-heading > div { display: flex; align-items: center; gap: 6px; }
+.recommendations-picker-heading button { padding: 7px 9px; border: 1px solid #d9e5ff; border-radius: 6px; background: #fff; color: #6c7daa; font-size: 11px; white-space: nowrap; }
+.recommendations-picker-heading a { padding: 7px 9px; border: 1px solid #d9e5ff; border-radius: 6px; text-decoration: none; color: #355aaf; font-size: 11px; white-space: nowrap; }
+.recommendations-document-list { display: grid; gap: 7px; max-height: 340px; overflow-y: auto; padding-right: 4px; }
+.recommendations-document-row { min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 8px; border: 1px solid #ebeff9; border-radius: 8px; background: #fff; }
+.recommendations-document-row.is-selected { border-color: #c7dcff; background: #f5f9ff; }
+.recommendations-document-row label { min-width: 0; display: flex; align-items: center; gap: 8px; margin: 0; cursor: pointer; }
+.recommendations-document-row input { accent-color: var(--comparison-blue); }
+.recommendations-document-row label span:last-child { min-width: 0; }
+.recommendations-document-row strong, .recommendations-document-row small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.recommendations-document-row strong { font-size: 12px; }
+.recommendations-document-row small { color: #8894ba; font-size: 10px; }
+.recommendations-document-icon { display: grid; place-items: center; width: 32px; height: 38px; flex: none; color: var(--comparison-blue); background: #eaf3ff; border-radius: 6px; font-size: 22px; }
+.recommendations-document-grid > :nth-child(2) .recommendations-document-icon { color: #8443f5; background: #f4ebff; }
+.recommendations-document-row select { width: 135px; max-width: 35%; min-height: 30px; margin: 0; border: 1px solid #dce5f8; border-radius: 6px; color: #4b5f9b; background: #fff; font-size: 11px; }
+.recommendations-document-row select:disabled { color: #a2aac1; }
+.recommendations-document-preview { margin-top: 9px; padding: 11px; border: 1px solid #e2eaff; border-radius: 8px; background: #f5f9ff; }
+.recommendations-document-preview strong { color: #265eae; font-size: 12px; }
+.recommendations-document-preview p { max-height: 76px; overflow: auto; margin: 6px 0 0; color: #6677a7; font-size: 11px; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
+.recommendations-pagination { justify-content: center; font-size: 12px; }
+.recommendations-pagination button { min-height: 30px; padding: 5px 8px; font-size: 12px; }
+.recommendations-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 14px; border: 1px solid #e0e9fb; border-radius: 9px; background: #fff; }
+.recommendations-footer > div:first-child { display: flex; gap: 12px; align-items: center; font-size: 12px; }
+.recommendations-footer > div:first-child span { color: #6978a9; }
+.recommendations-footer-actions { display: flex; gap: 8px; }
+.recommendations-footer-actions button { min-height: 34px; padding: 7px 14px; font-size: 12px; }
+.recommendations-page .button-primary { background: var(--comparison-blue); border-color: var(--comparison-blue); color: #fff; }
+.recommendations-job-tabs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; margin-bottom: 8px; }
+.recommendations-job-tabs button { padding: 10px; border: 0; border-radius: 7px; background: #eef3fd; color: #7080b8; font-weight: 700; }
+.recommendations-job-tabs button.is-active { color: #fff; background: var(--comparison-blue); }
+.recommendations-candidate-grid { display: block; }
+.recommendations-job-picker { padding: 10px; }
+.recommendations-search { margin-bottom: 8px; }
+.recommendations-search label { color: #7080a7; font-size: 0; }
+.recommendations-search input { height: 36px; border: 1px solid #dce6f8; border-radius: 6px; font-size: 12px; }
+.recommendations-search button { min-height: 36px; }
+.recommendations-options { display: grid; gap: 5px; max-height: 480px; margin: 0; }
+.recommendations-options li { border: 1px solid #e7edf8; border-radius: 7px; }
+.recommendations-options li:has(input:checked) { background: #f5f9ff; border-color: #caddff; }
+.recommendations-options label { display: grid; grid-template-columns: 22px 32px minmax(80px, 120px) minmax(0, 1fr) auto; align-items: center; gap: 9px; padding: 8px 10px; }
+.recommendations-options input { margin: 0; accent-color: var(--comparison-blue); }
+.recommendations-company-mark { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 7px; background: #e2efff; color: var(--comparison-blue); font-weight: 800; }
+.recommendations-job-company { font-size: 12px; font-weight: 700; }
+.recommendations-job-title strong { display: block; font-size: 12px; }
+.recommendations-job-title small { color: #929ec2; font-size: 10px; }
+.recommendations-job-source { padding: 5px 7px; border-radius: 5px; background: #eaf2ff; color: #4173c3; font-size: 10px; }
+.recommendations-chips { padding: 10px; margin: 8px 0; border: 1px solid #e5edfc; border-radius: 9px; background: #fff; }
+.recommendations-chips button { border: 1px solid #dce8fb; border-radius: 6px; background: #fff; font-size: 11px; }
+.recommendations-chips button span { margin-left: 7px; color: #90a0c6; }
+.recommendations-selection-count { margin: 8px 3px 0; color: #7180ae; font-size: 12px; }
+.recommendations-selection-count strong { color: var(--comparison-blue); }
+.recommendations-review-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.recommendations-review-card h3 { margin: 0 0 12px; color: #1a5eaf; font-size: 15px; }
+.recommendations-review-card p { padding: 9px 10px; margin: 5px 0; border-radius: 6px; background: #f5f8ff; font-size: 12px; }
+.recommendations-review-card button { margin-top: 8px; }
+.recommendations-consent { margin-top: 10px; background: #f5f9ff; }
+.recommendations-consent h3 { margin: 0 0 8px; color: #1a5eaf; font-size: 15px; }
+.recommendations-consent p { padding: 12px; margin: 0; border-radius: 7px; background: #eaf2ff; color: #52699e; font-size: 12px; line-height: 1.6; }
+.recommendations-consent label { display: flex; gap: 8px; align-items: flex-start; margin-top: 10px; font-size: 12px; font-weight: 700; }
+.recommendations-consent input { accent-color: var(--comparison-blue); }
+.recommendations-result-heading { padding: 15px; border: 1px solid #e1eafa; border-radius: 9px; background: #fff; }
+.recommendations-result-heading h2 { margin: 0 0 7px; font-size: 17px; }
+.recommendations-result-heading p { margin: 0; color: #7582af; font-size: 11px; }
+.recommendations-result-heading button { font-size: 11px; }
+.recommendations-result-badge { padding: 4px 7px; border-radius: 5px; background: #dff9ec; color: #168853; font-size: 11px; }
+.recommendations-status { margin: 10px 0 0; font-size: 12px; }
+.recommendations-results { gap: 9px; margin: 10px 0; }
+.recommendations-results > li { padding: 0; border-color: #dfe9f9; border-radius: 8px; background: #fff; }
+.recommendations-item-heading { display: flex; align-items: center; gap: 10px; padding: 11px 14px; }
+.recommendations-rank { display: grid; place-items: center; width: 30px; height: 38px; border-radius: 7px; background: #fff1cb; color: #9b6410; font-weight: 800; }
+.recommendations-results > li:nth-child(2) .recommendations-rank { background: #e8ebf1; color: #53617b; }
+.recommendations-item-heading > div { flex: 1; min-width: 0; }
+.recommendations-item-heading h3 { margin: 0; font-size: 14px; }
+.recommendations-item-heading h3 small { margin-left: 5px; color: #6d7cb0; font-size: 11px; font-weight: 600; }
+.recommendations-item-heading p { margin: 3px 0 0; color: #8190b9; font-size: 11px; }
+.recommendations-skill-tags { display: flex; flex-wrap: wrap; gap: 5px; padding: 0 14px 10px 54px; }
+.recommendations-skill-tags span { padding: 4px 7px; border-radius: 5px; background: #edf5ff; color: #3476d5; font-size: 10px; }
+.recommendations-item-status { padding: 5px 7px; border-radius: 5px; background: #edf5ff; color: #3476d5; font-size: 10px; white-space: nowrap; }
+.recommendations-item-heading a { padding: 6px 8px; border: 1px solid #dbe6fb; border-radius: 5px; text-decoration: none; font-size: 11px; white-space: nowrap; }
+.recommendations-evidence { display: grid; gap: 7px; padding: 0 10px 10px; }
+.recommendations-evidence-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
+.recommendations-evidence-row > div { padding: 10px; border-radius: 7px; background: #f1f7ff; }
+.recommendations-evidence-row > div:nth-child(2) { background: #f6f1ff; }
+.recommendations-evidence-row > div:nth-child(3) { background: #f0faf5; }
+.recommendations-evidence-row h4, .recommendations-item-limitations h4 { margin: 0 0 5px; font-size: 11px; }
+.recommendations-evidence-row p { margin: 0; color: #405484; font-size: 11px; line-height: 1.5; }
+.recommendations-item-limitations { margin: 0 10px 10px; padding: 10px; border-radius: 7px; background: #fff9eb; }
+.recommendations-item-limitations ul { margin: 0; padding-left: 16px; color: #79684b; font-size: 11px; }
+.recommendations-preparation { margin: 0 10px 10px; padding: 10px 12px; border: 1px solid #ffe1e9; border-radius: 7px; background: #fff6f8; }
+.recommendations-preparation h4 { margin: 0 0 6px; color: #f5275b; font-size: 12px; }
+.recommendations-preparation ul { margin: 0; padding-left: 18px; color: #465888; font-size: 11px; line-height: 1.55; }
+.recommendations-preparation li::marker { color: #e92f63; }
+.recommendations-preparation li strong { color: #c72455; }
+.recommendations-result-footer { display: flex; justify-content: space-between; gap: 10px; padding: 10px; color: #7381aa; font-size: 12px; }
+.recommendations-page .button-primary, .recommendations-job-tabs button.is-active, .recommendations-step.is-active .recommendations-step-number { border-color: #6650ef; background: #6650ef; }
+.recommendations-step.is-active { box-shadow: inset 0 -3px #6650ef; }
+.recommendations-document-row input, .recommendations-options input, .recommendations-consent input { accent-color: #6650ef; }
+.recommendations-history { display: grid; justify-items: end; gap: 7px; }
+.recommendations-history > button { display: inline-flex; align-items: center; gap: 5px; min-height: 34px; padding: 5px 8px; border: 0; border-radius: 6px; background: transparent; color: #5140ba; font-size: 12px; font-weight: 750; cursor: pointer; }
+.recommendations-history > button:hover { background: #eeeaff; }
+.recommendations-history > button:focus-visible { outline: 2px solid #6650ef; outline-offset: 2px; }
+.recommendations-history > button .lucide-icon { width: 15px; height: 15px; }
+.recommendations-history-panel { width: 100%; padding: 12px; border: 1px solid #e3def8; border-radius: 9px; background: #fff; }
+.recommendations-history-panel > p { margin: 6px; color: #6b7197; }
+.recommendations-history-panel ul { margin: 0; padding: 0; list-style: none; }
+.recommendations-history-panel li + li { border-top: 1px solid #edf0f9; }
+.recommendations-history-panel li a { display: flex; align-items: center; gap: 12px; padding: 10px 6px; text-decoration: none; }
+.recommendations-history-panel li a strong { flex: 1; }
+.recommendations-history-panel li a span { color: #69739a; font-size: 12px; }
+.recommendations-history-pages { display: flex; align-items: center; justify-content: center; gap: 12px; padding-top: 10px; font-size: 12px; }
+.recommendations-history-pages button { min-height: 30px; }
+.recommendations-pending { display: grid; gap: 12px; }
+.recommendations-pending-card { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: center; gap: 20px; min-height: 250px; padding: 20px; border: 1px solid #e4edfb; border-radius: 10px; background: #f1f9ff; }
+.recommendations-pending-card > img { width: 100%; max-height: 210px; object-fit: contain; }
+.recommendations-pending-copy { display: grid; justify-items: start; gap: 10px; }
+.recommendations-pending-pill { padding: 5px 10px; border-radius: 20px; background: #e0efff; color: #2573d2; font-size: 12px; font-weight: 800; }
+.recommendations-pending-copy h2 { margin: 0; font-size: 21px; }
+.recommendations-pending-copy p { margin: 0; color: #6575a4; font-size: 13px; line-height: 1.55; }
+.recommendations-pending-counts { display: flex; flex-wrap: wrap; gap: 10px; width: 100%; }
+.recommendations-pending-counts span { flex: 1; min-width: 110px; padding: 10px; border: 1px solid #e0e8fa; border-radius: 7px; background: #fff; color: #425788; font-size: 12px; font-weight: 700; }
+.recommendations-pending-copy button { justify-self: center; border-color: #c9bfff; color: #5140ba; background: #fff; }
+.recommendations-pending-copy small { color: #7985ad; font-size: 11px; }
+.recommendations-pending-selected { padding: 14px; border: 1px solid #e2eafb; border-radius: 9px; background: #fff; }
+.recommendations-pending-selected h3 { margin: 0 0 10px; font-size: 14px; }
+.recommendations-pending-selected > div { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.recommendations-pending-selected section { min-width: 0; max-height: 170px; overflow: auto; padding: 12px; border-radius: 7px; background: #f5faff; }
+.recommendations-pending-selected section:nth-child(2) { background: #f4fbf8; }
+.recommendations-pending-selected h4 { margin: 0 0 8px; font-size: 12px; }
+.recommendations-pending-selected p { margin: 5px 0; padding: 8px; border-radius: 5px; background: #fff; font-size: 12px; }
+.recommendations-pending-back { justify-self: start; font-size: 12px; }
+@media (max-width: 760px) { .recommendations-pending-card { grid-template-columns: 1fr; } .recommendations-pending-card > img { max-height: 180px; } }
+@media (max-width: 560px) { .recommendations-pending-selected > div { grid-template-columns: 1fr; } }
+@media (max-width: 760px) { .recommendations-hero { padding: 12px; } .recommendations-hero img { width: 34%; height: 90px; } .recommendations-step { padding: 10px 7px; gap: 5px; } .recommendations-step small { display: none; } .recommendations-document-grid { grid-template-columns: 1fr; } .recommendations-review-grid { grid-template-columns: 1fr; } }
+@media (max-width: 560px) { .recommendations-hero img { width: 95px; height: 80px; display: block; } .recommendations-hero p { font-size: 11px; } .recommendations-step { flex-direction: column; align-items: center; text-align: center; } .recommendations-step strong { font-size: 10px; } .recommendations-options label { grid-template-columns: 20px 30px minmax(0, 1fr) auto; } .recommendations-job-company { display: none; } .recommendations-evidence-row { grid-template-columns: 1fr; } .recommendations-footer { flex-wrap: wrap; } .recommendations-footer-actions { width: 100%; justify-content: flex-end; } }

@@ -35,6 +35,16 @@
 .dashboard-skills { display: flex; flex-wrap: wrap; gap: 8px; padding: 0; list-style: none; }
 .dashboard-skills li { padding: 8px 12px; background: var(--accent); border-radius: 8px; font-weight: 650; }
 .dashboard-note { font-size: .78rem; margin: 15px 0 0; }
+.dashboard-recommendations-empty { display: grid; justify-items: center; gap: 12px; padding: 22px 16px 24px; border-radius: 12px; background: #f8faff; text-align: center; }
+.dashboard-recommendations-empty > img { display: block; width: min(100%, 340px); height: auto; max-height: 180px; object-fit: contain; }
+.dashboard-recommendations-empty h3 { margin: 0; color: #121d56; font-size: clamp(1.15rem, 1.8vw, 1.55rem); line-height: 1.35; letter-spacing: -.035em; }
+.dashboard-recommendations-empty p { margin: 0; color: #6979ad; font-size: .9rem; line-height: 1.55; }
+.dashboard-recommendations-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; width: 100%; margin-top: 4px; }
+.dashboard-recommendations-actions a { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 42px; padding: 9px 13px; border: 1px solid #d5dbf4; border-radius: 9px; color: #42558e; background: #fff; font-size: .82rem; font-weight: 750; text-decoration: none; }
+.dashboard-recommendations-actions a:hover { border-color: #6650ef; }
+.dashboard-recommendations-actions .dashboard-recommendations-primary { border-color: #6650ef; background: #6650ef; color: #fff; }
+.dashboard-recommendations-actions .dashboard-recommendations-primary:hover { background: #523cd9; }
+.dashboard-recommendations-actions .lucide-icon { width: 17px; height: 17px; }
 @media (max-width: 900px) { .dashboard-hero { grid-template-columns: 1fr; } .dashboard-hero-art { height: 220px; min-height: 0; object-position: center 53%; } .dashboard-content-grid { grid-template-columns: 1fr; } }
 @media (max-width: 650px) { .dashboard-page { gap: 16px; } .dashboard-hero-art { height: 180px; } .dashboard-hero-copy { padding: 22px; } .dashboard-quick-links { grid-template-columns: 1fr; gap: 10px; } .dashboard-panel { padding: 22px 18px; } .dashboard-list li { flex-direction: column; } }
 @media (max-width: 370px) { .dashboard-hero-metrics { grid-template-columns: 1fr; } .dashboard-hero-metric { min-height: 0; } }

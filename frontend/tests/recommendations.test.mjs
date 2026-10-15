@@ -5,9 +5,11 @@ import { createRecommendationsApi, validateRecommendationRequest } from '../src/
 
 const now = '2026-10-10T03:00:00Z';
 const item = { kind: 'COLLECTED', id: 10, title: '공고', status: 'COMPLETED', reason: null, rank: 1,
-  evidence: [{ documentQuote: '경험', jobQuote: '업무', explanation: '관련 경험' }], limitations: ['연수 확인 불가'] };
+  companyName: '회사', location: '서울', deadlineDate: '2026-10-22', skillTags: ['Java'],
+  evidence: [{ documentQuote: '경험', jobQuote: '업무', explanation: '관련 경험' }], limitations: ['연수 확인 불가'],
+  preparationTips: [{ type: 'CHECK', basisQuote: '업무', text: '담당 업무 범위를 확인하세요.' }] };
 const result = { id: 4, status: 'COMPLETED', stale: false, failureReason: null, consentedAt: now,
-  analyzedAt: now, policyVersion: 'B14_V1', modelName: 'model', resumeVersionId: 3,
+  analyzedAt: now, policyVersion: 'B14_V2', modelName: 'model', resumeVersionId: 3,
   coverLetterVersionId: null, candidateCount: 1, items: [item], page: 0, size: 20,
   totalElements: 1, limitation: '입력 원문이 잘릴 수 있습니다.' };
 const input = candidates => ({ resumeVersionId: 3, coverLetterVersionId: null,
@@ -50,6 +52,15 @@ test('result detail route reads the by-id GET without creating a new comparison'
   assert.deepEqual(urls, ['/api/me/recommendations/jobs/4?page=0&size=20']);
 });
 
+test('history lists saved requests without starting a new comparison', async () => {
+  const urls = [];
+  const history = { items: [{ id: 4, status: 'PENDING', consentedAt: now, analyzedAt: null,
+    candidateCount: 2, resumeVersionId: 3, coverLetterVersionId: null }], page: 0, size: 10, totalElements: 1 };
+  const api = createRecommendationsApi(createApiClient('/api', async url => { urls.push(url); return json(history); }));
+  assert.deepEqual(await api.history(), history);
+  assert.deepEqual(urls, ['/api/me/recommendations/jobs/history?page=0&size=10']);
+});
+
 test('empty and maximum-size selections reach POST unchanged', async () => {
   const sent = [];
   const api = createRecommendationsApi(createApiClient('/api', async (url, options) => {
@@ -88,4 +99,9 @@ test('404 and 503 remain distinguishable, and malformed stored data is rejected'
   }
   const api = createRecommendationsApi(async () => ({ ...result, items: [{ ...item, rank: '1' }] }));
   await assert.rejects(api.get(4), { code: 'INVALID_RESPONSE' });
+  const missingTags = createRecommendationsApi(async () => ({ ...result, items: [{ ...item, skillTags: undefined }] }));
+  await assert.rejects(missingTags.get(4), { code: 'INVALID_RESPONSE' });
+  const invalidTip = createRecommendationsApi(async () => ({ ...result, items: [{ ...item,
+    preparationTips: [{ type: 'PREDICT', basisQuote: '업무', text: '합격 가능' }] }] }));
+  await assert.rejects(invalidTip.get(4), { code: 'INVALID_RESPONSE' });
 });

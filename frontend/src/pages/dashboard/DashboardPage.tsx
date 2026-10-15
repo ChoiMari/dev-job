@@ -6,12 +6,14 @@ import type { Dashboard } from '../../api/dashboard';
 import type { CurrentUser } from '../../api/auth';
 import type { ApplicationStatus } from '../../api/application-status';
 import dashboardDesk from '../../assets/illustrations/dashboard-desk.png';
+import recommendationEmptyArt from '../../assets/illustrations/dashboard-recommendations-empty.png';
 import dashboardScene from '../../assets/redesign/cur-16-dashboard-developer.png';
 import profileArt from '../../assets/redesign/cur-17-dashboard-profile.png';
 import projectArt from '../../assets/redesign/cur-18-dashboard-projects.png';
 import analysisArt from '../../assets/redesign/cur-19-dashboard-skills.png';
 import nextActionArt from '../../assets/redesign/cur-03-next-action.png';
 import { EmptyState, ErrorState, LoadingState } from '../../components/States';
+import { LucideIcon } from '../../components/LucideIcon';
 import './dashboard.css';
 
 const api = createDashboardApi(apiRequest);
@@ -79,7 +81,15 @@ export function DashboardPage({ user }: { user: CurrentUser }) {
       {data.recommendedJobs.length ? <ul className="dashboard-list">{data.recommendedJobs.map(job => <li key={job.id}>
         <a href={`#/jobs/${job.id}`}><strong>{job.title}</strong><span>{job.company.name}</span></a>
         <span>기술 적합도 {job.matchRate}%{job.deadlineDate ? ` · 마감 ${job.deadlineDate}` : ''}</span>
-      </li>)}</ul> : <EmptyState title="추천할 공고가 없습니다." message="기술을 등록하고 공고 분석이 완료되면 적합도에 맞는 공고를 볼 수 있습니다." />}
+      </li>)}</ul> : <div className="dashboard-recommendations-empty" role="status">
+        <img src={recommendationEmptyArt} alt="" aria-hidden="true" />
+        <h3>추천할 공고가 없습니다.</h3>
+        <p>기술을 등록하고 공고 분석이 완료되면<br />적합도에 맞는 공고를 볼 수 있습니다.</p>
+        <div className="dashboard-recommendations-actions">
+          <a className="dashboard-recommendations-primary" href="#/profile"><LucideIcon name="cog" />내 기술 등록하기</a>
+          <a className="dashboard-recommendations-secondary" href="#/jobs"><LucideIcon name="fileText" />공고 둘러보기</a>
+        </div>
+      </div>}
       <p className="dashboard-note">기술 적합도는 등록한 기술과 분석된 공고 기술의 일치 비율이며 합격 가능성을 뜻하지 않습니다.</p></section>
     </div>
     <section className="card dashboard-panel dashboard-todo-panel"><div className="dashboard-section-heading"><div className="dashboard-heading-title"><img src={nextActionArt} alt="" aria-hidden="true" /><div><span className="eyebrow">MY TO-DO</span><h2>내가 등록한 할 일</h2></div></div><a href="#/todos">할 일 관리 ↗</a></div>

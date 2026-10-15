@@ -149,4 +149,16 @@ class ResumeDatabaseTest {
                 .andExpect(status().isBadRequest()).andExpect(content().string(not(containsString(SECRET))));
         assertThat(output.getAll()).doesNotContain(SECRET);
     }
+    @Test void limitsActiveResumesToTwentyAndAllowsReplacementAfterDelete() throws Exception {
+        long first = 0;
+        for (int i = 0; i < 20; i++) {
+            long id = create("이력서 본문 " + i);
+            if (i == 0) first = id;
+        }
+        mvc.perform(post("/api/me/resumes").with(as(owner)).with(csrf()).contentType("application/json")
+                .content("{\"title\":\"초과\",\"content\":\"본문\"}"))
+                .andExpect(status().isConflict());
+        mvc.perform(delete("/api/me/resumes/" + first).with(as(owner)).with(csrf())).andExpect(status().isNoContent());
+        create("대체 이력서");
+    }
 }

@@ -22,6 +22,11 @@ public class RecommendationController {
             @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size) {
         return service.get(user.id(), requestId, page, size);
     }
+    @GetMapping("/history")
+    public RecommendationService.HistoryPage history(@AuthenticationPrincipal CurrentUser user,
+            @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
+        return service.history(user.id(), page, size);
+    }
     @GetMapping("/{id}")
     public RecommendationService.Page get(@AuthenticationPrincipal CurrentUser user, @PathVariable long id,
             @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size) {

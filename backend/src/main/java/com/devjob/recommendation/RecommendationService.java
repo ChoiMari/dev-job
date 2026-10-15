@@ -12,7 +12,10 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -28,19 +31,27 @@ import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class RecommendationService {
-    private static final String POLICY_VERSION = "B14_V1";
+    private static final String POLICY_VERSION = "B14_V2";
     private static final String MODEL_NAME = "gpt-5.4-mini";
     public record Candidate(String kind, long id, String title, String description, Instant updatedAt,
             LocalDate deadlineDate, boolean applied, String status, String reason) { }
     public record Document(String kind, long documentId, long versionId, String content, boolean stale) { }
     public record Item(String kind, long id, String title, String status, String reason, Integer rank,
-            List<Evidence> evidence, List<String> limitations) { }
+            List<Evidence> evidence, List<String> limitations, List<PreparationTip> preparationTips) { }
+    public record PreparationTip(String type, String basisQuote, String text) { }
+    public record DisplayItem(String kind, long id, String title, String status, String reason, Integer rank,
+            List<Evidence> evidence, List<String> limitations, String companyName, String location,
+            LocalDate deadlineDate, List<String> skillTags, List<PreparationTip> preparationTips) { }
+    private record DisplayMeta(String companyName, String location, LocalDate deadlineDate, List<String> skillTags) { }
     public record Evidence(String documentQuote, String jobQuote, String explanation) { }
     public record Page(long id, String status, boolean stale, String failureReason, Instant consentedAt,
             Instant analyzedAt, String policyVersion, String modelName, Long resumeVersionId,
-            Long coverLetterVersionId, int candidateCount, List<Item> items, int page, int size, int totalElements,
+            Long coverLetterVersionId, int candidateCount, List<DisplayItem> items, int page, int size, int totalElements,
             String limitation) { }
     public record RequestResult(Page body, boolean accepted) { }
+    public record HistoryItem(long id, String status, Instant consentedAt, Instant analyzedAt,
+            int candidateCount, Long resumeVersionId, Long coverLetterVersionId) { }
+    public record HistoryPage(List<HistoryItem> items, int page, int size, long totalElements) { }
     private record Row(long id, long userId, Long resumeVersionId, Long coverVersionId, String status,
             String policyVersion, String modelName, String candidates, byte[] ciphertext, byte[] nonce, String failureReason, Instant consentedAt,
             Instant analyzedAt, Instant updatedAt) { }
@@ -141,6 +152,18 @@ public class RecommendationService {
         if (id < 1 || page < 0 || size < 1 || size > 100 || (long) page * size > Integer.MAX_VALUE) bad();
         return page(rowFor(userId, id), page, size);
     }
+    @Transactional(readOnly = true)
+    public HistoryPage history(long userId, int page, int size) {
+        if (page < 0 || size < 1 || size > 50 || (long) page * size > Integer.MAX_VALUE) bad();
+        long total = jdbc.queryForObject("select count(*) from semantic_recommendation where user_id=?", Long.class, userId);
+        var items = jdbc.query("select id,status,consented_at,analyzed_at,jsonb_array_length(candidates),"
+                + "resume_version_id,cover_letter_version_id from semantic_recommendation where user_id=? "
+                + "order by consented_at desc,id desc limit ? offset ?", (rs, n) -> new HistoryItem(
+                rs.getLong(1), rs.getString(2), rs.getTimestamp(3).toInstant(),
+                rs.getTimestamp(4) == null ? null : rs.getTimestamp(4).toInstant(), rs.getInt(5),
+                rs.getObject(6, Long.class), rs.getObject(7, Long.class)), userId, size, page * size);
+        return new HistoryPage(items, page, size, total);
+    }
     private Page page(Row row, int page, int size) {
         var candidates = parseCandidates(row.candidates());
         List<Item> items;
@@ -149,14 +172,74 @@ public class RecommendationService {
                 items = mapper.readerForListOf(Item.class).readValue(cipher.decrypt(row.id(), row.ciphertext(), row.nonce()));
             } catch (Exception exception) { throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE); }
         } else items = candidates.stream().map(c -> new Item(c.kind(), c.id(), c.title(),
-                "FAILED".equals(row.status()) ? "FAILED" : "PENDING", null, null, List.of(), List.of())).toList();
+                "FAILED".equals(row.status()) ? "FAILED" : "PENDING", null, null, List.of(), List.of(), List.of())).toList();
         int from = (int) Math.min(items.size(), (long) page * size);
         int to = Math.min(items.size(), from + size);
         return new Page(row.id(), row.status(), stale(row), row.failureReason(), row.consentedAt(), row.analyzedAt(),
                 row.policyVersion(), row.modelName(), row.resumeVersionId(), row.coverVersionId(),
-                candidates.size(), items.subList(from, to), page, size, items.size(),
+                candidates.size(), displayItems(row.userId(), items.subList(from, to)), page, size, items.size(),
                 "AI가 제공된 텍스트에서 찾은 근거로 정렬한 참고 결과이며 합격 확률이나 채용 결과 예측이 아닙니다. "
                         + "문서는 각 12,000자, 공고 본문은 각 4,000자로 잘릴 수 있으며 누락 정보와 AI 오류가 있을 수 있습니다.");
+    }
+    private List<DisplayItem> displayItems(long userId, List<Item> items) {
+        if (items.isEmpty()) return List.of();
+        Map<String, DisplayMeta> metadata = new HashMap<>();
+        var collected = items.stream().filter(i -> "COLLECTED".equals(i.kind())).map(Item::id).distinct().toList();
+        var manual = items.stream().filter(i -> "MANUAL".equals(i.kind())).map(Item::id).distinct().toList();
+        if (!collected.isEmpty()) {
+            String placeholders = String.join(",", Collections.nCopies(collected.size(), "?"));
+            jdbc.query("select j.id,c.name,j.location,j.deadline_date from job_posting j join company c on c.id=j.company_id "
+                    + "where j.id in (" + placeholders + ")", rs -> {
+                metadata.put("COLLECTED:" + rs.getLong(1), new DisplayMeta(rs.getString(2), rs.getString(3),
+                        rs.getObject(4, LocalDate.class), List.of()));
+            }, collected.toArray());
+            Map<Long, LinkedHashSet<String>> tags = new HashMap<>();
+            jdbc.query("select js.job_posting_id,s.name from job_skill js join skill s on s.id=js.skill_id "
+                    + "join ai_analysis a on a.job_posting_id=js.job_posting_id and a.status='COMPLETED' "
+                    + "where js.job_posting_id in (" + placeholders + ") "
+                    + "order by js.job_posting_id,case js.requirement_type when 'REQUIRED' then 0 else 1 end,s.name", rs -> {
+                tags.computeIfAbsent(rs.getLong(1), ignored -> new LinkedHashSet<>()).add(rs.getString(2));
+            }, collected.toArray());
+            for (long id : collected) {
+                String key = "COLLECTED:" + id;
+                DisplayMeta meta = metadata.get(key);
+                if (meta != null) metadata.put(key, new DisplayMeta(meta.companyName(), meta.location(),
+                        meta.deadlineDate(), List.copyOf(tags.getOrDefault(id, new LinkedHashSet<>()))));
+            }
+        }
+        if (!manual.isEmpty()) {
+            String placeholders = String.join(",", Collections.nCopies(manual.size(), "?"));
+            List<Object> args = new ArrayList<>(); args.add(userId); args.addAll(manual);
+            jdbc.query("select p.id,p.company_name,p.location,p.deadline_date from personal_saved_job p "
+                    + "where p.user_id=? and p.deleted_at is null and p.id in (" + placeholders + ")", rs -> {
+                metadata.put("MANUAL:" + rs.getLong(1), new DisplayMeta(rs.getString(2), rs.getString(3),
+                        rs.getObject(4, LocalDate.class), List.of()));
+            }, args.toArray());
+            jdbc.query("select a.personal_saved_job_id,a.result_json::text from personal_saved_job_analysis a "
+                    + "join personal_saved_job p on p.id=a.personal_saved_job_id "
+                    + "where p.user_id=? and p.deleted_at is null and a.status='COMPLETED' "
+                    + "and a.personal_saved_job_id in (" + placeholders + ")", rs -> {
+                String key = "MANUAL:" + rs.getLong(1);
+                DisplayMeta meta = metadata.get(key);
+                if (meta == null) return;
+                try {
+                    JsonNode result = mapper.readTree(rs.getString(2));
+                    LinkedHashSet<String> tags = new LinkedHashSet<>();
+                    for (String field : List.of("requiredSkills", "preferredSkills"))
+                        for (JsonNode skill : result.path(field)) if (skill.isTextual()) tags.add(skill.textValue());
+                    metadata.put(key, new DisplayMeta(meta.companyName(), meta.location(), meta.deadlineDate(),
+                            List.copyOf(tags)));
+                } catch (Exception ignored) { /* Metadata must not prevent reading a saved comparison. */ }
+            }, args.toArray());
+        }
+        return items.stream().map(item -> {
+            DisplayMeta meta = metadata.get(item.kind() + ":" + item.id());
+            return new DisplayItem(item.kind(), item.id(), item.title(), item.status(), item.reason(), item.rank(),
+                    item.evidence(), item.limitations(), meta == null ? null : meta.companyName(),
+                    meta == null ? null : meta.location(), meta == null ? null : meta.deadlineDate(),
+                    meta == null ? List.of() : meta.skillTags(),
+                    item.preparationTips() == null ? List.of() : item.preparationTips());
+        }).toList();
     }
     private boolean stale(Row row) {
         if (row.resumeVersionId() != null && jdbc.queryForObject("""

@@ -64,9 +64,12 @@ class RecommendationDatabaseTest {
                 "B14_" + run.replace("-", "").toUpperCase());
         long company = jdbc.queryForObject("insert into company(name) values ('B14') returning id", Long.class);
         long job = jdbc.queryForObject("""
-                insert into job_posting(job_source_id,company_id,external_id,title,description,source_url,created_at,updated_at)
-                values (?,?,?,'백엔드 개발','Java 서비스 개발','https://example.com/b14',now(),now()) returning id
+                insert into job_posting(job_source_id,company_id,external_id,title,description,location,deadline_date,source_url,created_at,updated_at)
+                values (?,?,?,'백엔드 개발','Java 서비스 개발','서울','2099-12-31','https://example.com/b14',now(),now()) returning id
                 """, Long.class, source, company, run);
+        jdbc.update("insert into ai_analysis(job_posting_id,status,updated_at) values (?,'COMPLETED',now())", job);
+        jdbc.update("insert into job_skill(job_posting_id,skill_id,requirement_type) "
+                + "select ?,id,'REQUIRED' from skill where normalized_name='java'", job);
         long manual = jdbc.queryForObject("""
                 insert into personal_saved_job(user_id,url,company_name,title,description,created_at,updated_at)
                 values (?,'https://example.com/manual','B14','개인 공고',null,now(),now()) returning id
@@ -75,7 +78,9 @@ class RecommendationDatabaseTest {
         when(gateway.compare(anyString())).thenReturn("""
                 {"items":[{"kind":"COLLECTED","id":JOB,"rank":1,"evidence":[
                 {"documentQuote":"Java 서버","jobQuote":"Java 서비스","explanation":"경험 관련성"}],
-                "limitations":["공고에 경력 연수 없음"]}]}
+                "limitations":["공고에 경력 연수 없음"],
+                "preparationTips":[{"type":"CHECK","basisQuote":"Java 서비스",
+                  "text":"요구하는 서비스 운영 범위를 확인하세요."}]}]}
                 """.replace("JOB", Long.toString(job)));
         String body = "{\"resumeVersionId\":" + version + ",\"coverLetterVersionId\":null,"
                 + "\"candidates\":[{\"kind\":\"COLLECTED\",\"id\":" + job + "},"
@@ -84,8 +89,12 @@ class RecommendationDatabaseTest {
         long id = response(post("/api/me/recommendations/jobs").with(as(owner)).with(csrf())
                 .contentType("application/json").content(body)).path("id").asLong();
         JsonNode result = await(owner, id, "COMPLETED");
+        assertThat(response(get("/api/me/recommendations/jobs/history").with(as(owner)))
+                .path("items").get(0).path("id").asLong()).isEqualTo(id);
+        assertThat(response(get("/api/me/recommendations/jobs/history").with(as(other)))
+                .path("items").isEmpty()).isTrue();
         assertThat(result.path("candidateCount").asInt()).isEqualTo(2);
-        assertThat(result.path("policyVersion").asText()).isEqualTo("B14_V1");
+        assertThat(result.path("policyVersion").asText()).isEqualTo("B14_V2");
         assertThat(result.path("resumeVersionId").asLong()).isEqualTo(version);
         assertThat(jdbc.queryForObject("select model_name from semantic_recommendation where id=?", String.class, id))
                 .isEqualTo("gpt-5.4-mini");
@@ -94,7 +103,14 @@ class RecommendationDatabaseTest {
         assertThat(jdbc.queryForObject("select result_ciphertext from semantic_recommendation where id=?", byte[].class, id))
                 .isNotEmpty();
         assertThat(result.path("items").get(0).path("rank").asInt()).isEqualTo(1);
+        assertThat(result.path("items").get(0).path("companyName").asText()).isEqualTo("B14");
+        assertThat(result.path("items").get(0).path("location").asText()).isEqualTo("서울");
+        assertThat(result.path("items").get(0).path("deadlineDate").asText()).isEqualTo("2099-12-31");
+        assertThat(result.path("items").get(0).path("skillTags").get(0).asText()).isEqualTo("Java");
+        assertThat(result.path("items").get(0).path("preparationTips").get(0).path("type").asText()).isEqualTo("CHECK");
         assertThat(result.path("items").get(1).path("status").asText()).isEqualTo("INSUFFICIENT_INPUT");
+        assertThat(result.path("items").get(1).path("skillTags").isEmpty()).isTrue();
+        assertThat(result.path("items").get(1).path("preparationTips").isEmpty()).isTrue();
         mvc.perform(get("/api/me/recommendations/jobs").with(as(other)).param("requestId", Long.toString(id)))
                 .andExpect(status().isNotFound());
         mvc.perform(get("/api/jobs/" + job + "/match").with(as(owner))).andExpect(status().isConflict());
@@ -134,12 +150,16 @@ class RecommendationDatabaseTest {
                 insert into personal_saved_job(user_id,url,company_name,title,description,created_at,updated_at)
                 values (?,'https://example.com/failure','B14','개인 공고','Java 서비스 개발',now(),now()) returning id
                 """, Long.class, owner.getId());
+        jdbc.update("insert into personal_saved_job_analysis(personal_saved_job_id,status,result_json,analyzed_at,updated_at) "
+                + "values (?,'COMPLETED','{\"requiredSkills\":[\"Java\"],\"preferredSkills\":[]}'::jsonb,now(),now())", manual);
         when(gateway.available()).thenReturn(true);
         when(gateway.compare(anyString())).thenThrow(new IllegalStateException("provider down"))
                 .thenReturn("""
                 {"items":[{"kind":"MANUAL","id":JOB,"rank":1,"evidence":[
                 {"documentQuote":"Java 서버","jobQuote":"Java 서비스","explanation":"관련 경험"}],
-                "limitations":["경력 기간 미상"]}]}
+                "limitations":["경력 기간 미상"],
+                "preparationTips":[{"type":"IMPROVE","basisQuote":"Java 서버",
+                  "text":"문서에 운영 경험을 구체적으로 표현할지 확인하세요."}]}]}
                 """.replace("JOB", Long.toString(manual)));
         String body = "{\"resumeVersionId\":null,\"coverLetterVersionId\":" + cover.path("latestVersionId").asLong()
                 + ",\"candidates\":[{\"kind\":\"MANUAL\",\"id\":" + manual
@@ -151,7 +171,9 @@ class RecommendationDatabaseTest {
         mvc.perform(get("/api/me/saved-jobs/" + manual).with(as(owner))).andExpect(status().isOk());
         mvc.perform(post("/api/me/recommendations/jobs").with(as(owner)).with(csrf())
                 .contentType("application/json").content(body)).andExpect(status().isAccepted());
-        assertThat(await(owner, id, "COMPLETED").path("items").get(0).path("rank").asInt()).isEqualTo(1);
+        JsonNode completed = await(owner, id, "COMPLETED");
+        assertThat(completed.path("items").get(0).path("rank").asInt()).isEqualTo(1);
+        assertThat(completed.path("items").get(0).path("skillTags").get(0).asText()).isEqualTo("Java");
         verify(gateway, times(2)).compare(argThat(prompt -> !prompt.contains("010-1234-5678")));
         mvc.perform(delete("/api/me/saved-jobs/" + manual).with(as(owner)).with(csrf()))
                 .andExpect(status().isNoContent());

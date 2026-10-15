@@ -46,6 +46,9 @@ public class ResumeService {
         String title = text(body.get("title"), 200);
         String content = text(body.get("content"), 100_000);
         var user = users.findById(userId).orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+        jdbc.queryForObject("select id from users where id=? for update", Long.class, userId);
+        if (jdbc.queryForObject("select count(*) from resume where user_id=? and deleted_at is null", Long.class, userId) >= 20)
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "이력서는 최대 20개까지 등록할 수 있습니다.");
         var resume = resumes.saveAndFlush(new Resume(user, title));
         var encrypted = cipher.encrypt(resume.getId(), 1, content);
         var version = versions.saveAndFlush(new ResumeVersion(resume, 1, encrypted.ciphertext(), encrypted.nonce()));

@@ -9,13 +9,19 @@ export type RecommendationRequest = {
   consentToExternalComparison: true;
 };
 export type RecommendationEvidence = { documentQuote: string; jobQuote: string; explanation: string };
+export type RecommendationPreparationTip = { type: 'CHECK' | 'IMPROVE'; basisQuote: string; text: string };
 export type RecommendationItem = JobCandidate & {
   title: string;
+  companyName: string | null;
+  location: string | null;
+  deadlineDate: string | null;
+  skillTags: string[];
   status: 'PENDING' | 'COMPLETED' | 'FAILED' | 'INSUFFICIENT_INPUT' | 'EXCLUDED';
   reason: string | null;
   rank: number | null;
   evidence: RecommendationEvidence[];
   limitations: string[];
+  preparationTips: RecommendationPreparationTip[];
 };
 export type RecommendationPage = {
   id: number; status: 'PENDING' | 'COMPLETED' | 'FAILED'; stale: boolean;
@@ -25,12 +31,15 @@ export type RecommendationPage = {
   candidateCount: number; items: RecommendationItem[];
   page: number; size: number; totalElements: number; limitation: string;
 };
+export type RecommendationHistoryItem = Pick<RecommendationPage, 'id' | 'status' | 'consentedAt' | 'analyzedAt' | 'candidateCount' | 'resumeVersionId' | 'coverLetterVersionId'>;
+export type RecommendationHistoryPage = { items: RecommendationHistoryItem[]; page: number; size: number; totalElements: number };
 
 const record = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v);
 const positive = (v: unknown): v is number => typeof v === 'number' && Number.isSafeInteger(v) && v > 0;
 const nonnegative = (v: unknown): v is number => typeof v === 'number' && Number.isSafeInteger(v) && v >= 0;
 const nullableId = (v: unknown) => v === null || positive(v);
 const nullableText = (v: unknown) => v === null || typeof v === 'string';
+const nullableDate = (v: unknown) => v === null || (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v));
 const date = (v: unknown) => typeof v === 'string' && !Number.isNaN(Date.parse(v));
 const candidate = (v: unknown): v is JobCandidate => record(v) && (v.kind === 'COLLECTED' || v.kind === 'MANUAL') && positive(v.id);
 const invalid = (): never => { throw new ApiError('추천 결과 응답을 확인할 수 없습니다.', 200, 'INVALID_RESPONSE'); };
@@ -38,11 +47,16 @@ function isRecommendationItem(item: unknown): item is RecommendationItem {
   if (!record(item) || !candidate(item)) return false;
   const fields = item as Record<string, unknown>;
   return typeof fields.title === 'string'
+    && nullableText(fields.companyName) && nullableText(fields.location) && nullableDate(fields.deadlineDate)
+    && Array.isArray(fields.skillTags) && fields.skillTags.every((s: unknown) => typeof s === 'string')
     && ['PENDING', 'COMPLETED', 'FAILED', 'INSUFFICIENT_INPUT', 'EXCLUDED'].includes(String(fields.status))
     && nullableText(fields.reason) && (fields.rank === null || positive(fields.rank))
     && Array.isArray(fields.evidence) && fields.evidence.every((e: unknown) => record(e)
       && typeof e.documentQuote === 'string' && typeof e.jobQuote === 'string' && typeof e.explanation === 'string')
-    && Array.isArray(fields.limitations) && fields.limitations.every((s: unknown) => typeof s === 'string');
+    && Array.isArray(fields.limitations) && fields.limitations.every((s: unknown) => typeof s === 'string')
+    && Array.isArray(fields.preparationTips) && fields.preparationTips.every((tip: unknown) => record(tip)
+      && (tip.type === 'CHECK' || tip.type === 'IMPROVE') && typeof tip.basisQuote === 'string'
+      && typeof tip.text === 'string');
 }
 
 export function validateRecommendationRequest(input: RecommendationRequest): void {
@@ -74,6 +88,16 @@ export function createRecommendationsApi(request: ReturnType<typeof createApiCli
     return value.token;
   };
   return {
+    async history(page = 0, size = 10, signal?: AbortSignal): Promise<RecommendationHistoryPage> {
+      if (!nonnegative(page) || !positive(size) || size > 50) throw new TypeError('비교 내역 페이지를 확인해 주세요.');
+      const value = await request('/me/recommendations/jobs/history', { query: { page, size }, signal });
+      return record(value) && Array.isArray(value.items) && value.items.every((item: unknown) => record(item)
+        && positive(item.id) && ['PENDING', 'COMPLETED', 'FAILED'].includes(String(item.status))
+        && date(item.consentedAt) && (item.analyzedAt === null || date(item.analyzedAt))
+        && nonnegative(item.candidateCount) && nullableId(item.resumeVersionId) && nullableId(item.coverLetterVersionId))
+        && nonnegative(value.page) && positive(value.size) && nonnegative(value.totalElements)
+        ? value as RecommendationHistoryPage : invalid();
+    },
     async create(input: RecommendationRequest): Promise<RecommendationPage> {
       validateRecommendationRequest(input);
       const value = await request('/me/recommendations/jobs', { method: 'POST', body: input, csrfToken: await csrf() });

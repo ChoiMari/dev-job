@@ -111,7 +111,7 @@ export function App() {
       : path === '/resumes' || path.startsWith('/resumes/') ? '이력서'
       : path === '/cover-letters' || path.startsWith('/cover-letters/') ? '자기소개서'
       : path === '/notifications' ? '알림'
-      : path === '/recommendations' || path.startsWith('/recommendations/') ? '의미 기반 추천'
+      : path === '/recommendations' || path.startsWith('/recommendations/') ? 'AI 공고 비교'
       : path === '/admin/alio' ? 'ALIO 배치' : '화면을 찾을 수 없습니다';
   useEffect(() => {
     document.title = `${title} · DevJob`;

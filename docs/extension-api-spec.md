@@ -108,6 +108,8 @@ B00은 새 엔드포인트를 확정하거나 구현하지 않는다. 아래 기
 | `POST /api/me/resumes/{resumeId}/versions` | `{ "content": "새 원문" }` | 새 `ResumeVersion` 메타데이터 · `201`; 본문 제외 |
 | `GET /api/me/resumes/{resumeId}/versions/{versionId}` | 없음 | `ResumeVersion`과 `content` · `200`; 본인만 원문 조회 |
 
+활성 이력서는 계정당 최대 20개다. 등록 시 사용자 행을 잠근 뒤 활성 문서 수를 확인하며 상한에서 `POST`는 `409`를 반환한다. 삭제 표시한 문서는 상한에 포함하지 않는다.
+
 `Resume`은 `{id, title, latestVersionId, latestVersionNumber, latestVersionCreatedAt, createdAt, updatedAt}`이다. `ResumeVersion` 메타데이터는 `{id, resumeId, versionNumber, createdAt}`이며 상세에만 `content`가 추가된다. 시각은 UTC 기준 ISO 8601 직렬화의 마이크로초 정밀도다. 버전의 ID·번호·생성 시각·본문은 변경되지 않는다. `POST versions`는 항상 번호를 하나 증가시키고 새 ID를 발급한다. B12는 `(resumeId, versionId)`와 해당 버전의 `createdAt`으로 원본을 식별하고, 삭제된 이력서는 분석하지 않는다. `Resume.updatedAt`은 제목 변경이나 버전 추가 시 바뀌므로 원문 식별자로 사용하지 않는다.
 
 제목은 공백 제거 후 1~200자, 본문은 공백 제거 후 1~100,000자 및 UTF-8 최대 262,144바이트다. 줄바꿈·탭 외 제어 문자는 거절한다. 필수 필드 누락·`null`·잘못된 타입·빈 문자열·알 수 없는 필드·빈 PATCH는 `400 INVALID_INPUT`이다. 공통 `401`·`403`·`404` 오류를 사용하며 본문·암호문·키를 오류 메시지에 넣지 않는다. 파일 업로드/다운로드와 기존 버전 본문 PATCH/DELETE, 복구 API는 제공하지 않는다.
@@ -244,6 +246,8 @@ POST·PATCH의 필드 검증 실패는 `400`과 `INVALID_INPUT`으로 응답하�
 
 ### B12 · 이력서·자기소개서 AI 분석 — EXT-08-01~02 (Backend 확정)
 
+활성 자기소개서는 계정당 최대 20개다. 등록 시 사용자 행을 잠근 뒤 활성 문서 수를 확인하며 상한에서 `POST /api/me/cover-letters`는 `409`를 반환한다. 삭제 표시한 문서는 상한에 포함하지 않는다.
+
 자기소개서는 `/api/me/cover-letters`에서 B05 이력서와 동일한 메서드·페이지·본문 제한·오류 계약으로 관리한다. `GET/POST /api/me/cover-letters`, `GET/PATCH/DELETE /api/me/cover-letters/{coverLetterId}`, `GET/POST /api/me/cover-letters/{coverLetterId}/versions`, `GET /api/me/cover-letters/{coverLetterId}/versions/{versionId}`를 제공한다. 생성은 `{title, content}`, 제목 변경은 `{title}`, 새 버전은 `{content}`다. 응답은 B05의 `Resume`·`ResumeVersion`과 같은 필드를 쓰되 버전 메타데이터의 `resumeId` 대신 `coverLetterId`를 반환한다. 모든 변경에는 세션·CSRF가 필요하다. 원문은 같은 `RESUME_ENCRYPTION_KEY`로 AES-256-GCM 암호화하되 이력서와 구분된 AAD를 쓴다. 버전은 불변이며 삭제는 즉시 비노출, DB 원본·버전은 30일 이후 매일 03:00 UTC 정리된다.
 
 | Method·URL | 요청 | 성공 응답 |
@@ -282,14 +286,17 @@ POST는 정확한 동의 본문을 매번 요구하고 지정 버전만 비동�
 | `POST /api/me/recommendations/jobs` | `{ "resumeVersionId": 3, "coverLetterVersionId": null, "candidates": [{"kind":"COLLECTED","id":10},{"kind":"MANUAL","id":7}], "consentToExternalComparison": true }` | 신규·진행 중 `202`, 동일 완료 입력 재사용 `200`와 아래 `RecommendationPage`. 후보는 0~20개, 중복·미지 필드·동의 누락은 `400`, 없는/타인 문서·공고는 `404`, AI 또는 암호화 키 미설정은 비교 실행 시 `503`. 미인증 `401`, CSRF 실패 `403`. |
 | `GET /api/me/recommendations/jobs?requestId={id}&page=0&size=20` | 저장 결과 ID와 페이지 | `RecommendationPage` · `200`; 다른 사용자/없는 결과 `404`, 잘못된 페이지·ID `400`, 미인증 `401` |
 | `GET /api/me/recommendations/jobs/{id}` | 위 GET의 단일 경로 별칭, 같은 page/size | 같은 응답·오류 |
+| `GET /api/me/recommendations/jobs/history` | `page=0`, `size=10` 기본; `page≥0`, `1≤size≤50` | 본인 요청의 `{items:[{id,status,consentedAt,analyzedAt,candidateCount,resumeVersionId,coverLetterVersionId}],page,size,totalElements}` · `200`; 최신 요청순, 잘못된 페이지는 `400`, 미인증 `401` |
 
-`RecommendationPage`는 `{ "id": 1, "status": "COMPLETED", "stale": false, "failureReason": null, "consentedAt": "...", "analyzedAt": "...", "policyVersion": "B14_V1", "modelName": "gpt-5.4-mini", "resumeVersionId": 3, "coverLetterVersionId": null, "candidateCount": 2, "items": [{ "kind": "COLLECTED", "id": 10, "title": "백엔드 개발자", "status": "COMPLETED", "reason": null, "rank": 1, "evidence": [{ "documentQuote": "Java 서버 운영", "jobQuote": "Java 서비스 개발", "explanation": "관련 경험" }], "limitations": ["경력 연수 확인 불가"] }], "page": 0, "size": 20, "totalElements": 2, "limitation": "..." }` 형태다. `status`는 요청 단위 `PENDING|COMPLETED|FAILED`, 항목별 `PENDING|COMPLETED|FAILED|INSUFFICIENT_INPUT|EXCLUDED`이다. 본문 없는 공고는 `INSUFFICIENT_INPUT`, 이미 지원한 공고는 `EXCLUDED/ALREADY_APPLIED`, 마감 공고는 `EXCLUDED/EXPIRED`이다. 후보 0건이면 완료 후 빈 `items`가 나온다. 실패 사유는 일반 문구만 반환하고 원문·AI 응답은 노출하지 않는다. GET은 외부 호출을 하지 않는다.
+`RecommendationPage`는 `{ "id": 1, "status": "COMPLETED", "stale": false, "failureReason": null, "consentedAt": "...", "analyzedAt": "...", "policyVersion": "B14_V2", "modelName": "gpt-5.4-mini", "resumeVersionId": 3, "coverLetterVersionId": null, "candidateCount": 2, "items": [{ "kind": "COLLECTED", "id": 10, "title": "백엔드 개발자", "companyName": "예시 회사", "location": "서울", "deadlineDate": "2026-10-22", "skillTags": ["Java"], "status": "COMPLETED", "reason": null, "rank": 1, "evidence": [{ "documentQuote": "Java 서버 운영", "jobQuote": "Java 서비스 개발", "explanation": "관련 경험" }], "limitations": ["경력 연수 확인 불가"], "preparationTips": [{ "type": "CHECK", "basisQuote": "Java 서비스 개발", "text": "실제 업무 범위를 확인하세요." }] }], "page": 0, "size": 20, "totalElements": 2, "limitation": "..." }` 형태다. 항목의 `companyName`, `location`, `deadlineDate`는 현재 공고 원본에서 조회하며 공고가 삭제되어 조회할 수 없거나 값이 없으면 `null`이다. `skillTags`는 공고 AI 분석이 `COMPLETED`인 경우 저장된 필수·우대 기술 이름을 반환하고, 분석 전·실패·결과 없음은 빈 배열이다. 직접 등록 공고의 기술은 본인 공고 분석 결과만 사용한다. 이 표시 정보는 저장된 비교 순위나 근거를 다시 계산하지 않는다. `status`는 요청 단위 `PENDING|COMPLETED|FAILED`, 항목별 `PENDING|COMPLETED|FAILED|INSUFFICIENT_INPUT|EXCLUDED`이다. 본문 없는 공고는 `INSUFFICIENT_INPUT`, 이미 지원한 공고는 `EXCLUDED/ALREADY_APPLIED`, 마감 공고는 `EXCLUDED/EXPIRED`이다. 후보 0건이면 완료 후 빈 `items`가 나온다. 실패 사유는 일반 문구만 반환하고 원문·AI 응답은 노출하지 않는다. GET은 외부 호출을 하지 않는다.
 
 본인 이력서·자기소개서의 불변 버전 중 하나 이상과 공용 수집 공고 `COLLECTED` 또는 본인 개인 저장 공고 `MANUAL`를 비교한다. B12 문서 분석과 공고 기술 분석 완료는 필수가 아니다. 사용자가 지정한 공고만 평가하며 외부 URL을 읽지 않는다. 모델은 기술·경험의 관련성과 강점의 근거를 바탕으로 비교 가능 후보에 1부터 연속 순위를 부여한다. 서버는 모든 후보·순위·인용의 원문 포함 여부와 출력 구조를 검증하고, 결과를 AES-256-GCM으로 저장한다. 점수·`matchRate`·합격 확률은 새 응답에 없다. 문서 버전당 마스킹 후 12,000자, 공고 본문당 마스킹 후 4,000자까지 전송한다. AI 출력은 추측할 수 있으며 잘린 입력과 공고 원문 결측이 한계다.
 
+`preparationTips`는 비교 완료 항목에서만 최대 3개이며 `{ "type": "CHECK"|"IMPROVE", "basisQuote": "문서나 공고 원문 일부", "text": "확인·보완 제안" }` 형태다. `basisQuote`는 전송한 마스킹 문서 또는 해당 공고의 실제 부분 문자열이어야 하고, 서버가 제안 구조·길이·정형 개인정보 포함 여부를 검증한다. 근거가 부족한 항목·제외·대기·실패 항목과 B14_V1로 저장된 기존 결과에는 빈 배열을 반환한다. 같은 입력도 정책 버전 변경으로 새 POST에서 다시 비교할 수 있으며 AI 응답 길이와 호출 비용이 증가할 수 있다. 조회 GET은 새 AI 호출을 하지 않는다.
+
 동일 사용자·문서 버전·공고 집합·입력 내용의 완료 결과를 재사용한다. 실패 또는 5분 이상 멈춘 요청은 다음 명시적 동의 POST에서 재시도한다. 결과는 문서 새 버전, 공고 내용 갱신, 마감·지원 상태 변화에 `stale: true`가 된다. 문서나 개인 공고 삭제 시 결과를 즉시 삭제한다. 기존 `GET /api/jobs/{jobId}/match`의 규칙 기반 기술 일치도와 대시보드 기본 추천은 그대로 유지되며 새 순위와 섞지 않는다. AI 장애가 공고 비교·CRM 조회를 막지 않는다.
 
-`RecommendationPage`는 원본 버전과 평가 조건을 추적하도록 `policyVersion: "B14_V1"`, `modelName: "gpt-5.4-mini"`, `resumeVersionId`, `coverLetterVersionId` 필드를 추가로 반환한다. 입력 해시는 모델·정책 버전까지 포함해 계산하며 서버의 중복 판단에만 사용한다.
+`RecommendationPage`는 원본 버전과 평가 조건을 추적하도록 `policyVersion: "B14_V2"`, `modelName: "gpt-5.4-mini"`, `resumeVersionId`, `coverLetterVersionId` 필드를 추가로 반환한다. 입력 해시는 모델·정책 버전까지 포함해 계산하며 서버의 중복 판단에만 사용한다.
 
 마감일의 경과 여부는 `Asia/Seoul` 날짜를 기준으로 판단한다.
 

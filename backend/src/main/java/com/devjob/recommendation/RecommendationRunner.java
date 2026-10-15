@@ -7,6 +7,7 @@ import com.devjob.recommendation.RecommendationService.Candidate;
 import com.devjob.recommendation.RecommendationService.Document;
 import com.devjob.recommendation.RecommendationService.Evidence;
 import com.devjob.recommendation.RecommendationService.Item;
+import com.devjob.recommendation.RecommendationService.PreparationTip;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.sql.Timestamp;
@@ -45,9 +46,17 @@ public class RecommendationRunner {
                     + "모든 공고를 상대적 우선순위로 정렬하세요. JSON 객체 하나만 반환하세요: "
                     + "{\"items\":[{\"kind\":\"COLLECTED\",\"id\":1,\"rank\":1,"
                     + "\"evidence\":[{\"documentQuote\":\"원문 일부\",\"jobQuote\":\"공고 일부\","
-                    + "\"explanation\":\"관련성 설명\"}],\"limitations\":[\"판단의 한계\"]}]}. "
-                    + "각 공고에 근거 1~3개, 한계 1~3개. 인용은 제공된 텍스트의 정확한 연속 부분 문자열이어야 합니다. "
-                    + "개인정보를 설명·한계에 포함하지 마세요. 문서:\n");
+                    + "\"explanation\":\"관련성 설명\"}],\"limitations\":[\"판단의 한계\"],"
+                    + "\"preparationTips\":[{\"type\":\"CHECK\",\"basisQuote\":\"공고 원문 일부\","
+                    + "\"text\":\"지원 전 확인할 항목\"}]}]}. "
+                    + "각 공고에 근거 1~3개, 한계 1~3개, 근거가 있는 지원 전 제안 최대 3개를 간결하게 작성하세요. "
+                    + "공고가 많으면 근거와 한계를 각각 1개씩만 제시하세요. "
+                    + "제안 type은 CHECK(지원 전 확인) 또는 IMPROVE(문서에서 보완)만 사용하세요. "
+                    + "basisQuote는 해당 공고 또는 문서에서 제공된 텍스트의 정확한 연속 부분 문자열이어야 합니다. "
+                    + "근거 있는 제안을 만들 수 없으면 preparationTips는 빈 배열로 반환하세요. "
+                    + "확인되지 않은 경력·능력의 부재를 단정하거나 새 사실을 지어내지 마세요. "
+                    + "인용은 제공된 텍스트의 정확한 연속 부분 문자열이어야 합니다. "
+                    + "개인정보를 설명·한계·제안에 포함하지 마세요. 문서:\n");
             for (int i = 0; i < redactedDocs.size(); i++)
                 prompt.append("[문서 ").append(i + 1).append("] ").append(redactedDocs.get(i)).append('\n');
             for (Candidate job : ready) prompt.append("[공고 ").append(job.kind()).append(':').append(job.id())
@@ -58,7 +67,7 @@ public class RecommendationRunner {
             List<Item> all = new ArrayList<>(evaluated);
             for (Candidate job : candidates) if (!"READY".equals(job.status()))
                 all.add(new Item(job.kind(), job.id(), job.title(), "INSUFFICIENT_INPUT".equals(job.reason())
-                        ? "INSUFFICIENT_INPUT" : "EXCLUDED", job.reason(), null, List.of(), List.of()));
+                        ? "INSUFFICIENT_INPUT" : "EXCLUDED", job.reason(), null, List.of(), List.of(), List.of()));
             all.sort(Comparator.comparing((Item item) -> item.rank() == null ? Integer.MAX_VALUE : item.rank())
                     .thenComparing(Item::kind).thenComparingLong(Item::id));
             complete(id, attempt, all);
@@ -67,11 +76,11 @@ public class RecommendationRunner {
     public void completeWithoutAi(long id, Instant attempt, List<Candidate> candidates) {
         var items = candidates.stream().map(c -> new Item(c.kind(), c.id(), c.title(),
                 "INSUFFICIENT_INPUT".equals(c.reason()) ? "INSUFFICIENT_INPUT" : "EXCLUDED",
-                c.reason(), null, List.<Evidence>of(), List.<String>of())).toList();
+                c.reason(), null, List.<Evidence>of(), List.<String>of(), List.<PreparationTip>of())).toList();
         try { complete(id, attempt, items); } catch (Exception ignored) { fail(id, attempt); }
     }
     List<Item> validate(String raw, List<String> docs, List<Candidate> jobs) throws Exception {
-        if (raw == null || raw.length() > 40000) throw new IllegalArgumentException();
+        if (raw == null || raw.length() > 50000) throw new IllegalArgumentException();
         JsonNode root = mapper.readTree(raw);
         if (root == null || !root.isObject() || root.size() != 1 || !root.path("items").isArray()
                 || root.path("items").size() != jobs.size()) throw new IllegalArgumentException();
@@ -80,14 +89,15 @@ public class RecommendationRunner {
         Set<Integer> ranks = new HashSet<>();
         List<Item> items = new ArrayList<>();
         for (JsonNode entry : root.path("items")) {
-            if (!entry.isObject() || entry.size() != 5 || !entry.path("kind").isTextual()
+            if (!entry.isObject() || entry.size() != 6 || !entry.path("kind").isTextual()
                     || !entry.path("id").canConvertToLong() || !entry.path("rank").canConvertToInt()) throw new IllegalArgumentException();
             Candidate job = byKey.remove(entry.path("kind").textValue() + ':' + entry.path("id").longValue());
             int rank = entry.path("rank").intValue();
             if (job == null || rank < 1 || rank > jobs.size() || !ranks.add(rank)) throw new IllegalArgumentException();
-            JsonNode evidence = entry.path("evidence"), limits = entry.path("limitations");
+            JsonNode evidence = entry.path("evidence"), limits = entry.path("limitations"), tips = entry.path("preparationTips");
             if (!evidence.isArray() || evidence.size() < 1 || evidence.size() > 3
-                    || !limits.isArray() || limits.size() < 1 || limits.size() > 3) throw new IllegalArgumentException();
+                    || !limits.isArray() || limits.size() < 1 || limits.size() > 3
+                    || !tips.isArray() || tips.size() > 3) throw new IllegalArgumentException();
             List<Evidence> proofs = new ArrayList<>();
             String jobText = redactor.redact(job.title()) + " " + truncate(redactor.redact(job.description()), 4000);
             for (JsonNode proof : evidence) {
@@ -101,8 +111,18 @@ public class RecommendationRunner {
             }
             List<String> limitations = new ArrayList<>();
             for (JsonNode limit : limits) limitations.add(value(limit, 200));
+            List<PreparationTip> preparationTips = new ArrayList<>();
+            for (JsonNode tip : tips) {
+                if (!tip.isObject() || tip.size() != 3) throw new IllegalArgumentException();
+                String type = value(tip.path("type"), 8);
+                if (!Set.of("CHECK", "IMPROVE").contains(type)) throw new IllegalArgumentException();
+                String basisQuote = value(tip.path("basisQuote"), 160);
+                if (!jobText.contains(basisQuote) && docs.stream().noneMatch(d -> d.contains(basisQuote)))
+                    throw new IllegalArgumentException();
+                preparationTips.add(new PreparationTip(type, basisQuote, value(tip.path("text"), 180)));
+            }
             items.add(new Item(job.kind(), job.id(), job.title(), "COMPLETED", null, rank,
-                    List.copyOf(proofs), List.copyOf(limitations)));
+                    List.copyOf(proofs), List.copyOf(limitations), List.copyOf(preparationTips)));
         }
         if (!byKey.isEmpty()) throw new IllegalArgumentException();
         return List.copyOf(items);

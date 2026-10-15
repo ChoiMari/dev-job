@@ -17,7 +17,7 @@ const groups = [
     { href: '#/', label: '대시보드', icon: 'layoutDashboard', active: (path: string) => path === '/' },
     { href: '#/jobs', label: '채용공고', icon: 'briefcase', active: (path: string) => path === '/jobs' || path.startsWith('/jobs/') },
     { href: '#/bookmarks', label: '관심 공고', icon: 'bookmark', active: (path: string) => path.startsWith('/bookmarks') },
-    { href: '#/recommendations', label: '의미 기반 추천', icon: 'lightbulb', active: (path: string) => path.startsWith('/recommendations') },
+    { href: '#/recommendations', label: 'AI 공고 비교', icon: 'search', active: (path: string) => path.startsWith('/recommendations') },
   ] },
   { label: '나의 취업 준비', links: [
     { href: '#/applications', label: '지원 관리', icon: 'clipboardList', active: (path: string) => path.startsWith('/applications') },
@@ -115,7 +115,7 @@ export function Layout({ title, path, children, user, nickname, onLogout, loggin
       </a>
     </aside>
     <main id="main-content" tabIndex={-1} className="main-content">
-      {path !== '/' && path !== '/profile' && path !== '/character' && path !== '/settings' && path !== '/analytics/skills' && !path.startsWith('/learning-goals') && !path.startsWith('/interviews/') && !path.startsWith('/jobs/')
+      {path !== '/' && path !== '/profile' && path !== '/character' && path !== '/settings' && path !== '/analytics/skills' && !path.startsWith('/learning-goals') && !path.startsWith('/interviews/') && !path.startsWith('/jobs/') && !path.startsWith('/recommendations')
         && <div className="page-heading"><span className="eyebrow">MY CAREER SPACE</span><h1>{title}</h1>{path === '/jobs' && <img className="job-search-banner-cat" src={jobDetailCat} alt="" aria-hidden="true" />}</div>}
       {children}
     </main>

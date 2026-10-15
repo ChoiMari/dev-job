@@ -65,6 +65,22 @@ class DocumentAnalysisDatabaseTest {
         throw new AssertionError("Analysis did not reach " + expected);
     }
 
+    @Test void limitsActiveCoverLettersToTwenty() throws Exception {
+        assertThat(jdbc.queryForObject("select current_database()", String.class)).isEqualTo("devjob_b12_test");
+        User owner = users.saveAndFlush(new User("b12-limit-" + java.util.UUID.randomUUID() + "@example.com", "hash"));
+        long first = 0;
+        for (int i = 0; i < 20; i++) {
+            long id = create(owner, "/api/me/cover-letters", "자기소개서 본문 " + i).path("id").asLong();
+            if (i == 0) first = id;
+        }
+        mvc.perform(post("/api/me/cover-letters").with(as(owner)).with(csrf()).contentType("application/json")
+                .content("{\"title\":\"초과\",\"content\":\"본문\"}"))
+                .andExpect(status().isConflict());
+        mvc.perform(delete("/api/me/cover-letters/" + first).with(as(owner)).with(csrf()))
+                .andExpect(status().isNoContent());
+        create(owner, "/api/me/cover-letters", "대체 자기소개서");
+    }
+
     @Test void resumeOwnershipDeduplicationFailureRetryStalenessAndDeletion() throws Exception {
         assertThat(jdbc.queryForObject("select current_database()", String.class)).isEqualTo("devjob_b12_test");
         String run = java.util.UUID.randomUUID().toString();
