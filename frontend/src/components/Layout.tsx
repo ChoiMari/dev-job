@@ -79,7 +79,9 @@ export function Layout({ title, path, children, user, nickname, onLogout, loggin
       <div className="account-controls">
         <a className={`account-avatar${bunnyOutfit ? ' is-bunny-outfit' : ''}`} href="#/character" aria-label="내 캐릭터 보기">{characterImage}</a>
         <span className="account-email">{nickname || user.email}</span>
-        <a className="account-notifications" href="#/notifications" aria-label="알림"><LucideIcon name="bell" /></a>
+        <a className="account-notifications" href="#/notifications" aria-current={path === '/notifications' ? 'page' : undefined}>
+          <LucideIcon name="bell" /><span>알림</span>
+        </a>
         <button className="account-logout" type="button" onClick={onLogout} disabled={loggingOut}>{loggingOut ? '로그아웃 중…' : '로그아웃'}</button>
       </div>
     </header>
