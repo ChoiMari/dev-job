@@ -179,9 +179,17 @@
 .recommendations-history-panel > p { margin: 6px; color: #6b7197; }
 .recommendations-history-panel ul { margin: 0; padding: 0; list-style: none; }
 .recommendations-history-panel li + li { border-top: 1px solid #edf0f9; }
-.recommendations-history-panel li a { display: flex; align-items: center; gap: 12px; padding: 10px 6px; text-decoration: none; }
-.recommendations-history-panel li a strong { flex: 1; }
-.recommendations-history-panel li a span { color: #69739a; font-size: 12px; }
+.recommendations-history-panel li a { display: flex; align-items: center; gap: 12px; min-height: 66px; padding: 10px 8px; border-radius: 6px; color: #17245c; text-decoration: none; }
+.recommendations-history-panel li a:hover { background: #f8f6ff; }
+.recommendations-history-panel li a:focus-visible { outline: 2px solid #6650ef; outline-offset: -2px; }
+.recommendations-history-details { display: grid; flex: 1; min-width: 0; gap: 5px; }
+.recommendations-history-topline, .recommendations-history-summary { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; }
+.recommendations-history-topline time { font-size: 12px; font-weight: 750; }
+.recommendations-history-summary { color: #69739a; font-size: 11px; }
+.recommendations-history-status { padding: 2px 6px; border-radius: 5px; background: #e9f1ff; color: #3565b0; font-size: 10px; font-weight: 750; }
+.recommendations-history-status.is-completed { background: #e8f7ef; color: #24774f; }
+.recommendations-history-status.is-failed { background: #fff0f1; color: #a33a50; }
+.recommendations-history-panel li a > .lucide-icon { flex: none; width: 17px; height: 17px; color: #6650ef; }
 .recommendations-history-pages { display: flex; align-items: center; justify-content: center; gap: 12px; padding-top: 10px; font-size: 12px; }
 .recommendations-history-pages button { min-height: 30px; }
 .recommendations-pending { display: grid; gap: 12px; }

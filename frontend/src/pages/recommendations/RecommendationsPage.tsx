@@ -150,8 +150,9 @@ function RecommendationHistory() {
     {!error && !data && <LoadingState message="이전 비교 내역을 불러오고 있습니다." />}
     {!error && data?.items.length === 0 && <p>이전 AI 공고 비교 결과가 없습니다.</p>}
     {!error && data && data.items.length > 0 && <><ul>{data.items.map(item => <li key={item.id}><a href={`#/recommendations/${item.id}`}>
-      <strong>{date(item.consentedAt)} 비교</strong><span>{item.candidateCount}개 공고 · {item.status === 'PENDING' ? '분석 중' : item.status === 'COMPLETED' ? '완료' : '실패'}</span><span aria-hidden="true">→</span>
-    </a></li>)}</ul><div className="recommendations-history-pages"><button type="button" disabled={page === 0} onClick={() => setPage(value => value - 1)}>이전</button><span>{page + 1} / {Math.max(1, Math.ceil(data.totalElements / 10))}</span><button type="button" disabled={(page + 1) * 10 >= data.totalElements} onClick={() => setPage(value => value + 1)}>다음</button></div></>}
+      <span className="recommendations-history-details"><span className="recommendations-history-topline"><time dateTime={item.consentedAt}>{date(item.consentedAt)} 요청</time><span className={`recommendations-history-status is-${item.status.toLowerCase()}`}>{item.status === 'PENDING' ? '분석 중' : item.status === 'COMPLETED' ? '완료' : '실패'}</span></span>
+        <span className="recommendations-history-summary">선택 문서: {[item.resumeVersionId && '이력서', item.coverLetterVersionId && '자기소개서'].filter(Boolean).join(' · ')}<span aria-hidden="true">·</span>공고 {item.candidateCount}개</span></span><LucideIcon name="chevronRight" />
+    </a></li>)}</ul>{data.totalElements > 10 && <div className="recommendations-history-pages"><button type="button" disabled={page === 0} onClick={() => setPage(value => value - 1)}>이전</button><span>{page + 1} / {Math.max(1, Math.ceil(data.totalElements / 10))}</span><button type="button" disabled={(page + 1) * 10 >= data.totalElements} onClick={() => setPage(value => value + 1)}>다음</button></div>}</>}
   </div>;
 }
 
