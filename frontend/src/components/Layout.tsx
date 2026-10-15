@@ -115,7 +115,7 @@ export function Layout({ title, path, children, user, nickname, onLogout, loggin
       </a>
     </aside>
     <main id="main-content" tabIndex={-1} className="main-content">
-      {path !== '/' && path !== '/profile' && path !== '/character' && path !== '/settings' && path !== '/analytics/skills' && !path.startsWith('/learning-goals') && !path.startsWith('/interviews/') && !path.startsWith('/jobs/') && !path.startsWith('/recommendations')
+      {path !== '/' && path !== '/profile' && path !== '/character' && path !== '/settings' && path !== '/analytics/skills' && !path.startsWith('/learning-goals') && !path.startsWith('/interviews/') && !path.startsWith('/jobs/') && !path.startsWith('/recommendations') && !path.startsWith('/resumes')
         && <div className="page-heading"><span className="eyebrow">MY CAREER SPACE</span><h1>{title}</h1>{path === '/jobs' && <img className="job-search-banner-cat" src={jobDetailCat} alt="" aria-hidden="true" />}</div>}
       {children}
     </main>

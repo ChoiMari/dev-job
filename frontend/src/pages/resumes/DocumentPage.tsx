@@ -4,16 +4,22 @@ import { ApiError } from '../../api/client';
 import { createDocumentApi } from '../../api/documents';
 import type { DocumentAnalysis, DocumentSummary, DocumentType, DocumentVersion, DocumentVersionSelection } from '../../api/documents';
 import { EmptyState, ErrorState, LoadingState } from '../../components/States';
-import resumesImage from '../../assets/redesign/ext-img-05b-resumes.png';
 import analysisImage from '../../assets/redesign/ext-img-08-ai-analysis.png';
+import { ResumeWorkspace } from './ResumeWorkspace';
+import { ResumeCreatePage } from './ResumeCreatePage';
 import './documents.css';
 
 const message = (e: unknown) => e instanceof Error ? e.message : '요청을 처리하지 못했습니다.';
 const date = (v: string) => new Date(v).toLocaleString('ko-KR');
 export function DocumentPage({ type, location }: { type: DocumentType; location: string }) {
+  return type === 'RESUME' ? location.split('?')[0] === '/resumes/new' ? <ResumeCreatePage /> : <ResumeWorkspace location={location} /> : <CoverLetterPage location={location} />;
+}
+
+function CoverLetterPage({ location }: { location: string }) {
+  const type: DocumentType = 'COVER_LETTER';
   const api = createDocumentApi(apiRequest, type);
-  const base = type === 'RESUME' ? '/resumes' : '/cover-letters';
-  const label = type === 'RESUME' ? '이력서' : '자기소개서';
+  const base = '/cover-letters';
+  const label = '자기소개서';
   const part = location.split('?')[0].slice(base.length).split('/').filter(Boolean)[0];
   const documentId = part ? Number(part) : null;
   const valid = documentId !== null && Number.isSafeInteger(documentId) && documentId > 0;
@@ -61,7 +67,7 @@ export function DocumentPage({ type, location }: { type: DocumentType; location:
     try { await action(); } catch (e) { setActionError(message(e)); } finally { setBusy(false); }
   }
   return <div className="documents-page">
-    <header className="card documents-hero"><div><span className="eyebrow">DOCUMENTS</span><h2>내 {label}</h2><p>원문은 선택한 버전에서만 조회합니다. 새 버전은 기존 원문을 변경하지 않습니다.</p><a href="#/recommendations">문서 버전으로 공고 비교</a>{valid && <a href={`#${base}`}>← {label} 목록</a>}</div><img src={type === 'RESUME' ? resumesImage : analysisImage} alt="" aria-hidden="true" /></header>
+    <header className="card documents-hero"><div><span className="eyebrow">DOCUMENTS</span><h2>내 {label}</h2><p>원문은 선택한 버전에서만 조회합니다. 새 버전은 기존 원문을 변경하지 않습니다.</p><a href="#/recommendations">문서 버전으로 공고 비교</a>{valid && <a href={`#${base}`}>← {label} 목록</a>}</div><img src={analysisImage} alt="" aria-hidden="true" /></header>
     {error ? <ErrorState message={error} onRetry={() => setReload(v => v + 1)} /> : loading ? <LoadingState message={`${label}를 불러오고 있습니다.`} /> : documentId === null ? <>
       <section className="card documents-form"><h3>새 {label}</h3><p>등록한 {label} {total}/20개</p>{total >= 20 ? <p role="status">최대 20개까지 등록할 수 있습니다. 새 문서를 만들려면 기존 문서를 삭제해 주세요.</p> : <form onSubmit={e => { e.preventDefault(); void run(async () => { const d = await api.create(title.trim(), content); setTitle(''); setContent(''); window.location.hash = `${base}/${d.id}`; }); }}><label>제목<input value={title} onChange={e => setTitle(e.target.value)} maxLength={200} required /></label><label>원문<textarea value={content} onChange={e => setContent(e.target.value)} maxLength={100000} rows={7} required /></label><button disabled={busy || !title.trim() || !content.trim()}>생성</button></form>}</section>
       <section className="card"><h3>저장된 {label}</h3>{list.length === 0 ? <EmptyState title={`저장된 ${label}가 없습니다.`} /> : <ul className="documents-list">{list.map(d => <li key={d.id}><a href={`#${base}/${d.id}`}>{d.title}</a><small>최신 버전 {d.latestVersionNumber} · {date(d.latestVersionCreatedAt)}</small></li>)}</ul>}<div className="documents-pagination"><button disabled={page === 0} onClick={() => setPage(v => v - 1)}>이전</button><span>{page + 1} / {Math.max(1, Math.ceil(total / 20))}</span><button disabled={(page + 1) * 20 >= total} onClick={() => setPage(v => v + 1)}>다음</button></div></section>
