@@ -119,11 +119,8 @@ class RecommendationDatabaseTest {
         verify(gateway, times(1)).compare(anyString());
         String emptyBody = "{\"resumeVersionId\":" + version + ",\"coverLetterVersionId\":null,"
                 + "\"candidates\":[],\"consentToExternalComparison\":true}";
-        long emptyId = response(post("/api/me/recommendations/jobs").with(as(owner)).with(csrf())
-                .contentType("application/json").content(emptyBody)).path("id").asLong();
-        JsonNode empty = await(owner, emptyId, "COMPLETED");
-        assertThat(empty.path("candidateCount").asInt()).isZero();
-        assertThat(empty.path("items").size()).isZero();
+        mvc.perform(post("/api/me/recommendations/jobs").with(as(owner)).with(csrf())
+                .contentType("application/json").content(emptyBody)).andExpect(status().isBadRequest());
         verify(gateway, times(1)).compare(anyString());
         mvc.perform(post("/api/me/resumes/" + resume.path("id").asLong() + "/versions")
                 .with(as(owner)).with(csrf()).contentType("application/json")

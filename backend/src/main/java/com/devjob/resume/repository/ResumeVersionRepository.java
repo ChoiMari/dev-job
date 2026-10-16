@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
 
 public interface ResumeVersionRepository extends JpaRepository<ResumeVersion, Long> {
+    long countByResume_Id(Long resumeId);
     @Query("select v from ResumeVersion v where v.resume.id = :resumeId order by v.versionNumber desc")
     List<ResumeVersion> list(@Param("resumeId") Long resumeId);
     @Query("select v from ResumeVersion v where v.resume.id = :resumeId order by v.versionNumber desc limit 1")

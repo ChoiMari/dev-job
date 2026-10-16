@@ -16,8 +16,9 @@ const input = candidates => ({ resumeVersionId: 3, coverLetterVersionId: null,
   candidates, consentToExternalComparison: true });
 const json = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
 
-test('0 and 20 explicit candidates are valid; 21, duplicates and missing documents or consent are rejected before network', () => {
-  assert.doesNotThrow(() => validateRecommendationRequest(input([])));
+test('1 and 20 explicit candidates are valid; 0, 21, duplicates and missing documents or consent are rejected before network', () => {
+  assert.doesNotThrow(() => validateRecommendationRequest(input([{ kind: 'COLLECTED', id: 1 }])));
+  assert.throws(() => validateRecommendationRequest(input([])), /1개 이상/);
   const twenty = Array.from({ length: 20 }, (_, i) => ({ kind: i % 2 ? 'MANUAL' : 'COLLECTED', id: i + 1 }));
   assert.doesNotThrow(() => validateRecommendationRequest(input(twenty)));
   assert.throws(() => validateRecommendationRequest(input([...twenty, { kind: 'MANUAL', id: 21 }])), /최대 20개/);
@@ -61,7 +62,7 @@ test('history lists saved requests without starting a new comparison', async () 
   assert.deepEqual(urls, ['/api/me/recommendations/jobs/history?page=0&size=10']);
 });
 
-test('empty and maximum-size selections reach POST unchanged', async () => {
+test('minimum and maximum-size selections reach POST unchanged', async () => {
   const sent = [];
   const api = createRecommendationsApi(createApiClient('/api', async (url, options) => {
     if (url === '/api/auth/csrf') return json({ headerName: 'X-CSRF-TOKEN', token: 'csrf' });
@@ -69,9 +70,9 @@ test('empty and maximum-size selections reach POST unchanged', async () => {
     return json({ ...result, candidateCount: sent.at(-1).candidates.length, items: [], totalElements: 0 });
   }));
   const twenty = Array.from({ length: 20 }, (_, i) => ({ kind: 'COLLECTED', id: i + 1 }));
-  await api.create(input([]));
+  await api.create(input([twenty[0]]));
   await api.create(input(twenty));
-  assert.deepEqual(sent.map(v => v.candidates.length), [0, 20]);
+  assert.deepEqual(sent.map(v => v.candidates.length), [1, 20]);
   assert.deepEqual(sent[1].candidates, twenty);
 });
 
@@ -95,7 +96,7 @@ test('404 and 503 remain distinguishable, and malformed stored data is rejected'
     const api = createRecommendationsApi(createApiClient('/api', async url => url.endsWith('/auth/csrf')
       ? json({ headerName: 'X-CSRF-TOKEN', token: 'csrf' }) : json({ code: 'ERROR', message: '실패' }, status)));
     await assert.rejects(api.get(4), { status });
-    await assert.rejects(api.create(input([])), { status });
+    await assert.rejects(api.create(input([{ kind: 'COLLECTED', id: 1 }])), { status });
   }
   const api = createRecommendationsApi(async () => ({ ...result, items: [{ ...item, rank: '1' }] }));
   await assert.rejects(api.get(4), { code: 'INVALID_RESPONSE' });

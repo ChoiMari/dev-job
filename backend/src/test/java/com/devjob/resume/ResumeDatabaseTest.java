@@ -93,6 +93,75 @@ class ResumeDatabaseTest {
         assertThat(new String(stored, java.nio.charset.StandardCharsets.UTF_8)).doesNotContain(SECRET);
     }
 
+    @Test void newVersionKeepsTitleDescriptionAndOriginalContent() throws Exception {
+        long id = create(SECRET);
+        long originalId = request(get("/api/me/resumes/" + id).with(as(owner))).get("latestVersionId").asLong();
+        mvc.perform(post("/api/me/resumes/" + id + "/versions").with(as(owner)).with(csrf())
+                .contentType("application/json").content("{\"title\":\" \",\"content\":\"새 원문\"}"))
+                .andExpect(status().isBadRequest());
+        var created = request(post("/api/me/resumes/" + id + "/versions").with(as(owner)).with(csrf())
+                .contentType("application/json")
+                .content("{\"title\":\"지원용 버전\",\"description\":\"프로젝트 경험 보강\",\"content\":\"새 원문\"}"));
+        assertThat(created.get("title").asText()).isEqualTo("지원용 버전");
+        assertThat(created.get("description").asText()).isEqualTo("프로젝트 경험 보강");
+        assertThat(created.has("content")).isFalse();
+        entities.clear();
+        var versions = request(get("/api/me/resumes/" + id + "/versions").with(as(owner)));
+        assertThat(versions.get(0).get("title").asText()).isEqualTo("지원용 버전");
+        assertThat(versions.get(0).get("description").asText()).isEqualTo("프로젝트 경험 보강");
+        assertThat(versions.get(1).has("title")).isFalse();
+        assertThat(request(get("/api/me/resumes/" + id + "/versions/" + originalId).with(as(owner)))
+                .get("content").asText()).isEqualTo(SECRET);
+        assertThat(request(get("/api/me/resumes/" + id + "/versions/" + created.get("id").asLong()).with(as(owner)))
+                .get("content").asText()).isEqualTo("새 원문");
+    }
+
+    @Test void rejectsEleventhVersionWithoutChangingExistingVersions() throws Exception {
+        long id = create(SECRET);
+        for (int number = 2; number <= 10; number++) {
+            mvc.perform(post("/api/me/resumes/" + id + "/versions").with(as(owner)).with(csrf())
+                    .contentType("application/json").content("{\"content\":\"버전 " + number + "\"}"))
+                    .andExpect(status().isCreated());
+        }
+        mvc.perform(post("/api/me/resumes/" + id + "/versions").with(as(owner)).with(csrf())
+                .contentType("application/json").content("{\"content\":\"초과 버전\"}"))
+                .andExpect(status().isConflict());
+        assertThat(request(get("/api/me/resumes/" + id + "/versions").with(as(owner)))).hasSize(10);
+    }
+
+    @Test void templateVersionEditResetsAnalysisAndDeleteKeepsLastVersion() throws Exception {
+        String form = "{\"name\":\"홍길동\",\"phone\":\"\",\"email\":\"hong@example.com\",\"birth\":\"\","
+                + "\"desiredRole\":\"백엔드 개발자\",\"location\":\"\",\"employment\":\"\",\"introduction\":\"\","
+                + "\"education\":[],\"skills\":[],\"projects\":[],\"experience\":[],\"certificates\":[],\"training\":[],"
+                + "\"link\":\"\",\"blog\":\"\",\"links\":[],\"extra\":\"\"}";
+        var created = request(post("/api/me/resumes").with(as(owner)).with(csrf())
+                .contentType("application/json").content("{\"title\":\"양식 이력서\",\"content\":\"이름: 홍길동\",\"form\":" + form + "}"));
+        long resumeId = created.get("id").asLong();
+        long firstId = created.get("latestVersionId").asLong();
+        byte[] stored = jdbc.queryForObject("select form_ciphertext from resume_version where id=?", byte[].class, firstId);
+        assertThat(new String(stored, java.nio.charset.StandardCharsets.UTF_8)).doesNotContain("hong@example.com");
+        assertThat(request(get("/api/me/resumes/" + resumeId + "/versions/" + firstId).with(as(owner)))
+                .get("form").get("name").asText()).isEqualTo("홍길동");
+        jdbc.update("insert into document_analysis(resume_version_id,status,consented_at,updated_at) values (?,'FAILED',now(),now())", firstId);
+        jdbc.update("insert into semantic_recommendation(user_id,resume_version_id,input_hash,policy_version,model_name,status,candidates,consented_at,updated_at) "
+                + "values (?, ?, repeat('a',64), 'B14_V2', 'test', 'FAILED', '[]'::jsonb, now(), now())", owner.getId(), firstId);
+        mvc.perform(patch("/api/me/resumes/" + resumeId + "/versions/" + firstId).with(as(owner)).with(csrf())
+                .contentType("application/json")
+                .content("{\"title\":\"수정본\",\"content\":\"수정된 원문\",\"form\":" + form + "}"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.title").value("수정본"));
+        assertThat(jdbc.queryForObject("select count(*) from document_analysis where resume_version_id=?", Long.class, firstId)).isZero();
+        assertThat(jdbc.queryForObject("select count(*) from semantic_recommendation where resume_version_id=?", Long.class, firstId)).isZero();
+        assertThat(request(get("/api/me/resumes/" + resumeId + "/versions/" + firstId).with(as(owner)))
+                .get("content").asText()).isEqualTo("수정된 원문");
+        long secondId = request(post("/api/me/resumes/" + resumeId + "/versions").with(as(owner)).with(csrf())
+                .contentType("application/json").content("{\"content\":\"다음 버전\"}")).get("id").asLong();
+        mvc.perform(delete("/api/me/resumes/" + resumeId + "/versions/" + firstId).with(as(owner)).with(csrf()))
+                .andExpect(status().isNoContent());
+        assertThat(request(get("/api/me/resumes/" + resumeId).with(as(owner))).get("versionCount").asInt()).isEqualTo(1);
+        mvc.perform(delete("/api/me/resumes/" + resumeId + "/versions/" + secondId).with(as(owner)).with(csrf()))
+                .andExpect(status().isConflict());
+    }
+
     @Test void deniesOtherUserAndHidesDeletedContent() throws Exception {
         long id = create(SECRET);
         long versionId = request(get("/api/me/resumes/" + id).with(as(owner))).get("latestVersionId").asLong();
@@ -160,5 +229,90 @@ class ResumeDatabaseTest {
                 .andExpect(status().isConflict());
         mvc.perform(delete("/api/me/resumes/" + first).with(as(owner)).with(csrf())).andExpect(status().isNoContent());
         create("대체 이력서");
+    }
+
+    @Test void draftsAreEncryptedOwnedAndOnlySelectedOneIsClearedWhenResumeIsCreated() throws Exception {
+        var form = json.createObjectNode();
+        for (String field : List.of("name", "phone", "email", "birth", "desiredRole", "location", "employment",
+                "introduction", "link", "extra")) form.put(field, "");
+        form.put("blog", "https://blog.example.com");
+        form.putArray("links").add("https://github.com/example");
+        for (String field : List.of("education", "skills", "projects", "experience", "certificates")) form.putArray(field);
+        form.putArray("training").addObject().put("name", "교육").put("provider", "기관")
+                .put("start", "2026-01").put("end", "2026-02").put("content", "실습");
+        var draft = json.createObjectNode().put("version", 1).put("mode", "template")
+                .put("title", "").put("content", SECRET);
+        draft.set("form", form);
+        assertThat(request(get("/api/me/resumes/drafts").with(as(owner))).size()).isZero();
+        long firstId = request(post("/api/me/resumes/drafts").with(as(owner)).with(csrf()).contentType("application/json")
+                .content(json.writeValueAsString(draft))).get("id").asLong();
+        long secondId = request(post("/api/me/resumes/drafts").with(as(owner)).with(csrf()).contentType("application/json")
+                .content(json.writeValueAsString(draft))).get("id").asLong();
+        assertThat(request(get("/api/me/resumes/drafts").with(as(owner))).size()).isEqualTo(2);
+        assertThat(request(get("/api/me/resumes/drafts/" + firstId).with(as(owner))).get("content").asText()).isEqualTo(SECRET);
+        assertThat(request(get("/api/me/resumes/drafts/" + firstId).with(as(owner))).at("/form/links/0").asText())
+                .isEqualTo("https://github.com/example");
+        mvc.perform(get("/api/me/resumes/drafts/" + firstId).with(as(other))).andExpect(status().isNotFound());
+        for (int i = 2; i < 20; i++) request(post("/api/me/resumes/drafts").with(as(owner)).with(csrf())
+                .contentType("application/json").content(json.writeValueAsString(draft)));
+        mvc.perform(post("/api/me/resumes/drafts").with(as(owner)).with(csrf()).contentType("application/json")
+                .content(json.writeValueAsString(draft))).andExpect(status().isConflict());
+        assertThat(request(get("/api/me/resumes/drafts").with(as(owner))).size()).isEqualTo(20);
+        var encrypted = jdbc.queryForObject("select content_ciphertext from resume_draft where id=?", byte[].class, firstId);
+        assertThat(new String(encrypted, java.nio.charset.StandardCharsets.UTF_8)).doesNotContain(SECRET);
+        mvc.perform(post("/api/me/resumes").with(as(owner)).with(csrf()).contentType("application/json")
+                .content("{\"title\":\"최종 이력서\",\"content\":\"최종 원문\",\"draftId\":" + firstId + "}"))
+                .andExpect(status().isCreated());
+        mvc.perform(get("/api/me/resumes/drafts/" + firstId).with(as(owner))).andExpect(status().isNotFound());
+        assertThat(request(get("/api/me/resumes/drafts/" + secondId).with(as(owner))).get("content").asText()).isEqualTo(SECRET);
+    }
+
+    @Test void versionDraftsResumeAcrossDevicesAndOnlyMatchingDraftIsConsumed() throws Exception {
+        long resumeId = create("기본 원문");
+        long firstVersionId = request(get("/api/me/resumes/" + resumeId).with(as(owner))).get("latestVersionId").asLong();
+        var form = json.createObjectNode();
+        for (String field : List.of("name", "phone", "email", "birth", "desiredRole", "location", "employment",
+                "introduction", "link", "blog", "extra")) form.put(field, "");
+        for (String field : List.of("education", "skills", "projects", "experience", "certificates", "training", "links"))
+            form.putArray(field);
+        var newDraft = json.createObjectNode().put("version", 2).put("mode", "free")
+                .put("title", "새 버전").put("content", SECRET).put("purpose", "version-new")
+                .put("resumeId", resumeId).put("description", "설명");
+        newDraft.set("form", form);
+        long newDraftId = request(post("/api/me/resumes/drafts").with(as(owner)).with(csrf())
+                .contentType("application/json").content(json.writeValueAsString(newDraft))).get("id").asLong();
+        assertThat(request(get("/api/me/resumes/drafts").with(as(owner))).get(0).get("purpose").asText())
+                .isEqualTo("version-new");
+        assertThat(request(get("/api/me/resumes/drafts/" + newDraftId).with(as(owner))).get("content").asText())
+                .isEqualTo(SECRET);
+        mvc.perform(get("/api/me/resumes/drafts/" + newDraftId).with(as(other))).andExpect(status().isNotFound());
+        mvc.perform(post("/api/me/resumes").with(as(owner)).with(csrf()).contentType("application/json")
+                .content("{\"title\":\"잘못된 사용\",\"content\":\"본문\",\"draftId\":" + newDraftId + "}"))
+                .andExpect(status().isBadRequest());
+        assertThat(request(get("/api/me/resumes/drafts/" + newDraftId).with(as(owner))).get("content").asText())
+                .isEqualTo(SECRET);
+        var added = request(post("/api/me/resumes/" + resumeId + "/versions").with(as(owner)).with(csrf())
+                .contentType("application/json")
+                .content("{\"content\":\"새 원문\",\"title\":\"새 버전\",\"draftId\":" + newDraftId + "}"));
+        mvc.perform(get("/api/me/resumes/drafts/" + newDraftId).with(as(owner))).andExpect(status().isNotFound());
+        assertThat(added.get("versionNumber").asInt()).isEqualTo(2);
+
+        var editDraft = newDraft.deepCopy().put("purpose", "version-edit").put("versionId", firstVersionId)
+                .put("title", "수정 중");
+        long editDraftId = request(post("/api/me/resumes/drafts").with(as(owner)).with(csrf())
+                .contentType("application/json").content(json.writeValueAsString(editDraft))).get("id").asLong();
+        var unrelatedDraft = newDraft.deepCopy().put("content", "다른 초안");
+        long unrelatedId = request(post("/api/me/resumes/drafts").with(as(owner)).with(csrf())
+                .contentType("application/json").content(json.writeValueAsString(unrelatedDraft))).get("id").asLong();
+        mvc.perform(patch("/api/me/resumes/" + resumeId + "/versions/" + added.get("id").asLong())
+                .with(as(owner)).with(csrf()).contentType("application/json")
+                .content("{\"content\":\"잘못된 대상\",\"draftId\":" + editDraftId + "}"))
+                .andExpect(status().isBadRequest());
+        request(patch("/api/me/resumes/" + resumeId + "/versions/" + firstVersionId)
+                .with(as(owner)).with(csrf()).contentType("application/json")
+                .content("{\"content\":\"수정 원문\",\"draftId\":" + editDraftId + "}"));
+        mvc.perform(get("/api/me/resumes/drafts/" + editDraftId).with(as(owner))).andExpect(status().isNotFound());
+        assertThat(request(get("/api/me/resumes/drafts/" + unrelatedId).with(as(owner))).get("content").asText())
+                .isEqualTo("다른 초안");
     }
 }

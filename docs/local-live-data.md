@@ -6,9 +6,13 @@
 
 루트의 무시된 `.env.live`는 DB 접속 정보와 공공 API 키를 보관한다. Git에 추가하지 않는다. 이 파일의 `DB_NAME=devjob_live`, `DB_HOST=127.0.0.1`, `DB_PORT=55450`을 고정하고, Backend는 `scripts/start-live.ps1`로 기동한다. 시작 스크립트는 다른 DB 대상이면 실행을 거부한다. Backend JAR을 새로 빌드한 뒤 기존 API 프로세스를 종료하고 스크립트를 다시 실행한다. 현재 5174 Frontend의 `/api` 프록시는 무시된 `frontend/.env.local`에서 8098을 사용한다.
 
+이력서 원문·임시저장·자기소개서에는 `.env.live`의 `RESUME_ENCRYPTION_KEY`(32바이트를 Base64로 인코딩)가 필요하다. 누락되거나 형식이 틀리면 저장·원문 조회가 `503`으로 거부된다. 기존 암호문이 있다면 반드시 같은 키를 유지해야 한다. 2026-10-16에는 로컬 DB의 이력서 버전·자기소개서 버전·초안이 모두 0건인 것을 확인한 뒤 키를 한 번 생성해 무시된 `.env.live`에 저장하고 8098 API를 재시작했다. 키 값은 문서·Git·로그에 남기지 않는다.
+
 AI 분석에는 별도의 `OPENAI_API_KEY`가 필요하다. 기본 체크아웃의 `.env`는 `scripts/start-live.ps1`이 읽지 않으므로, 실제 로컬 서버에서는 무시된 `.env.live`에 이 키를 설정하고 서버를 재시작해야 한다. 키 값은 문서나 Git에 기록하지 않는다.
 
 `docker compose -p devjob-live --env-file .env.live stop postgres`는 데이터를 보존한다. `down -v`와 볼륨 삭제는 사용하지 않는다. 새 DB로 전환했으므로 기존 시연 DB의 계정·개인 기록은 이 환경에 없고 사용자는 새 계정을 등록해야 한다.
+
+2026-10-16 로컬 `devjob_live`에 이력서 양식 암호문용 Flyway V47을 적용하고 8098 API를 새 JAR로 재시작했다. 기존 이력서·버전 행은 유지한다. 구조화 양식 데이터는 이 변경 이후 저장한 버전에만 존재한다.
 
 2026-10-11 최초 구축에서 기존 ALIO 수동 수집 API가 실제 공공 API 키로 호출됐고, `ALIO_RECRUITMENT` 공고 3건이 저장됐다. 응답은 `PARTIAL_FAILURE`(created 3, rejected 1, failed 0)였으며 성공한 공고는 유지됐다. 수집을 위해 만든 임시 계정은 삭제했다. 이후 공고 조회는 저장된 DB를 읽으며 화면 진입만으로 외부 API를 다시 호출하지 않는다.
 

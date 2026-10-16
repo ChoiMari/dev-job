@@ -26,10 +26,10 @@ try {
   });
   await page.goto(base + '/#/');
   await page.getByText('예정된 다음 행동이 없습니다.').waitFor();
-  assert.equal(await page.getByRole('heading', { name: '대시보드' }).count(), 1);
+  assert.equal(await page.getByRole('heading', { name: '오늘도 멋진 하루예요!' }).count(), 1);
   state = 'ready';
   await page.reload();
-  await page.getByText('지원 준비하기 · 백엔드 개발자').waitFor();
+  await page.getByText('백엔드 개발자').waitFor();
   assert.equal(await page.locator('a[href="#/jobs/5"]').count(), 1);
   assert.equal(await page.locator('a[href="#/applications/9"]').count(), 1);
   assert.equal(await page.locator('.dashboard-page a[href="#/learning-goals"]').count(), 2);

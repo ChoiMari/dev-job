@@ -3401,7 +3401,7 @@ DevJob의 핵심 아키텍처는 다음과 같이 요약한다.
 
 ## B05 이력서·버전 데이터 경계
 
-B05 이력서 Backend는 `ResumeController → ResumeService → ResumeRepository/ResumeVersionRepository → PostgreSQL` 계층을 사용한다. 이력서 메타데이터와 버전 원문을 분리하고, 원문은 `ResumeCipher`가 JDK AES-256-GCM으로 암호화·복호화한다. 32바이트 Base64 `RESUME_ENCRYPTION_KEY`는 환경변수에서만 읽고 원문·키·암호문을 로그·오류 본문에 포함하지 않는다. 키가 없거나 유효하지 않으면 B05 원문 읽기·쓰기만 `503`으로 거절하며 다른 CRM 경로는 기동·조회할 수 있다. 버전별 난수 nonce와 이력서 ID·버전 번호 AAD를 사용한다. 활성 소유권은 Service에서 확인하고 버전 원문은 본인 상세 API에서만 반환한다. 버전 ID·번호·생성 시각·본문은 불변이며 B12가 이 조합으로 원본을 참조한다. 이력서 행 잠금으로 버전 번호를 직렬화한다. 삭제는 즉시 비노출하며 `ResumeRetention`이 매일 03:00 UTC에 삭제 30일 이상 된 원본·버전을 DB에서 정리한다. 백업 보존·삭제 정책은 별도 운영 결정이 필요하다.
+B05 이력서 Backend는 `ResumeController → ResumeService → ResumeRepository/ResumeVersionRepository → PostgreSQL` 계층을 사용한다. 이력서 메타데이터와 버전 원문을 분리하고, 원문은 `ResumeCipher`가 JDK AES-256-GCM으로 암호화·복호화한다. 32바이트 Base64 `RESUME_ENCRYPTION_KEY`는 환경변수에서만 읽고 원문·키·암호문을 로그·오류 본문에 포함하지 않는다. 키가 없거나 유효하지 않으면 B05 원문 읽기·쓰기만 `503`으로 거절하며 다른 CRM 경로는 기동·조회할 수 있다. 버전별 난수 nonce와 이력서 ID·버전 번호 AAD를 사용하고, 선택 양식 JSON은 별도 AAD로 암호화한다. 활성 소유권은 Service에서 확인하고 버전 원문·양식은 본인 상세 API에서만 반환한다. 버전 ID·번호·생성 시각은 유지하되 원문·양식 수정은 새 nonce로 다시 암호화하고 연결 문서 분석·공고 비교 결과를 삭제한다. 이력서 행 잠금으로 최대 10개 버전 상한과 생성·수정·삭제를 직렬화하며 마지막 버전 삭제를 거부한다. 이력서 삭제는 즉시 비노출하며 `ResumeRetention`이 매일 03:00 UTC에 삭제 30일 이상 된 원본·버전을 DB에서 정리한다. 백업 보존·삭제 정책은 별도 운영 결정이 필요하다.
 
 ## B12 문서 분석 경계
 

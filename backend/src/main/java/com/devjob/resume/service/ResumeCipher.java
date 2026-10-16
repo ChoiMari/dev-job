@@ -43,6 +43,58 @@ public class ResumeCipher {
         catch (Exception exception) { throw unavailable(); }
     }
 
+    public Encrypted encryptForm(Long resumeId, int versionNumber, String form) {
+        try {
+            byte[] nonce = new byte[12];
+            random.nextBytes(nonce);
+            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+            cipher.init(Cipher.ENCRYPT_MODE, key(), new GCMParameterSpec(128, nonce));
+            cipher.updateAAD(formAad(resumeId, versionNumber));
+            return new Encrypted(cipher.doFinal(form.getBytes(StandardCharsets.UTF_8)), nonce);
+        } catch (ResponseStatusException exception) { throw exception; }
+        catch (Exception exception) { throw unavailable(); }
+    }
+
+    public String decryptForm(Long resumeId, int versionNumber, byte[] ciphertext, byte[] nonce) {
+        try {
+            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+            cipher.init(Cipher.DECRYPT_MODE, key(), new GCMParameterSpec(128, nonce));
+            cipher.updateAAD(formAad(resumeId, versionNumber));
+            return new String(cipher.doFinal(ciphertext), StandardCharsets.UTF_8);
+        } catch (ResponseStatusException exception) { throw exception; }
+        catch (Exception exception) { throw unavailable(); }
+    }
+
+    public Encrypted encryptDraft(Long userId, String content) {
+        try {
+            byte[] nonce = new byte[12];
+            random.nextBytes(nonce);
+            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+            cipher.init(Cipher.ENCRYPT_MODE, key(), new GCMParameterSpec(128, nonce));
+            cipher.updateAAD(draftAad(userId));
+            return new Encrypted(cipher.doFinal(content.getBytes(StandardCharsets.UTF_8)), nonce);
+        } catch (ResponseStatusException exception) { throw exception; }
+        catch (Exception exception) { throw unavailable(); }
+    }
+
+    public String decryptDraft(Long userId, byte[] ciphertext, byte[] nonce) {
+        try {
+            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+            cipher.init(Cipher.DECRYPT_MODE, key(), new GCMParameterSpec(128, nonce));
+            cipher.updateAAD(draftAad(userId));
+            return new String(cipher.doFinal(ciphertext), StandardCharsets.UTF_8);
+        } catch (ResponseStatusException exception) { throw exception; }
+        catch (Exception exception) { throw unavailable(); }
+    }
+
+    private static byte[] draftAad(Long userId) {
+        return ByteBuffer.allocate(13).put((byte) 1).putInt(0).putLong(userId).array();
+    }
+
+    private static byte[] formAad(Long resumeId, int versionNumber) {
+        return ByteBuffer.allocate(13).put((byte) 2).putLong(resumeId).putInt(versionNumber).array();
+    }
+
     private SecretKeySpec key() {
         try {
             byte[] decoded = Base64.getDecoder().decode(encodedKey);

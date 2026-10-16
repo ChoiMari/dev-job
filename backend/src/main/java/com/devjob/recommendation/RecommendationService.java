@@ -87,7 +87,7 @@ public class RecommendationService {
         Long coverId = positiveOptional(body.get("coverLetterVersionId"));
         if (resumeId == null && coverId == null) bad();
         JsonNode requested = body.get("candidates");
-        if (requested == null || !requested.isArray() || requested.size() > 20) bad();
+        if (requested == null || !requested.isArray() || requested.size() < 1 || requested.size() > 20) bad();
         var documents = new ArrayList<Document>();
         if (resumeId != null) documents.add(document(userId, "RESUME", resumeId));
         if (coverId != null) documents.add(document(userId, "COVER_LETTER", coverId));

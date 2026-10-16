@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { LucideIcon } from '../../components/LucideIcon';
+import type { ResumeDraftSummary } from '../../api/resume-draft';
 import emptyArt from '../../assets/illustrations/resume-empty.png';
 import techArt from '../../assets/illustrations/resume-guide-tech.png';
 import projectArt from '../../assets/illustrations/resume-guide-project.png';
@@ -15,14 +16,33 @@ const topics = [
   { title: 'GitHub 링크', detail: '코드로 증명하는 나의 역량', image: githubArt },
 ];
 
-export function ResumeEmptyState() {
+export function ResumeEmptyState({ drafts = [], draftError = '', onDelete, onRetry }: {
+  drafts?: ResumeDraftSummary[]; draftError?: string; onDelete?: (id: number) => void; onRetry?: () => void;
+}) {
   const [guideOpen, setGuideOpen] = useState(false);
   return <section className="resume-empty" aria-labelledby="resume-empty-title">
     <div className="resume-empty-count"><span className="resume-empty-count-icon"><LucideIcon name="fileText" /></span><div><strong>총 0개의 이력서</strong><p>이력서를 작성하고 버전을 관리해 보세요.</p></div></div>
-    <div className="resume-empty-center"><img src={emptyArt} alt="" aria-hidden="true" /><h2 id="resume-empty-title">아직 작성한 이력서가 없습니다.</h2><p>개발자 취업에 맞춘 이력서를 작성하고 버전을 관리해 보세요.</p><div className="resume-empty-actions"><a className="resume-primary" href="#/resumes/new">＋ 첫 이력서 작성하기</a><button type="button" onClick={() => setGuideOpen(true)}><LucideIcon name="fileText" /> 작성 가이드 보기</button></div></div>
-    <div className="resume-empty-bottom"><div className="resume-empty-tip"><LucideIcon name="star" /><div><strong>이력서에 이런 내용을 포함해 보세요</strong><p>AI가 더 정확한 분석을 할 수 있고, 기업에 더 잘 어필할 수 있어요.</p></div></div><div className="resume-empty-topics">{topics.map(topic => <div key={topic.title}><img src={topic.image} alt="" aria-hidden="true" /><strong>{topic.title}</strong><p>{topic.detail}</p></div>)}</div></div>
+    <div className={drafts.length ? 'resume-empty-main has-drafts' : 'resume-empty-main'}>
+    <div className="resume-empty-center"><img src={emptyArt} alt="" aria-hidden="true" /><h2 id="resume-empty-title">{drafts.length ? '아직 등록한 이력서가 없습니다.' : '아직 작성한 이력서가 없습니다.'}</h2><p>개발자 취업에 맞춘 이력서를 작성하고 버전을 관리해 보세요.</p><div className="resume-empty-actions"><a className="resume-primary" href="#/resumes/new">＋ {drafts.length ? '이력서 작성하기' : '첫 이력서 작성하기'}</a><button type="button" onClick={() => setGuideOpen(true)}><LucideIcon name="fileText" /> 작성 가이드 보기</button></div></div>
+    {drafts.length > 0 && <ResumeDraftList drafts={drafts} onDelete={onDelete} />}
+    </div>
+    {draftError && <p className="resume-message is-error" role="alert">{draftError} <button type="button" onClick={onRetry}>다시 시도</button></p>}
+    {drafts.length === 0 && <div className="resume-empty-bottom"><div className="resume-empty-tip"><LucideIcon name="star" /><div><strong>이력서에 이런 내용을 포함해 보세요</strong><p>AI가 더 정확한 분석을 할 수 있고, 기업에 더 잘 어필할 수 있어요.</p></div></div><div className="resume-empty-topics">{topics.map(topic => <div key={topic.title}><img src={topic.image} alt="" aria-hidden="true" /><strong>{topic.title}</strong><p>{topic.detail}</p></div>)}</div></div>}
     {guideOpen && <ResumeGuideModal onClose={() => setGuideOpen(false)} />}
   </section>;
+}
+
+export function ResumeDraftList({ drafts, onDelete, searchable = false }: { drafts: ResumeDraftSummary[]; onDelete?: (id: number) => void; searchable?: boolean }) {
+  const [query, setQuery] = useState('');
+  const [sort, setSort] = useState<'newest' | 'oldest'>('newest');
+  const [mode, setMode] = useState<'all' | 'free' | 'template'>('all');
+  const visible = drafts.filter(draft => (mode === 'all' || draft.mode === mode) && draft.title.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()))
+    .sort((a, b) => sort === 'newest' ? Date.parse(b.updatedAt) - Date.parse(a.updatedAt) : Date.parse(a.updatedAt) - Date.parse(b.updatedAt));
+  return <aside className={`resume-draft-panel${searchable ? ' is-searchable' : ''}`} aria-label="임시저장된 이력서">
+    <header><h3><LucideIcon name="clock" /> {searchable ? `임시저장 목록 (${drafts.length})` : '임시저장된 이력서'}</h3>{!searchable && <span>총 {drafts.length}개</span>}</header>
+    {searchable && <div className="resume-draft-filters"><label className="resume-draft-search"><LucideIcon name="search" /><input aria-label="임시저장 제목 검색" value={query} onChange={event => setQuery(event.target.value)} placeholder="제목 검색..." /></label><select aria-label="임시저장 정렬" value={sort} onChange={event => setSort(event.target.value as 'newest' | 'oldest')}><option value="newest">최신순</option><option value="oldest">오래된순</option></select><select aria-label="임시저장 입력 방식" value={mode} onChange={event => setMode(event.target.value as 'all' | 'free' | 'template')}><option value="all">전체 유형</option><option value="free">자유 입력</option><option value="template">양식 입력</option></select></div>}
+    {visible.length ? <ul>{visible.map(draft => <li key={draft.id}><span className="resume-list-icon"><LucideIcon name="fileText" /></span><a href={draft.purpose === 'version-new' ? `#/resumes/${draft.resumeId}/versions/new?draft=${draft.id}` : draft.purpose === 'version-edit' ? `#/resumes/${draft.resumeId}/versions/${draft.versionId}/edit?draft=${draft.id}` : `#/resumes/new?draft=${draft.id}`}><strong>{draft.title || '제목 없는 임시저장 이력서'} <span className="resume-draft-badge">{draft.purpose === 'version-new' ? '새 버전 작성 중' : draft.purpose === 'version-edit' ? '버전 수정 중' : '작성 중'}</span></strong><small>마지막 저장 {new Date(draft.updatedAt).toLocaleString('ko-KR')}</small></a><button type="button" aria-label={`${draft.title || '제목 없는 임시저장 이력서'} 삭제`} onClick={() => onDelete?.(draft.id)}>{searchable ? <LucideIcon name="trash" /> : '삭제'}</button></li>)}</ul> : <p className="resume-draft-no-results">검색 조건에 맞는 임시저장이 없습니다.</p>}
+  </aside>;
 }
 
 export function ResumeGuideModal({ onClose }: { onClose: () => void }) {

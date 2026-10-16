@@ -64,9 +64,9 @@ export function validateRecommendationRequest(input: RecommendationRequest): voi
     || (input.resumeVersionId === null && input.coverLetterVersionId === null))
     throw new TypeError('이력서 또는 자기소개서 버전을 하나 이상 선택해 주세요.');
   if (input.consentToExternalComparison !== true) throw new TypeError('외부 비교 동의가 필요합니다.');
-  if (!Array.isArray(input.candidates) || input.candidates.length > 20 || !input.candidates.every(candidate)
+  if (!Array.isArray(input.candidates) || input.candidates.length < 1 || input.candidates.length > 20 || !input.candidates.every(candidate)
     || new Set(input.candidates.map(v => `${v.kind}:${v.id}`)).size !== input.candidates.length)
-    throw new TypeError('공고 후보는 중복 없이 최대 20개까지 선택해 주세요.');
+    throw new TypeError('공고 후보는 중복 없이 1개 이상, 최대 20개까지 선택해 주세요.');
 }
 
 export function isRecommendationPage(v: unknown): v is RecommendationPage {

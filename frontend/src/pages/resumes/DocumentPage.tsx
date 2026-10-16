@@ -7,12 +7,29 @@ import { EmptyState, ErrorState, LoadingState } from '../../components/States';
 import analysisImage from '../../assets/redesign/ext-img-08-ai-analysis.png';
 import { ResumeWorkspace } from './ResumeWorkspace';
 import { ResumeCreatePage } from './ResumeCreatePage';
+import { ResumeVersionPage } from './ResumeVersionPage';
 import './documents.css';
 
 const message = (e: unknown) => e instanceof Error ? e.message : '요청을 처리하지 못했습니다.';
 const date = (v: string) => new Date(v).toLocaleString('ko-KR');
-export function DocumentPage({ type, location }: { type: DocumentType; location: string }) {
-  return type === 'RESUME' ? location.split('?')[0] === '/resumes/new' ? <ResumeCreatePage /> : <ResumeWorkspace location={location} /> : <CoverLetterPage location={location} />;
+export function DocumentPage({ type, location, userId }: { type: DocumentType; location: string; userId?: number }) {
+  if (type === 'COVER_LETTER') return <CoverLetterPage location={location} />;
+  const draftParam = new URLSearchParams(location.split('?')[1] ?? '').get('draft');
+  const draftId = draftParam === null ? undefined : Number(draftParam);
+  const newVersionPath = /^\/resumes\/([1-9]\d*)\/versions\/new$/.exec(location.split('?')[0]);
+  const editVersionPath = /^\/resumes\/([1-9]\d*)\/versions\/([1-9]\d*)\/edit$/.exec(location.split('?')[0])
+    ?? /^\/resumes\/([1-9]\d*)\/versions\/([1-9]\d*)\?edit=1$/.exec(location);
+  if (newVersionPath || editVersionPath) {
+    if (userId === undefined) throw new Error('이력서 작성에는 로그인 사용자 정보가 필요합니다.');
+    return <ResumeCreatePage userId={userId} draftId={draftId} versionEditor={editVersionPath
+      ? { kind: 'edit', resumeId: Number(editVersionPath[1]), versionId: Number(editVersionPath[2]) }
+      : { kind: 'new', resumeId: Number(newVersionPath![1]) }} />;
+  }
+  const versionPath = /^\/resumes\/([1-9]\d*)\/versions\/([1-9]\d*)(?:\?.*)?$/.exec(location);
+  if (versionPath) return <ResumeVersionPage resumeId={Number(versionPath[1])} versionId={Number(versionPath[2])} />;
+  if (location.split('?')[0] !== '/resumes/new') return <ResumeWorkspace location={location} />;
+  if (userId === undefined) throw new Error('이력서 작성에는 로그인 사용자 정보가 필요합니다.');
+  return <ResumeCreatePage userId={userId} draftId={draftId} />;
 }
 
 function CoverLetterPage({ location }: { location: string }) {

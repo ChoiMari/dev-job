@@ -49,7 +49,7 @@ class AccountDeletionDatabaseTest {
 
         JsonNode impact = json.readTree(mvc.perform(get("/api/auth/me/deletion-impact").session(current))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
-        assertThat(impact.path("deletedResources").size()).isEqualTo(27);
+        assertThat(impact.path("deletedResources").size()).isEqualTo(31);
         assertThat(impact.path("recoverableInApp").asBoolean()).isFalse();
         assertThat(impact.path("confirmationText").asText()).isEqualTo("계정 삭제");
         for (JsonNode resource : impact.path("deletedResources"))
@@ -106,10 +106,10 @@ class AccountDeletionDatabaseTest {
                 .andExpect(status().isUnauthorized());
 
         for (String table : new String[]{"profiles", "user_skill", "project", "bookmark",
-                "application", "personal_saved_job", "personal_todo", "interested_company", "personal_company_tag", "resume",
+                "application", "personal_saved_job", "personal_todo", "interested_company", "personal_company_tag", "resume_draft", "resume",
                 "cover_letter", "interview_schedule", "learning_goal", "character_equipment",
                 "character_activity", "character_reward", "notification_preference", "notification",
-                "semantic_recommendation"}) {
+                "semantic_recommendation", "user_ai_skill_candidate", "user_ai_analysis_request", "user_custom_skill"}) {
             assertThat(count(table, "user_id", f.user())).as(table).isZero();
         }
         assertThat(count("users", "id", f.user())).isZero();
@@ -172,6 +172,9 @@ class AccountDeletionDatabaseTest {
         jdbc.update("insert into project_skill(project_id,skill_id) values (?,?)", project, skill);
         jdbc.update("insert into bookmark(user_id,job_posting_id) values (?,?)", user, job);
         jdbc.update("insert into bookmark(user_id,job_posting_id) values (?,?)", other, job);
+        jdbc.update("insert into user_custom_skill(user_id,name,normalized_name) values (?,'Fixture','fixture')", user);
+        jdbc.update("insert into user_ai_analysis_request(user_id,job_posting_id) values (?,?)", user, job);
+        jdbc.update("insert into user_ai_skill_candidate(user_id,name,normalized_name) values (?,'Candidate','candidate')", user);
         jdbc.update("insert into application(user_id,job_posting_id,current_status,created_at,updated_at) "
                 + "values (?,?,'PLANNED',now(),now())", other, job);
         long personalJob = id("insert into personal_saved_job(user_id,url,company_name,title,created_at,updated_at,deleted_at) "
@@ -193,6 +196,8 @@ class AccountDeletionDatabaseTest {
         jdbc.update("insert into personal_company_tag(user_id,name) values (?,'직접태그')", user);
         long resume = id("insert into resume(user_id,title,deleted_at,created_at,updated_at) "
                 + "values (?,'Resume',now(),now(),now()) returning id", user);
+        jdbc.update("insert into resume_draft(user_id,content_ciphertext,content_nonce,updated_at) values (?,?,?,now())",
+                user, new byte[]{3}, new byte[12]);
         long rv = id("insert into resume_version(resume_id,version_number,content_ciphertext,content_nonce,created_at) "
                 + "values (?,1,?,?,now()) returning id", resume, new byte[]{1}, new byte[12]);
         long cover = id("insert into cover_letter(user_id,title,deleted_at,created_at,updated_at) "

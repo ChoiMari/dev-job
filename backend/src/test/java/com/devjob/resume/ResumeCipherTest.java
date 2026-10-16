@@ -29,4 +29,13 @@ class ResumeCipherTest {
                     .hasMessageNotContaining("SECRET-RESUME");
         }
     }
+    @Test void formEncryptionUsesSeparateVersionBoundAad() {
+        var cipher = cipher();
+        var form = cipher.encryptForm(1L, 3, "{\"name\":\"홍길동\"}");
+        assertThat(cipher.decryptForm(1L, 3, form.ciphertext(), form.nonce())).contains("홍길동");
+        assertThatThrownBy(() -> cipher.decryptForm(1L, 2, form.ciphertext(), form.nonce()))
+                .isInstanceOf(ResponseStatusException.class);
+        assertThatThrownBy(() -> cipher.decrypt(1L, 3, form.ciphertext(), form.nonce()))
+                .isInstanceOf(ResponseStatusException.class);
+    }
 }

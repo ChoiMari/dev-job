@@ -162,7 +162,7 @@ export function App() {
       : path === '/analytics/skills' ? <MarketAnalyticsPage location={location} />
       : path === '/learning-goals' || path.startsWith('/learning-goals/') ? <LearningGoalsPage key={path} location={location} />
       : path === '/interviews' || path.startsWith('/interviews/') ? <InterviewsPage key={path} location={location} />
-      : path === '/resumes' || path.startsWith('/resumes/') ? <ResumesPage key={path} location={location} />
+      : path === '/resumes' || path.startsWith('/resumes/') ? <ResumesPage key={`${user.id}:${path}`} location={location} userId={user.id} />
       : path === '/cover-letters' || path.startsWith('/cover-letters/') ? <CoverLettersPage key={path} location={location} />
       : path === '/notifications' ? <NotificationsPage />
       : path === '/recommendations' || path.startsWith('/recommendations/') ? <RecommendationsPage key={path} location={location} />

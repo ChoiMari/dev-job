@@ -43,4 +43,14 @@ public class ResumeController {
             @AuthenticationPrincipal CurrentUser user, @PathVariable Long resumeId, @PathVariable Long versionId) {
         return service.version(user.id(), resumeId, versionId);
     }
+    @PatchMapping("/{resumeId}/versions/{versionId}") public ResumeVersionResponse editVersion(
+            @AuthenticationPrincipal CurrentUser user, @PathVariable Long resumeId, @PathVariable Long versionId,
+            @RequestBody JsonNode body) {
+        return service.editVersion(user.id(), resumeId, versionId, body);
+    }
+    @DeleteMapping("/{resumeId}/versions/{versionId}") @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteVersion(@AuthenticationPrincipal CurrentUser user,
+            @PathVariable Long resumeId, @PathVariable Long versionId) {
+        service.deleteVersion(user.id(), resumeId, versionId);
+    }
 }

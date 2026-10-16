@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import MarkdownPreview from '@uiw/react-markdown-preview';
+import rehypeSanitize from 'rehype-sanitize';
 import { apiRequest } from '../../api';
 import { ApiError } from '../../api/client';
 import { createDocumentApi } from '../../api/documents';
@@ -13,6 +15,8 @@ import { EmptyState, ErrorState, LoadingState } from '../../components/States';
 import { LucideIcon } from '../../components/LucideIcon';
 import heroArt from '../../assets/illustrations/recommendations-hero.png';
 import pendingArt from '../../assets/illustrations/recommendations-pending.png';
+import consentCatArt from '../../assets/illustrations/recommendations-consent-cat.png';
+import '@uiw/react-markdown-preview/markdown.css';
 import './recommendations.css';
 
 const recommendations = createRecommendationsApi(apiRequest);
@@ -20,7 +24,9 @@ const jobs = createJobsApi(apiRequest);
 const savedJobs = createSavedJobsApi(apiRequest);
 const key = (v: JobCandidate) => `${v.kind}:${v.id}`;
 const message = (error: unknown) => error instanceof Error ? error.message : '요청을 처리하지 못했습니다.';
-const date = (value: string) => new Date(value).toLocaleString('ko-KR');
+const date = (value: string) => new Date(value).toLocaleString('ko-KR', {
+  year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: '2-digit',
+});
 
 export function RecommendationsPage({ location }: { location: string }) {
   const rawId = location.split('?')[0].replace(/^\/recommendations\/?/, '');
@@ -79,6 +85,7 @@ export function RecommendationsPage({ location }: { location: string }) {
     const input: RecommendationRequest = { resumeVersionId, coverLetterVersionId, candidates: selected,
       consentToExternalComparison: true };
     if (!resumeVersionId && !coverLetterVersionId) { setError('이력서 또는 자기소개서 버전을 하나 이상 선택해 주세요.'); return; }
+    if (selected.length === 0) { setError('비교할 공고를 하나 이상 선택해 주세요.'); setStep(2); return; }
     if (!consent) { setError('외부 비교에 동의해 주세요.'); return; }
     setBusy(true);
     try {
@@ -92,13 +99,13 @@ export function RecommendationsPage({ location }: { location: string }) {
   }
 
   const activeStep = resultId !== null ? 4 : step;
-  const steps = ['비교할 문서 선택', '비교할 공고 선택', '외부 비교 동의', '추천 결과'];
+  const steps = ['비교할 문서 선택', '비교할 공고 선택', '외부 비교 동의', 'AI 비교 결과'];
   return <div className="recommendations-page">
     <header className="recommendations-hero"><div><h1>AI 공고 비교</h1><p>이력서와 자기소개서 내용을 기반으로 공고를 비교하고, 나와 잘 맞는 공고를 찾아보세요.</p></div><img src={heroArt} alt="" aria-hidden="true" /></header>
+    <section className={`recommendations-history${historyOpen ? ' is-open' : ''}`}><button type="button" aria-expanded={historyOpen} onClick={() => setHistoryOpen(value => !value)}>지난 비교 내역 <LucideIcon name={historyOpen ? 'chevronUp' : 'chevronDown'} /></button>
+      {historyOpen && <RecommendationHistory />}</section>
     <nav className="recommendations-stepper" aria-label="AI 공고 비교 단계">{steps.map((title, index) => <div key={title} className={`recommendations-step ${activeStep === index + 1 ? 'is-active' : ''} ${activeStep > index + 1 ? 'is-done' : ''}`} aria-current={activeStep === index + 1 ? 'step' : undefined}>
       <span className="recommendations-step-number">{index + 1}</span><span><strong>{title}</strong><small>{['이력서와 자기소개서를 선택해 주세요.', '비교할 공고를 선택해 주세요.', '전송 내용을 확인하고 동의해 주세요.', '비교 결과를 확인해 보세요.'][index]}</small></span></div>)}</nav>
-    <section className="recommendations-history"><button type="button" aria-expanded={historyOpen} onClick={() => setHistoryOpen(value => !value)}>지난 비교 내역 <LucideIcon name={historyOpen ? 'chevronUp' : 'chevronDown'} /></button>
-      {historyOpen && <RecommendationHistory />}</section>
     {resultId !== null ? <>
       {resultLoading && !result ? <LoadingState message="저장된 비교 결과를 조회하고 있습니다." /> : error && !result ? <ErrorState message={error} onRetry={() => setReload(v => v + 1)} />
         : result && <>{error && <p className="recommendations-error" role="alert">{result.status === 'PENDING' ? '상태 조회에 실패했습니다. 자동으로 다시 확인합니다.' : '최신 상태를 확인하지 못했습니다. 다시 조회해 주세요.'} {error}</p>}<RecommendationResult result={result} onRefresh={() => setReload(v => v + 1)} /></>}
@@ -108,8 +115,8 @@ export function RecommendationsPage({ location }: { location: string }) {
           <DocumentPicker type="RESUME" value={resumeVersionId} onChange={setResumeVersionId} documentId={selectedDocuments.RESUME?.id ?? null} onDocumentChange={document => setSelectedDocuments(current => ({ ...current, RESUME: document ?? undefined }))} />
           <DocumentPicker type="COVER_LETTER" value={coverLetterVersionId} onChange={setCoverLetterVersionId} documentId={selectedDocuments.COVER_LETTER?.id ?? null} onDocumentChange={document => setSelectedDocuments(current => ({ ...current, COVER_LETTER: document ?? undefined }))} />
         </div></section>}
-      {step === 2 && <section className="recommendations-stage"><div className="recommendations-stage-heading"><h2>비교할 공고 선택</h2><p>수집 공고와 저장·직접 등록 공고 중 최대 20개를 선택할 수 있습니다.</p></div>
-        <div className="recommendations-job-tabs" role="tablist" aria-label="공고 종류"><button type="button" role="tab" aria-selected={jobTab === 'collected'} className={jobTab === 'collected' ? 'is-active' : ''} onClick={() => setJobTab('collected')}>수집 공고</button><button type="button" role="tab" aria-selected={jobTab === 'saved'} className={jobTab === 'saved' ? 'is-active' : ''} onClick={() => setJobTab('saved')}>저장·직접 등록 공고</button></div>
+      {step === 2 && <section className="recommendations-stage"><div className="recommendations-stage-heading"><h2>비교할 공고 선택</h2><p>수집 공고와 관심·직접 등록 공고를 합쳐 최대 20개까지 선택할 수 있습니다.</p></div>
+        <div className="recommendations-job-tabs" role="tablist" aria-label="공고 종류"><button type="button" role="tab" aria-selected={jobTab === 'collected'} className={jobTab === 'collected' ? 'is-active' : ''} onClick={() => setJobTab('collected')}>수집 공고</button><button type="button" role="tab" aria-selected={jobTab === 'saved'} className={jobTab === 'saved' ? 'is-active' : ''} onClick={() => setJobTab('saved')}>관심·직접 등록 공고</button></div>
         <div className="recommendations-candidate-grid">
           {jobTab === 'collected' ? <CollectedPicker selected={selected} onToggle={toggle} /> : <SavedPicker selected={selected} onToggle={toggle} />}
         </div>
@@ -117,18 +124,18 @@ export function RecommendationsPage({ location }: { location: string }) {
           {selected.map(item => <button key={key(item)} type="button" onClick={() => toggle(item)}>
             {selectedDetails[key(item)]?.company && <strong>{selectedDetails[key(item)].company}</strong>} {selectedDetails[key(item)]?.title ?? `${item.kind === 'COLLECTED' ? '수집' : '직접 등록'} 공고 #${item.id}`} <span aria-hidden="true">×</span></button>)}
         </div>}
-        <p className="recommendations-selection-count">선택한 공고 <strong>{selected.length} / 20</strong> · 선택하지 않아도 비교 요청할 수 있습니다.</p>
+        <p className="recommendations-selection-count">선택한 공고 <strong>{selected.length} / 20</strong> · 비교할 공고를 1개 이상 선택해 주세요.</p>
       </section>}
-      {step === 3 && <section className="recommendations-stage"><div className="recommendations-stage-heading"><h2>선택한 항목 확인</h2><p>AI 비교 요청 전에 문서와 공고를 확인해 주세요.</p></div>
-        <div className="recommendations-review-grid"><div className="recommendations-review-card"><h3>선택한 문서</h3>{resumeVersionId && <p>이력서 · {selectedDocuments.RESUME?.title} · 버전 #{resumeVersionId}</p>}{coverLetterVersionId && <p>자기소개서 · {selectedDocuments.COVER_LETTER?.title} · 버전 #{coverLetterVersionId}</p>}<button type="button" onClick={() => setStep(1)}>문서 변경</button></div>
-          <div className="recommendations-review-card"><h3>선택한 공고 ({selected.length}개)</h3>{selected.length ? selected.map(item => <p key={key(item)}>{selectedDetails[key(item)]?.title ?? `${item.kind === 'COLLECTED' ? '수집' : '직접 등록'} 공고 #${item.id}`}</p>) : <p>선택한 공고가 없습니다.</p>}<button type="button" onClick={() => setStep(2)}>공고 변경</button></div></div>
+      {step === 3 && <section className="recommendations-stage"><div className="recommendations-stage-heading"><h2><LucideIcon name="clipboardList" />선택한 항목 확인</h2><p>AI 비교 요청 전에 문서와 공고를 확인해 주세요.</p></div>
+        <div className="recommendations-review-grid"><div className="recommendations-review-card"><h3>선택한 문서</h3>{resumeVersionId && <p>이력서 · {selectedDocuments.RESUME?.title} · 버전 #{resumeVersionId}</p>}{coverLetterVersionId && <p>자기소개서 · {selectedDocuments.COVER_LETTER?.title} · 버전 #{coverLetterVersionId}</p>}<button type="button" onClick={() => setStep(1)}><LucideIcon name="rotateCcw" />문서 다시 선택</button></div>
+          <div className="recommendations-review-card"><h3>선택한 공고 ({selected.length}개)</h3>{selected.length ? selected.map(item => <p key={key(item)}>{selectedDetails[key(item)]?.title ?? `${item.kind === 'COLLECTED' ? '수집' : '직접 등록'} 공고 #${item.id}`}</p>) : <p>선택한 공고가 없습니다.</p>}<button type="button" onClick={() => setStep(2)}><LucideIcon name="rotateCcw" />공고 다시 선택</button></div></div>
         <div className="recommendations-consent"><h3>외부 AI 서비스 비교 동의</h3><p>선택한 문서 원문과 공고 본문에서 개인정보 형식을 일부 제거한 뒤 외부 AI 서비스로 전송합니다. 자유 형식 개인정보는 완전히 제거되지 않을 수 있으며, 문서와 공고 본문은 길이에 따라 잘릴 수 있습니다.</p>
-          <label><input type="checkbox" checked={consent} onChange={event => setConsent(event.target.checked)} /> 이 요청의 외부 비교에 동의합니다.</label></div></section>}
+          <label className="recommendations-consent-choice"><input type="checkbox" checked={consent} onChange={event => setConsent(event.target.checked)} /><span><strong>이 요청의 외부 비교에 동의합니다.</strong><small>선택한 문서와 공고로 비교를 요청합니다. 분석에는 몇 분 정도 소요될 수 있습니다.</small></span><img src={consentCatArt} alt="" aria-hidden="true" /></label></div></section>}
       {error && <p role="alert" className="recommendations-error">{error}</p>}
-      <footer className="recommendations-footer"><div><strong>선택한 항목</strong><span>문서 {[resumeVersionId, coverLetterVersionId].filter(Boolean).length}개 · 공고 {selected.length}개</span></div>
+      <footer className="recommendations-footer"><div><strong>총 선택한 항목</strong><span>문서 {[resumeVersionId, coverLetterVersionId].filter(Boolean).length}개 · 공고 {selected.length}개</span></div>
         <div className="recommendations-footer-actions">{step > 1 && <button type="button" onClick={() => { setError(''); setStep(v => v - 1); }}>이전 단계</button>}
-          {step < 3 ? <button type="button" className="button-primary" disabled={step === 1 && !resumeVersionId && !coverLetterVersionId} onClick={() => { setError(''); setStep(v => v + 1); }}>다음 단계 →</button>
-            : <button type="button" className="button-primary" disabled={busy || !consent} onClick={() => void submit()}>{busy ? '요청 중…' : `선택한 ${selected.length}개 공고 비교 요청`}</button>}</div></footer>
+          {step < 3 ? <button type="button" className="button-primary" disabled={(step === 1 && !resumeVersionId && !coverLetterVersionId) || (step === 2 && selected.length === 0)} onClick={() => { setError(''); setStep(v => v + 1); }}>다음 단계 →</button>
+            : <button type="button" className="button-primary" disabled={busy || !consent} onClick={() => void submit()}>{busy ? '요청 중…' : '비교 요청하기'}</button>}</div></footer>
     </>}
   </div>;
 }
@@ -145,7 +152,7 @@ function RecommendationHistory() {
       .catch(failure => { if (!controller.signal.aborted) setError(message(failure)); });
     return () => controller.abort();
   }, [page, retry]);
-  return <div className="recommendations-history-panel">
+  return <div className={`recommendations-history-panel${!error && data?.items.length === 0 ? ' is-empty' : ''}`}>
     {error && <ErrorState message={error} onRetry={() => { setError(''); setRetry(value => value + 1); }} />}
     {!error && !data && <LoadingState message="이전 비교 내역을 불러오고 있습니다." />}
     {!error && data?.items.length === 0 && <p>이전 AI 공고 비교 결과가 없습니다.</p>}
@@ -164,6 +171,7 @@ function DocumentPicker({ type, value, onChange, documentId, onDocumentChange }:
   const [documents, setDocuments] = useState<DocumentSummary[]>([]);
   const [versions, setVersions] = useState<DocumentVersion[]>([]);
   const [preview, setPreview] = useState('');
+  const [previewOpen, setPreviewOpen] = useState(true);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [retry, setRetry] = useState(0);
@@ -189,16 +197,20 @@ function DocumentPicker({ type, value, onChange, documentId, onDocumentChange }:
       .catch(() => { if (!controller.signal.aborted) setPreview(''); });
     return () => controller.abort();
   }, [type, documentId, value]);
+  const selectedDocument = documents.find(document => document.id === documentId);
+  const selectedVersion = versions.find(version => version.id === value);
+  const versionNumber = selectedVersion?.versionNumber ?? (selectedDocument?.latestVersionId === value ? selectedDocument.latestVersionNumber : null);
+  const versionDate = selectedVersion?.createdAt ?? (selectedDocument?.latestVersionId === value ? selectedDocument.latestVersionCreatedAt : null);
   return <div className="recommendations-picker"><div className="recommendations-picker-heading"><h3><LucideIcon name={type === 'RESUME' ? 'fileText' : 'pencil'} />{label} 선택</h3><div>{documentId !== null && <button type="button" onClick={() => { onDocumentChange(null); onChange(null); }}>선택 해제</button>}{total < 20 && <a href={type === 'RESUME' ? '#/resumes' : '#/cover-letters'}>+ 새 {label} 작성</a>}</div></div><p>비교에 사용할 {label}를 선택하고, 버전을 지정해 주세요.</p>
     {loading && <LoadingState message={`${label} 목록을 불러오고 있습니다.`} />}
     {error && <ErrorState message={error} onRetry={() => setRetry(v => v + 1)} />}
     {!loading && !error && documents.length === 0 && <p>저장된 {label}가 없습니다.</p>}
     {!error && <div className="recommendations-document-list" onScroll={event => { const element = event.currentTarget; if (!loading && documents.length < total && element.scrollTop + element.clientHeight >= element.scrollHeight - 24) { setLoading(true); setPage(value => value + 1); } }}>{documents.map(d => <div className={`recommendations-document-row ${documentId === d.id ? 'is-selected' : ''}`} key={d.id}>
-      <label><input type="radio" name={`recommendation-${type}`} checked={documentId === d.id} onChange={() => { onDocumentChange({ id: d.id, title: d.title }); setVersions([]); onChange(d.latestVersionId); }} /><span className="recommendations-document-icon" aria-hidden="true">▤</span><span><strong>{d.title}</strong><small>최근 수정 {date(d.updatedAt)}</small></span></label>
-      <select aria-label={`${d.title} 버전`} disabled={documentId !== d.id} value={documentId === d.id ? value ?? '' : d.latestVersionId} onChange={event => onChange(Number(event.target.value))}>
+      <label><input type="radio" name={`recommendation-${type}`} checked={documentId === d.id} onChange={() => { onDocumentChange({ id: d.id, title: d.title }); setVersions([]); setPreviewOpen(true); onChange(d.latestVersionId); }} /><span className="recommendations-document-icon" aria-hidden="true"><LucideIcon name={type === 'RESUME' ? 'fileText' : 'pencil'} /></span><span><strong>{d.title}</strong><small>최근 수정 {date(d.updatedAt)}</small></span></label>
+      <select aria-label={`${d.title} 버전`} disabled={documentId !== d.id} value={documentId === d.id ? value ?? '' : d.latestVersionId} onChange={event => { setPreviewOpen(true); onChange(Number(event.target.value)); }}>
         {documentId === d.id && versions.length > 0 ? versions.map(v => <option key={v.id} value={v.id}>v{v.versionNumber} · {date(v.createdAt)}</option>) : <option value={d.latestVersionId}>v{d.latestVersionNumber} · {date(d.latestVersionCreatedAt)}</option>}
       </select></div>)}</div>}
-    {documentId !== null && value !== null && <div className="recommendations-document-preview"><strong>선택한 {label} 버전</strong><p>{preview ? `${preview.slice(0, 220)}${preview.length > 220 ? '…' : ''}` : '원문 미리보기를 불러오는 중이거나 표시할 내용이 없습니다.'}</p></div>}
+    {documentId !== null && value !== null && <div className="recommendations-document-preview"><div className="recommendations-document-preview-heading"><strong>선택한 {label} 버전</strong><button type="button" aria-expanded={previewOpen} onClick={() => setPreviewOpen(open => !open)}>{previewOpen ? '닫기' : '보기'} <LucideIcon name={previewOpen ? 'chevronUp' : 'chevronDown'} /></button></div>{previewOpen && <div className="recommendations-document-preview-card"><span className="recommendations-document-preview-icon" aria-hidden="true"><LucideIcon name={type === 'RESUME' ? 'fileText' : 'pencil'} /></span><div className="recommendations-document-preview-content"><div className="recommendations-document-preview-meta"><strong>{selectedVersion?.title?.trim() || selectedDocument?.title || label}</strong>{versionNumber !== null && <span>v{versionNumber}</span>}{versionDate && <time dateTime={versionDate}>{new Date(versionDate).toLocaleDateString('ko-KR')}</time>}</div>{preview ? <MarkdownPreview source={preview} rehypePlugins={[[rehypeSanitize]]} /> : <p>원문 미리보기를 불러오는 중이거나 표시할 내용이 없습니다.</p>}</div></div>}</div>}
   </div>;
 }
 
@@ -221,7 +233,7 @@ function CollectedPicker({ selected, onToggle }: { selected: JobCandidate[]; onT
   }, [search, page, retry]);
   return <div className="recommendations-picker recommendations-job-picker">
     <form className="recommendations-search" onSubmit={event => { event.preventDefault(); setPage(0); setSearch(query.trim()); }}>
-      <label>공고 검색<input value={query} onChange={event => setQuery(event.target.value)} /></label><button type="submit">검색</button></form>
+      <label>공고 검색<input value={query} onChange={event => setQuery(event.target.value)} placeholder="공고 제목 또는 회사명 검색" /></label><button type="submit"><LucideIcon name="search" />검색</button></form>
     {loading ? <LoadingState message="수집 공고를 불러오고 있습니다." /> : error ? <ErrorState message={error} onRetry={() => setRetry(v => v + 1)} />
       : items.length === 0 ? <p>검색된 공고가 없습니다.</p> : <ul className="recommendations-options">{items.map(item => {
         const candidate: JobCandidate = { kind: 'COLLECTED', id: item.id };

@@ -100,19 +100,32 @@ B00은 새 엔드포인트를 확정하거나 구현하지 않는다. 아래 기
 | Method·URL | 요청 | 성공 응답 |
 | --- | --- | --- |
 | `GET /api/me/resumes` | `page`, `size` 선택 | `{items: Resume[], page, size, totalElements}` · `200`; 본문 제외 |
-| `POST /api/me/resumes` | `{ "title": "백엔드 이력서", "content": "원문 텍스트" }` | `Resume` · `201`; 1번 버전 생성 |
+| `POST /api/me/resumes` | `{ "title": "백엔드 이력서", "content": "원문 텍스트", "draftId": 1, "form": {...} }`; `draftId`·양식 `form` 선택 | `Resume` · `201`; 1번 버전 생성, 지정한 본인 초안만 삭제 |
 | `GET /api/me/resumes/{resumeId}` | 없음 | `Resume` · `200`; 본문 제외 |
-| `PATCH /api/me/resumes/{resumeId}` | `{ "title": "수정된 제목" }` | `Resume` · `200`; 본문 버전 불변 |
+| `PATCH /api/me/resumes/{resumeId}` | `{ "title": "수정된 제목" }` | `Resume` · `200`; 부모 제목만 변경 |
 | `DELETE /api/me/resumes/{resumeId}` | 없음 | 본문 없음 · `204`; 즉시 비노출 |
 | `GET /api/me/resumes/{resumeId}/versions` | 없음 | `ResumeVersion[]` · `200`; `versionNumber DESC`, 본문 제외 |
-| `POST /api/me/resumes/{resumeId}/versions` | `{ "content": "새 원문" }` | 새 `ResumeVersion` 메타데이터 · `201`; 본문 제외 |
-| `GET /api/me/resumes/{resumeId}/versions/{versionId}` | 없음 | `ResumeVersion`과 `content` · `200`; 본인만 원문 조회 |
+| `POST /api/me/resumes/{resumeId}/versions` | `{ "content": "새 원문", "title": "지원용 버전", "description": "프로젝트 경험 보강", "form": {...}, "draftId": 3 }` (`title`·`description`·양식 `form`·`draftId` 선택) | 새 `ResumeVersion` 메타데이터 · `201`; 본문 제외, 10개 상한 초과 `409` |
+| `GET /api/me/resumes/{resumeId}/versions/{versionId}` | 없음 | `ResumeVersion`과 `content`·양식일 때 `form` · `200`; 본인만 원문 조회 |
+| `PATCH /api/me/resumes/{resumeId}/versions/{versionId}` | `{ "content": "수정 원문", "title": "버전 제목", "description": "설명", "form": {...}, "draftId": 4 }`; `content` 필수, 나머지 선택 | 수정된 버전 메타데이터 · `200`; 연결 분석·공고 비교 결과 초기화 |
+| `DELETE /api/me/resumes/{resumeId}/versions/{versionId}` | 없음 | `204`; 연결 분석·공고 비교 결과 삭제, 마지막 버전이면 `409` |
+| `GET /api/me/resumes/drafts` | 없음 | 본인 초안 메타데이터 `{id, title, mode, updatedAt}[]` · `200`; 버전 초안에는 `purpose`, `resumeId`, 수정 초안에는 `versionId` 추가; 최신순, 빈 목록 `[]` |
+| `POST /api/me/resumes/drafts` | 새 이력서 `{version: 1, mode, title, content, form}` 또는 버전 `{version: 2, mode, title, content, form, purpose, resumeId, description, versionId?}` | 저장된 초안과 `id`, `updatedAt` · `201`; 20건 초과 `409` |
+| `GET /api/me/resumes/drafts/{id}` | 없음 | 본인 초안 내용과 `id`, `updatedAt` · `200`; 없거나 타인 소유 `404` |
+| `PUT /api/me/resumes/drafts/{id}` | 생성과 같은 초안 본문 | 저장된 초안과 `id`, `updatedAt` · `200`; 없거나 타인 소유 `404` |
+| `DELETE /api/me/resumes/drafts/{id}` | 없음 | 본문 없음 · `204`; 없어도 성공 |
 
-활성 이력서는 계정당 최대 20개다. 등록 시 사용자 행을 잠근 뒤 활성 문서 수를 확인하며 상한에서 `POST`는 `409`를 반환한다. 삭제 표시한 문서는 상한에 포함하지 않는다.
+임시저장은 새 이력서·새 버전·기존 버전 수정을 합쳐 계정당 최대 20건이며 신규 생성은 사용자 행 잠금 아래 건수를 확인한다. 빈 제목·본문도 허용한다. `version: 1`은 기존 새 이력서 초안 형식을 유지한다. `version: 2`의 `purpose`는 `version-new` 또는 `version-edit`, `resumeId`는 활성 본인 이력서 ID, `versionId`는 수정 초안에서만 필수인 본인 버전 ID다. 버전 초안의 `title`은 최대 50자, `description`은 최대 200자다. 기존 초안 `title`은 최대 200자, 모든 `content`는 최대 100,000자, 직렬화된 전체 요청은 UTF-8 262,144바이트 이하다. 잘못된 타입·미지 필드·초과 크기는 `400`, 없는 대상은 `404`다. 변경 요청에는 CSRF가 필요하다. 초안 전체는 `RESUME_ENCRYPTION_KEY`로 별도 AAD와 12바이트 nonce를 사용해 암호화한다. 이력서 생성·버전 추가·버전 수정에 `draftId`가 있으면 해당 작업·대상과 일치하는 본인 초안만 같은 트랜잭션에서 삭제한다. 다른 종류나 대상의 `draftId`는 `400`, 없는 초안은 `404`이며 저장도 롤백한다. 키 오류는 초안 읽기·저장과 `draftId`를 동반한 최종 저장에 `503`을 반환한다.
 
-`Resume`은 `{id, title, latestVersionId, latestVersionNumber, latestVersionCreatedAt, createdAt, updatedAt}`이다. `ResumeVersion` 메타데이터는 `{id, resumeId, versionNumber, createdAt}`이며 상세에만 `content`가 추가된다. 시각은 UTC 기준 ISO 8601 직렬화의 마이크로초 정밀도다. 버전의 ID·번호·생성 시각·본문은 변경되지 않는다. `POST versions`는 항상 번호를 하나 증가시키고 새 ID를 발급한다. B12는 `(resumeId, versionId)`와 해당 버전의 `createdAt`으로 원본을 식별하고, 삭제된 이력서는 분석하지 않는다. `Resume.updatedAt`은 제목 변경이나 버전 추가 시 바뀌므로 원문 식별자로 사용하지 않는다.
+`form.training`은 선택 배열이다. 항목은 `{name, provider, start, end, content}` 문자열 필드로 교육명·교육기관·기간·이수내용을 담는다. 이전에 저장된 초안에는 이 필드가 없을 수 있으며 조회 시 클라이언트가 빈 교육 입력으로 표시한다.
 
-제목은 공백 제거 후 1~200자, 본문은 공백 제거 후 1~100,000자 및 UTF-8 최대 262,144바이트다. 줄바꿈·탭 외 제어 문자는 거절한다. 필수 필드 누락·`null`·잘못된 타입·빈 문자열·알 수 없는 필드·빈 PATCH는 `400 INVALID_INPUT`이다. 공통 `401`·`403`·`404` 오류를 사용하며 본문·암호문·키를 오류 메시지에 넣지 않는다. 파일 업로드/다운로드와 기존 버전 본문 PATCH/DELETE, 복구 API는 제공하지 않는다.
+`form.blog`는 선택 문자열로 기술 블로그 주소를 담고, `form.links`는 추가 링크 문자열의 선택 배열이다. 이전 초안에서 두 필드가 없으면 클라이언트는 빈 값으로 표시한다. 기존 `form.link`는 포트폴리오 링크로 유지한다.
+
+활성 이력서는 계정당 최대 20개다. 등록 시 사용자 행을 잠근 뒤 활성 문서 수를 확인하며 상한에서 `POST`는 `409`를 반환한다. 삭제 표시한 문서는 상한에 포함하지 않는다. 이력서별 버전은 최대 10개다. 새 버전 등록 시 이력서 행을 잠그고 버전 수를 확인하며 상한에서 `409`를 반환한다. `Resume` 응답의 `versionCount`는 삭제 후 빈 번호가 있어도 실제 남은 버전 수다.
+
+`Resume`은 `{id, title, latestVersionId, latestVersionNumber, versionCount, latestVersionCreatedAt, createdAt, updatedAt}`이다. `ResumeVersion` 메타데이터는 `{id, resumeId, versionNumber, createdAt}`과 선택 `title`·`description`이며 상세에만 `content`와 양식으로 저장한 경우 `form`이 추가된다. 기존 버전이나 메타데이터 없이 생성한 버전에는 `title`·`description`·`form`을 생략한다. 시각은 UTC 기준 ISO 8601 직렬화의 마이크로초 정밀도다. 버전 ID·번호·생성 시각은 변경되지 않는다. `POST versions`는 남은 버전 수가 10개 미만일 때 번호를 하나 증가시키고 새 ID를 발급한다. `PATCH versions/{versionId}`는 원문·메타데이터·선택 양식을 같은 버전에서 수정하고 기존 문서 분석 및 공고 비교 결과를 지운다. `DELETE versions/{versionId}`는 마지막 1개를 보호하고 관련 결과를 함께 지우며 번호를 재사용하지 않는다. B12는 `(resumeId, versionId)`와 해당 버전의 `createdAt`으로 원본을 식별하고, 삭제된 이력서는 분석하지 않는다. `Resume.updatedAt`은 제목 변경이나 버전 추가·수정·삭제 시 바뀌므로 원문 식별자로 사용하지 않는다.
+
+이력서 제목은 공백 제거 후 1~200자, 선택 버전 제목은 1~50자, 선택 버전 설명은 0~200자다. 본문은 공백 제거 후 1~100,000자 및 UTF-8 최대 262,144바이트다. 선택 양식 `form`은 임시저장 양식과 같은 필드·타입·배열 길이 검증을 통과해야 하며 직렬화 후 최대 262,144바이트다. 양식 JSON은 원문과 별도 AAD로 암호화해 저장한다. 줄바꿈·탭 외 제어 문자는 거절한다. 필수 필드 누락·`null`·잘못된 타입·빈 문자열·알 수 없는 필드·빈 PATCH는 `400 INVALID_INPUT`이다. 공통 `401`·`403`·`404` 오류를 사용하며 본문·암호문·키를 오류 메시지에 넣지 않는다. 파일 업로드/다운로드와 삭제 복구 API는 제공하지 않는다.
 
 원문은 AES-256-GCM으로 버전별 난수 nonce와 `resumeId`·`versionNumber` AAD를 사용해 암호화한 뒤 PostgreSQL에 저장한다. Base64 인코딩된 32바이트 `RESUME_ENCRYPTION_KEY` 환경변수가 없거나 유효하지 않으면 원문 읽기·쓰기만 `503 SERVICE_UNAVAILABLE`이며 기존 CRM은 계속 사용 가능하다. 키를 잃거나 교체하면 기존 암호문을 읽을 수 없으므로 운영 중 키를 안전하게 보존해야 한다. 삭제는 `deletedAt`을 기록하고 즉시 전체 조회에서 제외한다. 매일 03:00 UTC 정리 작업이 삭제 30일 이상 지난 이력서와 모든 버전을 영구 삭제한다. 따라서 실제 DB 제거는 30일 시점 이후 다음 정리 실행 때 이뤄진다. 백업 보존 정책은 아직 미정이며 DB 정리만으로 백업에서의 삭제를 보증하지 않는다. 자기소개서의 저장 모델과 B12 분석 결과 처리 계약은 B12에서 결정한다.
 
@@ -248,7 +261,7 @@ POST·PATCH의 필드 검증 실패는 `400`과 `INVALID_INPUT`으로 응답하�
 
 활성 자기소개서는 계정당 최대 20개다. 등록 시 사용자 행을 잠근 뒤 활성 문서 수를 확인하며 상한에서 `POST /api/me/cover-letters`는 `409`를 반환한다. 삭제 표시한 문서는 상한에 포함하지 않는다.
 
-자기소개서는 `/api/me/cover-letters`에서 B05 이력서와 동일한 메서드·페이지·본문 제한·오류 계약으로 관리한다. `GET/POST /api/me/cover-letters`, `GET/PATCH/DELETE /api/me/cover-letters/{coverLetterId}`, `GET/POST /api/me/cover-letters/{coverLetterId}/versions`, `GET /api/me/cover-letters/{coverLetterId}/versions/{versionId}`를 제공한다. 생성은 `{title, content}`, 제목 변경은 `{title}`, 새 버전은 `{content}`다. 응답은 B05의 `Resume`·`ResumeVersion`과 같은 필드를 쓰되 버전 메타데이터의 `resumeId` 대신 `coverLetterId`를 반환한다. 모든 변경에는 세션·CSRF가 필요하다. 원문은 같은 `RESUME_ENCRYPTION_KEY`로 AES-256-GCM 암호화하되 이력서와 구분된 AAD를 쓴다. 버전은 불변이며 삭제는 즉시 비노출, DB 원본·버전은 30일 이후 매일 03:00 UTC 정리된다.
+자기소개서는 `/api/me/cover-letters`에서 이력서의 기본 메서드·페이지·본문 제한·오류 계약으로 관리한다. `GET/POST /api/me/cover-letters`, `GET/PATCH/DELETE /api/me/cover-letters/{coverLetterId}`, `GET/POST /api/me/cover-letters/{coverLetterId}/versions`, `GET /api/me/cover-letters/{coverLetterId}/versions/{versionId}`를 제공한다. 이력서 전용 버전 수정·삭제·양식 필드는 적용하지 않는다. 생성은 `{title, content}`, 제목 변경은 `{title}`, 새 버전은 `{content}`다. 응답은 기본 이력서 필드와 같되 버전 메타데이터의 `resumeId` 대신 `coverLetterId`를 반환한다. 모든 변경에는 세션·CSRF가 필요하다. 원문은 같은 `RESUME_ENCRYPTION_KEY`로 AES-256-GCM 암호화하되 이력서와 구분된 AAD를 쓴다. 자기소개서 버전은 불변이며 삭제는 즉시 비노출, DB 원본·버전은 30일 이후 매일 03:00 UTC 정리된다.
 
 | Method·URL | 요청 | 성공 응답 |
 | --- | --- | --- |
@@ -283,14 +296,14 @@ POST는 정확한 동의 본문을 매번 요구하고 지정 버전만 비동�
 
 | Method·URL | 요청 | 응답·오류 |
 | --- | --- | --- |
-| `POST /api/me/recommendations/jobs` | `{ "resumeVersionId": 3, "coverLetterVersionId": null, "candidates": [{"kind":"COLLECTED","id":10},{"kind":"MANUAL","id":7}], "consentToExternalComparison": true }` | 신규·진행 중 `202`, 동일 완료 입력 재사용 `200`와 아래 `RecommendationPage`. 후보는 0~20개, 중복·미지 필드·동의 누락은 `400`, 없는/타인 문서·공고는 `404`, AI 또는 암호화 키 미설정은 비교 실행 시 `503`. 미인증 `401`, CSRF 실패 `403`. |
+| `POST /api/me/recommendations/jobs` | `{ "resumeVersionId": 3, "coverLetterVersionId": null, "candidates": [{"kind":"COLLECTED","id":10},{"kind":"MANUAL","id":7}], "consentToExternalComparison": true }` | 신규·진행 중 `202`, 동일 완료 입력 재사용 `200`와 아래 `RecommendationPage`. 후보는 1~20개, 중복·미지 필드·동의 누락은 `400`, 없는/타인 문서·공고는 `404`, AI 또는 암호화 키 미설정은 비교 실행 시 `503`. 미인증 `401`, CSRF 실패 `403`. |
 | `GET /api/me/recommendations/jobs?requestId={id}&page=0&size=20` | 저장 결과 ID와 페이지 | `RecommendationPage` · `200`; 다른 사용자/없는 결과 `404`, 잘못된 페이지·ID `400`, 미인증 `401` |
 | `GET /api/me/recommendations/jobs/{id}` | 위 GET의 단일 경로 별칭, 같은 page/size | 같은 응답·오류 |
 | `GET /api/me/recommendations/jobs/history` | `page=0`, `size=10` 기본; `page≥0`, `1≤size≤50` | 본인 요청의 `{items:[{id,status,consentedAt,analyzedAt,candidateCount,resumeVersionId,coverLetterVersionId}],page,size,totalElements}` · `200`; 최신 요청순, 잘못된 페이지는 `400`, 미인증 `401` |
 
 `RecommendationPage`는 `{ "id": 1, "status": "COMPLETED", "stale": false, "failureReason": null, "consentedAt": "...", "analyzedAt": "...", "policyVersion": "B14_V2", "modelName": "gpt-5.4-mini", "resumeVersionId": 3, "coverLetterVersionId": null, "candidateCount": 2, "items": [{ "kind": "COLLECTED", "id": 10, "title": "백엔드 개발자", "companyName": "예시 회사", "location": "서울", "deadlineDate": "2026-10-22", "skillTags": ["Java"], "status": "COMPLETED", "reason": null, "rank": 1, "evidence": [{ "documentQuote": "Java 서버 운영", "jobQuote": "Java 서비스 개발", "explanation": "관련 경험" }], "limitations": ["경력 연수 확인 불가"], "preparationTips": [{ "type": "CHECK", "basisQuote": "Java 서비스 개발", "text": "실제 업무 범위를 확인하세요." }] }], "page": 0, "size": 20, "totalElements": 2, "limitation": "..." }` 형태다. 항목의 `companyName`, `location`, `deadlineDate`는 현재 공고 원본에서 조회하며 공고가 삭제되어 조회할 수 없거나 값이 없으면 `null`이다. `skillTags`는 공고 AI 분석이 `COMPLETED`인 경우 저장된 필수·우대 기술 이름을 반환하고, 분석 전·실패·결과 없음은 빈 배열이다. 직접 등록 공고의 기술은 본인 공고 분석 결과만 사용한다. 이 표시 정보는 저장된 비교 순위나 근거를 다시 계산하지 않는다. `status`는 요청 단위 `PENDING|COMPLETED|FAILED`, 항목별 `PENDING|COMPLETED|FAILED|INSUFFICIENT_INPUT|EXCLUDED`이다. 본문 없는 공고는 `INSUFFICIENT_INPUT`, 이미 지원한 공고는 `EXCLUDED/ALREADY_APPLIED`, 마감 공고는 `EXCLUDED/EXPIRED`이다. 후보 0건이면 완료 후 빈 `items`가 나온다. 실패 사유는 일반 문구만 반환하고 원문·AI 응답은 노출하지 않는다. GET은 외부 호출을 하지 않는다.
 
-본인 이력서·자기소개서의 불변 버전 중 하나 이상과 공용 수집 공고 `COLLECTED` 또는 본인 개인 저장 공고 `MANUAL`를 비교한다. B12 문서 분석과 공고 기술 분석 완료는 필수가 아니다. 사용자가 지정한 공고만 평가하며 외부 URL을 읽지 않는다. 모델은 기술·경험의 관련성과 강점의 근거를 바탕으로 비교 가능 후보에 1부터 연속 순위를 부여한다. 서버는 모든 후보·순위·인용의 원문 포함 여부와 출력 구조를 검증하고, 결과를 AES-256-GCM으로 저장한다. 점수·`matchRate`·합격 확률은 새 응답에 없다. 문서 버전당 마스킹 후 12,000자, 공고 본문당 마스킹 후 4,000자까지 전송한다. AI 출력은 추측할 수 있으며 잘린 입력과 공고 원문 결측이 한계다.
+본인 이력서·자기소개서의 버전 중 하나 이상과 공용 수집 공고 `COLLECTED` 또는 본인 개인 저장 공고 `MANUAL`를 비교한다. 이력서 버전 수정·삭제 시 연결된 저장 비교 결과는 제거한다. B12 문서 분석과 공고 기술 분석 완료는 필수가 아니다. 사용자가 지정한 공고만 평가하며 외부 URL을 읽지 않는다. 모델은 기술·경험의 관련성과 강점의 근거를 바탕으로 비교 가능 후보에 1부터 연속 순위를 부여한다. 서버는 모든 후보·순위·인용의 원문 포함 여부와 출력 구조를 검증하고, 결과를 AES-256-GCM으로 저장한다. 점수·`matchRate`·합격 확률은 새 응답에 없다. 문서 버전당 마스킹 후 12,000자, 공고 본문당 마스킹 후 4,000자까지 전송한다. AI 출력은 추측할 수 있으며 잘린 입력과 공고 원문 결측이 한계다.
 
 `preparationTips`는 비교 완료 항목에서만 최대 3개이며 `{ "type": "CHECK"|"IMPROVE", "basisQuote": "문서나 공고 원문 일부", "text": "확인·보완 제안" }` 형태다. `basisQuote`는 전송한 마스킹 문서 또는 해당 공고의 실제 부분 문자열이어야 하고, 서버가 제안 구조·길이·정형 개인정보 포함 여부를 검증한다. 근거가 부족한 항목·제외·대기·실패 항목과 B14_V1로 저장된 기존 결과에는 빈 배열을 반환한다. 같은 입력도 정책 버전 변경으로 새 POST에서 다시 비교할 수 있으며 AI 응답 길이와 호출 비용이 증가할 수 있다. 조회 GET은 새 AI 호출을 하지 않는다.
 
@@ -309,7 +322,7 @@ POST는 정확한 동의 본문을 매번 요구하고 지정 버전만 비동�
 | `GET /api/auth/me/deletion-impact` | 로그인 세션, 본문 없음 | `200 DeletionImpact` | 미인증 `401 UNAUTHORIZED` |
 | `DELETE /api/auth/me` | 로그인 세션과 같은 세션의 `X-CSRF-TOKEN`; `{ "currentPassword": "password123", "confirmation": "계정 삭제" }` | `204 No Content`, 본문 없음, 현재 세션 종료·쿠키 삭제 | 누락·형식·확인 문구 불일치 `400 INVALID_INPUT`; 미인증·현재 비밀번호 불일치 `401 UNAUTHORIZED`; CSRF 없음·불일치 `403 FORBIDDEN`; 처리 실패 `500 INTERNAL_SERVER_ERROR`(전체 롤백) |
 
-`DeletionImpact`의 필드·배열 항목 발췌: `{ "deletedResources": [{ "code": "resume_version", "name": "이력서 암호화 버전", "count": 2 }], "preservedSharedResources": ["공용 채용공고·회사·출처·수집 실행 정보", "공용 공고 AI 분석·기술·전형·첨부 메타데이터", "공용 표준 기술·별칭"], "confirmationText": "계정 삭제", "recoverableInApp": false, "processing": "동기 처리·운영 DB 즉시 삭제", "externalDataNotice": "운영 DB의 개인 기록은 즉시 삭제되며 앱에서 복구할 수 없습니다. DB 백업과 이미 전송된 AI 제공자 사본은 이 요청으로 삭제를 보장하지 않으며 별도 보존 정책에 따릅니다." }`. 실제 `deletedResources`에는 아래 25개 코드가 모두 나오며 `count`는 조회 시점의 본인 행 수(숨김·소프트 삭제된 행 포함)다. 조회와 삭제 사이에 새 기록이 생기면 DELETE는 실행 시점의 전체 행을 삭제한다.
+`DeletionImpact`의 필드·배열 항목 발췌: `{ "deletedResources": [{ "code": "resume_version", "name": "이력서 암호화 버전", "count": 2 }], "preservedSharedResources": ["공용 채용공고·회사·출처·수집 실행 정보", "공용 공고 AI 분석·기술·전형·첨부 메타데이터", "공용 표준 기술·별칭"], "confirmationText": "계정 삭제", "recoverableInApp": false, "processing": "동기 처리·운영 DB 즉시 삭제", "externalDataNotice": "운영 DB의 개인 기록은 즉시 삭제되며 앱에서 복구할 수 없습니다. DB 백업과 이미 전송된 AI 제공자 사본은 이 요청으로 삭제를 보장하지 않으며 별도 보존 정책에 따릅니다." }`. 실제 `deletedResources`에는 31개 코드가 나오며 `count`는 조회 시점의 본인 행 수(숨김·소프트 삭제된 행 포함)다. 조회와 삭제 사이에 새 기록이 생기면 DELETE는 실행 시점의 전체 행을 삭제한다.
 
 | 삭제 코드 | 처리 대상 |
 | --- | --- |
@@ -318,7 +331,7 @@ POST는 정확한 동의 본문을 매번 요구하고 지정 버전만 비동�
 | `application`, `application_status_history`, `interview_schedule` | 공용·개인 공고 지원 기록과 상태 이력, 면접 일정 |
 | `personal_saved_job`, `personal_saved_job_analysis`, `interested_company` | 숨긴 개인 공고와 분석 결과, 관심 기업 |
 | `personal_todo`, `learning_goal` | 삭제 표시한 기록을 포함한 할 일·학습 목표 |
-| `resume`, `resume_version`, `cover_letter`, `cover_letter_version` | 삭제 표시한 부모를 포함한 문서와 암호화된 모든 버전 |
+| `resume_draft`, `resume`, `resume_version`, `cover_letter`, `cover_letter_version` | 임시저장과 삭제 표시한 부모를 포함한 문서 및 암호화된 모든 버전 |
 | `document_analysis`, `semantic_recommendation` | 암호화된 문서 분석·의미 기반 추천 결과와 요청 메타데이터 |
 | `notification`, `notification_preference` | 앱 내 알림과 수신 설정 |
 | `character_equipment`, `character_activity`, `character_reward` | 장착·EXP 활동 원장·보상 소유권 |

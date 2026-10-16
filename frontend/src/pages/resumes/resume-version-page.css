@@ -1,0 +1,39 @@
+.resume-version-page { max-width: 960px; display: grid; gap: 16px; }
+.resume-version-back-link { display: inline-flex; align-items: center; gap: 5px; width: fit-content; color: #4d54a1; font-size: 12px; text-decoration: none; }
+.resume-version-back-link .lucide-icon { width: 15px; height: 15px; }
+.resume-version-page-heading, .resume-version-page-card { padding: 22px; border: 1px solid #e0e9fb; border-radius: 8px; background: #fff; }
+.resume-version-page-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.resume-version-page-heading p { margin: 0 0 5px; color: #7887b4; font-size: 12px; }
+.resume-version-page-heading h1 { margin: 0 0 5px; font-size: 21px; }
+.resume-version-page-heading small { color: #8490b6; font-size: 11px; }
+.resume-version-page-actions, .resume-version-page-edit-actions { display: flex; align-items: center; gap: 8px; }
+.resume-version-page-actions button, .resume-version-page-actions a, .resume-version-page-edit-actions button { display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-height: 31px; padding: 6px 10px; border: 1px solid #dce5fb; border-radius: 5px; background: #fff; color: #4d54a1; font-size: 11px; text-decoration: none; }
+.resume-version-page-actions .is-danger { color: #e03556; }
+.resume-version-page-actions .lucide-icon { width: 13px; height: 13px; }
+.resume-version-page-card { display: grid; gap: 16px; }
+.resume-version-page-label { display: grid; gap: 5px; min-width: 0; color: #17255e; font-size: 11px; font-weight: 700; }
+.resume-version-page-label > span { min-height: 32px; padding: 8px 10px; border: 1px solid #e2e9f8; border-radius: 5px; background: #fbfcff; color: #42578e; font-weight: 400; white-space: pre-wrap; overflow-wrap: anywhere; }
+.resume-workspace .resume-version-page-label input, .resume-workspace .resume-version-page-label textarea { min-height: 34px; border: 1px solid #dce5fb; border-radius: 5px; background: #fff; color: #17255e; font-size: 12px; font-weight: 400; }
+.resume-workspace .resume-version-page-label input[type='checkbox'] { width: 16px; height: 16px; min-height: 16px; padding: 0; }
+.resume-version-page-edit-actions { justify-content: flex-end; }
+.resume-version-page-description { margin: 0; color: #6172a2; font-size: 12px; }
+.resume-version-page-source { margin: 0; padding: 16px; border-radius: 6px; background: #f8faff; color: #24366f; font: inherit; font-size: 13px; line-height: 1.65; white-space: pre-wrap; overflow-wrap: anywhere; }
+.resume-version-template { display: grid; gap: 12px; }
+.resume-version-template-section { display: grid; gap: 10px; padding: 16px; border: 1px solid #e2e9f8; border-radius: 7px; }
+.resume-version-template-section h2 { margin: 0; color: #17255e; font-size: 15px; }
+.resume-version-template-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.resume-version-template-entry { display: grid; gap: 8px; padding: 10px; border: 1px solid #edf0fa; border-radius: 6px; }
+.resume-version-template-entry > strong { font-size: 12px; }
+.resume-version-template-add, .resume-version-template-remove { width: fit-content; min-height: 28px; padding: 5px 8px; border: 1px solid #dce5fb; border-radius: 5px; background: #fff; color: #4965a5; font-size: 11px; }
+.resume-version-template-remove { color: #e03556; }
+.resume-version-template-tags { display: flex; flex-wrap: wrap; gap: 5px; color: #8490b6; font-size: 12px; }
+.resume-version-template-tags span { padding: 5px 8px; border-radius: 5px; background: #eef4ff; color: #39599a; }
+.resume-version-page-analysis h2 { margin: 0; font-size: 16px; }
+.resume-version-page-analysis p { margin: 0; color: #6575a2; font-size: 12px; }
+.resume-version-page-analysis-results { display: grid; gap: 10px; }
+.resume-version-page-analysis-results strong { font-size: 12px; }
+.resume-version-page-analysis-results ul { margin: 5px 0 0; color: #6575a2; font-size: 12px; }
+.resume-version-page-reanalyze { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.resume-version-page-reanalyze label { display: flex; align-items: center; gap: 6px; color: #53649a; font-size: 11px; }
+.resume-workspace .resume-version-page-reanalyze input[type='checkbox'] { width: 15px; height: 15px; }
+@media (max-width: 560px) { .resume-version-page-heading { align-items: flex-start; flex-direction: column; } .resume-version-template-grid { grid-template-columns: 1fr; } }

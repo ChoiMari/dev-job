@@ -3,9 +3,9 @@ import type { createApiClient } from './client.ts';
 
 export type DocumentType = 'RESUME' | 'COVER_LETTER';
 export type DocumentVersionSelection = { documentType: DocumentType; documentId: number; versionId: number };
-export type DocumentSummary = { id: number; title: string; latestVersionId: number; latestVersionNumber: number; latestVersionCreatedAt: string; createdAt: string; updatedAt: string };
+export type DocumentSummary = { id: number; title: string; latestVersionId: number; latestVersionNumber: number; versionCount?: number; latestVersionCreatedAt: string; createdAt: string; updatedAt: string };
 export type DocumentPage = { items: DocumentSummary[]; page: number; size: number; totalElements: number };
-export type DocumentVersion = { id: number; versionNumber: number; createdAt: string; content?: string; resumeId?: number; coverLetterId?: number };
+export type DocumentVersion = { id: number; versionNumber: number; createdAt: string; title?: string; description?: string; content?: string; form?: Record<string, unknown>; resumeId?: number; coverLetterId?: number };
 export type DocumentAnalysis = { id: number; status: 'PENDING' | 'COMPLETED' | 'FAILED'; source: DocumentVersionSelection & { versionNumber: number; createdAt: string }; stale: boolean; result: { skills: string[]; strengths: string[]; improvements: string[] } | null; failureReason: string | null; consentedAt: string; analyzedAt: string | null; updatedAt: string };
 
 const record = (value: unknown): value is Record<string, unknown> => !!value && typeof value === 'object' && !Array.isArray(value);
@@ -14,10 +14,14 @@ const integer = (value: unknown): value is number => typeof value === 'number' &
 const date = (value: unknown): value is string => typeof value === 'string' && !Number.isNaN(Date.parse(value));
 const invalid = (): never => { throw new ApiError('문서 응답을 확인할 수 없습니다.', 200, 'INVALID_RESPONSE'); };
 export const isDocumentSummary = (v: unknown): v is DocumentSummary => record(v) && id(v.id) && typeof v.title === 'string'
-  && id(v.latestVersionId) && id(v.latestVersionNumber) && date(v.latestVersionCreatedAt) && date(v.createdAt) && date(v.updatedAt);
+  && id(v.latestVersionId) && id(v.latestVersionNumber) && (v.versionCount === undefined || id(v.versionCount))
+  && date(v.latestVersionCreatedAt) && date(v.createdAt) && date(v.updatedAt);
 export const isDocumentVersion = (v: unknown, type: DocumentType, documentId: number, detail = false): v is DocumentVersion =>
   record(v) && id(v.id) && id(v.versionNumber) && date(v.createdAt)
   && v[type === 'RESUME' ? 'resumeId' : 'coverLetterId'] === documentId
+  && (v.title === undefined || typeof v.title === 'string')
+  && (v.description === undefined || typeof v.description === 'string')
+  && (v.form === undefined || record(v.form))
   && (!detail || typeof v.content === 'string');
 export const isDocumentAnalysis = (v: unknown, selection: DocumentVersionSelection): v is DocumentAnalysis =>
   record(v) && id(v.id) && ['PENDING', 'COMPLETED', 'FAILED'].includes(String(v.status))
@@ -43,8 +47,8 @@ export function createDocumentApi(request: ReturnType<typeof createApiClient>, t
     get: async (documentId: number, signal?: AbortSignal): Promise<DocumentSummary> => {
       const v = await request(path(documentId), { signal }); return isDocumentSummary(v) && v.id === documentId ? v : invalid();
     },
-    create: async (title: string, content: string): Promise<DocumentSummary> => {
-      const v = await request(base, { method: 'POST', body: { title, content }, csrfToken: await csrf() });
+    create: async (title: string, content: string, draftId?: number, form?: Record<string, unknown>): Promise<DocumentSummary> => {
+      const v = await request(base, { method: 'POST', body: { title, content, ...(draftId === undefined ? {} : { draftId }), ...(type === 'RESUME' && form ? { form } : {}) }, csrfToken: await csrf() });
       return isDocumentSummary(v) ? v : invalid();
     },
     rename: async (documentId: number, title: string): Promise<DocumentSummary> => {
@@ -56,9 +60,18 @@ export function createDocumentApi(request: ReturnType<typeof createApiClient>, t
       const v = await request(`${path(documentId)}/versions`, { signal });
       return Array.isArray(v) && v.every(item => isDocumentVersion(item, type, documentId) && !('content' in item)) ? v : invalid();
     },
-    addVersion: async (documentId: number, content: string): Promise<DocumentVersion> => {
-      const v = await request(`${path(documentId)}/versions`, { method: 'POST', body: { content }, csrfToken: await csrf() });
+    addVersion: async (documentId: number, content: string, metadata?: { title: string; description?: string; form?: Record<string, unknown>; draftId?: number }): Promise<DocumentVersion> => {
+      const v = await request(`${path(documentId)}/versions`, { method: 'POST', body: { content, ...(type === 'RESUME' ? metadata : {}) }, csrfToken: await csrf() });
       return isDocumentVersion(v, type, documentId) && !('content' in v) ? v : invalid();
+    },
+    editVersion: async (documentId: number, versionId: number, content: string, metadata: { title?: string; description?: string; form?: Record<string, unknown>; draftId?: number }): Promise<DocumentVersion> => {
+      if (type !== 'RESUME') throw new TypeError('이력서 버전만 수정할 수 있습니다.');
+      const v = await request(`${path(documentId)}/versions/${versionId}`, { method: 'PATCH', body: { content, ...metadata }, csrfToken: await csrf() });
+      return isDocumentVersion(v, type, documentId) && v.id === versionId && !('content' in v) ? v : invalid();
+    },
+    removeVersion: async (documentId: number, versionId: number): Promise<void> => {
+      if (type !== 'RESUME') throw new TypeError('이력서 버전만 삭제할 수 있습니다.');
+      await request(`${path(documentId)}/versions/${versionId}`, { method: 'DELETE', csrfToken: await csrf() });
     },
     version: async (documentId: number, versionId: number, signal?: AbortSignal): Promise<DocumentVersion> => {
       const v = await request(versionPath(documentId, versionId), { signal });

@@ -8,7 +8,7 @@ const summary = { id: 2, title: '문서', latestVersionId: 7, latestVersionNumbe
 const selection = { documentType: 'RESUME', documentId: 2, versionId: 7 };
 const analysis = { id: 4, status: 'PENDING', source: { ...selection, versionNumber: 1, createdAt: summary.createdAt }, stale: false, result: null, failureReason: null, consentedAt: summary.createdAt, analyzedAt: null, updatedAt: summary.createdAt };
 
-test('immutable version metadata omits content and detail fetches selected original', async () => {
+test('version metadata omits content and detail fetches selected original', async () => {
   const calls = [];
   const api = createDocumentApi(createApiClient('/api', async (url, options) => {
     calls.push(url);
@@ -18,6 +18,49 @@ test('immutable version metadata omits content and detail fetches selected origi
   assert.equal((await api.versions(2))[0].content, undefined);
   assert.equal((await api.version(2, 7)).content, '원문');
   assert.deepEqual(calls, ['/api/me/resumes/2/versions', '/api/me/resumes/2/versions/7']);
+});
+
+test('resume version detail accepts form and edit/delete send CSRF requests', async () => {
+  const calls = [];
+  const form = { name: '홍길동' };
+  const api = createDocumentApi(createApiClient('/api', async (url, options) => {
+    calls.push({ url, options });
+    if (url === '/api/auth/csrf') return json({ headerName: 'X-CSRF-TOKEN', token: 'fresh' });
+    if (options.method === 'DELETE') return new Response(null, { status: 204 });
+    if (options.method === 'PATCH') return json({ id: 7, resumeId: 2, versionNumber: 1, createdAt: summary.createdAt, title: '수정본' });
+    return json({ id: 7, resumeId: 2, versionNumber: 1, createdAt: summary.createdAt, content: '원문', form });
+  }), 'RESUME');
+  assert.deepEqual((await api.version(2, 7)).form, form);
+  assert.equal((await api.editVersion(2, 7, '수정 원문', { title: '수정본', form })).title, '수정본');
+  assert.deepEqual(JSON.parse(calls.find(call => call.options.method === 'PATCH').options.body), { content: '수정 원문', title: '수정본', form });
+  await api.removeVersion(2, 7);
+  assert.equal(calls.at(-1).options.method, 'DELETE');
+  assert.equal(calls.at(-1).options.headers['X-CSRF-TOKEN'], 'fresh');
+});
+
+test('resume version creation sends title and description while keeping content out of metadata', async () => {
+  const calls = [];
+  const api = createDocumentApi(createApiClient('/api', async (url, options) => {
+    calls.push({ url, options });
+    if (url === '/api/auth/csrf') return json({ headerName: 'X-CSRF-TOKEN', token: 'fresh' });
+    return json({ id: 8, resumeId: 2, versionNumber: 2, createdAt: summary.createdAt, title: '지원용 버전', description: '프로젝트 보강' });
+  }), 'RESUME');
+  const created = await api.addVersion(2, '새 원문', { title: '지원용 버전', description: '프로젝트 보강' });
+  assert.equal(created.title, '지원용 버전');
+  assert.equal(created.content, undefined);
+  assert.deepEqual(JSON.parse(calls[1].options.body), { content: '새 원문', title: '지원용 버전', description: '프로젝트 보강' });
+});
+
+test('template resume creation sends its form with the generated source', async () => {
+  const calls = [];
+  const form = { name: '홍길동' };
+  const api = createDocumentApi(createApiClient('/api', async (url, options) => {
+    calls.push({ url, options });
+    if (url === '/api/auth/csrf') return json({ headerName: 'X-CSRF-TOKEN', token: 'fresh' });
+    return json({ ...summary, versionCount: 1 });
+  }), 'RESUME');
+  await api.create('양식 이력서', '이름: 홍길동', undefined, form);
+  assert.deepEqual(JSON.parse(calls[1].options.body), { title: '양식 이력서', content: '이름: 홍길동', form });
 });
 
 test('analysis POST requires explicit consent and GET reports stale saved result', async () => {

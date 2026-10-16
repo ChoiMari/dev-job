@@ -26,6 +26,7 @@ public class AccountDeletionService {
                     + " or cover_letter_version_id in (select v.id from cover_letter_version v join cover_letter c on c.id=v.cover_letter_id where c.user_id=?)", true),
             indirect("resume_version", "이력서 암호화 버전", "resume_id in (select id from resume where user_id=?)"),
             indirect("cover_letter_version", "자기소개서 암호화 버전", "cover_letter_id in (select id from cover_letter where user_id=?)"),
+            direct("resume_draft", "이력서 작성 임시저장"),
             direct("resume", "이력서"),
             direct("cover_letter", "자기소개서"),
             direct("notification", "앱 내 알림"),

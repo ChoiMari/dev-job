@@ -23,3 +23,8 @@ S05 격리 DB `devjob_s05_test`에는 기술 migration이 이미 V3으로 적용
 
 V35__interested_company_profile.sql은 기존 관심 기업 행에 산업·규모·지역·관심도·즐겨찾기를 추가하고, 기업별 태그 연결 및 사용자 태그 표를 만든다. 기존 행은 관심도 MEDIUM, 즐겨찾기 false, 태그 없음으로 유지한다.
 V36__company_tag_presentation.sql은 사용자 기업 태그에 색상 키와 정렬 순서를 추가한다. 기존 태그는 파랑으로 유지하고 기존 계정의 기본 8개 태그를 채운다. 신규 계정은 첫 목록 조회 때 기본 태그를 준비한다.
+
+V44__resume_draft.sql은 계정별 이력서 작성 초안 1건을 암호문과 nonce로 저장한다. 기존 이력서·버전 데이터는 변경하지 않는다.
+V45__resume_draft_multiple.sql은 기존 초안 행을 보존하면서 초안 ID를 부여하고 계정별 여러 초안을 저장하도록 PK를 바꾼다. 애플리케이션에서 계정당 최대 20건을 제한한다.
+V46__resume_version_labels.sql은 기존 버전을 보존하면서 선택 버전 제목·설명 컬럼을 추가한다.
+V47__resume_version_form.sql은 기존 버전을 보존하면서 양식 이력서 버전의 암호화 JSON과 nonce 컬럼을 추가한다.
