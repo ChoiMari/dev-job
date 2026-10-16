@@ -5,10 +5,10 @@
 body, #root, .app-layout, #main-content, .public-home, .auth-page { @apply bg-white; }
 #root .auth-page.f02-auth-page, .public-home { @apply bg-white; background-image: none; }
 
-#main-content :is(section, article)[class] {
+#main-content:not(.public-home) :is(section, article)[class] {
   @apply rounded-none border-0 border-b border-slate-200 bg-white shadow-none;
 }
-#main-content :is(section, article)[class]:not(.profile-banner) { background-image: none; }
+#main-content:not(.public-home) :is(section, article)[class]:not(.profile-banner) { background-image: none; }
 #main-content section.resume-empty[class] { border: 0; border-radius: 0; box-shadow: none; }
 #main-content .character-page > .character-theme-section { border-bottom: 0; }
 #main-content .character-page .character-slot { border-bottom: 0; }
