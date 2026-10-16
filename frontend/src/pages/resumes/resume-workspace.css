@@ -45,6 +45,8 @@
 .resume-version-panel, .resume-analysis-preview, .resume-tip, .resume-source-panel, .resume-analysis-panel, .resume-create { padding: 12px; border: 1px solid #e2e9f9; border-radius: 8px; }
 .resume-workspace-detail > :is(.resume-version-panel, .resume-source-panel, .resume-analysis-panel) { padding-top: 4px; }
 #main-content .resume-workspace-detail > section[class] { border: 0; border-radius: 0; box-shadow: none; }
+#main-content .resume-workspace-detail > .resume-version-panel { padding-bottom: 4px; }
+#main-content .resume-workspace-detail > .resume-analysis-preview { padding-top: 4px; padding-bottom: 8px; }
 .resume-section-title { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
 .resume-section-title h3 { display: inline-flex; align-items: center; gap: 6px; margin: 0; font-size: 12px; }
 .resume-section-title h3 .lucide-icon { width: 17px; height: 17px; color: #6650ef; }
@@ -96,6 +98,7 @@
 .resume-form-actions { display: flex; justify-content: flex-end; gap: 8px; }
 .resume-form-actions > button:not(.resume-primary) { min-height: 34px; padding: 6px 10px; border: 1px solid #dce4f4; border-radius: 6px; background: #fff; color: #52628f; font-size: 11px; }
 .resume-source-panel pre { max-height: 550px; margin: 0; padding: 14px; overflow: auto; border-radius: 6px; background: #f8f9fe; color: #253668; font: inherit; font-size: 12px; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
+.resume-source-panel .resume-source-notice { width: fit-content; margin: 8px 0 0 auto; text-align: right; }
 .resume-analysis-intro { padding: 10px; }
 .resume-analysis-intro img { width: 30%; max-height: 105px; object-fit: contain; }
 .resume-analysis-results { display: grid; gap: 10px; }

@@ -142,7 +142,7 @@ body, #root, .app-layout, #main-content, .public-home, .auth-page { @apply bg-wh
 #main-content .todos-dashboard-list[class] { border: 1px solid #dce3f0; border-radius: 0; background: #fff; }
 #main-content .interview-overview-detail[class] { border: 0; border-radius: 0; background: #f6f8ff; box-shadow: none; }
 #main-content .interview-overview-next[class] { border: 0; border-top: 1px dashed #dce3f0; border-bottom: 1px dashed #dce3f0; border-radius: 0; background: #fff; box-shadow: none; }
-#main-content section.interview-overview-stats { border: 0; }
+#main-content:not(.public-home) section.interview-overview-stats[class] { border: 0; }
 #main-content .interviews-editor-hero[class] { background: #f7f8ff; }
 #main-content .interviews-editor-form[class] { border: 1px solid #dce3f0; border-radius: 0; background: #fff; box-shadow: none; }
 #main-content .interviews-detail[class],

@@ -79,8 +79,9 @@ S04 물리 매핑: `V3__create_profiles.sql`은 `profiles`를 새로 만들고 `
 | `Skill` | 표준 기술명 | `id` PK, `name` | 정규화한 기술명 기준 유일 |
 | `SkillAlias` | 여러 입력 이름을 표준 기술에 연결 | `id` PK, `skill_id` FK, `alias_name` | `skill_id`, `alias_name` 필수; 정규화한 별칭은 하나의 `Skill`만 가리킴 |
 | `UserSkill` | 사용자가 보유한 기술 | `id` PK, `user_id` FK, `skill_id` FK, `created_at`, `proficiency_level`, `experience_months` | `(user_id, skill_id)` 유일; 숙련도 1~5 또는 null, 경험 개월 0~600 또는 null |
-| `Project` | 사용자 프로젝트 경험 | `id` PK, `user_id` FK, `name`, `description`, `start_date`, `end_date`, `role`, `key_features`, `outcome`, `project_url`, `created_at`, `updated_at` | `user_id`, `name`, `start_date` 필수; 종료일이 있으면 시작일보다 빠를 수 없음 |
+| `Project` | 사용자 프로젝트 경험 | `id` PK, `user_id` FK, `name`, `project_type`, `description`, `start_date`, `end_date`, `role`, `key_features`, `outcome`, `project_url`, `created_at`, `updated_at` | `user_id`, `name`, `start_date`, `project_type` 필수; 유형은 `UNSPECIFIED`·`PERSONAL`·`TEAM`; 종료일이 있으면 시작일보다 빠를 수 없음 |
 | `ProjectSkill` | 프로젝트에서 사용한 기술 | `id` PK, `project_id` FK, `skill_id` FK | `(project_id, skill_id)` 유일 |
+| `ProjectCustomSkill` | 프로젝트에만 직접 입력한 기술 | `id` PK, `project_id` FK, `name`, `normalized_name`, `usage_note` | `(project_id, normalized_name)` 유일 |
 
 `UserSkill`과 `ProjectSkill`이 필요한 이유는 한 사용자가 여러 기술을, 한 기술을 여러 사용자가 보유할 수 있고 프로젝트에도 같은 N:M 관계가 있기 때문이다. 역량 비교에는 `UserSkill`과 사용자의 `ProjectSkill`을 합친 기술 집합을 사용한다. 프로젝트 기술을 추가해도 `UserSkill` 행을 자동 생성하지는 않는다.
 
@@ -91,6 +92,14 @@ S05 물리 매핑: `skill`, `skill_alias`, `user_skill`의 ID는 BIGINT identity
 B02 물리 매핑: main 통합 순서에 맞춘 `V13__user_skill_experience.sql`은 기존 `user_skill`에 nullable INTEGER `proficiency_level`·`experience_months`와 각각 1~5·0~600 CHECK만 추가한다. 기존 행은 두 값이 null이며 기존 행·migration은 변경하지 않는다. 사용자 기술 관계 삭제 시 값도 함께 삭제되고 재등록은 새 null 관계다. 프로젝트 기술은 값을 자동 생성하거나 합산하지 않으며 적합도·Skill Gap의 기술 집합 계산은 그대로다.
 
 S06 물리 매핑: `V5__create_projects.sql`은 `project`·`project_skill`만 추가한다. ID는 BIGINT identity, 프로젝트의 `user_id`는 users FK, 이름은 필수 VARCHAR(100)·공백 검사, 역할은 VARCHAR(100), 설명·주요 기능·성과·URL은 VARCHAR(2000)이다. 시작일은 필수 DATE, 종료일은 선택 DATE·날짜 순서 CHECK, 생성·수정 시각은 필수 TIMESTAMPTZ다. 목록을 위해 `(user_id, created_at DESC, id DESC)` 인덱스를 둔다. ProjectSkill은 두 필수 FK와 `(project_id, skill_id)` UNIQUE, `skill_id` 인덱스를 갖는다. FK cascade 없이 서비스 트랜잭션과 JPA orphan removal로 해당 프로젝트 관계를 삭제한다. 수정·삭제는 프로젝트 행 잠금으로 직렬화한다. 기존 테이블·데이터·migration 이력은 변경하지 않는다.
+
+`V49__project_type.sql`은 기존 프로젝트를 보존하며 `project_type`을 추가한다. 기존 행은 `UNSPECIFIED`가 되고 새 입력은 `PERSONAL`·`TEAM`을 선택할 수 있다. DB CHECK와 문자열 enum 매핑으로 세 값만 허용한다.
+
+`V50__project_portfolio_details.sql`은 기존 프로젝트를 보존하면서 한 줄 소개·카테고리·팀원 수·문제/기획 배경·주요 기능 항목(JSONB)·성과 항목(JSONB)·시연/GitHub/문서 URL·기여도·담당 업무·트러블슈팅·결과 지표(JSONB)를 추가한다. 기존 `key_features`와 `outcome`은 대응 배열 한 항목으로 이관하고 호환 컬럼도 유지한다. `project_skill.usage_note`는 기술별 활용 내용이다. `V51__project_image.sql`의 `project_image`는 프로젝트 FK, 비공개 S3 객체 키, 썸네일/추가 이미지 구분, 업로드 준비/완료 상태, 원본 파일명·MIME·크기를 저장한다. 이미지 바이트나 영구 공개 URL은 DB에 저장하지 않는다.
+
+`V52__project_contribution_details.sql`은 `project.contribution_items`와 `project.troubleshooting_items`를 각각 JSONB 비어 있는 배열 기본값으로 추가한다. 기여도 항목은 담당 기능명과 0~100의 기여도 값을 한 쌍으로 저장한다. 기존 `responsibilities`와 `contribution_percent`가 함께 있으면 한 항목으로 이관하고, 기존 `troubleshooting`은 한 항목으로 이관한다. 기존 단일 값 컬럼은 이전 API와 데이터의 호환을 위해 유지한다.
+
+`V53__project_custom_skills.sql`은 프로젝트 소유 범위의 직접 입력 기술을 별도 관계로 추가한다. 표시는 원래 이름, 중복 검사는 정규화 이름, 활용 내용은 선택 메모로 저장한다. 기존 프로젝트·보유 기술·공통 기술 행은 변경하지 않는다.
 
 ### 3.2 채용공고와 AI 분석
 
@@ -199,6 +208,8 @@ V15__create_interested_companies.sql은 interested_company만 추가한다. id B
 
 `V24__document_analysis.sql`은 `cover_letter`, `cover_letter_version`, `document_analysis`를 추가한다. 자기소개서 부모·버전은 B05 이력서와 같은 사용자 FK, 제목·시각, 불변 버전 번호·암호문·12바이트 nonce, 활성 목록·만료 정리 인덱스를 가진다. 버전 번호는 부모별 UNIQUE이고 부모 행 잠금으로 순차 생성한다. `CoverLetterCipher`는 기존 `RESUME_ENCRYPTION_KEY`를 사용하되 이력서 원문과 다른 AAD 영역을 사용한다. 자기소개서 삭제는 `deleted_at`을 기록하고 즉시 비노출하며, 30일 이후 매일 03:00 UTC에 원본·버전을 DB에서 삭제한다.
 
+`V48__cover_letter_draft.sql`은 `cover_letter_draft`를 추가한다. `id` BIGINT identity PK, `user_id` 사용자 FK, 암호문 BYTEA, 12바이트 nonce BYTEA, `updated_at` TIMESTAMPTZ와 사용자·수정시각 내림차순 인덱스로 구성된다. 제목과 원문을 한 JSON으로 묶어 자기소개서 버전과 다른 AAD로 암호화한다. 계정별 최대 20건을 서비스에서 제한하고, 최종 등록 시 선택한 초안만 동일 트랜잭션에서 제거한다. 계정 삭제 때 모든 초안을 제거한다.
+
 `document_analysis`는 BIGINT identity PK, 선택 `resume_version_id` 또는 `cover_letter_version_id` 중 **정확히 하나**를 갖는 CHECK, 각 버전 FK의 UNIQUE, `PENDING|COMPLETED|FAILED` 상태 CHECK를 둔다. `result_ciphertext`·12바이트 `result_nonce`는 함께 null이거나 함께 값이 있어야 한다. 실패 사유·동의 시각·분석 시각·갱신 시각을 보존한다. 결과 JSON은 저장 전에 검증·정규화하고 기존 암호화 키와 분석 ID 전용 AAD로 AES-256-GCM 암호화한다. 분석 행은 부모 문서 삭제 시 즉시 제거하고, 버전 물리 삭제에도 FK `ON DELETE CASCADE`로 제거된다. 결과 조회의 `stale`은 저장 필드가 아니라 해당 문서의 최신 버전 ID와 분석 원본 버전 ID를 비교해 계산한다. DB 백업과 외부 AI 제공자의 보존·삭제 정책은 아직 미정이다.
 
 ### B13 앱 내 알림
@@ -217,7 +228,7 @@ V15__create_interested_companies.sql은 interested_company만 추가한다. id B
 
 ### B15 계정 삭제
 
-애플리케이션 서비스가 사용자 행을 잠그고 FK 자식부터 삭제한다. 직접 `user_id`를 가진 `semantic_recommendation`, `notification`, `notification_preference`, `interview_schedule`, `application`, `resume_draft`, `resume`, `cover_letter`, `personal_saved_job`, `project`, `bookmark`, `user_ai_skill_candidate`, `user_ai_analysis_request`, `user_custom_skill`, `user_skill`, `profiles`, `personal_todo`, `interested_company`, `personal_company_tag`, `learning_goal`, `character_activity`, `character_reward`, `character_equipment` 및 최종 `users` 행을 제거한다. 간접 소유인 `document_analysis`, `resume_version`, `cover_letter_version`, `application_status_history`, `personal_saved_job_analysis`, `project_skill`, `interested_company_tag`도 부모를 통해 소유자를 한정해 먼저 제거한다. 총 31개 테이블이며 `deleted_at`이 있는 행도 제외하지 않는다. 영향 안내의 리소스 코드와 건수 조회는 이 삭제 대상 목록을 공유한다.
+애플리케이션 서비스가 사용자 행을 잠그고 FK 자식부터 삭제한다. 직접 `user_id`를 가진 `semantic_recommendation`, `notification`, `notification_preference`, `interview_schedule`, `application`, `resume_draft`, `cover_letter_draft`, `resume`, `cover_letter`, `personal_saved_job`, `project`, `bookmark`, `user_ai_skill_candidate`, `user_ai_analysis_request`, `user_custom_skill`, `user_skill`, `profiles`, `personal_todo`, `interested_company`, `personal_company_tag`, `learning_goal`, `character_activity`, `character_reward`, `character_equipment` 및 최종 `users` 행을 제거한다. 간접 소유인 `document_analysis`, `resume_version`, `cover_letter_version`, `application_status_history`, `personal_saved_job_analysis`, `project_skill`, `project_custom_skill`, `project_image`, `interested_company_tag`도 부모를 통해 소유자를 한정해 먼저 제거한다. 총 34개 테이블이며 `deleted_at`이 있는 행도 제외하지 않는다. 프로젝트 이미지가 있으면 S3 객체를 먼저 삭제하고 메타데이터를 지운다. 영향 안내의 리소스 코드와 건수 조회는 이 삭제 대상 목록을 공유한다.
 
 모든 SQL은 하나의 DB 트랜잭션에서 실행되므로 중간 FK·DB 실패 시 전체 롤백한다. 삭제 성공 후 현재 세션은 종료하고, 다른 세션은 인증 필터가 `users` 행 부재를 확인해 무효화한다. 로그인은 사용자 행 잠금으로 삭제와 직렬화한다. 공용 `job_posting`·`company`·`job_source`·`job_collection_run`, `ai_analysis`·`job_skill`·공고 전형/첨부 메타데이터, `skill`·`skill_alias` 및 다른 사용자 행은 삭제하지 않는다. 운영 DB의 개인 기록은 즉시 제거하고 앱 내 복원 기능은 없다. DB 백업과 이미 전송된 AI 제공자 사본은 별도 보존 정책에 따르며 이 트랜잭션의 대상이 아니다.
 

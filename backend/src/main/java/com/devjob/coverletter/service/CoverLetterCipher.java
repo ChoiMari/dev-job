@@ -43,6 +43,28 @@ public class CoverLetterCipher {
         catch (Exception exception) { throw unavailable(); }
     }
 
+    public Encrypted encryptDraft(Long userId, String content) {
+        try {
+            byte[] nonce = new byte[12];
+            random.nextBytes(nonce);
+            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+            cipher.init(Cipher.ENCRYPT_MODE, key(), new GCMParameterSpec(128, nonce));
+            cipher.updateAAD(draftAad(userId));
+            return new Encrypted(cipher.doFinal(content.getBytes(StandardCharsets.UTF_8)), nonce);
+        } catch (ResponseStatusException exception) { throw exception; }
+        catch (Exception exception) { throw unavailable(); }
+    }
+
+    public String decryptDraft(Long userId, byte[] ciphertext, byte[] nonce) {
+        try {
+            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+            cipher.init(Cipher.DECRYPT_MODE, key(), new GCMParameterSpec(128, nonce));
+            cipher.updateAAD(draftAad(userId));
+            return new String(cipher.doFinal(ciphertext), StandardCharsets.UTF_8);
+        } catch (ResponseStatusException exception) { throw exception; }
+        catch (Exception exception) { throw unavailable(); }
+    }
+
     private SecretKeySpec key() {
         try {
             byte[] decoded = Base64.getDecoder().decode(encodedKey);
@@ -53,6 +75,10 @@ public class CoverLetterCipher {
 
     private static byte[] aad(Long coverLetterId, int versionNumber) {
         return ByteBuffer.allocate(20).putLong(0x434F5645524C5452L).putLong(coverLetterId).putInt(versionNumber).array();
+    }
+
+    private static byte[] draftAad(Long userId) {
+        return ByteBuffer.allocate(16).putLong(0x434F564452414654L).putLong(userId).array();
     }
 
     private static ResponseStatusException unavailable() {

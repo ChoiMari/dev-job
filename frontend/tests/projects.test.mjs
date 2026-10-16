@@ -5,7 +5,7 @@ import { ApiError, createApiClient } from '../src/api/client.ts';
 
 const input = { name: 'DevJob', description: null, startDate: '2026-01-01', endDate: null,
   role: 'backend', keyFeatures: null, outcome: null, projectUrl: 'https://example.com/project', skillIds: [1] };
-const value = { ...input, id: 3, skills: [{ id: 1, name: 'Java' }] };
+const value = { ...input, projectType: 'UNSPECIFIED', id: 3, skills: [{ id: 1, name: 'Java' }] };
 const json = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
 test('project CRUD carries session and fresh CSRF and replaces skills', async () => {
   let stored; let tokens = 0;
@@ -55,4 +55,22 @@ test('invalid CSRF blocks mutation and failures propagate without retry', async 
     assert.equal(calls, 2);
   }
   await assert.rejects(createProjectsApi(async () => { throw new Error('should not request'); }).get(0), TypeError);
+});
+test('project portfolio fields and skill usage survive response parsing', async () => {
+  const extended = { ...value, summary: '한 줄 소개', category: '웹 애플리케이션', teamSize: 3,
+    problemSolving: '문제', featureItems: ['기능 1'], achievementItems: ['성과 1'],
+    demoUrl: 'https://example.com/demo', githubUrl: null, presentationUrl: null,
+    contributionPercent: 70, responsibilities: '담당 업무', troubleshooting: '개선 경험',
+    metricItems: ['40% 개선'], skillUsages: [{ skillId: 1, usage: 'API 구현' }],
+    contributionItems: [{ responsibility: '검색 API', percent: 70 }, { responsibility: '화면 구현', percent: 40 }],
+    troubleshootingItems: ['쿼리 계획 개선', '인덱스 적용'], customSkills: [{ name: 'My Tool', usage: '검색 구현' }] };
+  const parsed = await createProjectsApi(async () => extended).get(3);
+  assert.deepEqual(parsed.featureItems, ['기능 1']);
+  assert.deepEqual(parsed.skillUsages, [{ skillId: 1, usage: 'API 구현' }]);
+  assert.deepEqual(parsed.contributionItems, extended.contributionItems);
+  assert.deepEqual(parsed.troubleshootingItems, extended.troubleshootingItems);
+  assert.deepEqual(parsed.customSkills, extended.customSkills);
+  await assert.rejects(createProjectsApi(async () => ({ ...extended, contributionPercent: 120 })).get(3), { code: 'INVALID_RESPONSE' });
+  await assert.rejects(createProjectsApi(async () => ({ ...extended, contributionItems: [{ responsibility: 'API', percent: 101 }] })).get(3), { code: 'INVALID_RESPONSE' });
+  await assert.rejects(createProjectsApi(async () => ({ ...extended, customSkills: [{ name: '', usage: null }] })).get(3), { code: 'INVALID_RESPONSE' });
 });

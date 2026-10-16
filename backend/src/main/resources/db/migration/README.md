@@ -28,3 +28,9 @@ V44__resume_draft.sql은 계정별 이력서 작성 초안 1건을 암호문과 
 V45__resume_draft_multiple.sql은 기존 초안 행을 보존하면서 초안 ID를 부여하고 계정별 여러 초안을 저장하도록 PK를 바꾼다. 애플리케이션에서 계정당 최대 20건을 제한한다.
 V46__resume_version_labels.sql은 기존 버전을 보존하면서 선택 버전 제목·설명 컬럼을 추가한다.
 V47__resume_version_form.sql은 기존 버전을 보존하면서 양식 이력서 버전의 암호화 JSON과 nonce 컬럼을 추가한다.
+V48__cover_letter_draft.sql은 사용자별 자기소개서 작성 초안의 암호문·nonce·수정시각을 저장한다. 기존 자기소개서와 버전 행은 변경하지 않는다.
+V49__project_type.sql은 프로젝트 유형을 추가하고 기존 행을 `UNSPECIFIED`로 보존한다. 개인·팀 유형과 함께 CHECK로 허용값을 제한한다.
+V50__project_portfolio_details.sql은 프로젝트 포트폴리오 상세 필드와 기술별 활용 내용을 추가하고 기존 주요 기능·성과 텍스트를 배열로 보존한다.
+V51__project_image.sql은 프로젝트 이미지의 비공개 S3 객체 키와 업로드 메타데이터를 저장한다. 기존 프로젝트 행은 변경하지 않는다.
+V52__project_contribution_details.sql은 담당 기능별 기여도와 트러블슈팅/개선 경험의 반복 항목을 JSONB 배열로 추가한다. 기존 단일 값이 있으면 각각 배열 한 항목으로 보존한다.
+V53__project_custom_skills.sql은 프로젝트별 직접 입력 기술명과 활용 내용을 저장한다. 계정의 보유 기술과 공통 기술 카탈로그는 변경하지 않는다.

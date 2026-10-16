@@ -10,8 +10,11 @@ public class ProjectSkill {
     @JoinColumn(name = "project_id", nullable = false) private Project project;
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "skill_id", nullable = false) private Skill skill;
+    @Column(name = "usage_note", length = 1000) private String usageNote;
     protected ProjectSkill() { }
     public ProjectSkill(Project project, Skill skill) { this.project = project; this.skill = skill; }
     public Long getProjectId() { return project.getId(); }
     public Skill getSkill() { return skill; }
+    public String getUsageNote() { return usageNote; }
+    public void setUsageNote(String usageNote) { this.usageNote = usageNote == null || usageNote.isBlank() ? null : usageNote.strip(); }
 }

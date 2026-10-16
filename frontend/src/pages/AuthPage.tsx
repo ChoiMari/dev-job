@@ -72,7 +72,6 @@ export function AuthPage({ register, forgotPassword, passwordChanged, sessionExp
       <p className="auth-intro">{forgotPassword ? '비밀번호 재설정 안내를 준비하고 있어요.' : register ? '취업 준비를 함께할 공간을 만들어 보세요.' : '오늘의 한 걸음도 DevJob과 함께해요.'}</p>
       {!register && passwordChanged && <SuccessState compact title="비밀번호가 변경되었습니다." message="새 비밀번호로 다시 로그인해 주세요." />}
       {!register && window.location.hash.includes('accountDeleted=1') && <SuccessState compact title="계정이 삭제되었습니다." message="개인 기록은 삭제되었으며 이전 계정으로 로그인할 수 없습니다." />}
-      {!register && sessionExpired && <p className="form-error" role="alert">로그인이 만료되었습니다. 다시 로그인해 주세요.</p>}
       {forgotPassword ? <div className="f02-auth-forgot">
         <label htmlFor="recovery-email">이메일</label>
         <div className="f02-auth-input"><FieldIcon name="mail" />
@@ -84,6 +83,7 @@ export function AuthPage({ register, forgotPassword, passwordChanged, sessionExp
         <a className="f02-auth-secondary" href="#/login">로그인으로 돌아가기</a>
       </div> : <>
         <form onSubmit={submit} aria-busy={pending}>
+          {!register && sessionExpired && <p className="f02-auth-session-notice" role="alert"><PixelIcon name="clock" /><span>로그인이 만료되었습니다. 다시 로그인해 주세요.</span></p>}
           <label htmlFor="email">이메일</label>
           <div className="f02-auth-input"><FieldIcon name="mail" />
             <input id="email" name="email" type="email" required maxLength={254} autoComplete="email"

@@ -22,13 +22,14 @@ public class CoverLetterService {
     private final CoverLetterVersionRepository versions;
     private final UserRepository users;
     private final CoverLetterCipher cipher;
+    private final CoverLetterDraftService drafts;
     private final DocumentAnalysisRepository analyses;
     private final JdbcTemplate jdbc;
 
     public CoverLetterService(CoverLetterRepository coverLetters, CoverLetterVersionRepository versions, UserRepository users,
-            CoverLetterCipher cipher, DocumentAnalysisRepository analyses, JdbcTemplate jdbc) {
+            CoverLetterCipher cipher, CoverLetterDraftService drafts, DocumentAnalysisRepository analyses, JdbcTemplate jdbc) {
         this.coverLetters = coverLetters; this.versions = versions; this.users = users; this.cipher = cipher; this.analyses = analyses;
-        this.jdbc = jdbc;
+        this.jdbc = jdbc; this.drafts = drafts;
     }
 
     @Transactional(readOnly = true)
@@ -42,9 +43,15 @@ public class CoverLetterService {
 
     @Transactional
     public CoverLetterResponse create(Long userId, JsonNode body) {
-        fields(body, Set.of("title", "content"), Set.of("title", "content"));
+        fields(body, Set.of("title", "content", "draftId"), Set.of("title", "content"));
         String title = text(body.get("title"), 200);
         String content = text(body.get("content"), 100_000);
+        Long draftId = null;
+        if (body.has("draftId")) {
+            var value = body.get("draftId");
+            if (!value.isIntegralNumber() || !value.canConvertToLong() || value.longValue() <= 0) throw badInput();
+            draftId = value.longValue();
+        }
         var user = users.findById(userId).orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
         jdbc.queryForObject("select id from users where id=? for update", Long.class, userId);
         if (jdbc.queryForObject("select count(*) from cover_letter where user_id=? and deleted_at is null", Long.class, userId) >= 20)
@@ -52,6 +59,7 @@ public class CoverLetterService {
         var coverLetter = coverLetters.saveAndFlush(new CoverLetter(user, title));
         var encrypted = cipher.encrypt(coverLetter.getId(), 1, content);
         var version = versions.saveAndFlush(new CoverLetterVersion(coverLetter, 1, encrypted.ciphertext(), encrypted.nonce()));
+        if (draftId != null) drafts.consume(userId, draftId);
         return CoverLetterResponse.from(coverLetter, version);
     }
 

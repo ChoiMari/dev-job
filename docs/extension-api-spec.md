@@ -263,6 +263,8 @@ POST·PATCH의 필드 검증 실패는 `400`과 `INVALID_INPUT`으로 응답하�
 
 자기소개서는 `/api/me/cover-letters`에서 이력서의 기본 메서드·페이지·본문 제한·오류 계약으로 관리한다. `GET/POST /api/me/cover-letters`, `GET/PATCH/DELETE /api/me/cover-letters/{coverLetterId}`, `GET/POST /api/me/cover-letters/{coverLetterId}/versions`, `GET /api/me/cover-letters/{coverLetterId}/versions/{versionId}`를 제공한다. 이력서 전용 버전 수정·삭제·양식 필드는 적용하지 않는다. 생성은 `{title, content}`, 제목 변경은 `{title}`, 새 버전은 `{content}`다. 응답은 기본 이력서 필드와 같되 버전 메타데이터의 `resumeId` 대신 `coverLetterId`를 반환한다. 모든 변경에는 세션·CSRF가 필요하다. 원문은 같은 `RESUME_ENCRYPTION_KEY`로 AES-256-GCM 암호화하되 이력서와 구분된 AAD를 쓴다. 자기소개서 버전은 불변이며 삭제는 즉시 비노출, DB 원본·버전은 30일 이후 매일 03:00 UTC 정리된다.
 
+자기소개서 임시저장은 `GET/POST /api/me/cover-letters/drafts`, `GET/PUT/DELETE /api/me/cover-letters/drafts/{draftId}`로 관리한다. POST·PUT 본문은 문자열 `title`(최대 200자), `content`(최대 100,000자)만 받으며 작성 중 빈 문자열도 허용한다. 저장 본문은 UTF-8 262,144바이트 이하이고 계정당 최대 20건(초과 시 `409`)이다. 목록은 수정일 내림차순이며 `{id,title,updatedAt}`만, 상세는 여기에 `content`를 더해 반환한다. 빈 제목은 목록에서 `제목 없는 임시저장 자기소개서`로 표시한다. POST는 `201`, DELETE는 `204`이며 다른 계정의 초안과 없는 초안은 `404`다. 모든 변경에는 세션·CSRF가 필요하다. 제목과 원문은 버전 원문과 분리된 AAD를 사용해 AES-256-GCM으로 암호화한다. 최종 `POST /api/me/cover-letters`는 기존 `{title,content}` 외에 선택적 양의 정수 `draftId`를 받아, 문서 저장이 성공한 같은 트랜잭션에서 본인의 해당 초안 한 건을 제거한다. 초안이 없으면 `404`로 전체 등록을 취소한다.
+
 | Method·URL | 요청 | 성공 응답 |
 | --- | --- | --- |
 | `POST /api/me/resumes/{resumeId}/versions/{versionId}/analysis` | `{ "consentToExternalAnalysis": true }` | 새 요청·진행 중 `DocumentAnalysis` · `202`, 완료 결과 재사용 `200` |
@@ -331,7 +333,7 @@ POST는 정확한 동의 본문을 매번 요구하고 지정 버전만 비동�
 | `application`, `application_status_history`, `interview_schedule` | 공용·개인 공고 지원 기록과 상태 이력, 면접 일정 |
 | `personal_saved_job`, `personal_saved_job_analysis`, `interested_company` | 숨긴 개인 공고와 분석 결과, 관심 기업 |
 | `personal_todo`, `learning_goal` | 삭제 표시한 기록을 포함한 할 일·학습 목표 |
-| `resume_draft`, `resume`, `resume_version`, `cover_letter`, `cover_letter_version` | 임시저장과 삭제 표시한 부모를 포함한 문서 및 암호화된 모든 버전 |
+| `resume_draft`, `cover_letter_draft`, `resume`, `resume_version`, `cover_letter`, `cover_letter_version` | 임시저장과 삭제 표시한 부모를 포함한 문서 및 암호화된 모든 버전 |
 | `document_analysis`, `semantic_recommendation` | 암호화된 문서 분석·의미 기반 추천 결과와 요청 메타데이터 |
 | `notification`, `notification_preference` | 앱 내 알림과 수신 설정 |
 | `character_equipment`, `character_activity`, `character_reward` | 장착·EXP 활동 원장·보상 소유권 |

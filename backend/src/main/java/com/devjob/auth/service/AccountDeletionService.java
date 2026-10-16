@@ -2,6 +2,7 @@ package com.devjob.auth.service;
 
 import com.devjob.auth.dto.AccountDeletionRequest;
 import com.devjob.auth.dto.DeletionImpactResponse;
+import com.devjob.project.service.ProjectImageService;
 import com.devjob.user.repository.UserRepository;
 import java.util.List;
 import org.springframework.http.HttpStatus;
@@ -27,6 +28,7 @@ public class AccountDeletionService {
             indirect("resume_version", "이력서 암호화 버전", "resume_id in (select id from resume where user_id=?)"),
             indirect("cover_letter_version", "자기소개서 암호화 버전", "cover_letter_id in (select id from cover_letter where user_id=?)"),
             direct("resume_draft", "이력서 작성 임시저장"),
+            direct("cover_letter_draft", "자기소개서 작성 임시저장"),
             direct("resume", "이력서"),
             direct("cover_letter", "자기소개서"),
             direct("notification", "앱 내 알림"),
@@ -39,6 +41,8 @@ public class AccountDeletionService {
                     "personal_saved_job_id in (select id from personal_saved_job where user_id=?)"),
             direct("personal_saved_job", "개인 저장 공고"),
             indirect("project_skill", "프로젝트 기술 연결", "project_id in (select id from project where user_id=?)"),
+            indirect("project_custom_skill", "프로젝트 직접 입력 기술", "project_id in (select id from project where user_id=?)"),
+            indirect("project_image", "프로젝트 이미지", "project_id in (select id from project where user_id=?)"),
             direct("project", "프로젝트"),
             direct("bookmark", "공용 공고 북마크"),
             direct("user_ai_analysis_request", "공용 공고 AI 기술 후보 요청"),
@@ -63,11 +67,13 @@ public class AccountDeletionService {
     private final UserRepository users;
     private final PasswordEncoder passwords;
     private final JdbcTemplate jdbc;
+    private final ProjectImageService images;
 
-    public AccountDeletionService(UserRepository users, PasswordEncoder passwords, JdbcTemplate jdbc) {
+    public AccountDeletionService(UserRepository users, PasswordEncoder passwords, JdbcTemplate jdbc, ProjectImageService images) {
         this.users = users;
         this.passwords = passwords;
         this.jdbc = jdbc;
+        this.images = images;
     }
 
     @Transactional
@@ -87,6 +93,7 @@ public class AccountDeletionService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
         if (!passwords.matches(request.currentPassword(), user.getPasswordHash()))
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
+        images.removeAllForUser(userId);
         for (Resource resource : RESOURCES) {
             int removed = resource.twoParameters()
                     ? jdbc.update(resource.deleteSql(), userId, userId)

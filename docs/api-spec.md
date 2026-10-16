@@ -61,21 +61,30 @@ S04 구현: 이메일은 앞뒤 공백 제거·소문자 정규화 후 최대 25
 | 내 기술 삭제 `DELETE /api/me/skills/{skillId}` | 예 | Path: `skillId` | 없음 | 본문 없음 · `204` | 등록된 기술 없음 `404` |
 
 B02에서 내 기술 목록의 각 항목만 `proficiencyLevel`(1~5 정수 또는 `null`)과 `experienceMonths`(0~600개월 정수 또는 `null`)를 추가한다. PATCH는 두 필드 중 하나 이상을 요구하며 누락은 값 유지, `null`은 제거다. 빈 객체·알 수 없는 필드·잘못된 타입과 범위는 `400`이다. 기존 등록 요청/응답과 공용 `Skill` 형식은 유지한다. 등록 시 두 값은 `null`, 삭제 후 재등록 시에도 `null`이며 프로젝트 기술은 자동 반영하지 않는다. 세부 예시는 [확장 API 명세 B02](extension-api-spec.md)를 따른다.
-| 내 프로젝트 목록 `GET /api/me/projects` | 예 | Query: `page`, `size` | 없음 | `Project` 목록 · `200` | 잘못된 페이지 `400` |
+| 내 프로젝트 목록 `GET /api/me/projects` | 예 | Query: `page`, `size`, 선택 `q`, `projectType`, `status`, `sort` | 없음 | 필터 적용 `Project` 목록 · `200` | 잘못된 조건·페이지 `400` |
 | 내 프로젝트 등록 `POST /api/me/projects` | 예 | 없음 | 아래 `Project` 입력 | `Project` · `201` | 값 오류 `400`, 기술 없음 `404` |
 | 내 프로젝트 상세 `GET /api/me/projects/{projectId}` | 예 | Path: `projectId` | 없음 | `Project` · `200` | 없음 `404`, 타인 소유 `403` |
 | 내 프로젝트 수정 `PUT /api/me/projects/{projectId}` | 예 | Path: `projectId` | 아래 `Project` 입력 | `Project` · `200` | 값 오류 `400`, 없음 `404`, 타인 소유 `403` |
 | 내 프로젝트 삭제 `DELETE /api/me/projects/{projectId}` | 예 | Path: `projectId` | 없음 | 본문 없음 · `204` | 없음 `404`, 타인 소유 `403` |
 
-`Project` 입력: `{ "name": "프로젝트명", "description": "...", "startDate": "2026-01-01", "endDate": null, "role": "백엔드", "keyFeatures": "...", "outcome": "...", "projectUrl": null, "skillIds": [1, 2] }`. `name`, `startDate`, `skillIds`는 필수이고 `skillIds`는 빈 배열이 가능하다. 그 외 텍스트·URL·종료일은 선택이다. 응답에는 `id`와 입력 정보 중 `skillIds`를 제외한 필드, `skills: Skill[]`를 포함한다. 수정 시 `skillIds`는 전달한 목록으로 프로젝트 기술 관계를 교체한다. 프로젝트 기술을 수정해도 보유 기술 목록이 자동으로 변하지 않는다.
+`Project` 입력: `{ "name": "프로젝트명", "projectType": "PERSONAL", "description": "...", "startDate": "2026-01-01", "endDate": null, "role": "백엔드", "keyFeatures": "...", "outcome": "...", "projectUrl": null, "skillIds": [1, 2] }`. `name`, `startDate`, `skillIds`는 필수이고 `skillIds`는 빈 배열이 가능하다. `projectType`은 `PERSONAL`·`TEAM`이며 누락·`null`은 기존 호출과의 호환을 위해 `UNSPECIFIED`로 저장한다. 그 외 텍스트·URL·종료일은 선택이다. 응답에는 `id`와 입력 정보 중 `skillIds`를 제외한 필드, `skills: Skill[]`를 포함한다. 수정 시 `skillIds`는 전달한 목록으로 프로젝트 기술 관계를 교체한다. 프로젝트 기술을 수정해도 보유 기술 목록이 자동으로 변하지 않는다.
 
 S06 구현 계약:
 
 - 프로젝트명·역할은 최대 100자, 설명·주요 기능·성과·URL은 최대 2000자다. 문자열은 앞뒤 공백을 제거하며 선택 문자열의 공백뿐인 값·누락은 `null`이다. 텍스트의 NUL 등 제어 문자는 `400`이며 줄바꿈·탭은 허용한다. 숫자·객체를 문자열로 변환하지 않는다.
 - 시작일은 필수 ISO 날짜, 종료일은 선택이며 시작일보다 빠르면 `400`이다. URL은 호스트가 있는 `http`/`https` 절대 주소만 허용하고 계정 정보가 포함된 URL은 `400`이다.
-- `skillIds`는 JSON 양의 정수(Long 범위) 배열이다. 누락·null 배열·null 원소·문자열/소수/0/음수 ID는 `400`이다. 중복 ID는 하나의 관계로 저장하고, 하나라도 없는 ID이면 `404`로 전체 생성·수정을 거부한다. 선택한 기술이 UserSkill에 없어도 연결할 수 있다. 새 기술명 생성은 프로젝트 API에 포함하지 않는다.
+- `skillIds`는 JSON 양의 정수(Long 범위) 배열이다. 누락·null 배열·null 원소·문자열/소수/0/음수 ID는 `400`이다. 중복 ID는 하나의 관계로 저장하고, 하나라도 없는 ID이면 `404`로 전체 생성·수정을 거부한다. 선택한 기술이 UserSkill에 없어도 연결할 수 있다. 고정 목록에 없는 이름은 별도 `customSkills`로 프로젝트에만 저장한다.
 - 목록은 생성 시각·ID 내림차순, 1절의 페이지 규칙을 사용하며 `page × size > 2147483647`은 `400`이다. 범위 밖 페이지는 빈 `items`와 실제 전체 건수를 반환한다. 상세·수정·삭제의 비양수/잘못된 ID는 `400`, 없는 프로젝트는 `404`, 다른 사용자 소유는 `403`이다.
-- 사용자 ID는 S03 세션에서만 얻고 요청의 `userId`·`X-User-Id`로 바꾸지 않는다. POST·PUT·DELETE는 최신 CSRF 토큰을 요구한다. 수정은 텍스트·날짜·선택 기술을 교체하고 선택 필드 누락은 `null`로 처리한다. 삭제는 해당 Project·ProjectSkill만 제거하며 UserSkill·공통 Skill·SkillAlias를 유지한다.
+- 목록의 `q`는 프로젝트명, 연결된 고정 기술명, 프로젝트 직접 입력 기술명을 대소문자 구분 없이 부분 검색한다(앞뒤 공백 제거, 최대 100자). `projectType`은 `PERSONAL`·`TEAM`, `status`는 `PLANNED`·`IN_PROGRESS`·`COMPLETED`, `sort`는 `NEWEST`(기본)·`OLDEST`만 허용한다. 상태는 한국 시간 오늘을 기준으로 시작 전·진행 중·종료일 경과로 계산한다. 조건은 소유자 범위에서 페이지 자르기 전에 함께 적용하며 `totalElements`도 필터 결과다.
+- 사용자 ID는 S03 세션에서만 얻고 요청의 `userId`·`X-User-Id`로 바꾸지 않는다. POST·PUT·DELETE는 최신 CSRF 토큰을 요구한다. 수정은 텍스트·날짜·선택 기술을 교체하고 선택 필드 누락은 `null`로 처리한다. 삭제는 해당 Project와 연결된 ProjectSkill·ProjectCustomSkill을 제거하며 UserSkill·공통 Skill·SkillAlias를 유지한다.
+
+프로젝트 등록 화면 확장: 기존 `Project` 요청·응답에 선택 필드 `summary`(200자), `category`(100자), `teamSize`(1~99), `problemSolving`(1000자), `featureItems`·`achievementItems`(각 최대 10개·항목당 2000자), `demoUrl`·`githubUrl`·`presentationUrl`(각 2000자), `contributionPercent`(0~100), `responsibilities`·`troubleshooting`(각 1000자), `metricItems`(최대 10개·항목당 1000자), `skillUsages: [{skillId, usage}]`(선택 기술의 고유 ID·활용 내용 최대 1000자)을 추가한다. URL은 기존 `projectUrl`과 같은 HTTP(S) 규칙을 따른다. 응답은 같은 필드의 저장값을 돌려준다. 배열 누락은 빈 배열로 정규화한다. 기존 `keyFeatures`·`outcome` 호환 필드는 유지한다.
+
+프로젝트 직접 입력 기술: 요청·응답의 `customSkills: [{name, usage}]`는 선택 항목이며 누락·`null`은 빈 배열이다. 최대 20개, 이름은 필수 100자 이내, 활용 내용은 선택 1000자 이내다. 이름은 NFKC·공백·대소문자 정규화 후 프로젝트 안에서 중복될 수 없고 고정 기술명·별칭과 같으면 `400`이다. 수정 시 목록을 교체하며 삭제 시 프로젝트와 함께 지운다. 공통 기술 카탈로그와 프로필 보유 기술은 변경하지 않는다. 고정 기술 ID 기반 역량 비교에는 직접 입력 기술을 포함하지 않는다.
+
+담당 기능별 기록에는 선택 필드 `contributionItems: [{ "responsibility": "검색 API", "percent": 70 }]`(최대 10개, 기능명 필수·최대 1000자, 기여도 정수 0~100)와 `troubleshootingItems: ["쿼리 개선"]`(최대 10개, 항목당 최대 1000자)을 사용한다. 배열 누락은 빈 배열이며 응답에 저장된 배열을 포함한다. `contributionPercent`·`responsibilities`·`troubleshooting` 단일 값은 호환 필드로 남지만 새 등록 화면은 기능별 목록을 입력한다.
+
+프로젝트 이미지 API는 모두 세션 인증이 필요하고 변경 요청에는 CSRF가 필요하다. `GET /api/me/project-image-storage`는 `{ "available": boolean }`을 반환한다. `POST /api/me/projects/{projectId}/images/uploads`는 `{ "kind": "THUMBNAIL"|"ADDITIONAL", "fileName": "...", "contentType": "image/jpeg"|"image/png", "byteSize": 1..5242880 }`을 받아 `{ "imageId", "uploadUrl", "contentType" }`을 `201`로 반환한다. 클라이언트는 5분 유효한 서명 URL로 `PUT`한 뒤 `POST /api/me/projects/{projectId}/images/{imageId}/complete`를 호출한다. 서버는 S3의 크기·MIME·파일 시그니처를 확인한 후 이미지 응답 `{ "id", "kind", "fileName", "byteSize", "viewUrl" }`을 반환한다. `GET /api/me/projects/{projectId}/images`는 완료 이미지와 5분 유효 조회 URL 목록, `DELETE /api/me/projects/{projectId}/images/{imageId}`는 객체와 메타데이터 삭제 후 `204`를 반환한다. 썸네일은 1장, 추가 이미지는 2장까지이며 초과는 `409`, 잘못된 파일은 `400`, 다른 사용자 소유는 `403`, 버킷·리전 미설정은 `503`이다. S3 버킷은 비공개이며 업로드용 CORS에 앱 출처의 `PUT`과 `Content-Type` 헤더를 허용해야 한다.
 
 기술 추가 요청은 `skillId`와 `name` 중 하나만 보낸다. `name`은 기존 표준 기술명·별칭으로 먼저 정규화하고, 일치 항목이 없으면 해당 이름의 표준 `Skill`을 생성해 연결한다. 문자열 자체를 `UserSkill`에 저장하지 않는다. 별칭 목록 관리는 공개 사용자 API 범위에 넣지 않는다.
 

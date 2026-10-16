@@ -1,5 +1,7 @@
 \# DevJob Architecture
 
+프로젝트 이미지 저장: 프로젝트 메타데이터와 비공개 S3 객체 키는 PostgreSQL에 저장한다. 백엔드가 세션 소유권을 확인하고 5분 유효한 업로드·조회 URL을 발급한다. 업로드 완료 시 S3 객체의 크기·MIME·이미지 시그니처를 검사한다. 버킷·리전이 없으면 이미지 API만 503으로 비활성화하고 프로젝트 텍스트 저장은 유지한다. S3 자격 증명은 AWS 기본 자격 증명 체인에서 읽으며 코드·DB에 저장하지 않는다.
+
 
 
 \## 1. 문서 목적
@@ -3407,6 +3409,8 @@ B05 이력서 Backend는 `ResumeController → ResumeService → ResumeRepositor
 
 자기소개서는 B05와 같은 Controller → Service → Repository 구조로 별도 `cover_letter`·불변 버전을 관리한다. `CoverLetterCipher`는 같은 서버 키를 쓰되 이력서 원문과 다른 AAD를 사용한다. 분석은 `DocumentAnalysisController → DocumentAnalysisService → DocumentAnalysisRepository`에서 문서 소유권과 해당 버전을 확인하고 부모 행 잠금·버전별 UNIQUE로 중복 요청을 직렬화한다. 명시 동의를 받은 POST에서만 원문을 복호화·정형 개인정보 마스킹하고, 트랜잭션 커밋 뒤 기존 Spring AI `ChatModel`의 OpenAI 호환 공급자로 최대 12,000자를 보낸다. GET·문서/CRM 조회는 외부 호출을 하지 않는다.
 
+자기소개서 작성 초안은 `CoverLetterDraftController → CoverLetterDraftService → cover_letter_draft`에서 소유권을 확인해 저장한다. 제목과 원문은 같은 서버 키와 초안 전용 AAD로 암호화한다. 최종 문서 등록에 `draftId`가 있으면 `CoverLetterService`가 문서 저장과 해당 초안 소비를 한 트랜잭션으로 처리한다. 계정 삭제 영향 조회와 실제 삭제는 이 테이블을 함께 포함한다.
+
 `DocumentAnalysisRunner`는 외부 호출과 출력 파싱을 맡고, `DocumentOutputValidator`는 세 배열의 구조·개수·문자·정형 개인정보를 검증하고 기술명을 정규화한다. `DocumentAnalysisWriter`는 현재 시도의 상태·시각을 확인해 유효한 결과만 `DocumentResultCipher`로 암호화한 뒤 저장한다. 오류는 일반 `FAILED`로 전환하고 외부 응답·원문·키를 로그나 API에 담지 않는다. 완료 결과는 재사용하고 실패 또는 5분 이상 멈춘 시도는 명시적 POST에서만 다시 접수한다. 분석 삭제·문서 삭제는 결과 행을 즉시 제거하고, 버전 물리 삭제는 FK cascade로 남은 행을 정리한다. 문서·CRM 기본 조회는 AI 키나 공급자 장애와 독립적이다.
 
 ## B13 앱 내 알림 경계
@@ -3423,6 +3427,8 @@ V43부터 새 공고·기술 기반 추천·관심 공고 변경·분석 완료�
 ## 고정 기술 카탈로그와 계정별 후보 (V37)
 
 시스템 검색은 `skill.is_system`으로 한정한다. 명시적 사용자 입력은 `user_custom_skill`로 저장해 다른 계정의 카탈로그에 전파되지 않는다. V39 이후 공용 `skill`은 승인된 66개 고정 기술만 담고, 분석은 목록 밖 이름을 공용 기술로 생성하지 않는다. 이 이름은 검증된 분석 JSON과 요청 계정의 AI 후보에 저장한다. 비교 서비스는 사용자 기술과 공고 기술의 정규화 이름도 비교해 계정별 직접 입력 기술을 반영한다.
+
+프로젝트 화면에서 목록 밖 기술을 직접 입력하면 `project_custom_skill`에 해당 프로젝트의 이름과 활용 내용만 저장한다. `user_custom_skill`이나 공용 `skill`은 생성하지 않는다. 기존 고정 Skill ID 관계와 역량 비교 경계는 유지한다.
 
 수집 공고 분석 요청 시 북마크 소유권을 확인한 뒤 요청자 관계를 기록한다. 비동기 분석 완료 시 검증된 기술만 해당 요청자의 `user_ai_skill_candidate`에 저장한다. 이미 완료된 공용 분석의 재사용과 개인 저장 공고 분석도 해당 계정 후보만 채운다. 다른 계정이 이미 완료한 공용 분석도 본인이 `AI 분석하기`를 눌러 POST할 때 저장된 JSON을 재사용해 해당 계정의 후보에 연결하며 외부 AI 호출은 없다. GET은 결과 조회만 하므로 관심 공고를 열어 보기만 해서는 후보가 바뀌지 않는다. 후보는 보유 기술로 자동 승격하지 않으며 사용자가 명시적으로 등록한다. 기존 분석 기록은 사용자 이름 수정과 독립적이다.
 공고 상세와 관심 공고 목록의 분석 상태는 `user_ai_analysis_request`에 현재 계정과 공고의 관계가 있을 때만 노출한다. 공용 분석 행은 재사용을 위해 유지하지만, 다른 계정이 완료한 사실이 클릭 전 화면 상태를 완료로 바꾸지 않는다.

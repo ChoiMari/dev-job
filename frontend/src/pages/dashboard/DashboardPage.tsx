@@ -3,12 +3,15 @@ import { apiRequest } from '../../api';
 import { createDashboardApi } from '../../api/dashboard';
 import { createCompaniesApi } from '../../api/companies';
 import { createSkillGapApi } from '../../api/skill-gap';
+import { createTodosApi } from '../../api/todos';
 import type { Dashboard } from '../../api/dashboard';
 import type { SkillGap } from '../../api/skill-gap';
+import type { TodoCategory } from '../../api/todos';
 import type { CurrentUser } from '../../api/auth';
 import { statusLabels } from '../../api/application-status';
 import { ErrorState, LoadingState } from '../../components/States';
 import { LucideIcon } from '../../components/LucideIcon';
+import { CategoryImage } from '../todos/todoIcons';
 import dashboardNextAction from '../../assets/illustrations/dashboard-next-action.png';
 import recommendationEmptyArt from '../../assets/illustrations/dashboard-recommendations-empty.png';
 import dashboardBanner from '../../assets/illustrations/dashboard-spring-banner.png';
@@ -17,6 +20,7 @@ import './dashboard.css';
 const api = createDashboardApi(apiRequest);
 const companies = createCompaniesApi(apiRequest);
 const skillGaps = createSkillGapApi(apiRequest);
+const todosApi = createTodosApi(apiRequest);
 const date = (value: string) => new Intl.DateTimeFormat('ko-KR', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value));
 const todoDate = (value: string, timeZone: string) => new Intl.DateTimeFormat('ko-KR', {
   year: 'numeric', month: '2-digit', day: '2-digit', timeZone,
@@ -30,6 +34,7 @@ export function DashboardPage({ user }: { user: CurrentUser }) {
   const [companyCount, setCompanyCount] = useState<number | null>(null);
   const [companyCountError, setCompanyCountError] = useState(false);
   const [skillGap, setSkillGap] = useState<SkillGap>();
+  const [todoCategories, setTodoCategories] = useState<TodoCategory[]>([]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -58,6 +63,16 @@ export function DashboardPage({ user }: { user: CurrentUser }) {
     return () => controller.abort();
   }, [user.id, retry]);
 
+  useEffect(() => {
+    const controller = new AbortController();
+    setTodoCategories([]);
+    if (!data?.personalTodos.length) return () => controller.abort();
+    todosApi.categories(controller.signal).then(value => {
+      if (!controller.signal.aborted) setTodoCategories(value);
+    }).catch(() => { /* Category names remain visible when their icon settings cannot be loaded. */ });
+    return () => controller.abort();
+  }, [data?.personalTodos.length, user.id, retry]);
+
   if (loading) return <section className="card"><LoadingState message="취업 준비 현황을 불러오고 있습니다." /></section>;
   if (error) return <section className="card"><ErrorState message={error} onRetry={() => setRetry(value => value + 1)} /></section>;
   if (!data) return null;
@@ -75,6 +90,7 @@ export function DashboardPage({ user }: { user: CurrentUser }) {
     { label: '관심 기업', value: companyCount, unit: '곳', href: '#/companies', icon: 'building', tone: 'sky' },
   ] as const;
   const gapById = new Map(skillGap?.items.map(item => [item.skill.id, item]));
+  const categoryIcons = new Map(todoCategories.map(item => [item.name, item.iconKey]));
 
   return <div className="dashboard-page">
     <section className="dashboard-banner" aria-label="취업 준비 응원">
@@ -120,7 +136,7 @@ export function DashboardPage({ user }: { user: CurrentUser }) {
 
       <section className="dashboard-panel dashboard-todos-panel"><div className="dashboard-panel-heading"><h2><LucideIcon name="check" />미완료 할 일</h2><a href="#/todos">전체보기 <LucideIcon name="chevronRight" /></a></div>
         {data.personalTodos.length ? <ul className="dashboard-todo-list">{data.personalTodos.map(todo => <li key={todo.id}>
-          <span className="dashboard-todo-category">{todo.category}</span><a href={`#/todos/${todo.id}`}>{todo.title}</a><small>{todo.dueAt && todo.dueTimeZone ? todoDate(todo.dueAt, todo.dueTimeZone) : '기한 없음'}</small>
+          <span className="dashboard-todo-category">{categoryIcons.has(todo.category) && <CategoryImage name={todo.category} iconKey={categoryIcons.get(todo.category)} size={22} />}{todo.category}</span><a href={`#/todos/${todo.id}`}>{todo.title}</a><small>{todo.dueAt && todo.dueTimeZone ? todoDate(todo.dueAt, todo.dueTimeZone) : '기한 없음'}</small>
         </li>)}</ul> : <div className="dashboard-panel-empty">미완료 할 일이 없습니다.<small>새 할 일을 등록해 계획을 이어가세요.</small></div>}
       </section>
     </div>

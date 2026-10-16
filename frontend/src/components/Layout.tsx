@@ -143,8 +143,11 @@ export function Layout({ title, path, children, user, nickname, onLogout, loggin
       </a>
     </aside>
     <main id="main-content" tabIndex={-1} className="main-content">
-      {path !== '/' && path !== '/profile' && path !== '/character' && path !== '/settings' && path !== '/notifications' && path !== '/analytics/skills' && !path.startsWith('/learning-goals') && !path.startsWith('/interviews/') && !path.startsWith('/jobs/') && !path.startsWith('/recommendations') && !path.startsWith('/resumes')
-        && <div className="page-heading"><span className="eyebrow">MY CAREER SPACE</span><h1>{title}</h1>{path === '/jobs' && <img className="job-search-banner-cat" src={jobDetailCat} alt="" aria-hidden="true" />}</div>}
+      {path !== '/' && path !== '/profile' && path !== '/character' && path !== '/settings' && path !== '/notifications' && path !== '/analytics/skills' && path !== '/projects' && !path.startsWith('/learning-goals') && !path.startsWith('/interviews/') && !path.startsWith('/jobs/') && !path.startsWith('/recommendations') && !path.startsWith('/resumes') && !path.startsWith('/cover-letters')
+        && <div className={path === '/projects/new' ? 'page-heading project-registration-heading' : 'page-heading'}>
+          {path === '/projects/new' ? <div className="project-registration-copy"><h1>프로젝트 등록</h1><p>프로젝트에서 맡은 역할과 성과를 기록해 보세요.</p></div>
+            : <><span className="eyebrow">MY CAREER SPACE</span><h1>{title}</h1>{path === '/jobs' && <img className="job-search-banner-cat" src={jobDetailCat} alt="" aria-hidden="true" />}</>}
+        </div>}
       {children}
     </main>
   </div>;

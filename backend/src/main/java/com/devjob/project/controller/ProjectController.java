@@ -2,6 +2,7 @@ package com.devjob.project.controller;
 
 import com.devjob.auth.dto.CurrentUser;
 import com.devjob.project.dto.*;
+import com.devjob.project.entity.ProjectType;
 import com.devjob.project.service.ProjectService;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -15,8 +16,11 @@ public class ProjectController {
     public ProjectController(ProjectService projects) { this.projects = projects; }
     public record ProjectPage(List<ProjectResponse> items, int page, int size, long totalElements) { }
     @GetMapping public ProjectPage list(@AuthenticationPrincipal CurrentUser user,
-            @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size) {
-        var result = projects.list(user.id(), page, size);
+            @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String q, @RequestParam(required = false) ProjectType projectType,
+            @RequestParam(required = false) String status,
+            @RequestParam(defaultValue = "NEWEST") String sort) {
+        var result = projects.list(user.id(), page, size, q, projectType, status, sort);
         return new ProjectPage(result.getContent(), page, size, result.getTotalElements());
     }
     @PostMapping @ResponseStatus(HttpStatus.CREATED)

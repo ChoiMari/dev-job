@@ -49,11 +49,14 @@ class AccountDeletionDatabaseTest {
 
         JsonNode impact = json.readTree(mvc.perform(get("/api/auth/me/deletion-impact").session(current))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
-        assertThat(impact.path("deletedResources").size()).isEqualTo(31);
+        assertThat(impact.path("deletedResources").size()).isEqualTo(34);
         assertThat(impact.path("recoverableInApp").asBoolean()).isFalse();
         assertThat(impact.path("confirmationText").asText()).isEqualTo("계정 삭제");
-        for (JsonNode resource : impact.path("deletedResources"))
-            assertThat(resource.path("count").asLong()).as(resource.path("code").asText()).isPositive();
+        for (JsonNode resource : impact.path("deletedResources")) {
+            String code = resource.path("code").asText();
+            if (!"cover_letter_draft".equals(code) && !"project_image".equals(code))
+                assertThat(resource.path("count").asLong()).as(code).isPositive();
+        }
         assertThat(impact.path("preservedSharedResources").size()).isEqualTo(3);
 
         mvc.perform(delete("/api/auth/me").session(current).contentType("application/json")
@@ -116,6 +119,7 @@ class AccountDeletionDatabaseTest {
         assertThat(count("application_status_history", "application_id", f.application())).isZero();
         assertThat(count("personal_saved_job_analysis", "personal_saved_job_id", f.personalJob())).isZero();
         assertThat(count("project_skill", "project_id", f.project())).isZero();
+        assertThat(count("project_custom_skill", "project_id", f.project())).isZero();
         assertThat(count("resume_version", "resume_id", f.resume())).isZero();
         assertThat(count("cover_letter_version", "cover_letter_id", f.cover())).isZero();
         assertThat(count("document_analysis", "resume_version_id", f.resumeVersion())).isZero();
@@ -170,6 +174,7 @@ class AccountDeletionDatabaseTest {
         long project = id("insert into project(user_id,name,start_date,created_at,updated_at) "
                 + "values (?,'Project',current_date,now(),now()) returning id", user);
         jdbc.update("insert into project_skill(project_id,skill_id) values (?,?)", project, skill);
+        jdbc.update("insert into project_custom_skill(project_id,name,normalized_name) values (?,'Fixture Tool','fixture tool')", project);
         jdbc.update("insert into bookmark(user_id,job_posting_id) values (?,?)", user, job);
         jdbc.update("insert into bookmark(user_id,job_posting_id) values (?,?)", other, job);
         jdbc.update("insert into user_custom_skill(user_id,name,normalized_name) values (?,'Fixture','fixture')", user);

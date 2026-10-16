@@ -1,0 +1,58 @@
+.cover-page { --primary: #6650ef; --primary-hover: #5541d5; --text: #181a50; --muted: #69709b; --border: #e3e5f8; max-width: 1160px; margin: 0 auto; color: var(--text); display: grid; gap: 18px; min-width: 0; }
+.cover-page .lucide-icon { width: 20px; height: 20px; flex: none; }
+.cover-banner { --cover-fade-start: 65%; --cover-fade-middle: 70%; --cover-fade-end: 80%; min-height: clamp(140px, 12vw, 170px); border: 1px solid #dcddff; border-radius: 15px; overflow: hidden; background-color: #e1d9f2; background-size: 100% 100%, auto 100%; background-position: center, right bottom; background-repeat: no-repeat; display: flex; align-items: center; padding: clamp(18px, 2vw, 28px); }
+.cover-banner__copy { max-width: 42%; position: relative; z-index: 1; }
+.cover-banner__title { display: flex; align-items: center; gap: 6px; }
+.cover-banner__icon { display: block; flex: none; margin-right: -9px; }
+.cover-banner__icon img { display: block; width: 64px; height: 64px; object-fit: contain; image-rendering: auto; filter: blur(.3px); }
+.cover-banner h1 { font-size: clamp(23px, 2.3vw, 32px); line-height: 1.2; margin: 0; }
+.cover-banner p { font-size: 14px; line-height: 1.55; margin: 4px 0 0 14px; color: var(--muted, #59658e); }
+@media (min-width: 900px) { .cover-banner__copy { max-width: 56%; } .cover-banner p { white-space: nowrap; } }
+@media (max-width: 899px) { .cover-banner { --cover-fade-start: 45%; --cover-fade-middle: 54%; --cover-fade-end: 70%; } }
+.cover-panel { border: 1px solid var(--border); border-radius: 12px; padding: clamp(16px, 2vw, 24px); background: #fff; box-shadow: 0 4px 17px #465bc50b; }
+.cover-panel__heading { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+.cover-panel__heading > div { min-width: 0; flex: 1; }
+.cover-panel__heading h2, .cover-list h3 { font-size: 17px; margin: 0 0 4px; color: #171d50; }
+.cover-panel__heading p, .cover-list__filters, .cover-row-copy small { font-size: 12px; color: var(--muted, #66739b); margin: 0; }
+.cover-icon, .cover-row-icon { display: grid; place-items: center; border-radius: 7px; color: var(--primary, #6650ef); background: #f0edff; flex: none; }
+.cover-icon { width: 40px; height: 40px; }.cover-row-icon { width: 34px; height: 34px; }
+.cover-button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 38px; padding: 7px 13px; border-radius: 6px; font-size: 12px; font-weight: 700; text-decoration: none; white-space: nowrap; cursor: pointer; }
+.cover-button .lucide-icon { width: 16px; height: 16px; }
+.cover-button--primary { background: var(--primary); border: 1px solid var(--primary); color: white; }
+.cover-button--primary:hover { background: var(--primary-hover); }
+.cover-button--quiet { background: #f1efff; color: #5541c0; border: 1px solid #ded9fa; }
+.cover-button--quiet:hover { background: #eeeaff; }
+.cover-button[aria-disabled="true"] { opacity: .5; pointer-events: none; }
+.cover-empty { border: 1px solid #e3e7fa; border-radius: 9px; min-height: 280px; text-align: center; padding: 20px; margin-bottom: 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.cover-empty img { width: min(380px, 80%); height: 175px; object-fit: contain; image-rendering: auto; filter: blur(.3px); }
+.cover-empty h3 { font-size: 17px; margin: 4px 0 5px; }.cover-empty p { font-size: 13px; color: var(--muted, #66739b); margin: 0; }
+.cover-columns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.cover-list { border: 1px solid var(--border); border-radius: 8px; background: #fff; min-width: 0; padding: 14px; }
+.cover-list__heading h3 { display: grid; grid-template-columns: 18px minmax(0, 1fr); align-items: center; gap: 7px; min-height: 22px; line-height: 22px; }
+.cover-list__heading h3 .lucide-icon { width: 18px; height: 18px; color: var(--primary); }
+.cover-list__filters { display: flex; gap: 6px; margin: 12px 0; align-items: center; min-height: 34px; }
+.cover-list__filters label { flex: 1; position: relative; min-width: 0; }.cover-list__filters label .lucide-icon { position: absolute; left: 9px; top: 8px; width: 15px; height: 15px; }
+.cover-list__filters input, .cover-list__filters select { font-size: 12px; min-height: 34px; border: 1px solid #d8ddf5; border-radius: 8px; background: #fff; color: #23265a; }
+.cover-list__filters input:focus-visible, .cover-list__filters select:focus-visible, .cover-editor__form input:focus-visible, .cover-editor__form textarea:focus-visible { outline: 2px solid #6650ef; outline-offset: 1px; }
+.cover-list__filters input { width: 100%; padding: 6px 8px 6px 30px; }.cover-list__filters select { max-width: 90px; }
+.cover-list ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; }.cover-list li { display: flex; align-items: center; gap: 8px; border: 1px solid #e3e7fa; border-radius: 8px; padding: 8px; min-width: 0; }
+.cover-list li:hover { border-color: #c8c6f6; }
+.cover-list li > a:not(.cover-button) { display: flex; gap: 8px; align-items: center; color: inherit; text-decoration: none; width: 100%; min-width: 0; }.cover-list li > a:not(.cover-button) > span:nth-child(2) { flex: 1; min-width: 0; }
+.cover-list li strong, .cover-list li small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }.cover-list li strong { font-size: 12px; }.cover-list li small { font-size: 11px; color: var(--muted, #66739b); }
+.cover-row-copy { min-width: 0; flex: 1; }.cover-delete { display: grid; place-items: center; padding: 7px; min-height: 34px; border: 1px solid #ead8e4; border-radius: 5px; background: #fff; color: #b6366c; cursor: pointer; }.cover-delete .lucide-icon { width: 16px; height: 16px; }
+.cover-list li > a.cover-button { min-height: 30px; padding: 4px 8px; gap: 4px; font-size: 11px; }
+.cover-list li > a.cover-button .lucide-icon { width: 14px; height: 14px; }
+.cover-list__placeholder, .cover-status { text-align: center; color: var(--muted, #66739b); padding: 25px 10px; font-size: 13px; }.cover-inline-error { color: #ad2454; font-size: 13px; }
+.cover-list__error { display: grid; grid-template-columns: 18px minmax(0, 1fr) auto; align-items: start; gap: 9px; margin-top: 12px; padding: 12px; border: 1px solid #e3e7fa; border-radius: 8px; background: #f8f9ff; color: #343d75; }
+.cover-list__error > .lucide-icon { width: 18px; height: 18px; color: #6650ef; margin-top: 2px; }
+.cover-list__error strong { display: block; font-size: 12px; line-height: 1.5; }
+.cover-list__error p { margin: 3px 0 0; color: #69709b; font-size: 11px; line-height: 1.5; overflow-wrap: anywhere; }
+.cover-list__error .cover-button { min-height: 32px; padding: 5px 9px; }
+.cover-editor { max-width: 840px; gap: 20px; }.cover-back { display: inline-flex; gap: 8px; align-items: center; color: var(--primary, #6650ef); text-decoration: none; }.cover-editor__heading h1 { margin: 0 0 6px; }.cover-editor__heading p { color: var(--muted, #66739b); margin: 0; }.cover-editor__form { border: 1px solid var(--border, #d9dcf2); border-radius: 10px; padding: 24px; display: grid; gap: 20px; }.cover-editor__form label { display: grid; gap: 8px; font-weight: 700; }.cover-editor__form input, .cover-editor__form textarea { width: 100%; border: 1px solid var(--border, #d9dcf2); border-radius: 6px; padding: 10px; }.cover-editor__actions { display: flex; justify-content: flex-end; gap: 8px; }
+@media (max-width: 740px) { .cover-columns { grid-template-columns: 1fr; }.cover-banner__copy { max-width: 52%; }.cover-panel__heading { flex-wrap: wrap; }.cover-panel__heading > .cover-button { margin-left: auto; } }
+@media (max-width: 480px) { .cover-banner__copy { max-width: 62%; }.cover-banner p { font-size: 11px; }.cover-panel__heading > .cover-button { width: 100%; }.cover-list li .cover-button { font-size: 0; }.cover-list li .cover-button .lucide-icon { width: 17px; height: 17px; } }
+@media (max-width: 480px) { .cover-list__error { grid-template-columns: 18px minmax(0, 1fr); }.cover-list__error .cover-button { grid-column: 2; justify-self: start; } }
+
+/* Keep the panel separator hidden while closing each list card's own border. */
+#main-content .cover-page section.cover-panel[class] { border-bottom: 0; }
+#main-content .cover-page section.cover-list[class] { border: 1px solid var(--border); border-radius: 8px; }

@@ -64,8 +64,8 @@
 .recommendations-step strong { font-size: 13px; }
 .recommendations-step small { margin-top: 7px; color: #8993bb; font-size: 11px; line-height: 1.35; }
 .recommendations-stage { min-width: 0; }
-#main-content .recommendations-page > .recommendations-history.is-open,
-#main-content .recommendations-page > .recommendations-stage { border-bottom: 0; }
+#main-content:not(.public-home) .recommendations-page > section.recommendations-history,
+#main-content:not(.public-home) .recommendations-page > section.recommendations-stage { border-bottom: 0; }
 .recommendations-stage-heading { margin: 6px 2px 15px; }
 .recommendations-stage-heading h2 { display: flex; align-items: center; gap: 7px; margin: 0 0 5px; font-size: 18px; }
 .recommendations-stage-heading h2 .lucide-icon { width: 19px; height: 19px; color: #6650ef; }
