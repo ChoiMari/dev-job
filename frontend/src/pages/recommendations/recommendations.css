@@ -65,7 +65,9 @@
 .recommendations-step small { margin-top: 7px; color: #8993bb; font-size: 11px; line-height: 1.35; }
 .recommendations-stage { min-width: 0; }
 #main-content:not(.public-home) .recommendations-page > section.recommendations-history,
-#main-content:not(.public-home) .recommendations-page > section.recommendations-stage { border-bottom: 0; }
+#main-content:not(.public-home) .recommendations-page > section.recommendations-stage,
+#main-content:not(.public-home) .recommendations-page > section.recommendations-result,
+#main-content:not(.public-home) .recommendations-page > section.recommendations-pending { border-bottom: 0; }
 .recommendations-stage-heading { margin: 6px 2px 15px; }
 .recommendations-stage-heading h2 { display: flex; align-items: center; gap: 7px; margin: 0 0 5px; font-size: 18px; }
 .recommendations-stage-heading h2 .lucide-icon { width: 19px; height: 19px; color: #6650ef; }
@@ -185,19 +187,50 @@
 .recommendations-item-heading a { padding: 6px 8px; border: 1px solid #dbe6fb; border-radius: 5px; text-decoration: none; font-size: 11px; white-space: nowrap; }
 .recommendations-evidence { display: grid; gap: 7px; padding: 0 10px 10px; }
 .recommendations-evidence-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
+.recommendations-evidence-index { grid-column: 1 / -1; width: fit-content; padding: 2px 7px; border-radius: 4px; background: #eef2ff; color: #5a5fd1; font-size: 10px; font-weight: 700; }
 .recommendations-evidence-row > div { padding: 10px; border-radius: 7px; background: #f1f7ff; }
-.recommendations-evidence-row > div:nth-child(2) { background: #f6f1ff; }
-.recommendations-evidence-row > div:nth-child(3) { background: #f0faf5; }
+.recommendations-evidence-row > div:nth-of-type(2) { background: #f6f1ff; }
+.recommendations-evidence-row > div:nth-of-type(3) { background: #f0faf5; }
 .recommendations-evidence-row h4, .recommendations-item-limitations h4 { margin: 0 0 5px; font-size: 11px; }
+.recommendations-evidence-row h4 { display: flex; align-items: center; gap: 4px; }
+.recommendations-evidence-row h4 .lucide-icon { flex: none; width: 12px; height: 12px; color: #3476d5; }
+.recommendations-evidence-row > div:nth-of-type(2) h4 .lucide-icon { color: #7654c9; }
+.recommendations-evidence-row > div:nth-of-type(3) h4 .lucide-icon { color: #31896c; }
 .recommendations-evidence-row p { margin: 0; color: #405484; font-size: 11px; line-height: 1.5; }
 .recommendations-item-limitations { margin: 0 10px 10px; padding: 10px; border-radius: 7px; background: #fff9eb; }
 .recommendations-item-limitations ul { margin: 0; padding-left: 16px; color: #79684b; font-size: 11px; }
 .recommendations-preparation { margin: 0 10px 10px; padding: 10px 12px; border: 1px solid #ffe1e9; border-radius: 7px; background: #fff6f8; }
-.recommendations-preparation h4 { margin: 0 0 6px; color: #f5275b; font-size: 12px; }
+.recommendations-preparation h4 { display: flex; align-items: center; gap: 5px; margin: 0 0 6px; color: #f5275b; font-size: 12px; }
+.recommendations-preparation h4 .lucide-icon { flex: none; width: 13px; height: 13px; }
 .recommendations-preparation ul { margin: 0; padding-left: 18px; color: #465888; font-size: 11px; line-height: 1.55; }
 .recommendations-preparation li::marker { color: #e92f63; }
 .recommendations-preparation li strong { color: #c72455; }
 .recommendations-result-footer { display: flex; justify-content: space-between; gap: 10px; padding: 10px; color: #7381aa; font-size: 12px; }
+.recommendations-result { display: grid; gap: 10px; min-width: 0; }
+.recommendations-result-heading { align-items: center; gap: 10px 16px; padding: 14px 16px; }
+.recommendations-result-heading > div { min-width: 0; }
+.recommendations-result-heading h2 { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; font-size: 16px; line-height: 1.35; }
+.recommendations-result-heading p { line-height: 1.5; overflow-wrap: anywhere; }
+.recommendations-result-heading button { flex: none; min-height: 32px; padding: 5px 9px; white-space: nowrap; }
+.recommendations-result-badge, .recommendations-stale-badge { display: inline-flex; align-items: center; min-height: 21px; padding: 2px 7px; border-radius: 5px; font-size: 10px; line-height: 1.2; font-weight: 700; }
+.recommendations-result-badge.is-failed { border: 1px solid #ffc5cd; background: #fff0f2; color: #d92d43; }
+.recommendations-result .recommendations-status.is-failed { justify-self: start; margin: 0; padding: 5px 9px; border: 1px solid #ffc5cd; background: #fff0f2; color: #d92d43; font-size: 11px; line-height: 1.35; }
+.recommendations-stale-badge { background: #f1edff; color: #624db3; }
+.recommendations-result-notice, .recommendations-result-error { margin: 0; padding: 10px 13px; border-radius: 7px; font-size: 12px; line-height: 1.5; }
+.recommendations-result-notice { background: #f6f3ff; color: #63529f; }
+.recommendations-result-error { border: 1px solid #f8d9df; background: #fff7f8; color: #a33a50; }
+.recommendations-limitation { padding: 12px 14px; border-color: #e1eafa; background: #f8faff; }
+.recommendations-limitation h4 { font-size: 12px; line-height: 1.4; }
+.recommendations-limitation p { margin: 5px 0 0; color: #5e6f9d; font-size: 12px; line-height: 1.55; }
+.recommendations-results { gap: 9px; margin: 0; }
+.recommendations-results > li { display: grid; gap: 0; }
+.recommendations-item-heading { align-items: center; min-width: 0; }
+.recommendations-item-heading h3 { line-height: 1.4; }
+.recommendations-item-heading a { color: #6554bd; }
+.recommendations-item-message { margin: 0 14px 12px 54px; padding: 8px 10px; border-radius: 6px; background: #f6f8fd; color: #687797; font-size: 12px; line-height: 1.45; }
+.recommendations-item-message.is-failed { background: #fff7f8; color: #9f5061; }
+.recommendations-result-footer { align-items: center; flex-wrap: wrap; margin-top: 1px; padding: 10px 2px; font-size: 11px; }
+@media (max-width: 560px) { .recommendations-result-heading { align-items: flex-start; } .recommendations-result-heading button { margin-left: auto; } .recommendations-item-message { margin-left: 14px; } }
 .recommendations-page .button-primary, .recommendations-job-tabs button.is-active, .recommendations-step.is-active .recommendations-step-number { border-color: #6650ef; background: #6650ef; }
 .recommendations-step.is-active { box-shadow: inset 0 -3px #6650ef; }
 .recommendations-document-row input, .recommendations-options input, .recommendations-consent input { accent-color: #6650ef; }
@@ -232,8 +265,11 @@
 .recommendations-pending-copy h2 { margin: 0; font-size: 21px; }
 .recommendations-pending-copy p { margin: 0; color: #6575a4; font-size: 13px; line-height: 1.55; }
 .recommendations-pending-counts { display: flex; flex-wrap: wrap; gap: 10px; width: 100%; }
-.recommendations-pending-counts span { flex: 1; min-width: 110px; padding: 10px; border: 1px solid #e0e8fa; border-radius: 7px; background: #fff; color: #425788; font-size: 12px; font-weight: 700; }
-.recommendations-pending-copy button { justify-self: center; border-color: #c9bfff; color: #5140ba; background: #fff; }
+.recommendations-pending-counts span { display: inline-flex; align-items: center; gap: 5px; flex: 1; min-width: 110px; padding: 10px; border: 1px solid #e0e8fa; border-radius: 7px; background: #fff; color: #425788; font-size: 12px; font-weight: 700; }
+.recommendations-pending-counts .lucide-icon { flex: none; width: 15px; height: 15px; color: #6650ef; }
+.recommendations-pending-copy button { display: inline-flex; align-items: center; gap: 5px; justify-self: center; min-height: 32px; padding: 5px 10px; border: 1px solid #d8cffc; border-radius: 6px; color: #5945ae; background: #f5f2ff; font-size: 11px; font-weight: 650; }
+.recommendations-pending-copy button:hover { border-color: #bbaaf4; background: #ebe5ff; }
+.recommendations-pending-copy button .lucide-icon { width: 13px; height: 13px; }
 .recommendations-pending-copy small { color: #7985ad; font-size: 11px; }
 .recommendations-pending-selected { padding: 14px; border: 1px solid #e2eafb; border-radius: 9px; background: #fff; }
 .recommendations-pending-selected h3 { margin: 0 0 10px; font-size: 14px; }

@@ -8,13 +8,14 @@ import java.time.Instant;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.transaction.PlatformTransactionManager;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 class RecommendationRunnerTest {
     private final RecommendationRunner runner = new RecommendationRunner(mock(RecommendationGateway.class),
             mock(RecommendationCipher.class), new DocumentRedactor(), mock(JdbcTemplate.class), new ObjectMapper(),
-            mock(NotificationEventRecorder.class));
+            mock(NotificationEventRecorder.class), mock(PlatformTransactionManager.class));
     private final Candidate job = new Candidate("MANUAL", 7, "백엔드", "Java 서버 운영", Instant.now(),
             null, false, "READY", null);
 
@@ -63,5 +64,38 @@ class RecommendationRunnerTest {
                  "rank":1,"evidence":[],"limitations":[]}
                 """, com.devjob.recommendation.RecommendationService.Item.class);
         assertThat(old.preparationTips()).isNull();
+    }
+
+    @Test void clipsLongModelTextAfterCheckingTheFullTextForPersonalData() throws Exception {
+        String quote = "Java 서버 ".repeat(21);
+        String explanation = "관련 경험을 확인했습니다. ".repeat(25);
+        String raw = """
+                {"items":[{"kind":"MANUAL","id":7,"rank":1,"evidence":[
+                  {"documentQuote":"%s","jobQuote":"%s","explanation":"%s"}],
+                  "limitations":["경력 연수는 확인할 수 없음"],"preparationTips":[]}]}
+                """.formatted(quote, quote, explanation);
+        var longJob = new Candidate("MANUAL", 7, "백엔드", quote, Instant.now(),
+                null, false, "READY", null);
+        var item = runner.validate(raw, List.of(quote), List.of(longJob)).get(0);
+        assertThat(item.evidence().get(0).documentQuote()).hasSize(160);
+        assertThat(item.evidence().get(0).jobQuote()).hasSize(160);
+        assertThat(item.evidence().get(0).explanation()).hasSize(200);
+        assertThatThrownBy(() -> runner.validate(raw.replace(explanation, "010-1234-5678 " + explanation),
+                List.of(quote), List.of(longJob))).isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("TEXT_PERSONAL_DATA");
+    }
+
+    @Test void acceptsOnlyQuotesThatCanBeRecoveredExactlyFromTheSources() throws Exception {
+        String raw = """
+                {"items":[{"kind":"MANUAL","id":7,"rank":1,"evidence":[
+                  {"documentQuote":"\\\"Java 서버 경험\\\"","jobQuote":"Java 서버 운영","explanation":"관련 경험"}],
+                  "limitations":["경력 연수는 확인할 수 없음"],
+                  "preparationTips":[{"type":"CHECK","basisQuote":"Java 서버 운영","text":"업무를 확인하세요."}]}]}
+                """;
+        var item = runner.validate(raw, List.of("Java  서버 경험"), List.of(job)).get(0);
+        assertThat(item.evidence().get(0).documentQuote()).isEqualTo("Java  서버 경험");
+        assertThatThrownBy(() -> runner.validate(raw.replace("Java 서버 경험", "없는 경력"),
+                List.of("Java  서버 경험"), List.of(job))).isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("DOCUMENT_QUOTE");
     }
 }

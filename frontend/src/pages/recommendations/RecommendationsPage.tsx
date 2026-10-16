@@ -278,25 +278,25 @@ const itemStatus: Record<RecommendationItem['status'], string> = {
 };
 const reason: Record<string, string> = { ALREADY_APPLIED: '이미 지원한 공고', EXPIRED: '마감된 공고', INSUFFICIENT_INPUT: '공고 본문이 없음' };
 function RecommendationResult({ result, onRefresh }: { result: RecommendationPage; onRefresh: () => void }) {
-  if (result.status === 'PENDING') return <section className="recommendations-pending" aria-live="polite"><div className="recommendations-pending-card"><img src={pendingArt} alt="" aria-hidden="true" /><div className="recommendations-pending-copy"><span className="recommendations-pending-pill">◌ AI 비교 분석 중</span><h2>공고와 문서를 비교하고 있어요!</h2><p>선택한 문서와 공고 내용을 AI가 분석하고 있습니다.<br />완료되면 이 화면이 자동으로 결과로 바뀝니다.</p><div className="recommendations-pending-counts"><span>▤ 문서 {[result.resumeVersionId, result.coverLetterVersionId].filter(Boolean).length}개</span><span>▤ 공고 {result.candidateCount}개</span></div><button type="button" onClick={onRefresh}>↻ 저장 상태 다시 조회</button><small>페이지를 닫거나 다른 화면으로 이동해도 분석은 계속 진행됩니다.</small></div></div>
+  if (result.status === 'PENDING') return <section className="recommendations-pending" aria-live="polite"><div className="recommendations-pending-card"><img src={pendingArt} alt="" aria-hidden="true" /><div className="recommendations-pending-copy"><span className="recommendations-pending-pill">◌ AI 비교 분석 중</span><h2>공고와 문서를 비교하고 있어요!</h2><p>선택한 문서와 공고 내용을 AI가 분석하고 있습니다.<br />완료되면 이 화면이 자동으로 결과로 바뀝니다.</p><div className="recommendations-pending-counts"><span><LucideIcon name="fileText" />문서 {[result.resumeVersionId, result.coverLetterVersionId].filter(Boolean).length}개</span><span><LucideIcon name="building" />공고 {result.candidateCount}개</span></div><button type="button" onClick={onRefresh}><LucideIcon name="rotateCcw" />저장 상태 다시 조회</button><small>페이지를 닫거나 다른 화면으로 이동해도 분석은 계속 진행됩니다.</small></div></div>
     <div className="recommendations-pending-selected"><h3>선택한 항목</h3><div><section><h4>선택한 문서</h4>{result.resumeVersionId && <p>이력서 버전 #{result.resumeVersionId}</p>}{result.coverLetterVersionId && <p>자기소개서 버전 #{result.coverLetterVersionId}</p>}</section><section><h4>선택한 공고 ({result.candidateCount}개)</h4>{result.items.length ? result.items.map(item => <p key={key(item)}>{item.companyName && `${item.companyName} · `}{item.title}</p>) : <p>선택한 공고가 없습니다.</p>}</section></div></div><a className="recommendations-pending-back" href="#/recommendations">← 새 비교 만들기</a></section>;
-  return <section className="recommendations-result" aria-live="polite"><div className="recommendations-result-heading"><div><h2>비교 결과 <span className="recommendations-result-badge">{result.status === 'COMPLETED' ? '완료' : '실패'}</span></h2>
-    <p>요청 {date(result.consentedAt)} · 비교한 공고 {result.candidateCount}개 · 이력서 버전 #{result.resumeVersionId ?? '선택 안 함'} · 자기소개서 버전 #{result.coverLetterVersionId ?? '선택 안 함'}</p></div><button type="button" onClick={onRefresh}>↻ 저장 상태 다시 조회</button></div>
-    <p className="recommendations-status">요청 상태: {result.status === 'COMPLETED' ? '비교 완료' : '비교 실패'}
-      {result.stale && ' · 오래된 결과'}</p>
-    {result.stale && <p>문서 새 버전, 공고 내용, 마감 또는 지원 상태가 바뀌었습니다. 현재 조건을 다시 확인해 주세요.</p>}
-    {result.status === 'FAILED' && <p role="alert">{result.failureReason || '비교에 실패했습니다.'}</p>}
+  return <section className="recommendations-result" aria-live="polite"><div className="recommendations-result-heading"><div><h2>비교 결과 <span className={`recommendations-result-badge${result.status === 'FAILED' ? ' is-failed' : ''}`}>{result.status === 'COMPLETED' ? '완료' : '실패'}</span>{result.stale && <span className="recommendations-stale-badge">오래된 결과</span>}</h2>
+    <p>요청 {date(result.consentedAt)} · 비교한 공고 {result.candidateCount}개 · 이력서 버전 #{result.resumeVersionId ?? '선택 안 함'} · 자기소개서 버전 #{result.coverLetterVersionId ?? '선택 안 함'}</p></div><button type="button" onClick={onRefresh}>↻ 결과 새로고침</button></div>
+    {result.status === 'FAILED' && <p className="recommendations-status is-failed">요청 상태: 비교 실패</p>}
+    {result.stale && <p className="recommendations-result-notice">문서·공고·지원 상태 또는 비교 기준이 바뀌었습니다. 현재 조건으로 다시 비교해 주세요.</p>}
+    {result.status === 'FAILED' && <p className="recommendations-result-error" role="alert">{result.failureReason || '비교에 실패했습니다.'}</p>}
     {result.limitation && <div className="recommendations-limitation"><h4>결과의 한계</h4><p>{result.limitation}</p></div>}
     {result.status === 'COMPLETED' && result.items.length === 0 && <EmptyState title="비교된 공고가 없습니다." message="선택한 후보가 0개였거나 표시할 결과가 없습니다." />}
     {result.items.length > 0 && <ol className="recommendations-results">{result.items.map(item => <li key={key(item)}>
       <div className="recommendations-item-heading"><span className="recommendations-rank">{item.rank ?? '–'}</span><div><h3>{item.title} {item.companyName && <small>{item.companyName}</small>}</h3><p>{[item.location, item.deadlineDate ? `마감 ${item.deadlineDate}` : null, item.kind === 'COLLECTED' ? '수집 공고' : '직접 등록 공고'].filter(Boolean).join(' · ')}</p></div><span className="recommendations-item-status">{itemStatus[item.status]}</span><a href={item.kind === 'COLLECTED' ? `#/jobs/${item.id}` : `#/bookmarks/${item.id}`}>공고 상세보기 →</a></div>
       {item.skillTags.length > 0 && <div className="recommendations-skill-tags" aria-label="AI 분석된 공고 기술">{item.skillTags.map(tag => <span key={tag}>{tag}</span>)}</div>}
-      {item.reason && <p>사유: {reason[item.reason] ?? item.reason}</p>}
-      {item.status === 'FAILED' && !item.reason && <p>이 공고의 비교에 실패했습니다.</p>}
+      {item.reason && <p className="recommendations-item-message">사유: {reason[item.reason] ?? item.reason}</p>}
+      {item.status === 'FAILED' && !item.reason && <p className="recommendations-item-message is-failed">이 공고의 비교에 실패했습니다.</p>}
       {item.evidence.length > 0 && <div className="recommendations-evidence">{item.evidence.map((e, i) => <div className="recommendations-evidence-row" key={i}>
-        <div><h4>▤ 문서에서 인용한 문장</h4><p>“{e.documentQuote}”</p></div><div><h4>▤ 공고에서 인용한 문장</h4><p>“{e.jobQuote}”</p></div><div><h4>✦ 관련성 설명</h4><p>{e.explanation}</p></div></div>)}</div>}
+        {item.evidence.length > 1 && <span className="recommendations-evidence-index">근거 {i + 1}</span>}
+        <div><h4><LucideIcon name="fileText" />문서에서 인용한 문장</h4><p>“{e.documentQuote}”</p></div><div><h4><LucideIcon name="building" />공고에서 인용한 문장</h4><p>“{e.jobQuote}”</p></div><div><h4><LucideIcon name="link" />관련성 설명</h4><p>{e.explanation}</p></div></div>)}</div>}
       {item.limitations.length > 0 && <div className="recommendations-item-limitations"><h4>! 판단의 한계</h4><ul>{item.limitations.map((v, i) => <li key={i}>{v}</li>)}</ul></div>}
-      {item.preparationTips.length > 0 && <div className="recommendations-preparation"><h4>◎ 지원 전에 무엇을 확인하거나 보완할까요?</h4><ul>{item.preparationTips.map((tip, i) => <li key={i}><strong>{tip.type === 'CHECK' ? '확인' : '보완'}</strong> {tip.text}</li>)}</ul></div>}
+      {item.preparationTips.length > 0 && <div className="recommendations-preparation"><h4><LucideIcon name="lightbulb" />지원 전에 무엇을 확인하거나 보완할까요?</h4><ul>{item.preparationTips.map((tip, i) => <li key={i}><strong>{tip.type === 'CHECK' ? '확인' : '보완'}</strong> {tip.text}</li>)}</ul></div>}
     </li>)}</ol>}
     <div className="recommendations-result-footer"><span>총 {result.totalElements}개 결과 · {result.page + 1}페이지</span><a href="#/recommendations">다른 공고 다시 비교하기 →</a></div>
   </section>;

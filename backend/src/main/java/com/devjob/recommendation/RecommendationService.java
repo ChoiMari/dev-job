@@ -31,7 +31,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class RecommendationService {
-    private static final String POLICY_VERSION = "B14_V2";
+    private static final String POLICY_VERSION = "B14_V3";
     private static final String MODEL_NAME = "gpt-5.4-mini";
     public record Candidate(String kind, long id, String title, String description, Instant updatedAt,
             LocalDate deadlineDate, boolean applied, String status, String reason) { }
@@ -242,6 +242,7 @@ public class RecommendationService {
         }).toList();
     }
     private boolean stale(Row row) {
+        if (!POLICY_VERSION.equals(row.policyVersion())) return true;
         if (row.resumeVersionId() != null && jdbc.queryForObject("""
                 select count(*) from resume_version v join resume r on r.id=v.resume_id
                 where v.id=? and r.user_id=? and r.deleted_at is null and
@@ -296,8 +297,7 @@ public class RecommendationService {
             String description = rs.getString("description");
             LocalDate deadline = rs.getObject("deadline_date", LocalDate.class);
             boolean applied = rs.getBoolean("applied");
-            String reason = applied ? "ALREADY_APPLIED" : deadline != null
-                    && deadline.isBefore(LocalDate.now(java.time.ZoneId.of("Asia/Seoul")))
+            String reason = deadline != null && deadline.isBefore(LocalDate.now(java.time.ZoneId.of("Asia/Seoul")))
                     ? "EXPIRED" : description == null || description.isBlank() ? "INSUFFICIENT_INPUT" : null;
             return new Candidate(kind, id, rs.getString("title"), description, rs.getTimestamp("updated_at").toInstant(),
                     deadline, applied, reason == null ? "READY" : "UNAVAILABLE", reason);

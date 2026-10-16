@@ -67,6 +67,8 @@ class RecommendationDatabaseTest {
                 insert into job_posting(job_source_id,company_id,external_id,title,description,location,deadline_date,source_url,created_at,updated_at)
                 values (?,?,?,'백엔드 개발','Java 서비스 개발','서울','2099-12-31','https://example.com/b14',now(),now()) returning id
                 """, Long.class, source, company, run);
+        response(post("/api/applications").with(as(owner)).with(csrf()).contentType("application/json")
+                .content("{\"jobId\":" + job + ",\"status\":\"APPLIED\",\"appliedDate\":\"2026-10-01\"}"));
         jdbc.update("insert into ai_analysis(job_posting_id,status,updated_at) values (?,'COMPLETED',now())", job);
         jdbc.update("insert into job_skill(job_posting_id,skill_id,requirement_type) "
                 + "select ?,id,'REQUIRED' from skill where normalized_name='java'", job);
@@ -94,7 +96,7 @@ class RecommendationDatabaseTest {
         assertThat(response(get("/api/me/recommendations/jobs/history").with(as(other)))
                 .path("items").isEmpty()).isTrue();
         assertThat(result.path("candidateCount").asInt()).isEqualTo(2);
-        assertThat(result.path("policyVersion").asText()).isEqualTo("B14_V2");
+        assertThat(result.path("policyVersion").asText()).isEqualTo("B14_V3");
         assertThat(result.path("resumeVersionId").asLong()).isEqualTo(version);
         assertThat(jdbc.queryForObject("select model_name from semantic_recommendation where id=?", String.class, id))
                 .isEqualTo("gpt-5.4-mini");
@@ -102,7 +104,11 @@ class RecommendationDatabaseTest {
                 .doesNotContain("Java 서비스 개발", "Java 서버 운영");
         assertThat(jdbc.queryForObject("select result_ciphertext from semantic_recommendation where id=?", byte[].class, id))
                 .isNotEmpty();
+        assertThat(jdbc.queryForObject("select count(*) from notification_outbox where type='SEMANTIC_RECOMMENDATION' and source_id=?",
+                Integer.class, id)).isEqualTo(1);
         assertThat(result.path("items").get(0).path("rank").asInt()).isEqualTo(1);
+        assertThat(result.path("items").get(0).path("status").asText()).isEqualTo("COMPLETED");
+        assertThat(result.path("items").get(0).path("reason").isNull()).isTrue();
         assertThat(result.path("items").get(0).path("companyName").asText()).isEqualTo("B14");
         assertThat(result.path("items").get(0).path("location").asText()).isEqualTo("서울");
         assertThat(result.path("items").get(0).path("deadlineDate").asText()).isEqualTo("2099-12-31");
@@ -113,10 +119,13 @@ class RecommendationDatabaseTest {
         assertThat(result.path("items").get(1).path("preparationTips").isEmpty()).isTrue();
         mvc.perform(get("/api/me/recommendations/jobs").with(as(other)).param("requestId", Long.toString(id)))
                 .andExpect(status().isNotFound());
-        mvc.perform(get("/api/jobs/" + job + "/match").with(as(owner))).andExpect(status().isConflict());
+        mvc.perform(get("/api/jobs/" + job + "/match").with(as(owner))).andExpect(status().isOk());
         mvc.perform(post("/api/me/recommendations/jobs").with(as(owner)).with(csrf())
                 .contentType("application/json").content(body)).andExpect(status().isOk());
         verify(gateway, times(1)).compare(anyString());
+        jdbc.update("update semantic_recommendation set policy_version='B14_V2' where id=?", id);
+        mvc.perform(get("/api/me/recommendations/jobs").with(as(owner)).param("requestId", Long.toString(id)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.stale").value(true));
         String emptyBody = "{\"resumeVersionId\":" + version + ",\"coverLetterVersionId\":null,"
                 + "\"candidates\":[],\"consentToExternalComparison\":true}";
         mvc.perform(post("/api/me/recommendations/jobs").with(as(owner)).with(csrf())
