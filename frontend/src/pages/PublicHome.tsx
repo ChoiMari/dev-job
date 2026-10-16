@@ -3,9 +3,9 @@ import brandWordmark from '../assets/redesign/brand-devjob-wordmark-dark.png';
 import lightWordmark from '../assets/redesign/brand-devjob-wordmark-light.png';
 import welcomeBanner from '../assets/illustrations/public-home-welcome-banner.png';
 import storyPreparation from '../assets/illustrations/public-home-story-preparation-v3.png';
-import storyMatch from '../assets/illustrations/public-home-story-match-v2.png';
-import storyGrowth from '../assets/illustrations/public-home-story-growth-v2.png';
-import storyJourney from '../assets/illustrations/public-home-story-journey-v2.png';
+import storyMatch from '../assets/illustrations/public-home-story-match-v3.png';
+import storyGrowth from '../assets/illustrations/public-home-story-growth-v3.png';
+import storyJourney from '../assets/illustrations/public-home-story-journey-v3.png';
 
 const storyImages = [storyPreparation, storyMatch, storyGrowth, storyJourney];
 const serviceIcons = Object.values(import.meta.glob('../assets/illustrations/public-home-service-*.png', { eager: true, query: '?url', import: 'default' })) as string[];

@@ -1,4 +1,5 @@
 #main-content.public-home { min-height: 100vh; padding: 0; background: #fff; color: #131a39; }
+#main-content.public-home:focus { outline: none; }
 #main-content.public-home .public-home-header { max-width: none; min-height: 60px; padding: 0 max(28px, calc((100% - 1320px) / 2)); border-bottom: 1px solid #e9eaf3; }
 .public-home-brand img { display: block; width: 154px; height: 52px; object-fit: contain; }
 .public-home-header nav { display: flex; align-items: center; gap: 12px; }
@@ -33,6 +34,14 @@
 #main-content.public-home .public-home-service:nth-child(4n + 3) { background: #fff5f7; }
 #main-content.public-home .public-home-service:nth-child(4n + 4) { background: #f7f3ff; }
 .public-home-service-icon { display: block; width: 48px; height: 48px; margin-bottom: 8px; object-fit: contain; image-rendering: auto; }
+.public-home-service:nth-child(1) .public-home-service-icon,
+.public-home-service:nth-child(2) .public-home-service-icon,
+.public-home-service:nth-child(6) .public-home-service-icon { transform: translateX(-10px); }
+.public-home-service:nth-child(3) .public-home-service-icon,
+.public-home-service:nth-child(5) .public-home-service-icon,
+.public-home-service:nth-child(7) .public-home-service-icon { transform: translateX(-8px); }
+.public-home-service:nth-child(8) .public-home-service-icon,
+.public-home-service:nth-child(11) .public-home-service-icon { transform: translateX(-6px); }
 .public-home-service:nth-child(10) .public-home-service-icon { transform: translateX(-10px); }
 .public-home-service:nth-child(12) .public-home-service-icon { transform: translateX(-6px); }
 .public-home-service h3 { margin: 0 0 3px; font-size: 1.05rem; line-height: 1.35; }
