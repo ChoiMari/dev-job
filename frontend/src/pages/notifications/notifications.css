@@ -32,6 +32,7 @@
 .notifications-list li { display: flex; align-items: center; gap: 12px; min-width: 0; min-height: 70px; padding: 9px 11px; border: 1px solid #dfe8f5; border-radius: 8px; background: #fff; }
 .notifications-list li.is-unread { border-color: #cbe2ff; background: #eff7ff; }
 .notifications-icon-box { display: grid; place-items: center; width: 52px; height: 52px; flex: none; border: 1px solid #e6eaf4; border-radius: 7px; background: #fff; }
+.notifications-icon-box .notification-pixel-icon[data-icon="calendar"] { transform: translate(-5px, -6px); }
 .notifications-icon-box .notification-pixel-icon[data-icon="analysis"] { transform: translateX(4px); }
 .notifications-item-main { flex: 1; min-width: 0; }
 .notifications-list li.is-unread .notifications-item-main { padding-left: 15px; }

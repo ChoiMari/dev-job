@@ -8,6 +8,10 @@ body, #root, .app-layout, #main-content, .public-home, .auth-page { @apply bg-wh
 #main-content:not(.public-home) :is(section, article)[class] {
   @apply rounded-none border-0 border-b border-slate-200 bg-white shadow-none;
 }
+#main-content:not(.public-home) .dashboard-page > section.dashboard-summary { border: 0; }
+#main-content:not(.public-home) .dashboard-page section.dashboard-panel { border: 1px solid #e1e8f6; border-radius: 10px; box-shadow: 0 2px 8px #273e6a08; }
+#main-content:not(.public-home) .resume-workspace section.resume-workspace-detail { border: 1px solid #e0e9fb; border-radius: 8px; }
+#main-content:not(.public-home) .resume-workspace-detail > section:is(.resume-version-panel, .resume-analysis-preview, .resume-analysis-panel, .resume-source-panel) { border: 0; }
 #main-content:not(.public-home) :is(section, article)[class]:not(.profile-banner) { background-image: none; }
 #main-content section.resume-empty[class] { border: 0; border-radius: 0; box-shadow: none; }
 #main-content .character-page > .character-theme-section { border-bottom: 0; }
@@ -114,7 +118,7 @@ body, #root, .app-layout, #main-content, .public-home, .auth-page { @apply bg-wh
 #main-content .manual-job-section:last-child { border-bottom: 0; }
 #main-content .applications-page--board .application-board-header,
 #main-content .applications-page--board .application-kanban-scroll { border: 0; }
-#main-content .application-kanban-column[class] { border: 0; border-radius: 0; background: var(--column-bg); }
+#main-content:not(.public-home) .application-kanban-column[class] { border: 0; border-radius: 0; background: var(--column-bg); }
 #main-content .application-kanban-column h2 { border-bottom: 0; background: var(--column-head); }
 #main-content .application-kanban-card[class] { border: 0; border-radius: 0; background: #fff; }
 #main-content .application-kanban-card .application-kanban-date { margin-top: 10px; padding-top: 8px; border-top: 1px solid #e7ebf3; }

@@ -3,9 +3,9 @@
 .dashboard-page a:focus-visible, .dashboard-page input:focus-visible { outline: 2px solid #6650ef; outline-offset: 2px; }
 .dashboard-banner { position: relative; min-height: 152px; aspect-ratio: 5.1 / 1; overflow: hidden; border: 1px solid #dae8fb; border-radius: 10px; background: #a8d8ff; }
 .dashboard-banner > img { position: absolute; left: 0; bottom: -16px; display: block; width: 100%; height: calc(100% + 16px); object-fit: cover; object-position: center bottom; image-rendering: pixelated; }
-.dashboard-banner > div { position: absolute; top: 50%; left: 44%; right: 13%; transform: translateY(-50%); padding: 10px 14px; border-radius: 10px; background: rgb(248 251 255 / 88%); color: #172452; text-align: center; }
-.dashboard-banner h1 { margin: 0 0 7px; font-size: clamp(13px, 1.65vw, 20px); line-height: 1.2; }
-.dashboard-banner p { margin: 0; font-size: clamp(10px, 1.05vw, 13px); line-height: 1.4; }
+.dashboard-banner > div { position: absolute; top: 50%; left: 42%; right: 11%; transform: translateY(-50%); padding: 13px 17px; border-radius: 10px; background: rgb(248 251 255 / 88%); color: #172452; text-align: center; }
+.dashboard-banner h1 { margin: 0 0 7px; font-size: clamp(15px, 1.85vw, 21px); line-height: 1.2; }
+.dashboard-banner p { margin: 0; font-size: clamp(11px, 1.2vw, 14px); line-height: 1.4; }
 
 .dashboard-summary { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; }
 #main-content .dashboard-page > section.dashboard-summary { border-bottom: 0; }

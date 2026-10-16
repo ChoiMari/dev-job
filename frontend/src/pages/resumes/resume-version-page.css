@@ -1,6 +1,8 @@
 .resume-version-page { max-width: 960px; display: grid; gap: 16px; }
-.resume-version-back-link { display: inline-flex; align-items: center; gap: 5px; width: fit-content; color: #4d54a1; font-size: 12px; text-decoration: none; }
-.resume-version-back-link .lucide-icon { width: 15px; height: 15px; }
+.resume-version-back-link { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border: 1px solid #dce5fb; border-radius: 7px; background: #fff; color: #4d54a1; text-decoration: none; }
+.resume-version-back-link:hover { background: #f5f3ff; border-color: #cfc5fb; }
+.resume-version-back-link:focus-visible { outline: 2px solid #6650ef; outline-offset: 2px; }
+.resume-version-back-link .lucide-icon { width: 17px; height: 17px; }
 .resume-version-page-heading, .resume-version-page-card { padding: 22px; border: 1px solid #e0e9fb; border-radius: 8px; background: #fff; }
 .resume-version-page-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .resume-version-page-heading p { margin: 0 0 5px; color: #7887b4; font-size: 12px; }

@@ -298,9 +298,9 @@ export function ResumeCreatePage({ userId, draftId, versionEditor }: { userId: n
       resumeId: versionEditor.resumeId, ...(versionEditor.kind === 'edit' ? { versionId: versionEditor.versionId } : {}),
       description: versionDescription,
     } : saveableDraft(draft);
-    if (payload.title.length > (versionEditor ? 50 : 200)) { showFormError('제목이 너무 깁니다.', mode, mode === 'free' ? 'title' : 'general'); return; }
+    if (payload.title.length > (versionEditor ? 50 : 200)) { showFormError('제목이 너무 깁니다.', mode, versionEditor || mode === 'free' ? 'title' : 'general'); return; }
     if (payload.content.length > 100000) { showFormError('이력서 원문은 100,000자까지 임시저장할 수 있습니다.', mode, mode === 'free' ? 'content' : 'general'); return; }
-    if (unsupportedControl.test(payload.title)) { showFormError('이력서 제목에 저장할 수 없는 제어 문자가 있습니다.', mode, mode === 'free' ? 'title' : 'general'); return; }
+    if (unsupportedControl.test(payload.title)) { showFormError('이력서 제목에 저장할 수 없는 제어 문자가 있습니다.', mode, versionEditor || mode === 'free' ? 'title' : 'general'); return; }
     if (unsupportedControl.test(payload.content)) { showFormError('이력서 원문에 저장할 수 없는 제어 문자가 있습니다.', mode, mode === 'free' ? 'content' : 'general'); return; }
     if (new TextEncoder().encode(JSON.stringify(payload)).length > 262144) {
       showFormError('임시저장할 전체 내용이 너무 깁니다. 작성 내용을 줄여 주세요.', mode); return;
@@ -334,11 +334,11 @@ export function ResumeCreatePage({ userId, draftId, versionEditor }: { userId: n
       showFormError(`${target === 'name' ? '이름' : target === 'email' ? '이메일' : '희망 직무'}을(를) 입력해 주세요.`, draft.mode, target); return;
     }
     if (!title || !content) {
-      showFormError(draft.mode === 'free' && !title ? '이력서 제목을 입력해 주세요.' : '이력서 원문을 입력해 주세요.',
-        draft.mode, draft.mode === 'free' && !title ? 'title' : draft.mode === 'free' ? 'content' : 'general'); return;
+      showFormError(!title ? `${versionEditor ? '버전' : '이력서'} 제목을 입력해 주세요.` : '이력서 원문을 입력해 주세요.',
+        draft.mode, !title && (versionEditor || draft.mode === 'free') ? 'title' : draft.mode === 'free' ? 'content' : 'general'); return;
     }
     if (content.length > 100000) { showFormError('이력서 내용은 100,000자까지 저장할 수 있습니다.', draft.mode, draft.mode === 'free' ? 'content' : 'general'); return; }
-    if (unsupportedControl.test(title)) { showFormError('제목에 저장할 수 없는 제어 문자가 있습니다.', draft.mode, draft.mode === 'free' ? 'title' : 'general'); return; }
+    if (unsupportedControl.test(title)) { showFormError('제목에 저장할 수 없는 제어 문자가 있습니다.', draft.mode, versionEditor || draft.mode === 'free' ? 'title' : 'general'); return; }
     if (unsupportedControl.test(content)) { showFormError('이력서 원문에 저장할 수 없는 제어 문자가 있습니다.', draft.mode, draft.mode === 'free' ? 'content' : 'general'); return; }
     if (new TextEncoder().encode(content).length > 262144) {
       showFormError('이력서 원문 용량이 256KB를 넘었습니다. 내용을 줄여 주세요.', draft.mode, draft.mode === 'free' ? 'content' : 'general'); return;
@@ -415,16 +415,16 @@ export function ResumeCreatePage({ userId, draftId, versionEditor }: { userId: n
     ? <span className="resume-field-error" role="alert">{activeError}</span> : null;
   return <div className="resume-workspace resume-create-page">
     <header className="resume-workspace-heading"><span className="resume-workspace-heading-icon"><LucideIcon name="fileText" /></span><div><h1>{versionEditor?.kind === 'new' ? '새 버전 작성' : versionEditor?.kind === 'edit' ? '버전 수정' : '이력서 작성'}</h1><p>개발 경험과 강점을 정리해 보세요.</p></div></header>
-    <div className="resume-create-toolbar"><a href={versionEditor?.kind === 'edit' ? `#/resumes/${versionEditor.resumeId}/versions/${versionEditor.versionId}` : versionEditor ? `#/resumes/${versionEditor.resumeId}` : '#/resumes'}><LucideIcon name="arrowLeft" /> {versionEditor ? '이력서 상세' : '이력서 목록'}</a><button type="button" onClick={() => setGuideOpen(true)}><LucideIcon name="fileText" /> 작성 가이드 보기</button></div>
+    <div className="resume-create-toolbar"><a href={versionEditor ? `#/resumes/${versionEditor.resumeId}` : '#/resumes'}><LucideIcon name="arrowLeft" /> {versionEditor ? '이력서 상세' : '이력서 목록'}</a><button type="button" onClick={() => setGuideOpen(true)}><LucideIcon name="fileText" /> 작성 가이드 보기</button></div>
     <div className="resume-create-tabs" role="tablist" aria-label="이력서 입력 방식">
       <button type="button" role="tab" aria-selected={draft.mode === 'free'} className={draft.mode === 'free' ? 'is-active' : ''} onClick={() => updateDraft({ mode: 'free' })}><LucideIcon name="fileText" /> 자유 입력</button>
       <button type="button" role="tab" aria-selected={draft.mode === 'template'} className={draft.mode === 'template' ? 'is-active' : ''} onClick={() => updateDraft({ mode: 'template' })}><LucideIcon name="clipboardList" /> 양식 입력</button>
     </div>
     {loading ? <p>작성 정보를 불러오는 중입니다.</p> : count === undefined ? <p role="alert">{error} <button type="button" onClick={() => setRetry(value => value + 1)}>다시 시도</button></p> : versionEditor?.kind === 'new' && count >= 10 ? <p role="status">이력서당 버전은 최대 10개까지 저장할 수 있습니다.</p> : !versionEditor && count >= 20 ? <p role="status">최대 20개까지 등록할 수 있습니다. 새 이력서를 만들려면 기존 이력서를 삭제해 주세요.</p> : <>
       <form className={`resume-create-form${draft.mode === 'free' ? ' is-free' : ''}`} onSubmit={event => void create(event)}>
-        {versionEditor && <div className="resume-create-version-meta">{draft.mode === 'template' && <label>버전 제목<input value={draft.title} onChange={event => updateDraft({ title: event.target.value })} maxLength={50} required /></label>}<label>버전 설명 (선택)<textarea value={versionDescription} onChange={event => setVersionDescription(event.target.value)} maxLength={200} rows={2} /></label></div>}
-        {draft.mode === 'free' ? <section className="resume-create-card"><div className="resume-create-card-heading"><h2>자유 입력</h2><p>제목과 본문을 작성하세요.</p></div>
-          <label>{versionEditor ? '버전 제목' : '이력서 제목'}<input value={draft.title} onChange={event => updateDraft({ title: event.target.value })} maxLength={versionEditor ? 50 : 200} placeholder="예: 백엔드 개발자 이력서" required />{fieldError('title')}</label>
+        {versionEditor && <div className="resume-create-version-meta"><label>버전 제목<input value={draft.title} onChange={event => updateDraft({ title: event.target.value })} maxLength={50} required />{fieldError('title')}</label><label>버전 설명 (선택)<textarea value={versionDescription} onChange={event => setVersionDescription(event.target.value)} maxLength={200} rows={2} /></label></div>}
+        {draft.mode === 'free' ? <section className="resume-create-card"><div className="resume-create-card-heading"><h2>자유 입력</h2><p>{versionEditor ? '이력서 원문을 작성하세요.' : '제목과 본문을 작성하세요.'}</p></div>
+          {!versionEditor && <label>이력서 제목<input value={draft.title} onChange={event => updateDraft({ title: event.target.value })} maxLength={200} placeholder="예: 백엔드 개발자 이력서" required />{fieldError('title')}</label>}
           <div className="resume-create-editor-field" data-color-mode="light">
             <label htmlFor="resume-free-content">이력서 원문</label>
             <MDEditor
