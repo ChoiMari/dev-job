@@ -87,11 +87,18 @@ class NotificationDatabaseTest {
                 Long.class, owner)).isZero();
         long notificationId = jdbc.queryForObject("select id from notification where user_id=?", Long.class, owner);
         mvc.perform(get("/api/me/notifications").with(as(other)))
-                .andExpect(status().isOk()).andExpect(jsonPath("$.totalElements").value(0));
+                .andExpect(status().isOk()).andExpect(jsonPath("$.totalElements").value(0))
+                .andExpect(jsonPath("$.unreadCount").value(0));
+        mvc.perform(get("/api/me/notifications").with(as(owner)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.totalElements").value(1))
+                .andExpect(jsonPath("$.unreadCount").value(1));
         mvc.perform(patch("/api/me/notifications/" + notificationId + "/read").with(as(other)).with(csrf()))
                 .andExpect(status().isNotFound());
         mvc.perform(patch("/api/me/notifications/" + notificationId + "/read").with(as(owner)).with(csrf()))
                 .andExpect(status().isNoContent());
+        mvc.perform(get("/api/me/notifications").with(as(owner)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.totalElements").value(1))
+                .andExpect(jsonPath("$.unreadCount").value(0));
         Instant firstRead = jdbc.queryForObject("select read_at from notification where id=?",
                 Timestamp.class, notificationId).toInstant();
         mvc.perform(patch("/api/me/notifications/" + notificationId + "/read").with(as(owner)).with(csrf()))

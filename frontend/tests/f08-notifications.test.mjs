@@ -13,10 +13,11 @@ test('notification page, source links, and idempotent read use their own resourc
     calls.push([url, options.method, options.headers['X-CSRF-TOKEN']]);
     if (url === '/api/auth/csrf') return json({ headerName: 'X-CSRF-TOKEN', token: 'csrf' });
     if (options.method === 'PATCH') { assert.equal(options.body, undefined); return new Response(null, { status: 204 }); }
-    return json({ items: [item], page: 2, size: 20, totalElements: 41 });
+    return json({ items: [item], page: 2, size: 20, totalElements: 41, unreadCount: 3 });
   }));
   const page = await api.list(2);
   assert.equal(page.totalElements, 41);
+  assert.equal(page.unreadCount, 3);
   assert.equal(notificationSource(page.items[0]), '#/interviews/4');
   assert.equal(notificationSource({ ...item, type: 'TODO_REMINDER', sourceId: 9 }), '#/todos/9');
   await api.markRead(8);
@@ -28,8 +29,10 @@ test('notification page, source links, and idempotent read use their own resourc
 });
 
 test('notification API rejects malformed data and preserves ownership errors', async () => {
-  for (const bad of [{ items: [{ ...item, type: 'EMAIL' }], page: 0, size: 20, totalElements: 1 },
-    { items: [item, item], page: 0, size: 20, totalElements: 2 }]) {
+  for (const bad of [{ items: [{ ...item, type: 'EMAIL' }], page: 0, size: 20, totalElements: 1, unreadCount: 1 },
+    { items: [item, item], page: 0, size: 20, totalElements: 2, unreadCount: 2 },
+    { items: [item], page: 0, size: 20, totalElements: 1, unreadCount: 2 },
+    { items: [item], page: 0, size: 20, totalElements: 1 }]) {
     await assert.rejects(createNotificationsApi(async () => bad).list(), { code: 'INVALID_RESPONSE' });
   }
   const api = createNotificationsApi(createApiClient('/api', async (url) => url === '/api/auth/csrf'

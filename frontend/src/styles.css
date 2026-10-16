@@ -217,12 +217,13 @@ body { background: var(--background); }
 .account-avatar .pixel-icon { width: 20px; height: 20px; }
 .account-controls button { min-height: 44px; padding: 7px 12px; border: 1px solid #ded9fa; border-radius: 8px; background: #f1efff; color: #5541c0; font-size: .78rem; font-weight: 750; }
 .account-controls button:hover { background: #eeeaff; }
-.account-notifications { display: inline-flex; align-items: center; justify-content: center; gap: 7px; flex: 0 0 auto; min-height: 36px; padding: 7px 12px; border: 1px solid #ddd4fc; border-radius: 999px; background: #f8f5ff; color: #5541c0; font-size: .78rem; font-weight: 750; line-height: 1; white-space: nowrap; text-decoration: none; transition: background .15s, border-color .15s, color .15s; }
+.account-notifications { position: relative; display: inline-flex; align-items: center; justify-content: center; gap: 7px; flex: 0 0 auto; min-height: 36px; padding: 7px 12px; border: 1px solid #ddd4fc; border-radius: 999px; background: #f8f5ff; color: #5541c0; font-size: .78rem; font-weight: 750; line-height: 1; white-space: nowrap; text-decoration: none; transition: background .15s, border-color .15s, color .15s; }
 .account-notifications:hover { border-color: #b9aaf8; background: #eee9ff; }
 .account-notifications[aria-current="page"] { border-color: #6650ef; background: #6650ef; color: #fff; }
 .account-notifications[aria-current="page"]:hover { border-color: #5541d5; background: #5541d5; }
 .account-notifications:focus-visible { outline: 2px solid #6650ef; outline-offset: 2px; }
 .account-notifications .lucide-icon { width: 17px; height: 17px; }
+.account-notifications .account-notifications-count { position: absolute; top: -8px; right: -8px; display: grid; place-items: center; min-width: 20px; height: 20px; padding: 0 4px; border: 2px solid #fff; border-radius: 999px; background: #ed4777; color: #fff; font-size: 10px; font-weight: 800; line-height: 1; }
 .account-controls .account-logout { min-height: 36px; padding: 4px 2px; border: 0; border-radius: 0; background: transparent; box-shadow: none; color: #5541c0; text-decoration: none; }
 .account-controls .account-logout:hover { background: transparent; color: #392a91; text-decoration: none; }
 .sidebar { position: sticky; top: 78px; height: calc(100vh - 78px); overflow-y: auto; display: flex; flex-direction: column; padding: 30px 15px 22px; background: var(--sidebar); border-color: var(--sidebar); color: var(--sidebar-text); }

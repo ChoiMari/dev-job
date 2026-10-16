@@ -88,7 +88,6 @@
 .dashboard-skill-list li > a:hover { border-color: #6650ef; background: #f7f4ff; }
 .dashboard-todo-list li { display: flex; align-items: center; gap: 7px; min-height: 29px; border-top: 1px solid #edf0f7; }
 .dashboard-todo-list li:first-child { border-top: 0; }
-.dashboard-todo-list input { flex: none; width: 14px; height: 14px; margin: 0 4px 0 2px; accent-color: #6650ef; cursor: pointer; }
 .dashboard-todo-category { flex: none; min-width: 34px; padding: 2px 4px; border-radius: 4px; background: #eeeaff; color: #5943c5; font-size: 10px; text-align: center; }
 .dashboard-todo-list li > a { flex: 1; min-width: 0; overflow: hidden; color: #172452; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
 .dashboard-todo-list li > a:hover { color: #6650ef; text-decoration: underline; }

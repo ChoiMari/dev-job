@@ -56,8 +56,11 @@ public class NotificationRepository {
                 + "values (?,?,?,?,?,current_timestamp) on conflict on constraint uq_notification_event do nothing",
                 userId, type.name(), event.id(), Timestamp.from(event.at()), event.subject());
     }
-    public long count(long userId) {
-        return jdbc.queryForObject("select count(*) from notification where user_id=?", Long.class, userId);
+    public record Counts(long total, long unread) { }
+    public Counts counts(long userId) {
+        return jdbc.query("select count(*), count(*) filter (where read_at is null) "
+                + "from notification where user_id=?",
+                rs -> { rs.next(); return new Counts(rs.getLong(1), rs.getLong(2)); }, userId);
     }
     public List<NotificationDto> list(long userId, int size, long offset) {
         return jdbc.query("select id,type,source_id,scheduled_at,subject,created_at,read_at "

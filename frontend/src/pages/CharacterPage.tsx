@@ -11,6 +11,7 @@ import welcomeCat from '../assets/illustrations/character-welcome-cat-head-first
 import tabGiftIcon from '../assets/illustrations/character-tab-gift.png';
 import journalBanner from '../assets/illustrations/character-journal-banner.png';
 import rewardsEmpty from '../assets/illustrations/character-rewards-empty.png';
+import activityEmpty from '../assets/illustrations/character-activity-empty.png';
 import questTodo from '../assets/illustrations/quest-todo.png';
 import questBookmark from '../assets/illustrations/quest-bookmark.png';
 import questResume from '../assets/illustrations/quest-resume.png';
@@ -229,7 +230,11 @@ export function CharacterPage({ userId }: { userId: number }) {
           return <li key={row.id}><span className="character-activity-icon"><img src={detail?.icon ?? questTodo} alt="" /></span>
             <strong>{detail?.title ?? row.activityType}</strong><span className="character-activity-exp">+{row.expAmount} EXP</span>
             <time dateTime={row.earnedAt}><LucideIcon name="clock" />{new Date(row.earnedAt).toLocaleString('ko-KR')}</time></li>;
-        })}</ul> : <EmptyState title="아직 EXP 활동이 없습니다." />}
+        })}</ul> : <div className="character-activity-empty" role="status">
+          <img src={activityEmpty} alt="" aria-hidden="true" />
+          <h3>아직 EXP 활동이 없습니다.</h3>
+          <p>할 일을 완료하거나 다양한 활동을 통해 EXP를 쌓아보세요!</p>
+        </div>}
           {!!activity?.totalElements && <div className="character-activity-pages"><button disabled={activityPage === 0} onClick={() => setActivityPage(p => p - 1)}>이전</button><span>{activityPage + 1}</span><button disabled={!activity || (activityPage + 1) * activity.size >= activity.totalElements} onClick={() => setActivityPage(p => p + 1)}>다음</button></div>}</div>}
         {!extrasLoading && !extraError && activeJournal === 'rewards' && <div className="character-reward-history">
           <div className="character-reward-summary"><div className="character-reward-summary-title"><img src={tabGiftIcon} alt="" /><div><h3>보상 수령 내역</h3><p>퀘스트를 달성하고 획득한 의상 보상을 확인해 보세요.</p></div></div>

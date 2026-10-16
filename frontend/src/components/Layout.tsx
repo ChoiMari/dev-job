@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { apiRequest } from '../api';
 import type { CurrentUser } from '../api/auth';
 import { createCharacterApi } from '../api/character';
+import { createNotificationsApi } from '../api/notifications';
 import type { CharacterState } from '../api/character';
 import { characterAppearanceUrl } from './CharacterLayers';
 import { PixelIcon } from './PixelArt';
@@ -11,6 +12,7 @@ import brandWordmark from '../assets/redesign/brand-devjob-wordmark-dark.png';
 import jobDetailCat from '../assets/redesign/interview-planner-cat.png';
 
 const characters = createCharacterApi(apiRequest);
+const notifications = createNotificationsApi(apiRequest);
 
 const groups = [
   { label: '시작하기', links: [
@@ -53,6 +55,30 @@ export function Layout({ title, path, children, user, nickname, onLogout, loggin
   const [menuOpen, setMenuOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [character, setCharacter] = useState<CharacterState>();
+  const [unreadCount, setUnreadCount] = useState<number | null>(null);
+  useEffect(() => {
+    let activeRequest: AbortController | null = null;
+    setUnreadCount(null);
+    const refresh = () => {
+      activeRequest?.abort();
+      const controller = new AbortController();
+      activeRequest = controller;
+      notifications.list(0, controller.signal).then(value => {
+        if (!controller.signal.aborted) setUnreadCount(value.unreadCount);
+      }).catch(() => { if (!controller.signal.aborted) setUnreadCount(null); });
+    };
+    const refreshWhenVisible = () => { if (document.visibilityState === 'visible') refresh(); };
+    refresh();
+    const interval = window.setInterval(refreshWhenVisible, 60000);
+    document.addEventListener('visibilitychange', refreshWhenVisible);
+    window.addEventListener('devjob:notifications-updated', refresh);
+    return () => {
+      activeRequest?.abort();
+      window.clearInterval(interval);
+      document.removeEventListener('visibilitychange', refreshWhenVisible);
+      window.removeEventListener('devjob:notifications-updated', refresh);
+    };
+  }, [user.id]);
   useEffect(() => {
     const controller = new AbortController();
     setCharacter(undefined);
@@ -79,8 +105,10 @@ export function Layout({ title, path, children, user, nickname, onLogout, loggin
       <div className="account-controls">
         <a className={`account-avatar${bunnyOutfit ? ' is-bunny-outfit' : ''}`} href="#/character" aria-label="내 캐릭터 보기">{characterImage}</a>
         <span className="account-email">{nickname || user.email}</span>
-        <a className="account-notifications" href="#/notifications" aria-current={path === '/notifications' ? 'page' : undefined}>
+        <a className="account-notifications" href="#/notifications" aria-current={path === '/notifications' ? 'page' : undefined}
+          aria-label={unreadCount ? `알림, 읽지 않은 알림 ${unreadCount}개` : '알림'}>
           <LucideIcon name="bell" /><span>알림</span>
+          {unreadCount !== null && unreadCount > 0 && <span className="account-notifications-count" aria-hidden="true">{unreadCount > 99 ? '99+' : unreadCount}</span>}
         </a>
         <button className="account-logout" type="button" onClick={onLogout} disabled={loggingOut}>{loggingOut ? '로그아웃 중…' : '로그아웃'}</button>
       </div>
@@ -115,7 +143,7 @@ export function Layout({ title, path, children, user, nickname, onLogout, loggin
       </a>
     </aside>
     <main id="main-content" tabIndex={-1} className="main-content">
-      {path !== '/' && path !== '/profile' && path !== '/character' && path !== '/settings' && path !== '/analytics/skills' && !path.startsWith('/learning-goals') && !path.startsWith('/interviews/') && !path.startsWith('/jobs/') && !path.startsWith('/recommendations') && !path.startsWith('/resumes')
+      {path !== '/' && path !== '/profile' && path !== '/character' && path !== '/settings' && path !== '/notifications' && path !== '/analytics/skills' && !path.startsWith('/learning-goals') && !path.startsWith('/interviews/') && !path.startsWith('/jobs/') && !path.startsWith('/recommendations') && !path.startsWith('/resumes')
         && <div className="page-heading"><span className="eyebrow">MY CAREER SPACE</span><h1>{title}</h1>{path === '/jobs' && <img className="job-search-banner-cat" src={jobDetailCat} alt="" aria-hidden="true" />}</div>}
       {children}
     </main>

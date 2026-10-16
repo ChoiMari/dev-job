@@ -78,8 +78,9 @@ public class NotificationService {
     @Transactional(readOnly = true)
     public NotificationPage list(long userId, int page, int size) {
         if (page < 0 || size < 1 || size > 100 || (long) page * size > Integer.MAX_VALUE) throw badInput();
+        var counts = repository.counts(userId);
         return new NotificationPage(repository.list(userId, size, (long) page * size), page, size,
-                repository.count(userId));
+                counts.total(), counts.unread());
     }
 
     @Transactional

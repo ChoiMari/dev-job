@@ -3,7 +3,6 @@ import { apiRequest } from '../../api';
 import { createDashboardApi } from '../../api/dashboard';
 import { createCompaniesApi } from '../../api/companies';
 import { createSkillGapApi } from '../../api/skill-gap';
-import { createTodosApi } from '../../api/todos';
 import type { Dashboard } from '../../api/dashboard';
 import type { SkillGap } from '../../api/skill-gap';
 import type { CurrentUser } from '../../api/auth';
@@ -18,7 +17,6 @@ import './dashboard.css';
 const api = createDashboardApi(apiRequest);
 const companies = createCompaniesApi(apiRequest);
 const skillGaps = createSkillGapApi(apiRequest);
-const todos = createTodosApi(apiRequest);
 const date = (value: string) => new Intl.DateTimeFormat('ko-KR', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value));
 const todoDate = (value: string, timeZone: string) => new Intl.DateTimeFormat('ko-KR', {
   year: 'numeric', month: '2-digit', day: '2-digit', timeZone,
@@ -32,8 +30,6 @@ export function DashboardPage({ user }: { user: CurrentUser }) {
   const [companyCount, setCompanyCount] = useState<number | null>(null);
   const [companyCountError, setCompanyCountError] = useState(false);
   const [skillGap, setSkillGap] = useState<SkillGap>();
-  const [todoBusyId, setTodoBusyId] = useState<number | null>(null);
-  const [todoError, setTodoError] = useState('');
 
   useEffect(() => {
     const controller = new AbortController();
@@ -61,17 +57,6 @@ export function DashboardPage({ user }: { user: CurrentUser }) {
     }).catch(() => { /* The dashboard's skill names remain available without the detailed analysis. */ });
     return () => controller.abort();
   }, [user.id, retry]);
-
-  async function completeTodo(id: number) {
-    if (todoBusyId !== null) return;
-    setTodoError(''); setTodoBusyId(id);
-    try {
-      await todos.complete(id, true);
-      setData(current => current && ({ ...current, personalTodos: current.personalTodos.filter(item => item.id !== id) }));
-    } catch (failure) {
-      setTodoError(failure instanceof Error ? failure.message : '할 일을 완료하지 못했습니다. 다시 시도해 주세요.');
-    } finally { setTodoBusyId(null); }
-  }
 
   if (loading) return <section className="card"><LoadingState message="취업 준비 현황을 불러오고 있습니다." /></section>;
   if (error) return <section className="card"><ErrorState message={error} onRetry={() => setRetry(value => value + 1)} /></section>;
@@ -134,9 +119,7 @@ export function DashboardPage({ user }: { user: CurrentUser }) {
       </section>
 
       <section className="dashboard-panel dashboard-todos-panel"><div className="dashboard-panel-heading"><h2><LucideIcon name="check" />미완료 할 일</h2><a href="#/todos">전체보기 <LucideIcon name="chevronRight" /></a></div>
-        {todoError && <p className="dashboard-inline-error" role="alert">{todoError}</p>}
         {data.personalTodos.length ? <ul className="dashboard-todo-list">{data.personalTodos.map(todo => <li key={todo.id}>
-          <input type="checkbox" aria-label={`${todo.title} 완료`} disabled={todoBusyId !== null} onChange={() => void completeTodo(todo.id)} />
           <span className="dashboard-todo-category">{todo.category}</span><a href={`#/todos/${todo.id}`}>{todo.title}</a><small>{todo.dueAt && todo.dueTimeZone ? todoDate(todo.dueAt, todo.dueTimeZone) : '기한 없음'}</small>
         </li>)}</ul> : <div className="dashboard-panel-empty">미완료 할 일이 없습니다.<small>새 할 일을 등록해 계획을 이어가세요.</small></div>}
       </section>

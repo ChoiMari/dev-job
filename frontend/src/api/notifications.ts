@@ -9,7 +9,7 @@ export const notificationTypes = ['INTERVIEW_REMINDER', 'TODO_REMINDER', 'NEW_JO
   'SAVED_JOB_UPDATE', 'DOCUMENT_ANALYSIS', 'MATCH_ANALYSIS', 'SEMANTIC_RECOMMENDATION',
   'LEARNING_GOAL_REMINDER', 'CHARACTER_ACTIVITY', 'SERVICE_NOTICE'] as const;
 export type NotificationType = typeof notificationTypes[number];
-export type NotificationPage = { items: NotificationItem[]; page: number; size: number; totalElements: number };
+export type NotificationPage = { items: NotificationItem[]; page: number; size: number; totalElements: number; unreadCount: number };
 const positive = (value: unknown): value is number => Number.isSafeInteger(value) && Number(value) > 0;
 const instant = (value: unknown): value is string => typeof value === 'string' && /(?:Z|[+-]\d{2}:\d{2})$/.test(value) && Number.isFinite(Date.parse(value));
 function invalid(): never { throw new ApiError('알림 응답을 확인할 수 없습니다.', 200, 'INVALID_RESPONSE'); }
@@ -43,6 +43,8 @@ export function createNotificationsApi(request: ReturnType<typeof createApiClien
         || !('page' in value) || value.page !== page || !('size' in value) || value.size !== 20
         || !('totalElements' in value) || !Number.isSafeInteger(value.totalElements)
         || Number(value.totalElements) < value.items.length || value.items.length > 20
+        || !('unreadCount' in value) || !Number.isSafeInteger(value.unreadCount)
+        || Number(value.unreadCount) < 0 || Number(value.unreadCount) > Number(value.totalElements)
         || !value.items.every(isNotification)
         || new Set(value.items.map(item => item.id)).size !== value.items.length) return invalid();
       return value as NotificationPage;
