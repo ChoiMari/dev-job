@@ -192,4 +192,28 @@ class RecommendationRunnerTest {
                 List.of("Java  서버 경험"), List.of(job))).isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("DOCUMENT_QUOTE");
     }
+    @Test void acceptsHarmlessExtraFieldsAndOmittedOptionalTips() throws Exception {
+        String raw = """
+                {"items":[{"kind":"MANUAL","id":7,"outcome":"RANKED","rank":1,
+                  "evidence":[{"documentQuote":"Java 경험","jobQuote":"Java 서버",
+                    "explanation":"관련 경험","confidence":"high"}],
+                  "limitations":["운영 규모는 확인할 수 없음"],"summary":"추가 설명"}]}
+                """;
+        var item = runner.validate(raw, List.of("Java 경험"), List.of(job)).get(0);
+        assertThat(item.status()).isEqualTo("COMPLETED");
+        assertThat(item.evidence()).hasSize(1);
+        assertThat(item.preparationTips()).isEmpty();
+        assertThatThrownBy(() -> runner.validate(raw.replace("Java 경험", "없는 경험"),
+                List.of("Java 경험"), List.of(job))).isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("DOCUMENT_QUOTE");
+    }
+
+    @Test void reportsWhyEveryCandidateWasSkipped() {
+        assertThatThrownBy(() -> runner.validate(
+                """
+                {"items":[{"kind":"MANUAL","id":7,"outcome":"UNKNOWN","rank":1}]}
+                """, List.of("Java 경험"), List.of(job)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("ITEM_OUTCOME_RANK");
+    }
 }

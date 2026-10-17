@@ -133,16 +133,20 @@ public class RecommendationRunner {
         List<Item> items = new ArrayList<>();
         String lastInvalid = "NO_VALID_ITEMS";
         for (JsonNode entry : outputItems) {
-            if (!entry.isObject() || (entry.size() != 6 && entry.size() != 7)
-                    || !entry.path("kind").isTextual() || !entry.path("id").canConvertToLong()
-                    || (entry.has("outcome") && !entry.path("outcome").isTextual())) continue;
+            if (!entry.isObject() || !entry.path("kind").isTextual()
+                    || !entry.path("id").canConvertToLong()
+                    || (entry.has("outcome") && !entry.path("outcome").isTextual())) {
+                lastInvalid = "ITEM_SHAPE";
+                continue;
+            }
             String key = entry.path("kind").textValue() + ':' + entry.path("id").longValue();
             Candidate job = byKey.get(key);
-            if (job == null) continue;
+            if (job == null) { lastInvalid = "ITEM_CANDIDATE"; continue; }
             String outcome = entry.has("outcome") && entry.path("outcome").isTextual()
                     ? entry.path("outcome").textValue() : "RANKED";
             try {
-                JsonNode evidence = entry.path("evidence"), limits = entry.path("limitations"), tips = entry.path("preparationTips");
+                JsonNode evidence = entry.path("evidence"), limits = entry.path("limitations");
+                JsonNode tips = entry.has("preparationTips") ? entry.path("preparationTips") : mapper.createArrayNode();
                 if ("UNRELATED".equals(outcome) || "INSUFFICIENT_EVIDENCE".equals(outcome)) {
                     if (!entry.path("rank").isNull() || !evidence.isArray() || !evidence.isEmpty()
                             || !limits.isArray() || limits.size() != 1 || !tips.isArray() || !tips.isEmpty())
@@ -154,16 +158,22 @@ public class RecommendationRunner {
                     byKey.remove(key);
                     continue;
                 }
-                if (!"RANKED".equals(outcome) || !entry.path("rank").canConvertToInt()) continue;
+                if (!"RANKED".equals(outcome) || !entry.path("rank").canConvertToInt()) {
+                    lastInvalid = "ITEM_OUTCOME_RANK";
+                    continue;
+                }
                 int rank = entry.path("rank").intValue();
-                if (rank < 1 || rank > jobs.size() || ranks.contains(rank)) continue;
+                if (rank < 1 || rank > jobs.size() || ranks.contains(rank)) {
+                    lastInvalid = "ITEM_RANK";
+                    continue;
+                }
                 if (!evidence.isArray() || evidence.size() < 1 || evidence.size() > 3
                         || !limits.isArray() || limits.size() < 1 || limits.size() > 3
                         || !tips.isArray() || tips.size() > 3) throw invalid("CONTENT_COUNTS");
                 List<Evidence> proofs = new ArrayList<>();
                 String jobText = redactor.redact(job.title()) + " " + truncate(redactor.redact(job.description()), 4000);
                 for (JsonNode proof : evidence) {
-                    if (!proof.isObject() || proof.size() != 3) throw invalid("EVIDENCE_SHAPE");
+                    if (!proof.isObject()) throw invalid("EVIDENCE_SHAPE");
                     String documentQuote = sourceQuote(value(proof.path("documentQuote"), 160), docs);
                     String jobQuote = sourceQuote(value(proof.path("jobQuote"), 160), List.of(jobText));
                     String explanation = value(proof.path("explanation"), 200);
@@ -176,7 +186,7 @@ public class RecommendationRunner {
                 List<PreparationTip> preparationTips = new ArrayList<>();
                 Set<String> tipTypes = new HashSet<>();
                 for (JsonNode tip : tips) {
-                    if (!tip.isObject() || tip.size() != 3) throw invalid("TIP_SHAPE");
+                    if (!tip.isObject()) throw invalid("TIP_SHAPE");
                     String type = value(tip.path("type"), 8);
                     if (!Set.of("CHECK", "IMPROVE", "PREPARE").contains(type)) throw invalid("TIP_TYPE");
                     String proposedQuote = value(tip.path("basisQuote"), 160);
