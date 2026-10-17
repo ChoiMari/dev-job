@@ -144,8 +144,9 @@ export function Layout({ title, path, children, user, nickname, onLogout, loggin
     </aside>
     <main id="main-content" tabIndex={-1} className="main-content">
       {path !== '/' && path !== '/profile' && path !== '/character' && path !== '/settings' && path !== '/notifications' && path !== '/analytics/skills' && path !== '/projects' && !path.startsWith('/learning-goals') && !path.startsWith('/interviews/') && !path.startsWith('/jobs/') && !path.startsWith('/recommendations') && !path.startsWith('/resumes') && !path.startsWith('/cover-letters')
-        && <div className={path === '/projects/new' ? 'page-heading project-registration-heading' : 'page-heading'}>
+        && <div className={path === '/projects/new' ? 'page-heading project-registration-heading' : /^\/projects\/[1-9]\d*$/.test(path) ? 'page-heading project-detail-heading' : 'page-heading'}>
           {path === '/projects/new' ? <div className="project-registration-copy"><h1>프로젝트 등록</h1><p>프로젝트에서 맡은 역할과 성과를 기록해 보세요.</p></div>
+            : /^\/projects\/[1-9]\d*$/.test(path) ? <div className="project-detail-heading__copy"><h1>프로젝트 상세보기</h1><p>프로젝트의 상세 내용을 확인하고,<br />나만의 개발 여정을 기록해보세요.</p></div>
             : <><span className="eyebrow">MY CAREER SPACE</span><h1>{title}</h1>{path === '/jobs' && <img className="job-search-banner-cat" src={jobDetailCat} alt="" aria-hidden="true" />}</>}
         </div>}
       {children}

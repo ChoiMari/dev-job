@@ -5,9 +5,9 @@ import { createProjectsApi, projectLink } from '../../api/projects';
 import type { Project, ProjectImage, ProjectInput, ProjectPage } from '../../api/projects';
 import { createSkillsApi } from '../../api/skills';
 import type { Skill, SkillPage } from '../../api/skills';
-import { Badge } from '../../components/PixelArt';
 import { LucideIcon } from '../../components/LucideIcon';
 import { EmptyState, ErrorState, LoadingState, SuccessState } from '../../components/States';
+import { ProjectDetailView } from './ProjectDetailView';
 import './projects.css';
 import projectEmptyArt from '../../assets/illustrations/project-empty-pixel.png';
 import projectBannerArt from '../../assets/illustrations/project-list-banner-pixel.png';
@@ -259,7 +259,11 @@ function ProjectEditor({ id, initialEdit = false }: { id?: number; initialEdit?:
     setForm(current => ({ ...current, [key]: key === 'name' || key === 'startDate' ? value : value || null })); setError('');
   }
   return <div className="projects-page project-editor-page">
-    <a className="project-editor-back" href="#/projects">← 프로젝트 목록</a>
+    <div className="project-view-toolbar"><a className="project-editor-back" href="#/projects"><LucideIcon name="arrowLeft" /> 목록으로 돌아가기</a>
+      {!editing && project && !loading && !loadError && <div className="project-view-toolbar-actions">
+        <button type="button" disabled={busy} onClick={() => { setEditing(true); setConfirmDelete(false); setSuccess(''); setError(''); }}><LucideIcon name="pencil" /> 수정</button>
+        <button type="button" className="project-view-delete-button" disabled={busy} onClick={() => setConfirmDelete(true)}><LucideIcon name="trash" /> 삭제</button>
+      </div>}</div>
     {loading ? <LoadingState message="프로젝트를 불러오고 있습니다." /> : loadError
       ? loadStatus === 404 || loadStatus === 403 ? <EmptyState title={loadStatus === 404 ? '프로젝트를 찾을 수 없습니다.' : '접근 권한이 없습니다.'} message={loadError} />
         : <ErrorState message={loadError} onRetry={() => setRetry(v => v + 1)} />
@@ -274,33 +278,10 @@ function ProjectEditor({ id, initialEdit = false }: { id?: number; initialEdit?:
             : <a className="button-link" href="#/projects">취소</a>}
             <button className="button-primary" type="submit" disabled={busy}>{busy ? '저장 중…' : '프로젝트 저장'}</button></div>
         </form> : project && <>
-          <h2>{project.name}</h2><p>{project.projectType === 'PERSONAL' ? '개인 프로젝트' : project.projectType === 'TEAM' ? '팀 프로젝트' : '유형 미지정'} · {project.startDate} ~ {project.endDate ?? '진행 중'}</p>
-          <dl className="project-detail">{([['role', '역할'], ['description', '프로젝트 설명'], ['keyFeatures', '주요 기능'], ['outcome', '성과']] as const).map(([key, label]) =>
-            <div key={key}><dt>{label}</dt><dd className="project-text">{project[key] ?? '정보 없음'}</dd></div>)}
-            {([['summary', '한 줄 소개'], ['category', '카테고리'], ['problemSolving', '해결하려는 문제 / 기획 배경']] as const).map(([key, label]) =>
-              <div key={key}><dt>{label}</dt><dd className="project-text">{project[key] ?? '정보 없음'}</dd></div>)}
-            {project.contributionItems.length > 0 && <div><dt>담당 기능별 기여도</dt><dd className="project-text">{project.contributionItems.map(item => `${item.responsibility} · ${item.percent}%`).join('\n')}</dd></div>}
-            {project.contributionItems.length === 0 && project.contributionPercent != null && <div><dt>기여도</dt><dd>{project.contributionPercent}%</dd></div>}
-            {project.contributionItems.length === 0 && project.responsibilities && <div><dt>담당 업무 상세</dt><dd className="project-text">{project.responsibilities}</dd></div>}
-            {project.troubleshootingItems.length > 0 && <div><dt>트러블슈팅 / 개선 경험 항목</dt><dd className="project-text">{project.troubleshootingItems.join('\n')}</dd></div>}
-            <div><dt>팀원 수</dt><dd>{project.teamSize == null ? '정보 없음' : `${project.teamSize}명`}</dd></div>
-            <div><dt>결과 지표</dt><dd className="project-text">{project.metricItems.join('\n') || '정보 없음'}</dd></div>
-            <div><dt>사용 기술</dt><dd className="project-badges">{project.skills.length + project.customSkills.length ? <>
-              {project.skills.map(skill => <Badge key={skill.id} tone="success" icon="check">{skill.name}</Badge>)}
-              {project.customSkills.map(skill => <Badge key={skill.name} tone="success" icon="check">{skill.name}</Badge>)}</> : '등록한 기술 없음'}</dd></div>
-            {project.skillUsages.length > 0 && <div><dt>기술 활용 내용</dt><dd className="project-text">{project.skillUsages.map(item => `${project.skills.find(skill => skill.id === item.skillId)?.name ?? item.skillId}: ${item.usage ?? ''}`).join('\n')}</dd></div>}
-            {project.customSkills.some(skill => skill.usage) && <div><dt>직접 입력 기술 활용 내용</dt><dd className="project-text">{project.customSkills.filter(skill => skill.usage).map(skill => `${skill.name}: ${skill.usage}`).join('\n')}</dd></div>}
-          </dl>
-          {images.length > 0 && <div className="project-detail-images" aria-label="프로젝트 이미지">{images.map(item =>
-            <img key={item.id} src={item.viewUrl} alt={item.fileName} />)}</div>}
-          {projectLink(project.projectUrl) && <a className="button-link" href={projectLink(project.projectUrl)} target="_blank" rel="noopener noreferrer">프로젝트 URL 보기 (새 창)</a>}
-          {([['demoUrl', '시연 영상'], ['githubUrl', 'GitHub'], ['presentationUrl', '발표 자료 / 문서']] as const).map(([key, label]) => projectLink(project[key]) &&
-            <a className="button-link" key={key} href={projectLink(project[key])} target="_blank" rel="noopener noreferrer">{label} 보기 (새 창)</a>)}
-          <div className="project-actions"><button disabled={busy} onClick={() => { setEditing(true); setConfirmDelete(false); setSuccess(''); setError(''); }}>프로젝트 수정</button>
-            <button disabled={busy} onClick={() => setConfirmDelete(true)}>프로젝트 삭제</button></div>
           {confirmDelete && <div className="project-delete" role="group" aria-label="프로젝트 삭제 확인"><p>“{project.name}” 프로젝트와 프로젝트 기술 연결을 삭제할까요? 보유 기술은 유지됩니다.</p>
             <div className="project-actions"><button disabled={busy} onClick={() => void remove()}>{busy ? '삭제 중…' : '삭제 확인'}</button>
               <button disabled={busy} onClick={() => setConfirmDelete(false)}>삭제 취소</button></div></div>}
+          <ProjectDetailView project={project} images={images} />
         </>}
       </>}
   </div>;
