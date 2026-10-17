@@ -20,9 +20,15 @@ test('skill gap sends role filter and cancellation', async () => {
 });
 
 test('skill gap validates score inputs and unavailable responses', async () => {
-  const empty = { available: false, desiredRole: null, analyzedJobCount: 4,
+  const empty = { available: false, desiredRole: null, analyzedJobCount: 0,
     provisional: false, totalMissingSkills: 0, items: [], reason: 'INSUFFICIENT_SAMPLE' };
+  const smallSample = { ...result, analyzedJobCount: 2, items: [{ ...result.items[0],
+    demandJobCount: 2, requiredJobCount: 1, preferredJobCount: 1, demandRatio: 1, priorityScore: 75 }] };
+  const regularSample = { ...result, analyzedJobCount: 10, provisional: false, items: [{ ...result.items[0],
+    demandRatio: 0.4, priorityScore: 30 }] };
   assert.deepEqual(await createSkillGapApi(async () => empty).get(), empty);
+  assert.deepEqual(await createSkillGapApi(async () => smallSample).get(), smallSample);
+  assert.deepEqual(await createSkillGapApi(async () => regularSample).get(), regularSample);
   for (const invalid of [{ ...result, items: [{ ...result.items[0], priorityScore: 80 }] },
     { ...result, items: [{ ...result.items[0], demandJobCount: 3 }] },
     { ...empty, items: result.items }, { ...result, provisional: false }]) {

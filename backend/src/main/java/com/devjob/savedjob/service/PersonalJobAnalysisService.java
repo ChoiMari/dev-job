@@ -6,6 +6,8 @@ import com.devjob.analysis.service.AnalysisOutputValidator;
 import com.devjob.savedjob.dto.PersonalJobAnalysisResponse;
 import com.devjob.skill.service.SkillName;
 import com.devjob.skill.service.AccountSkillService;
+import com.devjob.notification.NotificationEventRecorder;
+import com.devjob.notification.NotificationType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.sql.Timestamp;
 import java.time.Instant;
@@ -16,6 +18,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
 @Service
@@ -25,10 +29,15 @@ public class PersonalJobAnalysisService {
     private final AnalysisOutputValidator validator;
     private final ObjectMapper mapper;
     private final AccountSkillService accountSkills;
+    private final NotificationEventRecorder notifications;
+    private final TransactionTemplate transaction;
     public PersonalJobAnalysisService(NamedParameterJdbcTemplate jdbc, AnalysisGateway gateway,
-            AnalysisOutputValidator validator, ObjectMapper mapper, AccountSkillService accountSkills) {
+            AnalysisOutputValidator validator, ObjectMapper mapper, AccountSkillService accountSkills,
+            NotificationEventRecorder notifications, PlatformTransactionManager manager) {
         this.jdbc = jdbc; this.gateway = gateway; this.validator = validator; this.mapper = mapper;
         this.accountSkills = accountSkills;
+        this.notifications = notifications;
+        this.transaction = new TransactionTemplate(manager);
     }
     public PersonalJobAnalysisResponse get(Long userId, long id) {
         owned(userId, id);
@@ -68,29 +77,34 @@ public class PersonalJobAnalysisService {
                     "분석을 완료하지 못했습니다. 다시 시도해 주세요.");
         }
         try {
-            var args = new MapSqlParameterSource("id", id).addValue("userId", userId)
-                    .addValue("version", Timestamp.from(job.updatedAt())).addValue("status", result.status())
-                    .addValue("json", mapper.writeValueAsString(Map.of("requiredSkills", result.requiredSkills(),
-                            "preferredSkills", result.preferredSkills())))
-                    .addValue("reason", result.failureReason())
-                    .addValue("analyzedAt", result.analyzedAt() == null ? null : Timestamp.from(result.analyzedAt()), java.sql.Types.TIMESTAMP)
-                    .addValue("updatedAt", Timestamp.from(Instant.now()));
-            int saved = jdbc.update("""
-                    insert into personal_saved_job_analysis
-                        (personal_saved_job_id, status, result_json, failure_reason, analyzed_at, updated_at)
-                    select p.id, :status, cast(:json as jsonb), :reason, :analyzedAt, :updatedAt
-                    from personal_saved_job p where p.id=:id and p.user_id=:userId
-                        and p.deleted_at is null and p.updated_at=:version
-                    on conflict (personal_saved_job_id) do update set status=excluded.status,
-                        result_json=excluded.result_json, failure_reason=excluded.failure_reason,
-                        analyzed_at=excluded.analyzed_at, updated_at=excluded.updated_at
-                    """, args);
-            if (saved == 0) throw new ResponseStatusException(HttpStatus.CONFLICT, "공고가 변경되었습니다. 다시 시도해 주세요.");
-            if ("COMPLETED".equals(result.status())) {
-                accountSkills.publishPersonal(userId, id, java.util.stream.Stream
-                        .concat(result.requiredSkills().stream(), result.preferredSkills().stream()).toList());
-            }
-            return result;
+            String json = mapper.writeValueAsString(Map.of("requiredSkills", result.requiredSkills(),
+                    "preferredSkills", result.preferredSkills()));
+            PersonalJobAnalysisResponse completed = result;
+            return transaction.execute(status -> {
+                var args = new MapSqlParameterSource("id", id).addValue("userId", userId)
+                        .addValue("version", Timestamp.from(job.updatedAt())).addValue("status", completed.status())
+                        .addValue("json", json)
+                        .addValue("reason", completed.failureReason())
+                        .addValue("analyzedAt", completed.analyzedAt() == null ? null : Timestamp.from(completed.analyzedAt()), java.sql.Types.TIMESTAMP)
+                        .addValue("updatedAt", Timestamp.from(Instant.now()));
+                int saved = jdbc.update("""
+                        insert into personal_saved_job_analysis
+                            (personal_saved_job_id, status, result_json, failure_reason, analyzed_at, updated_at)
+                        select p.id, :status, cast(:json as jsonb), :reason, :analyzedAt, :updatedAt
+                        from personal_saved_job p where p.id=:id and p.user_id=:userId
+                            and p.deleted_at is null and p.updated_at=:version
+                        on conflict (personal_saved_job_id) do update set status=excluded.status,
+                            result_json=excluded.result_json, failure_reason=excluded.failure_reason,
+                            analyzed_at=excluded.analyzed_at, updated_at=excluded.updated_at
+                        """, args);
+                if (saved == 0) throw new ResponseStatusException(HttpStatus.CONFLICT, "공고가 변경되었습니다. 다시 시도해 주세요.");
+                if ("COMPLETED".equals(completed.status())) {
+                    accountSkills.publishPersonal(userId, id, java.util.stream.Stream
+                            .concat(completed.requiredSkills().stream(), completed.preferredSkills().stream()).toList());
+                    notifications.record(NotificationType.PERSONAL_JOB_ANALYSIS, id, completed.analyzedAt());
+                }
+                return completed;
+            });
         } catch (com.fasterxml.jackson.core.JsonProcessingException exception) {
             throw new IllegalStateException("Validated analysis could not be stored");
         }

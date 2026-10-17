@@ -79,6 +79,14 @@ public class ExtendedNotificationRepository {
                     join job_posting j on j.id=a.job_posting_id
                     where a.status='COMPLETED' and a.analyzed_at is not null
                     """;
+            case PERSONAL_JOB_ANALYSIS -> """
+                    select j.user_id, j.id as source_id, a.analyzed_at as scheduled_at,
+                      left('직접 등록 공고 분석 완료: ' || j.title, 200) as subject
+                    from personal_saved_job_analysis a
+                    join personal_saved_job j on j.id=a.personal_saved_job_id
+                    where a.status='COMPLETED' and a.analyzed_at is not null
+                      and j.deleted_at is null
+                    """;
             case SEMANTIC_RECOMMENDATION -> """
                     select r.user_id, r.id as source_id, r.analyzed_at as scheduled_at,
                       '의미 기반 공고 비교 결과가 준비되었습니다.' as subject
@@ -153,12 +161,14 @@ public class ExtendedNotificationRepository {
         boolean defaultEnabled = type != NotificationType.SAVED_JOB_UPDATE
                 && type != NotificationType.SEMANTIC_RECOMMENDATION
                 && type != NotificationType.SERVICE_NOTICE;
+        NotificationType preferenceType = type == NotificationType.PERSONAL_JOB_ANALYSIS
+                ? NotificationType.MATCH_ANALYSIS : type;
         var mapper = (org.springframework.jdbc.core.RowMapper<NotificationRepository.DueEvent>)
                 (rs, row) -> new NotificationRepository.DueEvent(
                         rs.getLong(2), rs.getLong(1), rs.getTimestamp(3).toInstant(), rs.getString(4));
         return sourceId == null
-                ? jdbc.query(sql + " limit 200", mapper, type.name(), defaultEnabled, type.name())
-                : jdbc.query(sql, mapper, type.name(), defaultEnabled, type.name(),
+                ? jdbc.query(sql + " limit 200", mapper, preferenceType.name(), defaultEnabled, type.name())
+                : jdbc.query(sql, mapper, preferenceType.name(), defaultEnabled, type.name(),
                         sourceId, Timestamp.from(occurredAt));
     }
 }

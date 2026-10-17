@@ -156,6 +156,41 @@ class NotificationDatabaseTest {
         }
     }
 
+    @Test void personalJobAnalysisUsesMatchPreferenceAndLinksToOwner() {
+        long jobId = jdbc.queryForObject("""
+                insert into personal_saved_job(user_id,url,company_name,title,created_at,updated_at)
+                values (?,?,?, ?,current_timestamp,current_timestamp) returning id
+                """, Long.class, owner, "https://example.com/" + UUID.randomUUID(), "Example", "Developer");
+        Instant analyzedAt = Instant.now();
+        try {
+            jdbc.update("""
+                    insert into personal_saved_job_analysis
+                      (personal_saved_job_id,status,result_json,analyzed_at,updated_at)
+                    values (?,'COMPLETED','{}'::jsonb,?,current_timestamp)
+                    """, jobId, Timestamp.from(analyzedAt));
+            new TransactionTemplate(transactionManager).executeWithoutResult(status ->
+                    recorder.record(NotificationType.PERSONAL_JOB_ANALYSIS, jobId, analyzedAt));
+            assertThat(jdbc.queryForObject("select count(*) from notification where user_id=? "
+                    + "and type='PERSONAL_JOB_ANALYSIS' and source_id=?", Long.class, owner, jobId)).isEqualTo(1);
+            assertThat(jdbc.queryForObject("select count(*) from notification where user_id=? "
+                    + "and type='PERSONAL_JOB_ANALYSIS'", Long.class, other)).isZero();
+            jdbc.update("insert into notification_preference(user_id,type,enabled) "
+                    + "values (?,'MATCH_ANALYSIS',false)", owner);
+            Instant secondAt = Instant.now().plusMillis(1);
+            jdbc.update("update personal_saved_job_analysis set analyzed_at=? where personal_saved_job_id=?",
+                    Timestamp.from(secondAt), jobId);
+            new TransactionTemplate(transactionManager).executeWithoutResult(status ->
+                    recorder.record(NotificationType.PERSONAL_JOB_ANALYSIS, jobId, secondAt));
+            assertThat(jdbc.queryForObject("select count(*) from notification where user_id=? "
+                    + "and type='PERSONAL_JOB_ANALYSIS'", Long.class, owner)).isEqualTo(1);
+        } finally {
+            jdbc.update("delete from notification where type='PERSONAL_JOB_ANALYSIS' and source_id=?", jobId);
+            jdbc.update("delete from notification_outbox where type='PERSONAL_JOB_ANALYSIS' and source_id=?", jobId);
+            jdbc.update("delete from personal_saved_job_analysis where personal_saved_job_id=?", jobId);
+            jdbc.update("delete from personal_saved_job where id=?", jobId);
+        }
+    }
+
     @Test void todoReminderRespectsSelectedLeadTimeAndDisabledValue() {
         long tenMinutes = todo(Instant.now().plusSeconds(3600));
         long disabled = todo(Instant.now().plusSeconds(300));

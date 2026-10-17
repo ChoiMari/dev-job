@@ -24,6 +24,9 @@ import org.springframework.web.server.ResponseStatusException;
 public class SkillGapService {
     private static final String COMPLETED = " from ai_analysis a join job_posting j on j.id = a.job_posting_id"
             + " where a.status = 'COMPLETED'";
+    private static final String PERSONAL_COMPLETED = " from personal_saved_job_analysis a"
+            + " join personal_saved_job p on p.id = a.personal_saved_job_id"
+            + " where a.status = 'COMPLETED' and p.user_id = :userId and p.deleted_at is null";
     private final ProfileRepository profiles;
     private final UserSkillRepository userSkills;
     private final ProjectSkillRepository projectSkills;
@@ -44,24 +47,42 @@ public class SkillGapService {
         if (role == null) role = profiles.findByUserId(userId).map(p -> normalize(p.getDesiredRole())).orElse(null);
         if (role != null && role.length() > 200) throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
 
-        var parameters = new MapSqlParameterSource();
+        var parameters = new MapSqlParameterSource("userId", userId);
         String roleFilter = role == null ? "" : " and strpos(lower(j.title), :role) > 0";
+        String personalRoleFilter = role == null ? "" : " and strpos(lower(p.title), :role) > 0";
         if (role != null) parameters.addValue("role", role.toLowerCase(Locale.ROOT));
-        long analyzed = jdbc.queryForObject("select count(*)" + COMPLETED + roleFilter, parameters, Long.class);
+        long analyzed = jdbc.queryForObject("select (select count(*)" + COMPLETED + roleFilter
+                + ") + (select count(*)" + PERSONAL_COMPLETED + personalRoleFilter + ")", parameters, Long.class);
         Set<Long> owned = new HashSet<>();
         userSkills.findSkills(userId).forEach(skill -> owned.add(skill.getId()));
         owned.addAll(projectSkills.findSkillIdsForUser(userId));
         var customKeys = accountSkills.customKeys(userId);
         if (owned.isEmpty() && customKeys.isEmpty()) return SkillGap.unavailable(role, analyzed, "USER_SKILLS_EMPTY");
-        if (analyzed < 5) return SkillGap.unavailable(role, analyzed, "INSUFFICIENT_SAMPLE");
+        if (analyzed == 0) return SkillGap.unavailable(role, analyzed, "INSUFFICIENT_SAMPLE");
 
         var rows = jdbc.query("select s.id, s.name,"
-                + " count(*) filter (where js.requirement_type = 'REQUIRED') as required_count,"
-                + " count(*) filter (where js.requirement_type = 'PREFERRED') as preferred_count"
-                + " from job_skill js join skill s on s.id = js.skill_id"
+                + " count(*) filter (where hits.requirement_type = 'REQUIRED') as required_count,"
+                + " count(*) filter (where hits.requirement_type = 'PREFERRED') as preferred_count"
+                + " from ("
+                + " select js.skill_id, js.requirement_type from job_skill js"
                 + " join ai_analysis a on a.job_posting_id = js.job_posting_id"
                 + " join job_posting j on j.id = a.job_posting_id"
                 + " where a.status = 'COMPLETED'" + roleFilter
+                + " union all select personal_hits.skill_id, personal_hits.requirement_type from ("
+                + " select distinct on (p.id, s.id) s.id as skill_id, skill_name.requirement_type"
+                + " from personal_saved_job_analysis a"
+                + " join personal_saved_job p on p.id = a.personal_saved_job_id"
+                + " cross join lateral ("
+                + " select value, 'REQUIRED' as requirement_type"
+                + " from jsonb_array_elements_text(coalesce(a.result_json->'requiredSkills', '[]'::jsonb))"
+                + " union all select value, 'PREFERRED' as requirement_type"
+                + " from jsonb_array_elements_text(coalesce(a.result_json->'preferredSkills', '[]'::jsonb))"
+                + " ) skill_name"
+                + " join skill s on lower(s.name) = lower(skill_name.value)"
+                + " where a.status = 'COMPLETED' and p.user_id = :userId and p.deleted_at is null" + personalRoleFilter
+                + " order by p.id, s.id, case when skill_name.requirement_type = 'REQUIRED' then 0 else 1 end"
+                + " ) personal_hits"
+                + " ) hits join skill s on s.id = hits.skill_id"
                 + " group by s.id, s.name", parameters, (rs, index) -> {
                     long required = rs.getLong("required_count");
                     long preferred = rs.getLong("preferred_count");
@@ -79,7 +100,7 @@ public class SkillGapService {
                         .thenComparing(item -> item.skill().name())
                         .thenComparing(item -> item.skill().id()))
                 .toList();
-        return new SkillGap(true, role, analyzed, analyzed < 20, missing.size(),
+        return new SkillGap(true, role, analyzed, analyzed < 10, missing.size(),
                 missing.stream().limit(5).toList(), null);
     }
 

@@ -220,6 +220,8 @@ V15__create_interested_companies.sql은 interested_company만 추가한다. id B
 
 `V43__notification_outbox.sql`은 즉시 발생하는 확장 알림 8종의 `(type, source_id, occurred_at)` 이벤트를 저장한다. `processed_at`이 NULL인 행만 실패 재시도 대상으로 조회하며 조합 UNIQUE가 동일 이벤트의 재기록을 막는다. V42 적용 이후의 이벤트를 최초 한 번 이관하고, 처리 시 수신 설정·적용 시작 시각·기존 `notification` 유일 키를 확인한다. 학습 목표·면접·할 일 알림은 outbox 대상이 아니다.
 
+`V54__personal_job_analysis_notifications.sql`은 `notification`과 `notification_outbox`의 허용 종류에 `PERSONAL_JOB_ANALYSIS`를 추가한다. `source_id`는 `personal_saved_job.id`이며 별도 FK는 두지 않는다. `notification_preference`에는 새 종류를 추가하지 않고 기존 `MATCH_ANALYSIS` 수신 설정을 함께 적용한다. 알림 도입 뒤 완료된 직접 등록 공고 분석은 기존 분석 시각으로 outbox에 한 번 이관한다.
+
 ### B14 의미 기반 비교·추천
 
 평가의 재현을 위해 `policy_version`과 `model_name`을 필수로 저장한다. 입력 해시에는 이 값들도 포함한다.

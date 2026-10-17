@@ -100,11 +100,19 @@
 .resume-source-panel pre { max-height: 550px; margin: 0; padding: 14px; overflow: auto; border-radius: 6px; background: #f8f9fe; color: #253668; font: inherit; font-size: 12px; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
 .resume-source-panel .resume-source-notice { width: fit-content; margin: 8px 0 0 auto; text-align: right; }
 .resume-analysis-intro { padding: 10px; }
-.resume-analysis-intro img { width: 30%; max-height: 105px; object-fit: contain; }
-.resume-analysis-results { display: grid; gap: 10px; }
-.resume-analysis-results > div { padding: 10px; border-radius: 6px; background: #f7f9ff; }
-.resume-analysis-results h4 { margin: 0 0 6px; font-size: 12px; }
-.resume-analysis-results ul { margin: 0; padding-left: 20px; color: #4f6091; font-size: 11px; line-height: 1.6; }
+.resume-analysis-intro img { flex: none; width: 24%; max-height: 105px; object-fit: contain; }
+.resume-analysis-intro > div { min-width: 0; }
+.resume-analysis-panel { container-type: inline-size; }
+.resume-analysis-results { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 10px; }
+.resume-analysis-results > div { min-width: 0; padding: 12px; border: 1px solid #e4eafa; border-radius: 6px; background: #f7f9ff; }
+.resume-analysis-results > div:first-child { grid-column: 1 / -1; }
+.resume-analysis-results h4 { margin: 0 0 8px; font-size: 12px; }
+.resume-analysis-results ul { margin: 0; padding-left: 18px; color: #4f6091; font-size: 11px; line-height: 1.6; overflow-wrap: anywhere; }
+.resume-analysis-results > div:first-child ul { display: flex; flex-wrap: wrap; gap: 6px; padding: 0; list-style: none; }
+.resume-analysis-results > div:first-child li { padding: 4px 9px; border-radius: 999px; background: #e9edff; color: #4939b5; }
+.resume-analysis-results p { margin: 0; color: #7783af; font-size: 11px; line-height: 1.6; }
+.resume-analysis-panel > .resume-delete { display: flex; width: fit-content; margin: 10px 0 0 auto; }
+@container (max-width: 400px) { .resume-analysis-results { grid-template-columns: 1fr; } }
 .resume-analysis-panel > p { color: #64739f; font-size: 11px; line-height: 1.6; }
 .resume-consent { display: flex; align-items: flex-start; gap: 7px; color: #344579; font-size: 11px; }
 .resume-message { margin: 0; color: #326b52; font-size: 12px; }

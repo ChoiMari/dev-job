@@ -15,7 +15,7 @@ type Filter = 'all' | 'unread' | 'read';
 const icon: Record<NotificationType, string> = {
   INTERVIEW_REMINDER: 'calendar', TODO_REMINDER: 'checklist', NEW_JOB: 'megaphone',
   AI_JOB_RECOMMENDATION: 'star', SAVED_JOB_UPDATE: 'bookmark', DOCUMENT_ANALYSIS: 'document',
-  MATCH_ANALYSIS: 'analysis', SEMANTIC_RECOMMENDATION: 'comparison',
+  MATCH_ANALYSIS: 'analysis', PERSONAL_JOB_ANALYSIS: 'analysis', SEMANTIC_RECOMMENDATION: 'comparison',
   LEARNING_GOAL_REMINDER: 'book', CHARACTER_ACTIVITY: 'cat', SERVICE_NOTICE: 'bell',
 };
 const guide: Record<NotificationType, string> = {
@@ -26,6 +26,7 @@ const guide: Record<NotificationType, string> = {
   SAVED_JOB_UPDATE: '관심 공고의 변경 내용을 확인해 보세요.',
   DOCUMENT_ANALYSIS: '완료된 문서 분석 결과를 확인해 보세요.',
   MATCH_ANALYSIS: '완료된 공고 기술 분석을 확인해 보세요.',
+  PERSONAL_JOB_ANALYSIS: '완료된 직접 등록 공고의 기술 분석을 확인해 보세요.',
   SEMANTIC_RECOMMENDATION: '문서와 공고의 비교 결과를 확인해 보세요.',
   LEARNING_GOAL_REMINDER: '진행 중인 학습 목표를 확인해 보세요.',
   CHARACTER_ACTIVITY: '캐릭터 활동과 보상을 확인해 보세요.',

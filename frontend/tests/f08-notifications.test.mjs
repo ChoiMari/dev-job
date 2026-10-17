@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { ApiError, createApiClient } from '../src/api/client.ts';
-import { createNotificationsApi, notificationSource } from '../src/api/notifications.ts';
+import { createNotificationsApi, isNotification, notificationSource } from '../src/api/notifications.ts';
 
 const json = (value, status = 200) => new Response(JSON.stringify(value), { status, headers: { 'Content-Type': 'application/json' } });
 const now = '2026-10-10T00:00:00Z';
@@ -20,6 +20,8 @@ test('notification page, source links, and idempotent read use their own resourc
   assert.equal(page.unreadCount, 3);
   assert.equal(notificationSource(page.items[0]), '#/interviews/4');
   assert.equal(notificationSource({ ...item, type: 'TODO_REMINDER', sourceId: 9 }), '#/todos/9');
+  assert.equal(notificationSource({ ...item, type: 'PERSONAL_JOB_ANALYSIS', sourceId: 6 }), '#/bookmarks/6');
+  assert.equal(isNotification({ ...item, type: 'PERSONAL_JOB_ANALYSIS', sourceId: 6 }), true);
   await api.markRead(8);
   assert.deepEqual(calls, [
     ['/api/me/notifications?page=2&size=20', 'GET', undefined],

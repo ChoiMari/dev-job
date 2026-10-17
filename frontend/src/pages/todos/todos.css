@@ -116,6 +116,7 @@ main#main-content:has(> .todos-calendar-page) > .page-heading { display: none; }
 .todos-editor .todos-list-heading h2, .todos-modal .todos-list-heading h2 { font-size: 1rem; color: #14225e; }.todos-editor .todos-list-heading p, .todos-modal .todos-list-heading p { margin: 3px 0 0; color: #7280a9; font-size: .72rem; }
 .todos-modal-close { margin-left: auto; border: 0; background: transparent; color: #25377f; font-size: 1.4rem; }
 .todos-modal .todos-form, .todos-editor .todos-form { gap: 12px; }.todos-modal .todos-form fieldset, .todos-editor .todos-form fieldset { gap: 13px; }
+.todos-modal .todos-form .todos-reminder-field { margin-top: -6px; }
 .todos-modal .todos-form label, .todos-editor .todos-form label { gap: 5px; color: #1b2d72; font-size: .76rem; font-weight: 750; }
 .todos-modal .todos-form em, .todos-editor .todos-form em { color: #ed5676; font-style: normal; }.todos-modal .todos-form small, .todos-editor .todos-form small { justify-self: end; color: #7685ad; font-size: .67rem; }
 .todos-modal .todos-form input, .todos-modal .todos-form textarea, .todos-modal .todos-form select,

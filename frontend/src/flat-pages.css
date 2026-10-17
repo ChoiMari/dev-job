@@ -53,11 +53,11 @@ body, #root, .app-layout, #main-content, .public-home, .auth-page { @apply bg-wh
 }
 
 /* Keep decorative image banners, but remove the frame around them. */
-#main-content .job-detail-tab-card,
+#main-content:not(.public-home) section.job-detail-tab-card[class],
 #main-content .job-detail-tab-panel { border-bottom: 0; }
 #main-content .job-detail-tab-panel > .job-detail-application,
-#main-content .job-detail-tab-panel > .application-registration,
-#main-content .job-detail-ai-card .job-analysis,
+#main-content:not(.public-home) .job-detail-tab-panel > section.application-registration[class],
+#main-content:not(.public-home) .job-detail-ai-card > section.job-analysis[class],
 #main-content .job-detail-sidebar > .job-detail-match-card,
 #main-content .job-detail-match-card .job-analysis { border-bottom: 0; }
 #main-content .job-detail-application-facts > div { border: 0; background: transparent; }
@@ -134,13 +134,14 @@ body, #root, .app-layout, #main-content, .public-home, .auth-page { @apply bg-wh
   background: transparent;
   box-shadow: none;
 }
-#main-content .interview-overview-stats > div,
-#main-content .interview-overview-calendar[class],
-#main-content .interview-overview-day[class],
-#main-content .todos-dashboard-calendar[class],
-#main-content .todos-dashboard-selected[class],
-#main-content .todos-dashboard-list[class] { border: 1px solid #dce3f0; border-radius: 0; background: #fff; }
+#main-content .interview-overview-stats > div { border: 1px solid #dce3f0; border-radius: 0; background: #fff; }
+#main-content:not(.public-home) section.interview-overview-calendar[class],
+#main-content:not(.public-home) section.interview-overview-day[class] { border: 1px solid #dce3f0; border-radius: 10px; background: #fff; box-shadow: 0 2px 8px #273e6a08; }
+#main-content:not(.public-home) section.todos-dashboard-calendar[class],
+#main-content:not(.public-home) section.todos-dashboard-selected[class],
+#main-content:not(.public-home) section.todos-dashboard-list[class] { border: 1px solid #dce3f0; border-radius: 10px; background: #fff; box-shadow: 0 2px 8px #273e6a08; }
 #main-content .interview-overview-detail[class] { border: 0; border-radius: 0; background: #f6f8ff; box-shadow: none; }
+#main-content:not(.public-home) article.interview-overview-detail[class] { border: 0; border-radius: 8px; background: #f3f6ff; }
 #main-content .interview-overview-next[class] { border: 0; border-top: 1px dashed #dce3f0; border-bottom: 1px dashed #dce3f0; border-radius: 0; background: #fff; box-shadow: none; }
 #main-content:not(.public-home) section.interview-overview-stats[class] { border: 0; }
 #main-content .interviews-editor-hero[class] { background: #f7f8ff; }
@@ -149,10 +150,12 @@ body, #root, .app-layout, #main-content, .public-home, .auth-page { @apply bg-wh
 #main-content .interviews-extra,
 #main-content .interviews-actions { border-bottom: 0; }
 #main-content .profile-skills__owned > li { border: 1px solid #e3e7fa; border-radius: 0; }
-#main-content .profile-skill-search[class],
-#main-content .profile-ai-candidates[class] { border: 1px solid #e3e7fa; border-radius: 0; background: #fff; }
+#main-content:not(.public-home) section.profile-info-card[class],
+#main-content:not(.public-home) section.profile-skills[class] { border-bottom: 0; }
+#main-content:not(.public-home) section.profile-skill-search[class],
+#main-content:not(.public-home) section.profile-ai-candidates[class] { border: 1px solid #dce3f0; border-radius: 10px; background: #fff; box-shadow: 0 2px 8px #273e6a08; }
 #main-content .market-dashboard { border: 1px solid #dce3f0; border-radius: 0; background: #fff; box-shadow: none; }
 #main-content .market-page > .market-filter-panel { border: 0; }
 #main-content .company-grid > li.company-card { border: 1px solid #dce3f0; border-radius: 9px; background: #fff; box-shadow: 0 2px 10px #465bc508; }
 #main-content .company-grid > li.company-card:hover { border-color: #c8c6f6; }
-#main-content .job-detail-sidebar > .job-detail-ai-card { border-bottom: 1px solid #e3e7fa; }
+#main-content:not(.public-home) .job-detail-sidebar > section.job-detail-ai-card[class] { border-bottom: 0; }

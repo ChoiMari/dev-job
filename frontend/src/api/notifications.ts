@@ -6,7 +6,7 @@ export type NotificationItem = {
   scheduledAt: string; subject: string; createdAt: string; readAt: string | null;
 };
 export const notificationTypes = ['INTERVIEW_REMINDER', 'TODO_REMINDER', 'NEW_JOB', 'AI_JOB_RECOMMENDATION',
-  'SAVED_JOB_UPDATE', 'DOCUMENT_ANALYSIS', 'MATCH_ANALYSIS', 'SEMANTIC_RECOMMENDATION',
+  'SAVED_JOB_UPDATE', 'DOCUMENT_ANALYSIS', 'MATCH_ANALYSIS', 'PERSONAL_JOB_ANALYSIS', 'SEMANTIC_RECOMMENDATION',
   'LEARNING_GOAL_REMINDER', 'CHARACTER_ACTIVITY', 'SERVICE_NOTICE'] as const;
 export type NotificationType = typeof notificationTypes[number];
 export type NotificationPage = { items: NotificationItem[]; page: number; size: number; totalElements: number; unreadCount: number };
@@ -26,6 +26,7 @@ export function notificationSource(item: NotificationItem) {
     case 'INTERVIEW_REMINDER': return `#/interviews/${item.sourceId}`;
     case 'TODO_REMINDER': return `#/todos/${item.sourceId}`;
     case 'NEW_JOB': case 'AI_JOB_RECOMMENDATION': case 'MATCH_ANALYSIS': return `#/jobs/${item.sourceId}`;
+    case 'PERSONAL_JOB_ANALYSIS': return `#/bookmarks/${item.sourceId}`;
     case 'SAVED_JOB_UPDATE': return '#/bookmarks';
     case 'DOCUMENT_ANALYSIS': return item.subject.startsWith('이력서') ? '#/resumes' : '#/cover-letters';
     case 'SEMANTIC_RECOMMENDATION': return `#/recommendations/${item.sourceId}`;

@@ -37,6 +37,7 @@ public class NotificationRepository {
                 rs.getTimestamp(3).toInstant(), rs.getString(4)) : null, id, Timestamp.from(end));
     }
     public boolean enabled(long userId, NotificationType type) {
+        if (type == NotificationType.PERSONAL_JOB_ANALYSIS) type = NotificationType.MATCH_ANALYSIS;
         Boolean stored = jdbc.query("select enabled from notification_preference where user_id=? and type=?",
                 rs -> rs.next() ? rs.getBoolean(1) : null, userId, type.name());
         return stored == null ? type != NotificationType.SAVED_JOB_UPDATE

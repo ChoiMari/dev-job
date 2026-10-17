@@ -122,7 +122,7 @@ export function LearningGoalsPage({ location }: { location: string }) {
     </header>
     <section className="learning-stage learning-stage--analysis" id="learning-analysis" aria-label="부족한 기술 TOP 5">
       <div className="learning-stage__head"><div><h2><PixelIcon name="chart" /> 부족한 기술 TOP 5</h2>
-        <p>분석 완료 공고와 내 기술을 비교한 결과예요.</p></div>
+        <p>분석 완료된 수집·직접 등록 공고와 내 기술을 비교한 결과예요.</p></div>
         {gap && <div className="learning-analysis-meta"><span>{gap.desiredRole ? `프로필 희망 직무: ${gap.desiredRole}` : '전체 공고'}</span><span>분석 공고 {gap.analyzedJobCount}건</span></div>}</div>
       {gapLoading ? <LoadingState message="역량 분석을 불러오고 있습니다." /> : gapError ? <ErrorState message={gapError} onRetry={() => setGapRetry(v => v + 1)} /> : gap && <>
         {!gap.available && <p className="learning-analysis-hint">ⓘ 분석 조건을 충족하면 부족한 기술 순위가 표시됩니다.</p>}
@@ -136,9 +136,9 @@ export function LearningGoalsPage({ location }: { location: string }) {
             <span className="learning-top-skill__rank">{index + 1}</span><PixelIcon name="chart" /><strong>분석 후<br />표시됩니다.</strong>
             <span className="learning-top-skill__placeholder-meter" aria-hidden="true" /></li>)}</ol>}
         {!gap.available && <div className="learning-analysis-conditions"><strong>분석 조건</strong>
-          <ul><li>프로필 또는 프로젝트에 보유 기술 등록</li><li>분석 완료 공고 5건 이상</li>
+          <ul><li>프로필 또는 프로젝트에 보유 기술 등록</li><li>분석 완료 공고 1건 이상</li>
             <li>공고 분석 결과에 기술 정보 포함</li></ul></div>}
-        {gap.provisional && <p className="learning-caution">표본이 적어 순위가 달라질 수 있습니다.</p>}
+        {gap.provisional && <p className="learning-caution">분석 공고 {gap.analyzedJobCount}건의 잠정 결과입니다. 표본이 적어 순위가 달라질 수 있습니다.</p>}
         {gap.available && <p className="learning-note">등장률은 분석 완료 공고 기준이며 개인 숙련도를 뜻하지 않습니다.</p>}
       </>}
     </section>

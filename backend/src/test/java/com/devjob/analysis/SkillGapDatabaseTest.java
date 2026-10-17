@@ -1,6 +1,7 @@
 package com.devjob.analysis;
 
 import com.devjob.analysis.service.SkillGapService;
+import com.devjob.analysis.service.PersonalJobAnalyticsService;
 import com.devjob.auth.dto.CurrentUser;
 import java.util.UUID;
 import java.util.List;
@@ -27,6 +28,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class SkillGapDatabaseTest {
     @Autowired JdbcTemplate jdbc;
     @Autowired SkillGapService service;
+    @Autowired PersonalJobAnalyticsService personalAnalytics;
     @Autowired MockMvc mvc;
 
     @Test void ranksOnlyMissingSkillsFromCompletedRoleJobsAndKeepsOwnersSeparate() {
@@ -80,7 +82,7 @@ class SkillGapDatabaseTest {
         assertThat(service.find(owner, "no-such-s15-role").reason()).isEqualTo("INSUFFICIENT_SAMPLE");
     }
 
-    @Test void holdsRankingUnderFiveJobsAndMarksFiveToNineteenProvisional() {
+    @Test void showsProvisionalRankingUnderTenJobs() {
         assertThat(jdbc.queryForObject("select current_database()", String.class)).isEqualTo("devjob_s15_test");
         String marker = "s15_" + UUID.randomUUID();
         long owner = user(marker), source = source(marker), company = company(marker);
@@ -89,21 +91,21 @@ class SkillGapDatabaseTest {
             long job = job(source, company, marker + i, marker + " 분석 대상");
             analysis(job, "COMPLETED"); jobSkill(job, skill("Docker"), "REQUIRED");
         }
-        var insufficient = service.find(owner, marker);
-        assertThat(insufficient.available()).isFalse();
-        assertThat(insufficient.analyzedJobCount()).isEqualTo(4);
-        assertThat(insufficient.items()).isEmpty();
-        assertThat(insufficient.reason()).isEqualTo("INSUFFICIENT_SAMPLE");
-        for (int i = 4; i < 20; i++) {
+        var smallSample = service.find(owner, marker);
+        assertThat(smallSample.available()).isTrue();
+        assertThat(smallSample.analyzedJobCount()).isEqualTo(4);
+        assertThat(smallSample.provisional()).isTrue();
+        assertThat(smallSample.items()).extracting(item -> item.skill().name()).containsExactly("Docker");
+        for (int i = 4; i < 10; i++) {
             long job = job(source, company, marker + i, marker + " 분석 대상");
             analysis(job, "COMPLETED");
         }
         var enough = service.find(owner, marker);
         assertThat(enough.available()).isTrue();
-        assertThat(enough.analyzedJobCount()).isEqualTo(20);
+        assertThat(enough.analyzedJobCount()).isEqualTo(10);
         assertThat(enough.provisional()).isFalse();
-        assertThat(enough.items().get(0).demandRatio()).isEqualTo(0.2);
-        assertThat(enough.items().get(0).priorityScore()).isEqualTo(20.0);
+        assertThat(enough.items().get(0).demandRatio()).isEqualTo(0.4);
+        assertThat(enough.items().get(0).priorityScore()).isEqualTo(40.0);
         assertThat(service.find(user(marker + "_empty"), marker).reason()).isEqualTo("USER_SKILLS_EMPTY");
         long fullyOwned = user(marker + "_owned");
         jdbc.update("insert into user_skill (user_id, skill_id, created_at) values (?, ?, now())", fullyOwned, skill("Docker"));
@@ -118,9 +120,45 @@ class SkillGapDatabaseTest {
         assertThat(service.find(owner, marker + " 기술 없음").reason()).isEqualTo("NO_JOB_SKILLS");
     }
 
+    @Test void includesOnlyOwnedCompletedPersonalJobsAndMatchesCatalogSkills() throws Exception {
+        String marker = "s15_" + UUID.randomUUID();
+        long owner = user(marker + "_owner"), other = user(marker + "_other");
+        jdbc.update("insert into user_skill (user_id, skill_id, created_at) values (?, ?, now())", owner, skill("Java"));
+        long first = personalJob(owner, marker + " 백엔드 개발자");
+        long second = personalJob(owner, marker + " 백엔드 엔지니어");
+        personalAnalysis(first, "COMPLETED", "{\"requiredSkills\":[\"Spring Boot\",\"Java\",\"PrivateToolS15\",\"Docker\"],\"preferredSkills\":[\"Docker\",\"Docker\"]}");
+        personalAnalysis(second, "COMPLETED", "{\"requiredSkills\":[\"Docker\"],\"preferredSkills\":[]}");
+        personalAnalysis(personalJob(other, marker + " 백엔드 개발자"), "COMPLETED",
+                "{\"requiredSkills\":[\"React\"],\"preferredSkills\":[]}");
+        personalAnalysis(personalJob(owner, marker + " 프론트엔드 개발자"), "COMPLETED",
+                "{\"requiredSkills\":[\"React\"],\"preferredSkills\":[]}");
+        personalAnalysis(personalJob(owner, marker + " 백엔드 대기"), "FAILED",
+                "{\"requiredSkills\":[\"React\"],\"preferredSkills\":[]}");
+
+        var result = service.find(owner, marker + " 백엔드");
+        assertThat(result.available()).isTrue();
+        assertThat(result.analyzedJobCount()).isEqualTo(2);
+        assertThat(result.provisional()).isTrue();
+        assertThat(result.items()).extracting(item -> item.skill().name()).containsExactly("Docker", "Spring Boot");
+        assertThat(result.items().get(0).demandJobCount()).isEqualTo(2);
+        assertThat(result.items().get(0).requiredJobCount()).isEqualTo(2);
+        assertThat(result.items().get(0).preferredJobCount()).isZero();
+        assertThat(result.items().get(0).demandRatio()).isEqualTo(1.0);
+        assertThat(personalAnalytics.find(owner).savedJobCount()).isEqualTo(4);
+        assertThat(personalAnalytics.find(owner).analyzedJobCount()).isEqualTo(3);
+        assertThat(personalAnalytics.find(owner).skills()).extracting(item -> item.name()).contains("PrivateToolS15");
+        assertThat(personalAnalytics.find(other).analyzedJobCount()).isEqualTo(1);
+        var principal = UsernamePasswordAuthenticationToken.authenticated(
+                new CurrentUser(owner, "s15@example.com"), null, List.of());
+        mvc.perform(get("/api/me/job-analytics").with(authentication(principal)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.savedJobCount").value(4))
+                .andExpect(jsonPath("$.analyzedJobCount").value(3));
+    }
+
     @Test void endpointRequiresAuthenticationAndRejectsOversizedRole() throws Exception {
         assertThat(jdbc.queryForObject("select current_database()", String.class)).isEqualTo("devjob_s15_test");
         mvc.perform(get("/api/me/skill-gap")).andExpect(status().isUnauthorized());
+        mvc.perform(get("/api/me/job-analytics")).andExpect(status().isUnauthorized());
         long owner = user("s15_" + UUID.randomUUID());
         var principal = UsernamePasswordAuthenticationToken.authenticated(
                 new CurrentUser(owner, "s15@example.com"), null, List.of());
@@ -147,5 +185,15 @@ class SkillGapDatabaseTest {
     }
     private void jobSkill(long job, long skill, String type) {
         jdbc.update("insert into job_skill (job_posting_id, skill_id, requirement_type) values (?, ?, ?)", job, skill, type);
+    }
+    private long personalJob(long userId, String title) {
+        return jdbc.queryForObject("insert into personal_saved_job (user_id, url, company_name, title, created_at, updated_at)"
+                + " values (?, ?, 'S15', ?, now(), now()) returning id", Long.class,
+                userId, "https://example.com/" + UUID.randomUUID(), title);
+    }
+    private void personalAnalysis(long jobId, String status, String json) {
+        jdbc.update("insert into personal_saved_job_analysis"
+                + " (personal_saved_job_id, status, result_json, updated_at) values (?, ?, cast(? as jsonb), now())",
+                jobId, status, json);
     }
 }

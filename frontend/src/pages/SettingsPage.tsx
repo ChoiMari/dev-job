@@ -30,7 +30,7 @@ const preferenceGroups: { title: string; icon: LucideIconName; rows: PreferenceR
   ] },
   { title: '분석 결과 알림', icon: 'chartBar', rows: [
     { key: 'documentAnalysis', title: '이력서·자기소개서 분석 완료 알림', description: '문서 분석이 완료되면 알려드립니다.', icon: 'fileText', tone: 'purple' },
-    { key: 'matchAnalysis', title: '공고 분석 결과 알림', description: '요청한 공고의 기술 분석이 완료되면 알려드립니다.', icon: 'target', tone: 'rose' },
+    { key: 'matchAnalysis', title: '공고 분석 결과 알림', description: '요청한 수집 공고 또는 직접 등록 공고의 기술 분석이 완료되면 알려드립니다.', icon: 'target', tone: 'rose' },
     { key: 'semanticRecommendation', title: 'AI 공고 비교 결과 알림', description: '내 이력서·자기소개서와 선택한 공고의 비교가 완료되면 알려드립니다.', icon: 'search', tone: 'mint' },
   ] },
   { title: '기타 알림', icon: 'message', rows: [

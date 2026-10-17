@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { apiRequest } from '../../api';
 import { createAnalyticsApi } from '../../api/analytics';
 import type { MarketDistribution, SkillDemandPage, SkillTrend } from '../../api/analytics';
+import { createPersonalJobAnalyticsApi } from '../../api/personal-job-analytics';
+import type { PersonalJobAnalytics } from '../../api/personal-job-analytics';
 import { createSkillsApi } from '../../api/skills';
 import type { Skill } from '../../api/skills';
 import { EmptyState, ErrorState, LoadingState } from '../../components/States';
@@ -10,6 +12,7 @@ import koreaProvinces from '../../assets/korea-provinces.svg';
 import './market.css';
 
 const api = createAnalyticsApi(apiRequest);
+const personalApi = createPersonalJobAnalyticsApi(apiRequest);
 const skills = createSkillsApi(apiRequest);
 const colors = ['#3184f8', '#2ecba1', '#ffbd49', '#f765aa', '#9161ed', '#82b8f7', '#a5adef'];
 const careerOrder = ['ENTRY', 'JUNIOR', 'MIDDLE', 'SENIOR'] as const;
@@ -84,7 +87,19 @@ function TrendChart({ series }: { series: Series[] }) {
   </div>;
 }
 
+function MarketScopeTabs({ personal }: { personal: boolean }) {
+  return <nav className="market-scope-tabs" aria-label="분석 범위">
+    <a href="#/analytics/skills" aria-current={!personal ? 'page' : undefined}>공용 채용시장 추세</a>
+    <a href="#/analytics/skills?view=mine" aria-current={personal ? 'page' : undefined}>내 공고 분석</a>
+  </nav>;
+}
+
 export function MarketAnalyticsPage({ location }: { location: string }) {
+  const personal = new URLSearchParams(location.split('?')[1] || '').get('view') === 'mine';
+  return personal ? <PersonalJobAnalyticsPage /> : <PublicMarketAnalyticsPage location={location} />;
+}
+
+function PublicMarketAnalyticsPage({ location }: { location: string }) {
   const search = location.split('?')[1] || '';
   const params = new URLSearchParams(search);
   const applied = {
@@ -223,8 +238,9 @@ export function MarketAnalyticsPage({ location }: { location: string }) {
     </header>
     {infoOpen && <aside className="market-guide" role="note">
       <strong>데이터 기준</strong>
-      <p>전체 공고·경력·지역은 저장된 공용 채용공고 기준입니다. 기술 수요와 추이는 AI 분석이 완료된 공고 기준이며 두 집계의 표본은 다릅니다. 증감률은 선택 기간과 직전 같은 길이의 기간을 비교합니다. 기술 수요에는 출처 필터가 적용되지 않습니다.</p>
+      <p>전체 공고·경력·지역은 저장된 공용 채용공고 기준입니다. 기술 수요와 추이는 AI 분석이 완료된 공용 공고에서 표준 기술 목록에 매칭된 항목만 집계합니다. 직접 등록한 관심 공고와 매칭되지 않은 추출 문구는 포함되지 않습니다. 증감률은 선택 기간과 직전 같은 길이의 기간을 비교합니다. 기술 수요에는 출처 필터가 적용되지 않습니다.</p>
     </aside>}
+    <MarketScopeTabs personal={false} />
     <details className="market-filter-panel">
       <summary><LucideIcon name="sliders" />조건 설정
         {(applied.dateFrom || applied.dateTo || applied.desiredRole || applied.source || applied.skillId) && <span>적용 중</span>}</summary>
@@ -264,14 +280,14 @@ export function MarketAnalyticsPage({ location }: { location: string }) {
     </details>
     <main className="market-dashboard">
       <div className="market-overview-head" id="market-skills">
-        <div><h2>기술 수요 현황</h2><p>현재 채용공고에서 많이 요구하는 기술을 확인할 수 있습니다.</p></div>
+        <div><h2>기술 수요 현황</h2><p>분석 완료된 공용 채용공고에서 확인된 표준 기술을 보여줍니다.</p></div>
         <label className="market-search"><LucideIcon name="search" /><span className="sr-only">기술명 검색</span>
           <input value={listQuery} onChange={event => { setListQuery(event.target.value); if (page) goPage(0); }}
             placeholder="기술명을 검색하세요. (예: Java, Python, React)" /></label>
       </div>
       <div className="market-metrics">
         <div className="market-metric"><span>전체 채용공고 수</span><div><strong>{career.data ? number(career.data.jobCount) : '—'}</strong><Change value={growth?.jobs} label="직전 기간 대비" /></div></div>
-        <div className="market-metric"><span>분석된 기술 수</span><div><strong>{demand.data ? number(demand.data.totalElements) : '—'}</strong><Change value={growth?.skills} label="직전 기간 대비" /></div></div>
+        <div className="market-metric"><span>집계된 표준 기술 수</span><div><strong>{demand.data ? number(demand.data.totalElements) : '—'}</strong><Change value={growth?.skills} label="직전 기간 대비" /></div></div>
         <div className="market-metric"><span>가장 수요가 높은 기술</span><strong>{highest?.skill.name || '—'} {highest && <span aria-hidden="true">🔥</span>}</strong><small>채용공고 {highest ? number(highest.jobCount) : '—'}건 · 분석 완료 공고 기준</small></div>
         <div className="market-metric"><span>가장 빠르게 성장 중인 기술</span><strong>{growth === undefined ? '—' : growth.rising?.name || '비교 자료 부족'}</strong>
           <small>{growth?.rising ? '▲ ' + growth.rising.rate.toFixed(1) + '% · 등장 비율 변화' : '비교 가능한 기간·표본 필요'}</small></div>
@@ -333,6 +349,64 @@ export function MarketAnalyticsPage({ location }: { location: string }) {
           <p className="market-trend-note">각 기간의 분석 완료 공고가 분모입니다. 표본이 없는 기간은 선을 연결하지 않습니다.</p>
         </section>
       </div>
+    </main>
+  </div>;
+}
+
+function PersonalJobAnalyticsPage() {
+  const [result, setResult] = useState<Result<PersonalJobAnalytics>>({});
+  const [retry, setRetry] = useState(0);
+  const [showAll, setShowAll] = useState(false);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    setResult({});
+    personalApi.get(controller.signal).then(data => {
+      if (!controller.signal.aborted) setResult({ data });
+    }).catch(failure => {
+      if (!controller.signal.aborted) setResult({ error: errorText(failure) });
+    });
+    return () => controller.abort();
+  }, [retry]);
+
+  const data = result.data;
+  const rows = showAll ? data?.skills : data?.skills.slice(0, 10);
+  return <div className="market-page">
+    <header className="market-header">
+      <span className="market-header-icon"><LucideIcon name="chartBar" /></span>
+      <div><h1>내 공고 분석</h1><p>직접 등록한 관심 공고의 AI 분석 결과를 계정별로 살펴보세요.</p></div>
+    </header>
+    <MarketScopeTabs personal />
+    <main className="market-dashboard market-personal-dashboard">
+      {result.error ? <ErrorState message={result.error} onRetry={() => setRetry(value => value + 1)} />
+        : !data ? <LoadingState message="내 공고 분석을 불러오고 있습니다." />
+          : <>
+            <div className="market-overview-head"><div><h2>직접 등록 공고의 기술 수요</h2>
+              <p>내 공고의 저장된 AI 추출 결과만 집계하며 다른 계정의 공고는 포함하지 않습니다.</p></div></div>
+            <div className="market-personal-metrics">
+              <div className="market-metric"><span>직접 등록 공고</span><strong>{number(data.savedJobCount)}건</strong></div>
+              <div className="market-metric"><span>분석 완료 공고</span><strong>{number(data.analyzedJobCount)}건</strong></div>
+              <div className="market-metric"><span>추출된 기술명</span><strong>{number(data.skills.length)}개</strong></div>
+            </div>
+            {data.analyzedJobCount > 0 && data.analyzedJobCount < 10
+              && <p className="market-caution market-personal-caution">분석 완료 공고 {data.analyzedJobCount}건의 참고용 결과입니다. 표본이 적어 순위와 비율이 달라질 수 있습니다.</p>}
+            {data.savedJobCount === 0 ? <EmptyState title="직접 등록한 공고가 없습니다." message="관심 공고에서 공고를 등록하면 이곳에 표시됩니다." />
+              : data.analyzedJobCount === 0 ? <EmptyState title="분석 완료된 내 공고가 없습니다." message="직접 등록한 공고의 AI 분석을 완료하면 기술 수요가 표시됩니다." />
+                : data.skills.length === 0 ? <EmptyState title="추출된 기술이 없습니다." message="완료된 공고 분석 결과에 기술 정보가 없습니다." />
+                  : <section className="market-panel market-personal-skills" aria-label="내 공고 기술별 수요">
+                    <div className="market-panel-head"><h3>기술별 언급 공고</h3><span>총 {number(data.skills.length)}개</span></div>
+                    <ol className="market-personal-skill-list">{rows?.map((item, index) => <li key={item.name}>
+                      <span className="market-rank-number">{index + 1}</span>
+                      <span className="market-personal-skill-name"><strong>{item.name}</strong><small>필수 {item.requiredJobCount}건 · 우대 {item.preferredJobCount}건</small></span>
+                      <span className="market-rank-bar"><i style={{ width: `${Math.max(2, item.ratio * 100)}%` }} /></span>
+                      <span className="market-personal-skill-ratio">{item.jobCount}건 · {percent(item.ratio)}</span>
+                    </li>)}</ol>
+                    {data.skills.length > 10 && <button type="button" className="market-personal-more" onClick={() => setShowAll(value => !value)}>
+                      {showAll ? '접기' : `전체 ${number(data.skills.length)}개 보기`}
+                    </button>}
+                  </section>}
+            <p className="market-personal-note">기술명은 AI 분석 결과의 원문을 이름별로 묶었습니다. 공용 채용시장 통계와 합산하지 않습니다.</p>
+          </>}
     </main>
   </div>;
 }

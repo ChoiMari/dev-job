@@ -17,8 +17,8 @@ export function isSkillGap(value: unknown): value is SkillGap {
     || !(value.reason === null || typeof value.reason === 'string')
     || !Array.isArray(value.items) || value.items.length > 5 || value.totalMissingSkills < value.items.length) return false;
   if (!value.available && (value.items.length !== 0 || value.totalMissingSkills !== 0 || value.provisional || !value.reason)) return false;
-  if (value.available && (value.reason !== null || analyzed < 5
-    || value.provisional !== (analyzed < 20))) return false;
+  if (value.available && (value.reason !== null || analyzed < 1
+    || value.provisional !== (analyzed < 10))) return false;
   return value.items.every(item => object(item) && object(item.skill) && count(item.skill.id) && item.skill.id > 0
     && typeof item.skill.name === 'string' && item.skill.name.length > 0
     && count(item.demandJobCount) && count(item.requiredJobCount) && count(item.preferredJobCount)

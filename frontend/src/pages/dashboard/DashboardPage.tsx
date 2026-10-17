@@ -12,6 +12,7 @@ import { statusLabels } from '../../api/application-status';
 import { ErrorState, LoadingState } from '../../components/States';
 import { LucideIcon } from '../../components/LucideIcon';
 import { CategoryImage } from '../todos/todoIcons';
+import { deviceZone, todoDday } from '../todos/todoTime';
 import dashboardNextAction from '../../assets/illustrations/dashboard-next-action.png';
 import recommendationEmptyArt from '../../assets/illustrations/dashboard-recommendations-empty.png';
 import dashboardBanner from '../../assets/illustrations/dashboard-spring-banner.png';
@@ -35,6 +36,18 @@ export function DashboardPage({ user }: { user: CurrentUser }) {
   const [companyCountError, setCompanyCountError] = useState(false);
   const [skillGap, setSkillGap] = useState<SkillGap>();
   const [todoCategories, setTodoCategories] = useState<TodoCategory[]>([]);
+  const [today, setToday] = useState(() => new Date());
+
+  useEffect(() => {
+    let timer: number;
+    const scheduleNextDay = () => {
+      const now = new Date();
+      const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+      timer = window.setTimeout(() => { setToday(new Date()); scheduleNextDay(); }, midnight.getTime() - now.getTime() + 1000);
+    };
+    scheduleNextDay();
+    return () => window.clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -136,7 +149,7 @@ export function DashboardPage({ user }: { user: CurrentUser }) {
 
       <section className="dashboard-panel dashboard-todos-panel"><div className="dashboard-panel-heading"><h2><LucideIcon name="check" />미완료 할 일</h2><a href="#/todos">전체보기 <LucideIcon name="chevronRight" /></a></div>
         {data.personalTodos.length ? <ul className="dashboard-todo-list">{data.personalTodos.map(todo => <li key={todo.id}>
-          <span className="dashboard-todo-category">{categoryIcons.has(todo.category) && <CategoryImage name={todo.category} iconKey={categoryIcons.get(todo.category)} size={22} />}{todo.category}</span><a href={`#/todos/${todo.id}`}>{todo.title}</a><small>{todo.dueAt && todo.dueTimeZone ? todoDate(todo.dueAt, todo.dueTimeZone) : '기한 없음'}</small>
+          <span className="dashboard-todo-category">{categoryIcons.has(todo.category) && <CategoryImage name={todo.category} iconKey={categoryIcons.get(todo.category)} size={22} />}{todo.category}</span><a href={`#/todos/${todo.id}`}>{todo.title}</a><small title={todo.dueAt ? todoDate(todo.dueAt, deviceZone) : undefined}>{todoDday(todo.dueAt, today)}</small>
         </li>)}</ul> : <div className="dashboard-panel-empty">미완료 할 일이 없습니다.<small>새 할 일을 등록해 계획을 이어가세요.</small></div>}
       </section>
     </div>
