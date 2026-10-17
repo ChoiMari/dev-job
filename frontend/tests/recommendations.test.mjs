@@ -84,6 +84,10 @@ test('saved PENDING, FAILED, excluded, insufficient input, evidence, limitation 
       { ...item, status: 'EXCLUDED', reason: 'ALREADY_APPLIED', rank: null, evidence: [] },
       { ...item, id: 11, status: 'INSUFFICIENT_INPUT', reason: 'INSUFFICIENT_INPUT', rank: null, evidence: [] },
     ] },
+    { ...result, candidateCount: 2, totalElements: 2, items: [
+      { ...item, status: 'UNRELATED', rank: null, evidence: [], limitations: ['업무 분야가 다릅니다.'], preparationTips: [] },
+      { ...item, id: 11, status: 'NO_RESULT', rank: null, evidence: [], limitations: [], preparationTips: [] },
+    ] },
   ];
   for (const state of states) {
     const api = createRecommendationsApi(createApiClient('/api', async () => json(state)));

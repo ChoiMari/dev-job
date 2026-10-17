@@ -31,7 +31,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class RecommendationService {
-    private static final String POLICY_VERSION = "B14_V3";
+    private static final String POLICY_VERSION = "B14_V5";
     private static final String MODEL_NAME = "gpt-5.4-mini";
     public record Candidate(String kind, long id, String title, String description, Instant updatedAt,
             LocalDate deadlineDate, boolean applied, String status, String reason) { }

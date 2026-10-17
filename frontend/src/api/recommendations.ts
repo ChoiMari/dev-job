@@ -9,14 +9,14 @@ export type RecommendationRequest = {
   consentToExternalComparison: true;
 };
 export type RecommendationEvidence = { documentQuote: string; jobQuote: string; explanation: string };
-export type RecommendationPreparationTip = { type: 'CHECK' | 'IMPROVE'; basisQuote: string; text: string };
+export type RecommendationPreparationTip = { type: 'CHECK' | 'IMPROVE' | 'PREPARE'; basisQuote: string; text: string };
 export type RecommendationItem = JobCandidate & {
   title: string;
   companyName: string | null;
   location: string | null;
   deadlineDate: string | null;
   skillTags: string[];
-  status: 'PENDING' | 'COMPLETED' | 'FAILED' | 'INSUFFICIENT_INPUT' | 'EXCLUDED';
+  status: 'PENDING' | 'COMPLETED' | 'FAILED' | 'INSUFFICIENT_INPUT' | 'EXCLUDED' | 'NO_RESULT' | 'UNRELATED';
   reason: string | null;
   rank: number | null;
   evidence: RecommendationEvidence[];
@@ -49,13 +49,13 @@ function isRecommendationItem(item: unknown): item is RecommendationItem {
   return typeof fields.title === 'string'
     && nullableText(fields.companyName) && nullableText(fields.location) && nullableDate(fields.deadlineDate)
     && Array.isArray(fields.skillTags) && fields.skillTags.every((s: unknown) => typeof s === 'string')
-    && ['PENDING', 'COMPLETED', 'FAILED', 'INSUFFICIENT_INPUT', 'EXCLUDED'].includes(String(fields.status))
+    && ['PENDING', 'COMPLETED', 'FAILED', 'INSUFFICIENT_INPUT', 'EXCLUDED', 'NO_RESULT', 'UNRELATED'].includes(String(fields.status))
     && nullableText(fields.reason) && (fields.rank === null || positive(fields.rank))
     && Array.isArray(fields.evidence) && fields.evidence.every((e: unknown) => record(e)
       && typeof e.documentQuote === 'string' && typeof e.jobQuote === 'string' && typeof e.explanation === 'string')
     && Array.isArray(fields.limitations) && fields.limitations.every((s: unknown) => typeof s === 'string')
     && Array.isArray(fields.preparationTips) && fields.preparationTips.every((tip: unknown) => record(tip)
-      && (tip.type === 'CHECK' || tip.type === 'IMPROVE') && typeof tip.basisQuote === 'string'
+      && (tip.type === 'CHECK' || tip.type === 'IMPROVE' || tip.type === 'PREPARE') && typeof tip.basisQuote === 'string'
       && typeof tip.text === 'string');
 }
 

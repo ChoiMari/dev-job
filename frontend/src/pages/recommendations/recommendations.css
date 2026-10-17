@@ -200,11 +200,13 @@
 .recommendations-item-limitations { margin: 0 10px 10px; padding: 10px; border-radius: 7px; background: #fff9eb; }
 .recommendations-item-limitations ul { margin: 0; padding-left: 16px; color: #79684b; font-size: 11px; }
 .recommendations-preparation { margin: 0 10px 10px; padding: 10px 12px; border: 1px solid #ffe1e9; border-radius: 7px; background: #fff6f8; }
-.recommendations-preparation h4 { display: flex; align-items: center; gap: 5px; margin: 0 0 6px; color: #f5275b; font-size: 12px; }
+.recommendations-preparation h4 { display: flex; align-items: center; gap: 5px; margin: 0 0 10px; color: #f5275b; font-size: 12px; }
 .recommendations-preparation h4 .lucide-icon { flex: none; width: 13px; height: 13px; }
-.recommendations-preparation ul { margin: 0; padding-left: 18px; color: #465888; font-size: 11px; line-height: 1.55; }
-.recommendations-preparation li::marker { color: #e92f63; }
-.recommendations-preparation li strong { color: #c72455; }
+.recommendations-preparation ul { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; color: #465888; font-size: 11px; line-height: 1.55; }
+.recommendations-preparation li { display: grid; grid-template-columns: 34px minmax(0, 1fr); align-items: start; gap: 7px; }
+.recommendations-preparation li strong { display: inline-flex; justify-content: center; padding: 1px 3px; border-radius: 4px; background: #ffe6ed; color: #c72455; font-size: 10px; }
+.recommendations-preparation li[data-type="IMPROVE"] strong { background: #efeaff; color: #6248bd; }
+.recommendations-preparation li[data-type="PREPARE"] strong { background: #e6f4ff; color: #2768ad; }
 .recommendations-result-footer { display: flex; justify-content: space-between; gap: 10px; padding: 10px; color: #7381aa; font-size: 12px; }
 .recommendations-result { display: grid; gap: 10px; min-width: 0; }
 .recommendations-result-heading { align-items: center; gap: 10px 16px; padding: 14px 16px; }
@@ -214,6 +216,7 @@
 .recommendations-result-heading button { flex: none; min-height: 32px; padding: 5px 9px; white-space: nowrap; }
 .recommendations-result-badge, .recommendations-stale-badge { display: inline-flex; align-items: center; min-height: 21px; padding: 2px 7px; border-radius: 5px; font-size: 10px; line-height: 1.2; font-weight: 700; }
 .recommendations-result-badge.is-failed { border: 1px solid #ffc5cd; background: #fff0f2; color: #d92d43; }
+.recommendations-result-badge.is-partial { border: 1px solid #f5dfaa; background: #fff7e7; color: #99620f; }
 .recommendations-result .recommendations-status.is-failed { justify-self: start; margin: 0; padding: 5px 9px; border: 1px solid #ffc5cd; background: #fff0f2; color: #d92d43; font-size: 11px; line-height: 1.35; }
 .recommendations-stale-badge { background: #f1edff; color: #624db3; }
 .recommendations-result-notice, .recommendations-result-error { margin: 0; padding: 10px 13px; border-radius: 7px; font-size: 12px; line-height: 1.5; }
@@ -261,7 +264,10 @@
 .recommendations-pending-card { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: center; gap: 20px; min-height: 250px; padding: 20px; border: 1px solid #e4edfb; border-radius: 10px; background: #f1f9ff; }
 .recommendations-pending-card > img { width: 100%; max-height: 210px; object-fit: contain; }
 .recommendations-pending-copy { display: grid; justify-items: start; gap: 10px; }
-.recommendations-pending-pill { padding: 5px 10px; border-radius: 20px; background: #e0efff; color: #2573d2; font-size: 12px; font-weight: 800; }
+.recommendations-pending-pill { display: inline-flex; align-items: center; gap: 5px; padding: 5px 10px; border-radius: 20px; background: #e0efff; color: #2573d2; font-size: 12px; font-weight: 800; }
+.recommendations-pending-spinner { width: 11px; height: 11px; border: 1.5px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: recommendations-spinner-rotate 0.8s linear infinite; }
+@keyframes recommendations-spinner-rotate { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .recommendations-pending-spinner { animation: none; } }
 .recommendations-pending-copy h2 { margin: 0; font-size: 21px; }
 .recommendations-pending-copy p { margin: 0; color: #6575a4; font-size: 13px; line-height: 1.55; }
 .recommendations-pending-counts { display: flex; flex-wrap: wrap; gap: 10px; width: 100%; }

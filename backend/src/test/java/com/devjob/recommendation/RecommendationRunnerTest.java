@@ -41,9 +41,9 @@ class RecommendationRunnerTest {
                 List.of("Java 경험"), List.of(job))).isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> runner.validate(valid.replace("\"rank\":1", "\"rank\":2"),
                 List.of("Java 경험"), List.of(job))).isInstanceOf(IllegalArgumentException.class);
-        assertThatThrownBy(() -> runner.validate(valid.replace("\"basisQuote\":\"Java 서버\"",
-                "\"basisQuote\":\"없는 요구사항\""), List.of("Java 경험"), List.of(job)))
-                .isInstanceOf(IllegalArgumentException.class);
+        assertThat(runner.validate(valid.replace("\"basisQuote\":\"Java 서버\"",
+                "\"basisQuote\":\"없는 요구사항\""), List.of("Java 경험"), List.of(job)).get(0).preparationTips())
+                .isEmpty();
         assertThatThrownBy(() -> runner.validate(valid.replace("\"type\":\"CHECK\"",
                 "\"type\":\"PREDICT\""), List.of("Java 경험"), List.of(job)))
                 .isInstanceOf(IllegalArgumentException.class);
@@ -64,6 +64,100 @@ class RecommendationRunnerTest {
                  "rank":1,"evidence":[],"limitations":[]}
                 """, com.devjob.recommendation.RecommendationService.Item.class);
         assertThat(old.preparationTips()).isNull();
+    }
+
+    @Test void acceptsThreeDistinctPreparationCategoriesWithSourceQuotes() throws Exception {
+        String raw = """
+                {"items":[{"kind":"MANUAL","id":7,"rank":1,"evidence":[
+                  {"documentQuote":"Java 경험","jobQuote":"Java 서버","explanation":"기술 관련성"}],
+                  "limitations":["개발 환경은 알 수 없음"],"preparationTips":[
+                    {"type":"CHECK","basisQuote":"Java 서버 운영","text":"사용하는 Java 버전을 확인해 보세요."},
+                    {"type":"IMPROVE","basisQuote":"Java 경험","text":"담당한 API를 구체적으로 작성해 보세요."},
+                    {"type":"PREPARE","basisQuote":"Java 경험","text":"설계와 문제 해결 경험을 면접 전에 정리해 보세요."}]}]}
+                """;
+        assertThat(runner.validate(raw, List.of("Java 경험"), List.of(job)).get(0).preparationTips())
+                .extracting(tip -> tip.type()).containsExactly("CHECK", "IMPROVE", "PREPARE");
+        assertThat(runner.validate(raw.replace("\"type\":\"PREPARE\"", "\"type\":\"CHECK\""),
+                List.of("Java 경험"), List.of(job)).get(0).preparationTips())
+                .extracting(tip -> tip.type()).containsExactly("CHECK", "IMPROVE");
+        assertThatThrownBy(() -> runner.validate(raw.replace("\"type\":\"PREPARE\"", "\"type\":\"OTHER\""),
+                List.of("Java 경험"), List.of(job))).isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("TIP_TYPE");
+    }
+
+    @Test void dropsOnlyUnmatchedPreparationQuoteAndKeepsSupportedTips() throws Exception {
+        String raw = """
+                {"items":[{"kind":"MANUAL","id":7,"rank":1,"evidence":[
+                  {"documentQuote":"Java 경험","jobQuote":"Java 서버","explanation":"기술 관련성"}],
+                  "limitations":["개발 환경은 알 수 없음"],"preparationTips":[
+                    {"type":"CHECK","basisQuote":"공고에 없는 요구사항","text":"실제 요구사항을 확인하세요."},
+                    {"type":"IMPROVE","basisQuote":"Java 경험","text":"담당한 API를 구체적으로 작성해 보세요."}]}]}
+                """;
+        var item = runner.validate(raw, List.of("Java 경험"), List.of(job)).get(0);
+        assertThat(item.status()).isEqualTo("COMPLETED");
+        assertThat(item.evidence()).hasSize(1);
+        assertThat(item.preparationTips()).singleElement().satisfies(tip -> {
+            assertThat(tip.type()).isEqualTo("IMPROVE");
+            assertThat(tip.basisQuote()).isEqualTo("Java 경험");
+        });
+    }
+
+    @Test void acceptsAdditionalRootMetadataButRequiresAllRequestedJobs() throws Exception {
+        String raw = """
+                {"items":[{"kind":"MANUAL","id":7,"rank":1,"evidence":[
+                  {"documentQuote":"Java 경험","jobQuote":"Java 서버","explanation":"관련 경험"}],
+                  "limitations":["상세 경력은 알 수 없음"],"preparationTips":[]}],
+                  "summary":"모델의 추가 메타데이터"}
+                """;
+        assertThat(runner.validate(raw, List.of("Java 경험"), List.of(job))).hasSize(1);
+        assertThatThrownBy(() -> runner.validate("{\"items\":[],\"summary\":\"extra\"}",
+                List.of("Java 경험"), List.of(job))).isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("ROOT_COUNT");
+        assertThatThrownBy(() -> runner.validate("{\"results\":[]}", List.of("Java 경험"), List.of(job)))
+                .isInstanceOf(IllegalArgumentException.class).hasMessage("ROOT_ITEMS");
+    }
+
+    @Test void keepsValidResultsAndShowsMissingCandidatesWithoutInventingAReason() throws Exception {
+        String raw = """
+                {"items":[{"kind":"MANUAL","id":7,"rank":2,"evidence":[
+                  {"documentQuote":"Java 경험","jobQuote":"Java 서버","explanation":"관련 경험"}],
+                  "limitations":["상세 경력은 알 수 없음"],"preparationTips":[]}]}
+                """;
+        var otherJob = new Candidate("MANUAL", 8, "프론트엔드", "React 개발", Instant.now(),
+                null, false, "READY", null);
+        var items = runner.validate(raw, List.of("Java 경험"), List.of(job, otherJob));
+        assertThat(items).hasSize(2);
+        assertThat(items.get(0).status()).isEqualTo("COMPLETED");
+        assertThat(items.get(0).rank()).isEqualTo(1);
+        assertThat(items.get(1).status()).isEqualTo("NO_RESULT");
+        assertThat(items.get(1).rank()).isNull();
+        assertThat(items.get(1).limitations()).isEmpty();
+    }
+
+    @Test void acceptsExplicitUnrelatedReasonAndDiscardsAnInvalidCandidateOnly() throws Exception {
+        String raw = """
+                {"items":[{"kind":"MANUAL","id":7,"outcome":"RANKED","rank":1,"evidence":[
+                  {"documentQuote":"Java 경험","jobQuote":"Java 서버","explanation":"관련 경험"}],
+                  "limitations":["상세 경력은 알 수 없음"],"preparationTips":[]},
+                  {"kind":"MANUAL","id":8,"outcome":"UNRELATED","rank":null,"evidence":[],
+                  "limitations":["문서의 Java 경험과 공고의 디자인 업무가 달라 관련성이 낮습니다."],"preparationTips":[]}]}
+                """;
+        var otherJob = new Candidate("MANUAL", 8, "디자인", "디자인 업무", Instant.now(),
+                null, false, "READY", null);
+        var items = runner.validate(raw, List.of("Java 경험"), List.of(job, otherJob));
+        assertThat(items).hasSize(2);
+        assertThat(items.get(1).status()).isEqualTo("UNRELATED");
+        assertThat(items.get(1).limitations()).containsExactly("문서의 Java 경험과 공고의 디자인 업무가 달라 관련성이 낮습니다.");
+        assertThat(runner.validate(raw.replace("\"outcome\":\"UNRELATED\"",
+                "\"outcome\":\"INSUFFICIENT_EVIDENCE\""), List.of("Java 경험"), List.of(job, otherJob))
+                .get(1).status()).isEqualTo("NO_RESULT");
+
+        var invalid = runner.validate(raw.replace("\"jobQuote\":\"Java 서버\"", "\"jobQuote\":\"없는 공고 문장\""),
+                List.of("Java 경험"), List.of(job, otherJob));
+        assertThat(invalid).hasSize(2);
+        assertThat(invalid.get(0).status()).isEqualTo("UNRELATED");
+        assertThat(invalid.get(1).status()).isEqualTo("NO_RESULT");
+        assertThat(invalid.get(1).limitations()).isEmpty();
     }
 
     @Test void clipsLongModelTextAfterCheckingTheFullTextForPersonalData() throws Exception {

@@ -96,7 +96,7 @@ class RecommendationDatabaseTest {
         assertThat(response(get("/api/me/recommendations/jobs/history").with(as(other)))
                 .path("items").isEmpty()).isTrue();
         assertThat(result.path("candidateCount").asInt()).isEqualTo(2);
-        assertThat(result.path("policyVersion").asText()).isEqualTo("B14_V3");
+        assertThat(result.path("policyVersion").asText()).isEqualTo("B14_V5");
         assertThat(result.path("resumeVersionId").asLong()).isEqualTo(version);
         assertThat(jdbc.queryForObject("select model_name from semantic_recommendation where id=?", String.class, id))
                 .isEqualTo("gpt-5.4-mini");
